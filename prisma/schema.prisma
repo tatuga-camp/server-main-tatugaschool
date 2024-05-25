@@ -79,7 +79,7 @@ model Subject {
   createAt          DateTime           @default(now())
   updateAt          DateTime           @updatedAt
   title             String
-  educationYear     String
+  educationYear     DateTime
   description       String
   classId           String             @db.ObjectId
   teamId            String             @db.ObjectId
