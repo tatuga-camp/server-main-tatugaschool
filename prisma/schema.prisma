@@ -30,7 +30,7 @@ model User {
   resetPasswordTokenExpiresAt DateTime?
   memberOnSchools             MemberOnSchool[]
   subjects                    Subject[]
-  MemberOnTeam                MemberOnTeam[]
+  memberOnTeams               MemberOnTeam[]
 }
 
 model School {
@@ -52,7 +52,7 @@ model School {
   teams           Team[]
   students        Student[]
   subjects        Subject[]
-  MemberOnTeam    MemberOnTeam[]
+  memberOnTeams   MemberOnTeam[]
 }
 
 model MemberOnSchool {
