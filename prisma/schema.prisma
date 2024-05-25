@@ -10,7 +10,7 @@ datasource db {
 model User {
   id                          String           @id @default(auto()) @map("_id") @db.ObjectId
   createAt                    DateTime
-  updateAt                    DateTime
+  updateAt                    DateTime         @updatedAt
   firstName                   String
   lastName                    String
   email                       String
@@ -46,8 +46,8 @@ model School {
 model MemberOnSchool {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
   userId       String         @db.ObjectId
-  createAt     DateTime
-  updateAt     DateTime
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @updatedAt
   status       String
   role         String
   firstName    String
@@ -62,8 +62,8 @@ model MemberOnSchool {
 
 model Class {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  createAt      DateTime
-  updateAt      DateTime
+  createAt      DateTime  @default(now())
+  updateAt      DateTime  @updatedAt
   title         String
   level         String
   description   String
@@ -76,8 +76,8 @@ model Class {
 
 model Subject {
   id               String             @id @default(auto()) @map("_id") @db.ObjectId
-  createAt         DateTime
-  updateAt         DateTime
+  createAt         DateTime           @default(now())
+  updateAt         DateTime           @updatedAt
   title            String
   educationYear    String
   description      String
@@ -92,8 +92,8 @@ model Subject {
 
 model Team {
   id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  createAt     DateTime
-  updateAt     DateTime
+  createAt     DateTime       @default(now())
+  updateAt     DateTime       @updatedAt
   title        String
   description  String
   icon         String
@@ -106,8 +106,8 @@ model Team {
 model MemberOnTeam {
   id               String         @id @default(auto()) @map("_id") @db.ObjectId
   memberOnSchoolId String         @db.ObjectId
-  createAt         DateTime
-  updateAt         DateTime
+  createAt         DateTime       @default(now())
+  updateAt         DateTime       @updatedAt
   teamId           String         @db.ObjectId
   firstName        String
   lastName         String
@@ -121,8 +121,8 @@ model MemberOnTeam {
 
 model Student {
   id               String             @id @default(auto()) @map("_id") @db.ObjectId
-  createAt         DateTime
-  updateAt         DateTime
+  createAt         DateTime           @default(now())
+  updateAt         DateTime           @updatedAt
   title            String
   firstName        String
   lastName         String
@@ -138,8 +138,8 @@ model Student {
 model StudentOnSubject {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   subjectId String   @db.ObjectId
-  createAt  DateTime
-  updateAt  DateTime
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
   title     String
   firstName String
   lastName  String
