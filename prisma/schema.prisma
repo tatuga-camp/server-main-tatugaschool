@@ -20,43 +20,43 @@ model User {
   createBySchoolId            String
   lastActiveAt                DateTime
   isResetPassword             Boolean          @default(false)
-  provider                    String
+  provider                    Provider
   isDeleted                   Boolean
   deleteAt                    DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
-  memberOnSchools              MemberOnSchool[]
+  memberOnSchools             MemberOnSchool[]
 }
 
 model School {
   id                           String           @id @default(auto()) @map("_id") @db.ObjectId
   title                        String
   description                  String
-  plan                         String
+  plan                         Plan
   stripe_customer_id           String?
   stripe_price_id              String?
   stripe_subscription_id       String?
   stripe_subscription_expireAt DateTime?
-  memberOnSchools               MemberOnSchool[]
-  classes                        Class[]
-  teams                         Team[]
-  students                      Student[]
+  memberOnSchools              MemberOnSchool[]
+  classes                      Class[]
+  teams                        Team[]
+  students                     Student[]
 }
 
 model MemberOnSchool {
-  id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String         @db.ObjectId
-  createAt     DateTime       @default(now())
-  updateAt     DateTime       @updatedAt
-  status       String
-  role         String
-  firstName    String
-  lastName     String
-  email        String
-  phone        String
-  schoolId     String         @db.ObjectId
-  user         User           @relation(fields: [userId], references: [id])
-  school       School         @relation(fields: [schoolId], references: [id])
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String         @db.ObjectId
+  createAt      DateTime       @default(now())
+  updateAt      DateTime       @updatedAt
+  status        Status
+  role          String
+  firstName     String
+  lastName      String
+  email         String
+  phone         String
+  schoolId      String         @db.ObjectId
+  user          User           @relation(fields: [userId], references: [id])
+  school        School         @relation(fields: [schoolId], references: [id])
   memberOnTeams MemberOnTeam[]
 }
 
@@ -70,35 +70,35 @@ model Class {
   educationYear String
   schoolId      String    @db.ObjectId
   school        School    @relation(fields: [schoolId], references: [id])
-  subjects       Subject[]
-  students       Student[]
+  subjects      Subject[]
+  students      Student[]
 }
 
 model Subject {
-  id               String             @id @default(auto()) @map("_id") @db.ObjectId
-  createAt         DateTime           @default(now())
-  updateAt         DateTime           @updatedAt
-  title            String
-  educationYear    String
-  description      String
-  classId          String             @db.ObjectId
-  teamId           String             @db.ObjectId
-  memberOnTeamId   String             @db.ObjectId
-  class            Class              @relation(fields: [classId], references: [id])
-  team             Team               @relation(fields: [teamId], references: [id])
-  memberOnTeam     MemberOnTeam       @relation(fields: [memberOnTeamId], references: [id])
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  createAt          DateTime           @default(now())
+  updateAt          DateTime           @updatedAt
+  title             String
+  educationYear     String
+  description       String
+  classId           String             @db.ObjectId
+  teamId            String             @db.ObjectId
+  memberOnTeamId    String             @db.ObjectId
+  class             Class              @relation(fields: [classId], references: [id])
+  team              Team               @relation(fields: [teamId], references: [id])
+  memberOnTeam      MemberOnTeam       @relation(fields: [memberOnTeamId], references: [id])
   studentOnSubjects StudentOnSubject[]
 }
 
 model Team {
-  id           String         @id @default(auto()) @map("_id") @db.ObjectId
-  createAt     DateTime       @default(now())
-  updateAt     DateTime       @updatedAt
-  title        String
-  description  String
-  icon         String
-  schoolId     String         @db.ObjectId
-  school       School         @relation(fields: [schoolId], references: [id])
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  createAt      DateTime       @default(now())
+  updateAt      DateTime       @updatedAt
+  title         String
+  description   String
+  icon          String
+  schoolId      String         @db.ObjectId
+  school        School         @relation(fields: [schoolId], references: [id])
   memberOnTeams MemberOnTeam[]
   subjects      Subject[]
 }
@@ -116,22 +116,22 @@ model MemberOnTeam {
   userId           String
   memberOnSchool   MemberOnSchool @relation(fields: [memberOnSchoolId], references: [id])
   team             Team           @relation(fields: [teamId], references: [id])
-  subjects          Subject[]
+  subjects         Subject[]
 }
 
 model Student {
-  id               String             @id @default(auto()) @map("_id") @db.ObjectId
-  createAt         DateTime           @default(now())
-  updateAt         DateTime           @updatedAt
-  title            String
-  firstName        String
-  lastName         String
-  picture          String
-  number           String
-  schoolId         String             @db.ObjectId
-  classId          String             @db.ObjectId
-  school           School             @relation(fields: [schoolId], references: [id])
-  class            Class              @relation(fields: [classId], references: [id])
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  createAt          DateTime           @default(now())
+  updateAt          DateTime           @updatedAt
+  title             String
+  firstName         String
+  lastName          String
+  picture           String
+  number            String
+  schoolId          String             @db.ObjectId
+  classId           String             @db.ObjectId
+  school            School             @relation(fields: [schoolId], references: [id])
+  class             Class              @relation(fields: [classId], references: [id])
   studentOnSubjects StudentOnSubject[]
 }
 
@@ -153,4 +153,19 @@ model StudentOnSubject {
 enum UserRole {
   ADMIN
   USER
+}
+
+enum Plan {
+  FREE
+  PREMIUM
+}
+
+enum Provider {
+  LOCAL
+  GOOGLE
+}
+
+enum Status {
+  PENDDING
+  ACCEPT
 }
