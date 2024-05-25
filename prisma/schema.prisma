@@ -1,14 +1,151 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id                          String           @id @default(auto()) @map("_id") @db.ObjectId
+  createAt                    DateTime
+  updateAt                    DateTime
+  firstName                   String
+  lastName                    String
+  email                       String
+  phone                       String
+  password                    String
+  role                        String
+  createBySchoolId            String
+  lastActiveAt                DateTime
+  isResetPassword             Boolean
+  provider                    String
+  isDeleted                   Boolean
+  deleteAt                    DateTime?
+  resetPasswordToken          String?
+  resetPasswordTokenExpiresAt DateTime?
+  memberOnSchool              MemberOnSchool[]
+}
+
+model School {
+  id                           String           @id @default(auto()) @map("_id") @db.ObjectId
+  title                        String
+  description                  String
+  plan                         String
+  stripe_customer_id           String?
+  stripe_price_id              String?
+  stripe_subscription_id       String?
+  stripe_subscription_expireAt DateTime?
+  memberOnSchool               MemberOnSchool[]
+  class                        Class[]
+  team                         Team[]
+  student                      Student[]
+}
+
+model MemberOnSchool {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String         @db.ObjectId
+  createAt     DateTime
+  updateAt     DateTime
+  status       String
+  role         String
+  firstName    String
+  lastName     String
+  email        String
+  phone        String
+  schoolId     String         @db.ObjectId
+  user         User           @relation(fields: [userId], references: [id])
+  school       School         @relation(fields: [schoolId], references: [id])
+  memberOnTeam MemberOnTeam[]
+}
+
+model Class {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  createAt      DateTime
+  updateAt      DateTime
+  title         String
+  level         String
+  description   String
+  educationYear String
+  schoolId      String    @db.ObjectId
+  school        School    @relation(fields: [schoolId], references: [id])
+  subject       Subject[]
+  student       Student[]
+}
+
+model Subject {
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  createAt         DateTime
+  updateAt         DateTime
+  title            String
+  educationYear    String
+  description      String
+  classId          String             @db.ObjectId
+  teamId           String             @db.ObjectId
+  memberOnTeamId   String             @db.ObjectId
+  class            Class              @relation(fields: [classId], references: [id])
+  team             Team               @relation(fields: [teamId], references: [id])
+  memberOnTeam     MemberOnTeam       @relation(fields: [memberOnTeamId], references: [id])
+  studentOnSubject StudentOnSubject[]
+}
+
+model Team {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  createAt     DateTime
+  updateAt     DateTime
+  title        String
+  description  String
+  icon         String
+  schoolId     String         @db.ObjectId
+  school       School         @relation(fields: [schoolId], references: [id])
+  memberOnTeam MemberOnTeam[]
+  subject      Subject[]
+}
+
+model MemberOnTeam {
+  id               String         @id @default(auto()) @map("_id") @db.ObjectId
+  memberOnSchoolId String         @db.ObjectId
+  createAt         DateTime
+  updateAt         DateTime
+  teamId           String         @db.ObjectId
+  firstName        String
+  lastName         String
+  email            String
+  phone            String
+  userId           String
+  memberOnSchool   MemberOnSchool @relation(fields: [memberOnSchoolId], references: [id])
+  team             Team           @relation(fields: [teamId], references: [id])
+  subject          Subject[]
+}
+
+model Student {
+  id               String             @id @default(auto()) @map("_id") @db.ObjectId
+  createAt         DateTime
+  updateAt         DateTime
+  title            String
+  firstName        String
+  lastName         String
+  picture          String
+  number           String
+  schoolId         String             @db.ObjectId
+  classId          String             @db.ObjectId
+  school           School             @relation(fields: [schoolId], references: [id])
+  class            Class              @relation(fields: [classId], references: [id])
+  studentOnSubject StudentOnSubject[]
+}
+
+model StudentOnSubject {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  subjectId String   @db.ObjectId
+  createAt  DateTime
+  updateAt  DateTime
+  title     String
+  firstName String
+  lastName  String
+  picture   String
+  number    String
+  studentId String   @db.ObjectId
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  student   Student  @relation(fields: [studentId], references: [id])
 }
