@@ -22,15 +22,16 @@ model User {
   createBySchoolId String?  @db.ObjectId
 
   lastActiveAt                DateTime
-  isResetPassword             Boolean          @default(false)
+  isResetPassword             Boolean                      @default(false)
   provider                    Provider
-  isDeleted                   Boolean          @default(false)
+  isDeleted                   Boolean                      @default(false)
   deleteAt                    DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
   memberOnSchools             MemberOnSchool[]
   subjects                    Subject[]
   memberOnTeams               MemberOnTeam[]
+  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
 }
 
 model School {
@@ -47,12 +48,16 @@ model School {
   stripe_subscription_id       String?
   stripe_subscription_expireAt DateTime?
 
-  memberOnSchools MemberOnSchool[]
-  classes         Class[]
-  teams           Team[]
-  students        Student[]
-  subjects        Subject[]
-  memberOnTeams   MemberOnTeam[]
+  memberOnSchools      MemberOnSchool[]
+  classes              Class[]
+  teams                Team[]
+  students             Student[]
+  subjects             Subject[]
+  memberOnTeams        MemberOnTeam[]
+  assignments          Assignment[]
+  studentOnAssignments StudentOnAssignment[]
+  attendanceTitles     AttendanceTitle[]
+  attendances          Attendance[]
 }
 
 model MemberOnSchool {
@@ -90,8 +95,9 @@ model Class {
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
 
-  subjects Subject[]
-  students Student[]
+  subjects          Subject[]
+  students          Student[]
+  studentOnSubjects StudentOnSubject[]
 }
 
 model Subject {
@@ -116,6 +122,9 @@ model Subject {
   school       School       @relation(fields: [schoolId], references: [id])
 
   studentOnSubjects StudentOnSubject[]
+  assignments       Assignment[]
+  scoreOnSubjects   ScoreOnSubject[]
+  attendanceTitles  AttendanceTitle[]
 }
 
 model Team {
@@ -127,10 +136,16 @@ model Team {
   description String?
   icon        String
 
-  schoolId      String         @db.ObjectId
-  school        School         @relation(fields: [schoolId], references: [id])
-  memberOnTeams MemberOnTeam[]
-  subjects      Subject[]
+  schoolId             String                @db.ObjectId
+  school               School                @relation(fields: [schoolId], references: [id])
+  memberOnTeams        MemberOnTeam[]
+  subjects             Subject[]
+  assignments          Assignment[]
+  studentOnAssignments StudentOnAssignment[]
+  scoreOnSubjects      ScoreOnSubject[]
+  scoreOnStudents      ScoreOnStudent[]
+  attendanceTitles     AttendanceTitle[]
+  attendances          Attendance[]
 }
 
 model MemberOnTeam {
@@ -156,7 +171,9 @@ model MemberOnTeam {
   team           Team           @relation(fields: [teamId], references: [id])
   school         School         @relation(fields: [schoolId], references: [id])
 
-  subjects Subject[]
+  subjects                    Subject[]
+  assignments                 Assignment[]
+  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
 }
 
 model Student {
@@ -170,11 +187,15 @@ model Student {
   picture   String
   number    String
 
-  schoolId          String             @db.ObjectId
-  classId           String             @db.ObjectId
-  school            School             @relation(fields: [schoolId], references: [id])
-  class             Class              @relation(fields: [classId], references: [id])
-  studentOnSubjects StudentOnSubject[]
+  schoolId                    String                       @db.ObjectId
+  classId                     String                       @db.ObjectId
+  school                      School                       @relation(fields: [schoolId], references: [id])
+  class                       Class                        @relation(fields: [classId], references: [id])
+  studentOnSubjects           StudentOnSubject[]
+  studentOnAssignments        StudentOnAssignment[]
+  commentOnAssignmentStudents CommentOnAssignmentStudent[]
+  scoreOnStudents             ScoreOnStudent[]
+  attendances                 Attendance[]
 }
 
 model StudentOnSubject {
@@ -188,10 +209,289 @@ model StudentOnSubject {
   picture   String
   number    String
 
-  studentId String  @db.ObjectId
+  studentId String @db.ObjectId
+  classId   String @db.ObjectId
+  subjectId String @db.ObjectId
+
+  class                Class                 @relation(fields: [classId], references: [id])
+  subject              Subject               @relation(fields: [subjectId], references: [id])
+  student              Student               @relation(fields: [studentId], references: [id])
+  studentOnAssignments StudentOnAssignment[]
+  scoreOnStudents      ScoreOnStudent[]
+  attendances          Attendance[]
+}
+
+model Assignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String
+  maxScore    Float
+  weight      Float  @default(1)
+
+  beginDate DateTime
+  dueDate   DateTime
+
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
-  student   Student @relation(fields: [studentId], references: [id])
+
+  memberOnTeamId String       @db.ObjectId
+  memberOnTeam   MemberOnTeam @relation(fields: [memberOnTeamId], references: [id])
+
+  teamId String @db.ObjectId
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  schoolId String @db.ObjectId
+  school   School @relation(fields: [schoolId], references: [id])
+
+  fileOnAssignments    FileOnAssignment[]
+  studentOnAssignments StudentOnAssignment[]
+  skillOnAssignments   SkillOnAssignment[]
+}
+
+model FileOnAssignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  type String
+  url  String
+  size Float
+
+  assignmentId String     @db.ObjectId
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+}
+
+model StudentOnAssignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title     String
+  firstName String
+  lastName  String
+  picture   String
+  number    String
+
+  score       Float
+  body        String
+  isCompleted Boolean @default(false)
+  isReviewed  Boolean @default(false)
+
+  studentId          String @db.ObjectId
+  assignmentId       String @db.ObjectId
+  studentOnSubjectId String @db.ObjectId
+  teamId             String @db.ObjectId
+  schoolId           String @db.ObjectId
+
+  team                        Team                         @relation(fields: [teamId], references: [id])
+  school                      School                       @relation(fields: [schoolId], references: [id])
+  student                     Student                      @relation(fields: [studentId], references: [id])
+  assignment                  Assignment                   @relation(fields: [assignmentId], references: [id])
+  studentOnSubject            StudentOnSubject             @relation(fields: [studentOnSubjectId], references: [id])
+  fileOnStudentOnAssignments  FileOnStudentOnAssignment[]
+  commentOnAssignmentStudents CommentOnAssignmentStudent[]
+  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
+  skillOnStudentAssignments   SkillOnStudentAssignment[]
+}
+
+model FileOnStudentOnAssignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  type String
+  url  String
+  size Float
+
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+}
+
+model CommentOnAssignmentStudent {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  content String
+
+  title     String
+  firstName String
+  lastName  String
+  picture   String
+  number    String
+
+  studentId             String              @db.ObjectId
+  student               Student             @relation(fields: [studentId], references: [id])
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+}
+
+model CommentOnAssignmentTeacher {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  content String
+
+  status    Status     @default(PENDDING)
+  role      MemberRole @default(TEACHER)
+  firstName String
+  lastName  String
+  email     String
+  photo     String
+  phone     String
+
+  userId                String              @db.ObjectId
+  user                  User                @relation(fields: [userId], references: [id])
+  memberOnTeamId        String              @db.ObjectId
+  memberOnTeam          MemberOnTeam        @relation(fields: [memberOnTeamId], references: [id])
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+}
+
+model ScoreOnSubject {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  score Float
+  title String
+  icon  String
+
+  subjectId String  @db.ObjectId
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  teamId    String  @db.ObjectId
+  team      Team    @relation(fields: [teamId], references: [id])
+}
+
+model ScoreOnStudent {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  score Float
+  title String
+  icon  String
+
+  studentId          String           @db.ObjectId
+  student            Student          @relation(fields: [studentId], references: [id])
+  studentOnSubjectId String           @db.ObjectId
+  studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
+  teamId             String           @db.ObjectId
+  team               Team             @relation(fields: [teamId], references: [id])
+}
+
+model AttendanceTitle {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  startDate DateTime
+  endDate   DateTime
+  note      String?
+
+  subjectId   String       @db.ObjectId
+  subject     Subject      @relation(fields: [subjectId], references: [id])
+  teamId      String       @db.ObjectId
+  team        Team         @relation(fields: [teamId], references: [id])
+  schoolId    String       @db.ObjectId
+  school      School       @relation(fields: [schoolId], references: [id])
+  attendances Attendance[]
+}
+
+model Attendance {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  startDate DateTime
+  endDate   DateTime
+
+  absent  Boolean @default(false)
+  present Boolean @default(false)
+  holiday Boolean @default(false)
+  sick    Boolean @default(false)
+  late    Boolean @default(false)
+  note    String?
+
+  studentId          String           @db.ObjectId
+  student            Student          @relation(fields: [studentId], references: [id])
+  attendanceTitleId  String           @db.ObjectId
+  attendanceTitle    AttendanceTitle  @relation(fields: [attendanceTitleId], references: [id])
+  studentOnSubjectId String           @db.ObjectId
+  studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
+  teamId             String           @db.ObjectId
+  team               Team             @relation(fields: [teamId], references: [id])
+  schoolId           String           @db.ObjectId
+  school             School           @relation(fields: [schoolId], references: [id])
+}
+
+model Skill {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title                     String
+  description               String
+  keywords                  String
+  vector                    Float[]
+  skillOnAssignments        SkillOnAssignment[]
+  skillOnStudentAssignments SkillOnStudentAssignment[]
+  skillOnCareers            SkillOnCareer[]
+}
+
+model SkillOnAssignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  skillId      String @db.ObjectId
+  assignmentId String @db.ObjectId
+
+  skill      Skill      @relation(fields: [skillId], references: [id])
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+}
+
+model SkillOnStudentAssignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  weight Float
+
+  skillId               String              @db.ObjectId
+  skill                 Skill               @relation(fields: [skillId], references: [id])
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+}
+
+model Career {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title          String
+  describe       String
+  keywords       String
+  vector         Float[]
+  skillOnCareers SkillOnCareer[]
+}
+
+model SkillOnCareer {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  weight Float
+
+  skillId  String @db.ObjectId
+  careerId String @db.ObjectId
+
+  skill  Skill  @relation(fields: [skillId], references: [id])
+  career Career @relation(fields: [careerId], references: [id])
 }
 
 enum UserRole {
