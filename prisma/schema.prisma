@@ -19,7 +19,7 @@ model User {
   role                        String
   createBySchoolId            String
   lastActiveAt                DateTime
-  isResetPassword             Boolean
+  isResetPassword             Boolean          @default(false)
   provider                    String
   isDeleted                   Boolean
   deleteAt                    DateTime?
