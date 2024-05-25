@@ -21,7 +21,7 @@ model User {
   lastActiveAt                DateTime
   isResetPassword             Boolean          @default(false)
   provider                    Provider
-  isDeleted                   Boolean
+  isDeleted                   Boolean          @default(false)
   deleteAt                    DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
