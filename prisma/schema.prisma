@@ -16,7 +16,7 @@ model User {
   email                       String
   phone                       String
   password                    String
-  role                        String
+  role                        UserRole
   createBySchoolId            String
   lastActiveAt                DateTime
   isResetPassword             Boolean          @default(false)
@@ -148,4 +148,9 @@ model StudentOnSubject {
   studentId String   @db.ObjectId
   subject   Subject  @relation(fields: [subjectId], references: [id])
   student   Student  @relation(fields: [studentId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  USER
 }
