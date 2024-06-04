@@ -1,14 +1,12 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as crypto from 'crypto';
-import { JwtService } from '@nestjs/jwt';
 import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
-    private jwtService: JwtService,
     private emailService: EmailService,
   ) {}
 
@@ -28,7 +26,7 @@ export class AuthService {
   }
 
   private async sendResetEmail(email: string, token: string): Promise<void> {
-    const resetUrl = `http://localhost:3000/auth/reset-password?token=${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
     await this.emailService.sendMail(
       email,
       'Welcome to TATUGA SCHOOL',
@@ -50,9 +48,9 @@ export class AuthService {
 
     const token = crypto.randomBytes(32).toString('hex');
     const expiration = new Date();
-    expiration.setHours(expiration.getMonth() + 12); // Token valid for 12 months
+    expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
     await this.usersService.createUser(data, token, expiration);
-    const resetUrl = `http://localhost:3000/auth/verify-email?token=${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 
     await this.emailService.sendMail(
       data.email,

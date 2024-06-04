@@ -28,4 +28,11 @@ export class AuthController {
   ): Promise<void> {
     await this.authService.signup(data);
   }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-email')
+  async verifyEmail(@Body('token') token: string): Promise<void> {
+    await this.authService.verifyEmail(token);
+  }
 }

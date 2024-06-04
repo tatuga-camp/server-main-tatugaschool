@@ -8,12 +8,10 @@ export class EmailService {
   private transporter: nodemailer.Transporter;
 
   constructor() {
-    const clientId =
-      '349215492140-53jtkujmhoi58und7534jg6uk9c3prkv.apps.googleusercontent.com';
-    const clientSecret = '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';
-    const refreshToken =
-      '1//043zl2cUa8PEOCgYIARAAGAQSNwF-L9IrGcbPMDh2LyIyLuJPLrLG--cHgW2zE482hLZXywqmLWVn_mR8xGnIMa2xFPJEDbzLjAM';
-    const redirectUri = 'https://developers.google.com/oauthplayground';
+    const clientId = process.env.GMAIL_CLIENT_ID;
+    const clientSecret = process.env.GMAIL_CLIENT_SECRET;
+    const refreshToken = process.env.GMAIL_REFRESH_TOKEN;
+    const redirectUri = process.env.GMAIL_REDIRECT_URI;
 
     this.oauth2Client = new google.auth.OAuth2(
       clientId,
@@ -24,13 +22,11 @@ export class EmailService {
       refresh_token: refreshToken,
     });
 
-    console.log('AccessToken', this.oauth2Client.getAccessToken());
-
     this.transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
         type: 'OAuth2',
-        user: 'dlivestreaming8@gmail.com',
+        user: process.env.GMAIL_USER,
         clientId,
         clientSecret,
         refreshToken,
@@ -41,7 +37,7 @@ export class EmailService {
 
   async sendMail(to: string, subject: string, text: string): Promise<void> {
     const mailOptions = {
-      from: 'dlivestreaming8@gmail.com',
+      from: process.env.GMAIL_USER,
       to,
       subject,
       text,
