@@ -35,4 +35,11 @@ export class AuthController {
   async verifyEmail(@Body('token') token: string): Promise<void> {
     await this.authService.verifyEmail(token);
   }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('forget-password')
+  async forgetPassword(@Body('email') email: string): Promise<void> {
+    await this.authService.forgotPassword(email);
+  }
 }
