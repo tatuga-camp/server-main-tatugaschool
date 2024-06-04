@@ -2,12 +2,16 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import * as crypto from 'crypto';
 import { EmailService } from 'src/email/email.service';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { jwtConstants } from './constants';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private emailService: EmailService,
+    private jwtService: JwtService,
   ) {}
 
   async forgotPassword(email: string): Promise<void> {
@@ -82,5 +86,51 @@ export class AuthService {
     }
 
     await this.usersService.updatePassword(user.email, password);
+  }
+
+  async signIn(
+    email: string,
+    password: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!user.isVerifyEmail) {
+      throw new Error('User not verified');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      throw new Error('Invalid password');
+    }
+
+    await this.usersService.updateLastActiveAt(user.email);
+    return {
+      accessToken: await this.jwtService.signAsync(user),
+      refreshToken: await this.jwtService.signAsync(user, {
+        secret: jwtConstants.refreshTokenSecret,
+        expiresIn: '7d',
+      }),
+    };
+  }
+
+  async refreshToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const verify = await this.jwtService.verifyAsync(refreshToken, {
+      secret: jwtConstants.refreshTokenSecret,
+    });
+
+    const user = await this.usersService.findByEmail(verify.email);
+
+    return {
+      accessToken: await this.jwtService.signAsync(user),
+      refreshToken: await this.jwtService.signAsync(user, {
+        secret: jwtConstants.refreshTokenSecret,
+        expiresIn: '7d',
+      }),
+    };
   }
 }

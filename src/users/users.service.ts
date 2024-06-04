@@ -91,4 +91,12 @@ export class UsersService {
       },
     });
   }
+  async updateLastActiveAt(email: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { email },
+      data: {
+        lastActiveAt: new Date(),
+      },
+    });
+  }
 }

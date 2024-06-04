@@ -59,4 +59,23 @@ export class AuthController {
   ): Promise<void> {
     await this.authService.resetPassword(token, password);
   }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('sign-in')
+  async signIn(
+    @Body('email') email: string,
+    @Body('password') password: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    return await this.authService.signIn(email, password);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Post('refresh-token')
+  async refreshToken(
+    @Body('refreshToken') refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    return await this.authService.refreshToken(refreshToken);
+  }
 }
