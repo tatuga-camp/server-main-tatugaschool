@@ -107,6 +107,11 @@ export class AuthService {
     }
 
     await this.usersService.updateLastActiveAt(user.email);
+    delete user.password;
+    delete user.verifyEmailToken;
+    delete user.verifyEmailTokenExpiresAt;
+    delete user.resetPasswordToken;
+    delete user.resetPasswordTokenExpiresAt;
     return {
       accessToken: await this.jwtService.signAsync(user),
       refreshToken: await this.jwtService.signAsync(user, {
@@ -124,7 +129,11 @@ export class AuthService {
     });
 
     const user = await this.usersService.findByEmail(verify.email);
-
+    delete user.password;
+    delete user.verifyEmailToken;
+    delete user.verifyEmailTokenExpiresAt;
+    delete user.resetPasswordToken;
+    delete user.resetPasswordTokenExpiresAt;
     return {
       accessToken: await this.jwtService.signAsync(user),
       refreshToken: await this.jwtService.signAsync(user, {

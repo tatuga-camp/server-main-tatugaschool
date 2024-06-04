@@ -5,9 +5,13 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  UseGuards,
+  Get,
+  Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
+import { AuthGuard } from './auth.guard';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -77,5 +81,11 @@ export class AuthController {
     @Body('refreshToken') refreshToken: string,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     return await this.authService.refreshToken(refreshToken);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('me')
+  getProfile(@Request() req) {
+    return req.user;
   }
 }
