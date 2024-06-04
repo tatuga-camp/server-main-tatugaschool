@@ -29,7 +29,7 @@ model User {
   provider                    Provider
   isDeleted                   Boolean                      @default(false)
   deleteAt                    DateTime?
-  resetPasswordToken          String?
+  resetPasswordToken          String?                      @unique
   resetPasswordTokenExpiresAt DateTime?
   memberOnSchools             MemberOnSchool[]
   subjects                    Subject[]

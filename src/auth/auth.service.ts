@@ -71,4 +71,16 @@ export class AuthService {
 
     await this.usersService.updateVerified(user.email);
   }
+  async resetPassword(token: string, password: string): Promise<void> {
+    const user = await this.usersService.findByResetToken(token);
+    if (!user) {
+      throw new Error('Invalid token');
+    }
+
+    if (user.verifyEmailTokenExpiresAt < new Date()) {
+      throw new Error('Token expired');
+    }
+
+    await this.usersService.updatePassword(user.email, password);
+  }
 }

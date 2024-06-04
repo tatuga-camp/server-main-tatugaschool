@@ -1,4 +1,11 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Patch,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
 
@@ -41,5 +48,15 @@ export class AuthController {
   @Post('forget-password')
   async forgetPassword(@Body('email') email: string): Promise<void> {
     await this.authService.forgotPassword(email);
+  }
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @Patch('reset-password')
+  async resetPassword(
+    @Body('token') token: string,
+    @Body('password') password: string,
+  ): Promise<void> {
+    await this.authService.resetPassword(token, password);
   }
 }

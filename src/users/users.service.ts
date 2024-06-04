@@ -75,4 +75,20 @@ export class UsersService {
       },
     });
   }
+  async findByResetToken(token: string): Promise<User> {
+    return this.prisma.user.findUnique({
+      where: {
+        resetPasswordToken: token,
+      },
+    });
+  }
+  async updatePassword(email: string, password: string): Promise<void> {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await this.prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedPassword,
+      },
+    });
+  }
 }
