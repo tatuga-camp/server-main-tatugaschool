@@ -12,14 +12,17 @@ model User {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  firstName        String
-  lastName         String
-  email            String   @unique
-  phone            String
-  photo            String
-  password         String
-  role             UserRole @default(USER)
-  createBySchoolId String?  @db.ObjectId
+  firstName                 String
+  lastName                  String
+  email                     String    @unique
+  phone                     String
+  photo                     String
+  password                  String
+  role                      UserRole  @default(USER)
+  createBySchoolId          String?   @db.ObjectId
+  isVerifyEmail             Boolean   @default(false)
+  verifyEmailToken          String?   @unique
+  verifyEmailTokenExpiresAt DateTime?
 
   lastActiveAt                DateTime
   isResetPassword             Boolean                      @default(false)

@@ -3,6 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Provider, User, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+interface CreateUserModel {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+  role?: string;
+  provider?: Provider;
+}
+
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
@@ -27,27 +37,41 @@ export class UsersService {
     });
   }
 
-  async createUser(data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-    role?: string;
-    provider?: Provider;
-  }): Promise<User> {
+  async createUser(
+    data: CreateUserModel,
+    token: string,
+    expiration: Date,
+  ): Promise<User> {
     const hashedPassword = await bcrypt.hash(data.password, 10);
+    const value = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
+      phone: data.phone,
+      password: hashedPassword,
+      role: UserRole.USER,
+      photo: '',
+      lastActiveAt: new Date(),
+      provider: data.provider,
+      verifyEmailToken: token,
+      verifyEmailTokenExpiresAt: expiration,
+    };
     return this.prisma.user.create({
+      data: value,
+    });
+  }
+  async findByVerifyToken(token: string): Promise<User> {
+    return this.prisma.user.findUnique({
+      where: {
+        verifyEmailToken: token,
+      },
+    });
+  }
+  async updateVerified(email: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { email },
       data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        password: hashedPassword,
-        role: UserRole.USER,
-        photo: '',
-        lastActiveAt: new Date(),
-        provider: data.provider,
+        isVerifyEmail: true,
       },
     });
   }
