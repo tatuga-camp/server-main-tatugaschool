@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Provider, User, UserRole } from '@prisma/client';
+import { Provider, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { UserRepository } from './users.repository';
 
 interface CreateUserModel {
   firstName: string;
@@ -15,12 +16,13 @@ interface CreateUserModel {
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private userRepository: UserRepository,
+  ) {}
 
   async findByEmail(email: string): Promise<User> {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
+    return this.userRepository.findByEmail(email);
   }
 
   async updateResetToken(
@@ -28,13 +30,7 @@ export class UsersService {
     token: string,
     expiration: Date,
   ): Promise<void> {
-    await this.prisma.user.update({
-      where: { email },
-      data: {
-        resetPasswordToken: token,
-        resetPasswordTokenExpiresAt: expiration,
-      },
-    });
+    await this.userRepository.updateResetToken(email, token, expiration);
   }
 
   async createUser(
@@ -43,60 +39,28 @@ export class UsersService {
     expiration: Date,
   ): Promise<User> {
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    const value = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phone: data.phone,
-      password: hashedPassword,
-      role: UserRole.USER,
-      photo: '',
-      lastActiveAt: new Date(),
-      provider: data.provider,
-      verifyEmailToken: token,
-      verifyEmailTokenExpiresAt: expiration,
-    };
-    return this.prisma.user.create({
-      data: value,
-    });
+
+    return this.userRepository.createUser(
+      data,
+      token,
+      expiration,
+      hashedPassword,
+    );
   }
   async findByVerifyToken(token: string): Promise<User> {
-    return this.prisma.user.findUnique({
-      where: {
-        verifyEmailToken: token,
-      },
-    });
+    return this.userRepository.findByVerifyToken(token);
   }
   async updateVerified(email: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { email },
-      data: {
-        isVerifyEmail: true,
-      },
-    });
+    await this.userRepository.updateVerified(email);
   }
   async findByResetToken(token: string): Promise<User> {
-    return this.prisma.user.findUnique({
-      where: {
-        resetPasswordToken: token,
-      },
-    });
+    return this.userRepository.findByResetToken(token);
   }
   async updatePassword(email: string, password: string): Promise<void> {
     const hashedPassword = await bcrypt.hash(password, 10);
-    await this.prisma.user.update({
-      where: { email },
-      data: {
-        password: hashedPassword,
-      },
-    });
+    await this.userRepository.updatePassword(email, hashedPassword);
   }
   async updateLastActiveAt(email: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { email },
-      data: {
-        lastActiveAt: new Date(),
-      },
-    });
+    await this.userRepository.updateLastActiveAt(email);
   }
 }

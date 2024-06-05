@@ -9,6 +9,7 @@ import { AuthGuard } from './auth.guard';
 import { EmailModule } from 'src/email/email.module';
 import { AccessTokenStrategy } from './strategy/accessToken.strategy';
 import { RefreshTokenStrategy } from './strategy/refreshToken.strategy';
+import { UserRepository } from 'src/users/users.repository';
 
 @Module({
   imports: [
