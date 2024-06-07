@@ -5,13 +5,19 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
-  UseGuards,
   Get,
   Request,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
-import { AuthGuard } from './auth.guard';
+import {
+  ForgotPasswordDto,
+  RefreshTokenDto,
+  SignInDto,
+  SignUpDto,
+  VerifyEmailDto,
+  ResetPasswordDto,
+} from './dto/auth.dto';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -19,47 +25,38 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('forgot-password')
-  async forgotPassword(@Body('email') email: string): Promise<void> {
-    await this.authService.forgotPassword(email);
+  @Post('sign-up')
+  async signup(
+    @Body()
+    signUpDto: SignUpDto,
+  ): Promise<void> {
+    await this.authService.signup(signUpDto);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('sign-up')
-  async signup(
-    @Body()
-    data: {
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string;
-      password: string;
-    },
+  @Post('forgot-password')
+  async forgotPassword(
+    @Body('email') email: ForgotPasswordDto['email'],
   ): Promise<void> {
-    await this.authService.signup(data);
+    await this.authService.forgotPassword(email);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('verify-email')
-  async verifyEmail(@Body('token') token: string): Promise<void> {
+  async verifyEmail(
+    @Body('token') token: VerifyEmailDto['token'],
+  ): Promise<void> {
     await this.authService.verifyEmail(token);
-  }
-
-  @Public()
-  @HttpCode(HttpStatus.OK)
-  @Post('forget-password')
-  async forgetPassword(@Body('email') email: string): Promise<void> {
-    await this.authService.forgotPassword(email);
   }
 
   @Public()
   @HttpCode(HttpStatus.OK)
   @Patch('reset-password')
   async resetPassword(
-    @Body('token') token: string,
-    @Body('password') password: string,
+    @Body('token') token: ResetPasswordDto['token'],
+    @Body('password') password: ResetPasswordDto['password'],
   ): Promise<void> {
     await this.authService.resetPassword(token, password);
   }
@@ -68,8 +65,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('sign-in')
   async signIn(
-    @Body('email') email: string,
-    @Body('password') password: string,
+    @Body('email') email: SignInDto['email'],
+    @Body('password') password: SignInDto['password'],
   ): Promise<{ accessToken: string; refreshToken: string }> {
     return await this.authService.signIn(email, password);
   }
@@ -78,12 +75,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
   async refreshToken(
-    @Body('refreshToken') refreshToken: string,
+    @Body('refreshToken') refreshToken: RefreshTokenDto['refreshToken'],
   ): Promise<{ accessToken: string; refreshToken: string }> {
     return await this.authService.refreshToken(refreshToken);
   }
 
-  @UseGuards(AuthGuard)
   @Get('me')
   getProfile(@Request() req) {
     return req.user;

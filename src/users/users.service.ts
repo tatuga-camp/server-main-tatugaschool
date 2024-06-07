@@ -1,66 +1,112 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Provider, User } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from './users.repository';
-
-interface CreateUserModel {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  password: string;
-  role?: string;
-  provider?: Provider;
-}
+import { ImageService } from 'src/image/image.service';
+import {
+  CreateUserDto,
+  FindByEmailDto,
+  FindByResetTokenDto,
+  FindByVerifyTokenDto,
+  UpdateLastActiveAtDto,
+  UpdatePasswordDto,
+  UpdateResetTokenDto,
+  UpdateVerifiedDto,
+} from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
+  logger: Logger = new Logger(UsersService.name);
   constructor(
-    private prisma: PrismaService,
     private userRepository: UserRepository,
+    private base64ImageService: ImageService,
   ) {}
 
-  async findByEmail(email: string): Promise<User> {
-    return this.userRepository.findByEmail(email);
+  async findByEmail(email: FindByEmailDto['email']): Promise<User> {
+    try {
+      return this.userRepository.findByEmail(email);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async updateResetToken(
-    email: string,
-    token: string,
-    expiration: Date,
+    email: UpdateResetTokenDto['email'],
+    token: UpdateResetTokenDto['token'],
+    expiration: UpdateResetTokenDto['expiration'],
   ): Promise<void> {
-    await this.userRepository.updateResetToken(email, token, expiration);
+    try {
+      await this.userRepository.updateResetToken(email, token, expiration);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async createUser(
-    data: CreateUserModel,
-    token: string,
-    expiration: Date,
+    data: CreateUserDto,
+    token: CreateUserDto['token'],
+    expiration: CreateUserDto['expiration'],
   ): Promise<User> {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    try {
+      const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    return this.userRepository.createUser(
-      data,
-      token,
-      expiration,
-      hashedPassword,
-    );
+      const photo = this.base64ImageService.generateBase64Image(
+        data.email.toUpperCase(),
+      );
+      return this.userRepository.createUser(
+        data,
+        photo,
+        token,
+        expiration,
+        hashedPassword,
+      );
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
-  async findByVerifyToken(token: string): Promise<User> {
-    return this.userRepository.findByVerifyToken(token);
+
+  async findByVerifyToken(token: FindByVerifyTokenDto['token']): Promise<User> {
+    try {
+      return this.userRepository.findByVerifyToken(token);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
-  async updateVerified(email: string): Promise<void> {
-    await this.userRepository.updateVerified(email);
+  async updateVerified(email: UpdateVerifiedDto['email']): Promise<void> {
+    try {
+      await this.userRepository.updateVerified(email);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
-  async findByResetToken(token: string): Promise<User> {
-    return this.userRepository.findByResetToken(token);
+  async findByResetToken(token: FindByResetTokenDto['token']): Promise<User> {
+    try {
+      return this.userRepository.findByResetToken(token);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
-  async updatePassword(email: string, password: string): Promise<void> {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await this.userRepository.updatePassword(email, hashedPassword);
+  async updatePassword(
+    email: UpdatePasswordDto['email'],
+    password: UpdatePasswordDto['password'],
+  ): Promise<void> {
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await this.userRepository.updatePassword(email, hashedPassword);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
-  async updateLastActiveAt(email: string): Promise<void> {
+  async updateLastActiveAt(
+    email: UpdateLastActiveAtDto['email'],
+  ): Promise<void> {
     await this.userRepository.updateLastActiveAt(email);
   }
 }
