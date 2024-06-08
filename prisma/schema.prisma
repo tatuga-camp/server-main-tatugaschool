@@ -12,27 +12,30 @@ model User {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  firstName        String
-  lastName         String
-  email            String   @unique
-  phone            String
-  photo            String
-  password         String
+  firstName String
+  lastName  String
+  email     String @unique
+  phone     String
+  photo     String
+  password  String
+
   role             UserRole @default(USER)
   createBySchoolId String?  @db.ObjectId
 
+  isVerifyEmail               Boolean   @default(false)
   lastActiveAt                DateTime
-  isResetPassword             Boolean                      @default(false)
+  isResetPassword             Boolean   @default(false)
   provider                    Provider
-  isDeleted                   Boolean                      @default(false)
+  isDeleted                   Boolean   @default(false)
   deleteAt                    DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
+
   memberOnSchools             MemberOnSchool[]
   subjects                    Subject[]
   memberOnTeams               MemberOnTeam[]
   commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
-  TeacherOnSubject            TeacherOnSubject[]
+  teacherOnSubjects           TeacherOnSubject[]
 }
 
 model School {
@@ -59,7 +62,7 @@ model School {
   studentOnAssignments StudentOnAssignment[]
   attendanceTitles     AttendanceTitle[]
   attendances          Attendance[]
-  TeacherOnSubject     TeacherOnSubject[]
+  teacherOnSubjects    TeacherOnSubject[]
 }
 
 model MemberOnSchool {
@@ -102,6 +105,28 @@ model Class {
   studentOnSubjects StudentOnSubject[]
 }
 
+model Student {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title     String
+  firstName String
+  lastName  String
+  picture   String
+  number    String
+
+  schoolId                    String                       @db.ObjectId
+  classId                     String                       @db.ObjectId
+  school                      School                       @relation(fields: [schoolId], references: [id])
+  class                       Class                        @relation(fields: [classId], references: [id])
+  studentOnSubjects           StudentOnSubject[]
+  studentOnAssignments        StudentOnAssignment[]
+  commentOnAssignmentStudents CommentOnAssignmentStudent[]
+  scoreOnStudents             ScoreOnStudent[]
+  attendances                 Attendance[]
+}
+
 model Team {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
@@ -121,7 +146,7 @@ model Team {
   scoreOnStudents      ScoreOnStudent[]
   attendanceTitles     AttendanceTitle[]
   attendances          Attendance[]
-  TeacherOnSubject     TeacherOnSubject[]
+  teacherOnSubjects    TeacherOnSubject[]
 }
 
 model MemberOnTeam {
@@ -177,7 +202,7 @@ model Subject {
   assignments       Assignment[]
   scoreOnSubjects   ScoreOnSubject[]
   attendanceTitles  AttendanceTitle[]
-  TeacherOnSubject  TeacherOnSubject[]
+  teacherOnSubjects TeacherOnSubject[]
 }
 
 model TeacherOnSubject {
@@ -202,28 +227,6 @@ model TeacherOnSubject {
   subject Subject @relation(fields: [subjectId], references: [id])
   school  School  @relation(fields: [schoolId], references: [id])
   team    Team    @relation(fields: [teamId], references: [id])
-}
-
-model Student {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
-  title     String
-  firstName String
-  lastName  String
-  picture   String
-  number    String
-
-  schoolId                    String                       @db.ObjectId
-  classId                     String                       @db.ObjectId
-  school                      School                       @relation(fields: [schoolId], references: [id])
-  class                       Class                        @relation(fields: [classId], references: [id])
-  studentOnSubjects           StudentOnSubject[]
-  studentOnAssignments        StudentOnAssignment[]
-  commentOnAssignmentStudents CommentOnAssignmentStudent[]
-  scoreOnStudents             ScoreOnStudent[]
-  attendances                 Attendance[]
 }
 
 model StudentOnSubject {
