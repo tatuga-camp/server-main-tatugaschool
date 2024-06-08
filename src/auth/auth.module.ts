@@ -24,12 +24,7 @@ import { GoogleStrategy } from './strategy/google-oauth.strategy';
     ImageService,
     AccessTokenStrategy,
     RefreshTokenStrategy,
-    UserRepository,
     GoogleStrategy,
-    {
-      provide: APP_GUARD,
-      useClass: UserGuard,
-    },
   ],
   controllers: [AuthController],
 })

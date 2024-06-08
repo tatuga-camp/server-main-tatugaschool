@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {

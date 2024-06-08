@@ -257,13 +257,13 @@ export class AuthService {
     }
     const data = req.user;
 
-    const user = await this.usersRepository.findByEmail(data.email);
+    const user = await this.usersRepository.findByEmail({ email: data.email });
     if (user) {
       if (!user.isVerifyEmail) {
         throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
       }
 
-      await this.usersRepository.updateLastActiveAt(user.email);
+      await this.usersRepository.updateLastActiveAt({ email: user.email });
       delete user.password;
       delete user.verifyEmailToken;
       delete user.verifyEmailTokenExpiresAt;
@@ -272,7 +272,7 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(user),
         refreshToken: await this.jwtService.signAsync(user, {
-          secret: jwtConstants.refreshTokenSecret,
+          secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: '7d',
         }),
       };
@@ -285,13 +285,13 @@ export class AuthService {
 
     const photo = data.photo;
 
-    await this.usersRepository.createUser(
-      data,
+    await this.usersRepository.createUser({
+      ...data,
       photo,
       token,
       expiration,
       hashedPassword,
-    );
+    });
     const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 
     await this.emailService.sendMail(

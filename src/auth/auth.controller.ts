@@ -6,7 +6,6 @@ import {
   HttpStatus,
   Patch,
   Get,
-  Request,
   UseGuards,
   Req,
 } from '@nestjs/common';
@@ -18,9 +17,9 @@ import {
   SignInDto,
   SignUpDto,
   VerifyEmailDto,
-  ResetPasswordDto,
-} from './dto/auth.dto';
+} from './dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Public } from './decorators';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -73,11 +72,6 @@ export class AuthController {
     @Body() dto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     return await this.authService.refreshToken(dto);
-  }
-
-  @Get('me')
-  getProfile(@Request() req) {
-    return req.user;
   }
 
   @Public()
