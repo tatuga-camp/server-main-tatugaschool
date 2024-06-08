@@ -1,85 +1,53 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Provider, User, UserRole } from '@prisma/client';
+import {
+  RequestCreateUser,
+  RequestFindByEmail,
+  RequestFindByResetToken,
+  RequestFindByVerifyToken,
+  RequestUpdateLastActiveAt,
+  RequestUpdatePassword,
+  RequestUpdateResetToken,
+  RequestUpdateVerified,
+} from './model';
 
-interface CreateUserModel {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  password: string;
-  role?: string;
-  provider?: Provider;
-}
+export type UserRepositoryType = {
+  findByEmail: (request: RequestFindByEmail) => Promise<User>;
+  updateResetToken: (request: RequestUpdateResetToken) => Promise<void>;
+  createUser: (request: RequestCreateUser) => Promise<User>;
+  findByVerifyToken: (request: RequestFindByVerifyToken) => Promise<User>;
+  updateVerified: (request: RequestUpdateVerified) => Promise<void>;
+  findByResetToken: (request: RequestFindByResetToken) => Promise<User>;
+  updatePassword: (request: RequestUpdatePassword) => Promise<void>;
+  updateLastActiveAt: (request: RequestUpdateLastActiveAt) => Promise<void>;
+};
 
 @Injectable()
-export class UserRepository {
+export class UserRepository implements UserRepositoryType {
   logger: Logger = new Logger(UserRepository.name);
   constructor(private prisma: PrismaService) {}
-  async findByEmail(email: string): Promise<User> {
-    try {
-      return this.prisma.user.findUnique({
-        where: { email },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-  async updateResetToken(
-    email: string,
-    token: string,
-    expiration: Date,
-  ): Promise<void> {
-    try {
-      await this.prisma.user.update({
-        where: { email },
-        data: {
-          resetPasswordToken: token,
-          resetPasswordTokenExpiresAt: expiration,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
 
-  async createUser(
-    data: CreateUserModel,
-    photo: string,
-    token: string,
-    expiration: Date,
-    password: string,
-  ): Promise<User> {
-    try {
-      const value = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        password: password,
-        role: UserRole.USER,
-        photo: photo,
-        lastActiveAt: new Date(),
-        provider: data.provider,
-        verifyEmailToken: token,
-        verifyEmailTokenExpiresAt: expiration,
-      };
-      return this.prisma.user.create({
-        data: value,
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async findByVerifyToken(token: string): Promise<User> {
+  async findByEmail(request: RequestFindByEmail): Promise<User> {
     try {
       return this.prisma.user.findUnique({
         where: {
-          verifyEmailToken: token,
+          ...request,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+  async updateResetToken(request: RequestUpdateResetToken): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: {
+          ...request.query,
+        },
+        data: {
+          ...request.data,
         },
       });
     } catch (error) {
@@ -88,10 +56,37 @@ export class UserRepository {
     }
   }
 
-  async updateVerified(email: string): Promise<void> {
+  async createUser(request: RequestCreateUser): Promise<User> {
+    try {
+      return this.prisma.user.create({
+        data: {
+          ...request,
+          lastActiveAt: new Date(),
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async findByVerifyToken(request: RequestFindByVerifyToken): Promise<User> {
+    try {
+      return this.prisma.user.findFirst({
+        where: {
+          ...request,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async updateVerified(request: RequestUpdateVerified): Promise<void> {
     try {
       await this.prisma.user.update({
-        where: { email },
+        where: { email: request.email },
         data: {
           isVerifyEmail: true,
           verifyEmailToken: null,
@@ -104,11 +99,11 @@ export class UserRepository {
     }
   }
 
-  async findByResetToken(token: string): Promise<User> {
+  async findByResetToken(request: RequestFindByResetToken): Promise<User> {
     try {
-      return this.prisma.user.findUnique({
+      return this.prisma.user.findFirst({
         where: {
-          resetPasswordToken: token,
+          ...request,
         },
       });
     } catch (error) {
@@ -116,12 +111,12 @@ export class UserRepository {
       throw error;
     }
   }
-  async updatePassword(email: string, password: string): Promise<void> {
+  async updatePassword(request: RequestUpdatePassword): Promise<void> {
     try {
       await this.prisma.user.update({
-        where: { email },
+        where: { email: request.email },
         data: {
-          password: password,
+          password: request.password,
           resetPasswordToken: null,
           resetPasswordTokenExpiresAt: null,
         },
@@ -131,10 +126,10 @@ export class UserRepository {
       throw error;
     }
   }
-  async updateLastActiveAt(email: string): Promise<void> {
+  async updateLastActiveAt(request: RequestUpdateLastActiveAt): Promise<void> {
     try {
       await this.prisma.user.update({
-        where: { email },
+        where: { ...request },
         data: {
           lastActiveAt: new Date(),
         },

@@ -15,7 +15,7 @@ export class ImageService {
   generateBase64Image(letter: string): string {
     try {
       if (!/^[A-Z]$/.test(letter)) {
-        throw new ForbiddenException('กรุณาใส่ตัวอักษรภาษาอังกฤษเท่านั้น');
+        letter = 'A';
       }
 
       // Set background color

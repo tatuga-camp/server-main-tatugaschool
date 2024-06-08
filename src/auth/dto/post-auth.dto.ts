@@ -30,12 +30,11 @@ export class SignUpDto {
   lastName: string;
 
   @IsNotEmpty()
-  @IsPhoneNumber('TH', { message: 'หมายเลขโทรศัพท์ไม่ถูกต้องในประเทศไทย' })
   phone: string;
 
   @IsNotEmpty()
   @IsString()
-  @IsIn(['LOCAL', 'GOOGLE'])
+  @IsIn(Object.values(Provider))
   provider: Provider;
 }
 

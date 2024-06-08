@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -10,33 +11,40 @@ import * as crypto from 'crypto';
 import { EmailService } from 'src/email/email.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConstants } from './constants';
-import { UserRepository } from 'src/users/users.repository';
+import { UserRepository, UserRepositoryType } from 'src/users/users.repository';
+import { ImageService } from 'src/image/image.service';
 import {
   ForgotPasswordDto,
-  SignUpDto,
-  VerifyEmailDto,
+  RefreshTokenDto,
   ResetPasswordDto,
   SignInDto,
-  RefreshTokenDto,
-} from './dto/auth.dto';
-import { ImageService } from 'src/image/image.service';
+  SignUpDto,
+  VerifyEmailDto,
+} from './dto';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   logger: Logger;
+  usersRepository: UserRepositoryType;
   constructor(
-    private usersRepository: UserRepository,
     private emailService: EmailService,
     private jwtService: JwtService,
     private base64ImageService: ImageService,
+    private config: ConfigService,
+    private prisma: PrismaService,
   ) {
     this.logger = new Logger(AuthService.name);
+    this.usersRepository = new UserRepository(prisma);
   }
 
-  async forgotPassword(email: ForgotPasswordDto['email']): Promise<void> {
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
     try {
-      const user = await this.usersRepository.findByEmail(email);
+      const user = await this.usersRepository.findByEmail({
+        email: dto.email,
+      });
       if (!user) {
         throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
       }
@@ -59,9 +67,15 @@ export class AuthService {
       const expiration = new Date();
       expiration.setHours(expiration.getHours() + 1); // Token valid for 1 hour
 
-      await this.usersRepository.updateResetToken(email, token, expiration);
+      await this.usersRepository.updateResetToken({
+        query: { email: dto.email },
+        data: {
+          resetPasswordToken: token,
+          resetPasswordTokenExpiresAt: expiration.toISOString(),
+        },
+      });
 
-      await this.sendResetEmail(email, token);
+      await this.sendResetEmail(dto.email, token);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -82,9 +96,11 @@ export class AuthService {
     }
   }
 
-  async signup(data: SignUpDto): Promise<void> {
+  async signup(dto: SignUpDto): Promise<void> {
     try {
-      const existingUser = await this.usersRepository.findByEmail(data.email);
+      const existingUser = await this.usersRepository.findByEmail({
+        email: dto.email,
+      });
       if (existingUser) {
         throw new ConflictException('Email already exists');
       }
@@ -92,25 +108,26 @@ export class AuthService {
       const token = crypto.randomBytes(32).toString('hex');
       const expiration = new Date();
       expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
-      const hashedPassword = await bcrypt.hash(data.password, 10);
+
+      const hashedPassword = await bcrypt.hash(dto.password, 10);
 
       const photo = this.base64ImageService.generateBase64Image(
-        data.email.toUpperCase(),
+        dto.email.charAt(0).toUpperCase(),
       );
 
-      await this.usersRepository.createUser(
-        data,
+      await this.usersRepository.createUser({
+        ...dto,
         photo,
-        token,
-        expiration,
-        hashedPassword,
-      );
+        verifyEmailToken: token,
+        verifyEmailTokenExpiresAt: expiration.toISOString(),
+        password: hashedPassword,
+      });
       const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 
       await this.emailService.sendMail(
-        data.email,
+        dto.email,
         'Welcome to TATUGA SCHOOL',
-        `Hello ${data.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
+        `Hello ${dto.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
       );
     } catch (error) {
       this.logger.error(error);
@@ -118,9 +135,11 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(token: VerifyEmailDto['token']): Promise<void> {
+  async verifyEmail(dto: VerifyEmailDto): Promise<void> {
     try {
-      const user = await this.usersRepository.findByVerifyToken(token);
+      const user = await this.usersRepository.findByVerifyToken({
+        verifyEmailToken: dto.token,
+      });
       if (!user) {
         throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
       }
@@ -129,28 +148,31 @@ export class AuthService {
         throw new UnauthorizedException('Token expired');
       }
 
-      await this.usersRepository.updateVerified(user.email);
+      await this.usersRepository.updateVerified({
+        email: user.email,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  async resetPassword(
-    token: ResetPasswordDto['token'],
-    password: ResetPasswordDto['password'],
-  ): Promise<void> {
+  async resetPassword(dto: ResetPasswordDto): Promise<void> {
     try {
-      const user = await this.usersRepository.findByResetToken(token);
+      const user = await this.usersRepository.findByResetToken({
+        resetPasswordToken: dto.token,
+      });
       if (!user) {
         throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
       }
-
-      if (user.verifyEmailTokenExpiresAt < new Date()) {
+      if (user.resetPasswordTokenExpiresAt < new Date()) {
         throw new UnauthorizedException('Token expired');
       }
 
-      await this.usersRepository.updatePassword(user.email, password);
+      await this.usersRepository.updatePassword({
+        email: user.email,
+        password: await bcrypt.hash(dto.password, 10),
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -158,11 +180,12 @@ export class AuthService {
   }
 
   async signIn(
-    email: SignInDto['email'],
-    password: SignInDto['password'],
+    dto: SignInDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const user = await this.usersRepository.findByEmail(email);
+      const user = await this.usersRepository.findByEmail({
+        email: dto.email,
+      });
       if (!user) {
         throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
       }
@@ -171,12 +194,14 @@ export class AuthService {
         throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
       }
 
-      const isMatch = await bcrypt.compare(password, user.password);
+      const isMatch = await bcrypt.compare(dto.password, user.password);
       if (!isMatch) {
         throw new UnauthorizedException('รหัสผ่านไม่ถูกต้อง');
       }
 
-      await this.usersRepository.updateLastActiveAt(user.email);
+      await this.usersRepository.updateLastActiveAt({
+        email: user.email,
+      });
       delete user.password;
       delete user.verifyEmailToken;
       delete user.verifyEmailTokenExpiresAt;
@@ -185,7 +210,7 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(user),
         refreshToken: await this.jwtService.signAsync(user, {
-          secret: jwtConstants.refreshTokenSecret,
+          secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: '7d',
         }),
       };
@@ -196,15 +221,19 @@ export class AuthService {
   }
 
   async refreshToken(
-    refreshToken: RefreshTokenDto['refreshToken'],
+    dto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const verify = await this.jwtService.verifyAsync(refreshToken, {
-        secret: jwtConstants.refreshTokenSecret,
+      const verify = await this.jwtService.verifyAsync<User>(dto.refreshToken, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
       });
 
-      const user = await this.usersRepository.findByEmail(verify.email);
-
+      const user = await this.usersRepository.findByEmail({
+        email: verify.email,
+      });
+      if (!user) {
+        throw new BadRequestException('Refresh token is invalid');
+      }
       delete user.password;
       delete user.verifyEmailToken;
       delete user.verifyEmailTokenExpiresAt;
@@ -213,7 +242,7 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(user),
         refreshToken: await this.jwtService.signAsync(user, {
-          secret: jwtConstants.refreshTokenSecret,
+          secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: '7d',
         }),
       };

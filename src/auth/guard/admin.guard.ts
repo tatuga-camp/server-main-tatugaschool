@@ -8,12 +8,13 @@ import {
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { jwtConstants } from '../constants';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(
+    private config: ConfigService,
     private jwtService: JwtService,
     private reflector: Reflector,
   ) {}
@@ -34,7 +35,7 @@ export class AdminGuard implements CanActivate {
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.accessTokenSecret,
+        secret: this.config.get('JWT_ACCESS_SECRET'),
       });
       request['user'] = payload;
 

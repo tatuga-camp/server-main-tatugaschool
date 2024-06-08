@@ -5,12 +5,19 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
-import { ImageService } from './image/image.service';
-import { ImageController } from './image/image.controller';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, UsersModule, PrismaModule, EmailModule],
-  controllers: [AppController, ImageController],
-  providers: [AppService, ImageService],
+  imports: [
+    AuthModule,
+    UsersModule,
+    PrismaModule,
+    EmailModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
