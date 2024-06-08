@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ImageService } from 'src/image/image.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AccessTokenStrategy, RefreshTokenStrategy } from './strategy';
+import { GoogleStrategy } from './strategy/google-oauth.strategy';
 
 @Module({
   imports: [
@@ -23,6 +24,12 @@ import { AccessTokenStrategy, RefreshTokenStrategy } from './strategy';
     ImageService,
     AccessTokenStrategy,
     RefreshTokenStrategy,
+    UserRepository,
+    GoogleStrategy,
+    {
+      provide: APP_GUARD,
+      useClass: UserGuard,
+    },
   ],
   controllers: [AuthController],
 })

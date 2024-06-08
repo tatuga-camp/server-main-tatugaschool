@@ -251,4 +251,53 @@ export class AuthService {
       throw error;
     }
   }
+  async googleLogin(req) {
+    if (!req.user) {
+      throw new NotFoundException('ไม่พบผู้ใช้งานนี้ใน google');
+    }
+    const data = req.user;
+
+    const user = await this.usersRepository.findByEmail(data.email);
+    if (user) {
+      if (!user.isVerifyEmail) {
+        throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
+      }
+
+      await this.usersRepository.updateLastActiveAt(user.email);
+      delete user.password;
+      delete user.verifyEmailToken;
+      delete user.verifyEmailTokenExpiresAt;
+      delete user.resetPasswordToken;
+      delete user.resetPasswordTokenExpiresAt;
+      return {
+        accessToken: await this.jwtService.signAsync(user),
+        refreshToken: await this.jwtService.signAsync(user, {
+          secret: jwtConstants.refreshTokenSecret,
+          expiresIn: '7d',
+        }),
+      };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiration = new Date();
+    expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
+    const hashedPassword = null;
+
+    const photo = data.photo;
+
+    await this.usersRepository.createUser(
+      data,
+      photo,
+      token,
+      expiration,
+      hashedPassword,
+    );
+    const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
+
+    await this.emailService.sendMail(
+      data.email,
+      'Welcome to TATUGA SCHOOL',
+      `Hello ${data.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
+    );
+  }
 }

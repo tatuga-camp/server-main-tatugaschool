@@ -7,6 +7,8 @@ import {
   Patch,
   Get,
   Request,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -16,8 +18,9 @@ import {
   SignInDto,
   SignUpDto,
   VerifyEmailDto,
-} from './dto';
-import { Public } from './decorators';
+  ResetPasswordDto,
+} from './dto/auth.dto';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -70,5 +73,22 @@ export class AuthController {
     @Body() dto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     return await this.authService.refreshToken(dto);
+  }
+
+  @Get('me')
+  getProfile(@Request() req) {
+    return req.user;
+  }
+
+  @Public()
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {}
+
+  @Public()
+  @Get('google/redirect')
+  @UseGuards(AuthGuard('google'))
+  googleAuthRedirect(@Req() req) {
+    return this.authService.googleLogin(req);
   }
 }
