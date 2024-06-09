@@ -1,20 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { School } from '@prisma/client';
+import { MemberRole, School, Status } from '@prisma/client';
 import { CreateSchoolDto, UpdateSchoolDto } from './dto';
 import { SchoolRepository, SchoolRepositoryType } from './school.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  MemberOnSchoolRepository,
+  MemberOnSchoolRepositoryType,
+} from 'src/member-on-school/member-on-school.repository';
 
 @Injectable()
 export class SchoolService {
   logger: Logger = new Logger(SchoolService.name);
   schoolRepository: SchoolRepositoryType;
+  memberOnSchoolRepository: MemberOnSchoolRepositoryType;
   constructor(private prisma: PrismaService) {
     this.schoolRepository = new SchoolRepository(prisma);
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
   }
 
-  async createSchool(dto: CreateSchoolDto): Promise<School> {
+  async createSchool(user, dto: CreateSchoolDto): Promise<School> {
     try {
-      return await this.schoolRepository.create(dto);
+      const school = await this.schoolRepository.create(dto);
+      await this.memberOnSchoolRepository.create({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        photo: user.photo,
+        phone: user.phone,
+        userId: user.id,
+        role: MemberRole.ADMIN,
+        status: Status.ACCEPT,
+        schoolId: school.id,
+      });
+      return school;
     } catch (error) {
       this.logger.error(error);
       throw error;
