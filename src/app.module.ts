@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule } from '@nestjs/config';
+import { SchoolModule } from './school/school.module';
+import { MemberOnSchoolModule } from './member-on-school/member-on-school.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { ConfigModule } from '@nestjs/config';
     UsersModule,
     PrismaModule,
     EmailModule,
+    SchoolModule,
+    MemberOnSchoolModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
