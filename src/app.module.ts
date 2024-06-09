@@ -6,9 +6,9 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule } from '@nestjs/config';
-import { GoogleStorageModule } from './google-storage/google-storage.module';
 import { SchoolModule } from './school/school.module';
 import { MemberOnSchoolModule } from './member-on-school/member-on-school.module';
+import { GoogleStorageModule } from './google-storage/google-storage.module';
 
 @Module({
   imports: [
