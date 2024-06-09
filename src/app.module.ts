@@ -11,6 +11,8 @@ import { StripeModule } from './stripe/stripe.module';
 import { AttendanceTableModule } from './attendance-table/attendance-table.module';
 import { AttendanceRowModule } from './attendance-row/attendance-row.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { SchoolModule } from './school/school.module';
+import { MemberOnSchoolModule } from './member-on-school/member-on-school.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { AttendanceModule } from './attendance/attendance.module';
     UsersModule,
     PrismaModule,
     EmailModule,
+    SchoolModule,
+    MemberOnSchoolModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
