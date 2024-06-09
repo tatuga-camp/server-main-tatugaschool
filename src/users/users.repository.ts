@@ -4,29 +4,46 @@ import { User } from '@prisma/client';
 import {
   RequestCreateUser,
   RequestFindByEmail,
+  RequestFindById,
   RequestFindByResetToken,
   RequestFindByVerifyToken,
   RequestUpdateLastActiveAt,
   RequestUpdatePassword,
   RequestUpdateResetToken,
+  RequestUpdateUser,
   RequestUpdateVerified,
 } from './interfaces';
 
 export type UserRepositoryType = {
-  findByEmail(request: RequestFindByEmail): Promise<User>;
-  updateResetToken(request: RequestUpdateResetToken): Promise<void>;
-  createUser(request: RequestCreateUser): Promise<User>;
-  findByVerifyToken(request: RequestFindByVerifyToken): Promise<User>;
-  updateVerified(request: RequestUpdateVerified): Promise<void>;
-  findByResetToken(request: RequestFindByResetToken): Promise<User>;
-  updatePassword(request: RequestUpdatePassword): Promise<void>;
-  updateLastActiveAt(request: RequestUpdateLastActiveAt): Promise<void>;
+  findById: (request: RequestFindById) => Promise<User>;
+  findByEmail: (request: RequestFindByEmail) => Promise<User>;
+  updateResetToken: (request: RequestUpdateResetToken) => Promise<void>;
+  createUser: (request: RequestCreateUser) => Promise<User>;
+  updateUser: (request: RequestUpdateUser) => Promise<User>;
+  findByVerifyToken: (request: RequestFindByVerifyToken) => Promise<User>;
+  updateVerified: (request: RequestUpdateVerified) => Promise<void>;
+  findByResetToken: (request: RequestFindByResetToken) => Promise<User>;
+  updatePassword: (request: RequestUpdatePassword) => Promise<void>;
+  updateLastActiveAt: (request: RequestUpdateLastActiveAt) => Promise<void>;
 };
 
 @Injectable()
 export class UserRepository implements UserRepositoryType {
   logger: Logger = new Logger(UserRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findById(request: RequestFindById): Promise<User> {
+    try {
+      return this.prisma.user.findUnique({
+        where: {
+          ...request,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 
   async findByEmail(request: RequestFindByEmail): Promise<User> {
     try {
@@ -63,6 +80,22 @@ export class UserRepository implements UserRepositoryType {
         data: {
           ...request,
           lastActiveAt: new Date(),
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async updateUser(request: RequestUpdateUser): Promise<User> {
+    try {
+      return this.prisma.user.update({
+        where: {
+          ...request.query,
+        },
+        data: {
+          ...request.data,
         },
       });
     } catch (error) {

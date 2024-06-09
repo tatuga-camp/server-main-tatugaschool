@@ -11,3 +11,25 @@ export interface RequestCreateMemberOnSchool {
   userId: string;
   schoolId: string;
 }
+
+export interface RequestUpdateMemberOnSchool {
+  query: {
+    id: string;
+  };
+  data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    photo: string;
+    phone: string;
+  };
+}
+
+export interface RequestGetMemberOnSchoolByEmail {
+  email: string;
+  schoolId: string;
+}
+
+export interface RequestDeleteMemberOnSchool {
+  id: string;
+}
