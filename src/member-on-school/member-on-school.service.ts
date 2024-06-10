@@ -33,22 +33,54 @@ export class MemberOnSchoolService {
     this.userRepository = new UserRepository(prisma);
   }
 
+  async getSchoolByMemberOnSchoolId(id: string) {
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
+        where: { id },
+        include: {
+          school: true,
+        },
+      });
+
+      if (!memberOnSchool) {
+        throw new NotFoundException(`MemberOnSchool with ID ${id} not found`);
+      }
+
+      return memberOnSchool.school;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async getAllMemberOnSchools() {
-    return this.prisma.memberOnSchool.findMany();
+    try {
+      return this.prisma.memberOnSchool.findMany();
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getMemberOnSchoolById(
     dto: GetMemberOnSchoolDto,
   ): Promise<MemberOnSchool> {
-    const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
-      where: { ...dto },
-    });
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
+        where: { ...dto },
+      });
 
-    if (!memberOnSchool) {
-      throw new NotFoundException(`MemberOnSchool with ID ${dto.id} not found`);
+      if (!memberOnSchool) {
+        throw new NotFoundException(
+          `MemberOnSchool with ID ${dto.id} not found`,
+        );
+      }
+
+      return memberOnSchool;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-
-    return memberOnSchool;
   }
 
   async createMemberOnSchool(
@@ -146,18 +178,23 @@ export class MemberOnSchoolService {
   async deleteMemberOnSchool(
     request: RequestDeleteMemberOnSchool,
   ): Promise<void> {
-    const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
-      where: { ...request },
-    });
-    if (!memberOnSchool) {
-      throw new NotFoundException(
-        `MemberOnSchool with ID ${request.id} not found`,
-      );
-    }
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
+        where: { ...request },
+      });
+      if (!memberOnSchool) {
+        throw new NotFoundException(
+          `MemberOnSchool with ID ${request.id} not found`,
+        );
+      }
 
-    await this.prisma.memberOnSchool.delete({
-      where: { ...request },
-    });
+      await this.prisma.memberOnSchool.delete({
+        where: { ...request },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
 
     // const userId = memberOnSchool.userId;
 

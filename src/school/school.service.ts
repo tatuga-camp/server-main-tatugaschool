@@ -18,6 +18,29 @@ export class SchoolService {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
   }
 
+  async getSchools(page: number, limit: number) {
+    try {
+      const skip = (page - 1) * limit;
+      const [schools, total] = await Promise.all([
+        this.prisma.school.findMany({
+          skip,
+          take: limit,
+        }),
+        this.prisma.school.count(),
+      ]);
+
+      return {
+        data: schools,
+        total,
+        page,
+        limit,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async createSchool(user, dto: CreateSchoolDto): Promise<School> {
     try {
       const school = await this.schoolRepository.create(dto);
