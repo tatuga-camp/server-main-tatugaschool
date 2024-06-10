@@ -6,15 +6,23 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CreateSchoolDto, UpdateSchoolDto } from './dto';
 import { SchoolService } from './school.service';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
+import { GetSchoolsDto } from './dto/get-schools.dto';
 
 @Controller('v1/school')
 export class SchoolController {
   constructor(private schoolService: SchoolService) {}
+
+  @Get()
+  async getSchools(@Query() query: GetSchoolsDto) {
+    const { page, limit } = query;
+    return this.schoolService.getSchools(page, limit);
+  }
 
   @Post()
   async create(@GetUser() user: User, @Body() dto: CreateSchoolDto) {

@@ -14,6 +14,7 @@ import {
   GetMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchool } from '@prisma/client';
+import { GetSchoolByMemberOnSchoolDto } from './dto/get-school-by-memberonschool.dto';
 
 @Controller('v1/member-on-school')
 export class MemberOnSchoolController {
@@ -27,6 +28,13 @@ export class MemberOnSchoolController {
   @Get(':id')
   async getMemberOnSchoolById(@Param() params: GetMemberOnSchoolDto) {
     return this.memberOnSchoolService.getMemberOnSchoolById(params);
+  }
+
+  @Get(':id/school')
+  async getSchoolByMemberOnSchoolId(
+    @Param() params: GetSchoolByMemberOnSchoolDto,
+  ) {
+    return this.memberOnSchoolService.getSchoolByMemberOnSchoolId(params.id);
   }
 
   @Post()
