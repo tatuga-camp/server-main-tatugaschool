@@ -13,14 +13,14 @@ import {
 } from './model';
 
 export type UserRepositoryType = {
-  findByEmail: (request: RequestFindByEmail) => Promise<User>;
-  updateResetToken: (request: RequestUpdateResetToken) => Promise<void>;
-  createUser: (request: RequestCreateUser) => Promise<User>;
-  findByVerifyToken: (request: RequestFindByVerifyToken) => Promise<User>;
-  updateVerified: (request: RequestUpdateVerified) => Promise<void>;
-  findByResetToken: (request: RequestFindByResetToken) => Promise<User>;
-  updatePassword: (request: RequestUpdatePassword) => Promise<void>;
-  updateLastActiveAt: (request: RequestUpdateLastActiveAt) => Promise<void>;
+  findByEmail(request: RequestFindByEmail): Promise<User>;
+  updateResetToken(request: RequestUpdateResetToken): Promise<void>;
+  createUser(request: RequestCreateUser): Promise<User>;
+  findByVerifyToken(request: RequestFindByVerifyToken): Promise<User>;
+  updateVerified(request: RequestUpdateVerified): Promise<void>;
+  findByResetToken(request: RequestFindByResetToken): Promise<User>;
+  updatePassword(request: RequestUpdatePassword): Promise<void>;
+  updateLastActiveAt(request: RequestUpdateLastActiveAt): Promise<void>;
 };
 
 @Injectable()
@@ -40,6 +40,7 @@ export class UserRepository implements UserRepositoryType {
       throw error;
     }
   }
+
   async updateResetToken(request: RequestUpdateResetToken): Promise<void> {
     try {
       await this.prisma.user.update({
