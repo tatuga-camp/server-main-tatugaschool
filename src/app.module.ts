@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
 import { ConfigModule } from '@nestjs/config';
 import { GoogleStorageModule } from './google-storage/google-storage.module';
+import { StripeModule } from './stripe/stripe.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { GoogleStorageModule } from './google-storage/google-storage.module';
       isGlobal: true,
     }),
     GoogleStorageModule,
+    StripeModule,
   ],
   controllers: [AppController],
   providers: [AppService],
