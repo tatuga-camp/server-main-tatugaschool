@@ -71,8 +71,9 @@ model MemberOnSchool {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  status    Status     @default(PENDDING)
-  role      MemberRole @default(TEACHER)
+  status Status     @default(PENDDING)
+  role   MemberRole @default(TEACHER)
+
   firstName String
   lastName  String
   email     String
