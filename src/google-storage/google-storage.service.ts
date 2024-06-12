@@ -8,7 +8,7 @@ import { Storage, Bucket, GetSignedUrlConfig } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 
-import { InputDeleteFileOnStorage } from './model';
+import { InputDeleteFileOnStorage } from './interfaces';
 
 @Injectable()
 export class GoogleStorageService {
