@@ -61,9 +61,10 @@ model School {
   memberOnTeams        MemberOnTeam[]
   assignments          Assignment[]
   studentOnAssignments StudentOnAssignment[]
-  attendanceTitles     AttendanceTitle[]
+  attendanceRows       AttendanceRow[]
   attendances          Attendance[]
   teacherOnSubjects    TeacherOnSubject[]
+  attendanceTables     AttendanceTable[]
 }
 
 model MemberOnSchool {
@@ -146,9 +147,10 @@ model Team {
   studentOnAssignments StudentOnAssignment[]
   scoreOnSubjects      ScoreOnSubject[]
   scoreOnStudents      ScoreOnStudent[]
-  attendanceTitles     AttendanceTitle[]
+  attendanceRows       AttendanceRow[]
   attendances          Attendance[]
   teacherOnSubjects    TeacherOnSubject[]
+  attendanceTables     AttendanceTable[]
 }
 
 model MemberOnTeam {
@@ -203,8 +205,9 @@ model Subject {
   studentOnSubjects StudentOnSubject[]
   assignments       Assignment[]
   scoreOnSubjects   ScoreOnSubject[]
-  attendanceTitles  AttendanceTitle[]
+  attendanceRows    AttendanceRow[]
   teacherOnSubjects TeacherOnSubject[]
+  attendanceTables  AttendanceTable[]
 }
 
 model TeacherOnSubject {
@@ -417,7 +420,25 @@ model ScoreOnStudent {
   team               Team             @relation(fields: [teamId], references: [id])
 }
 
-model AttendanceTitle {
+model AttendanceTable {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+
+  subjectId      String          @db.ObjectId
+  subject        Subject         @relation(fields: [subjectId], references: [id])
+  teamId         String          @db.ObjectId
+  team           Team            @relation(fields: [teamId], references: [id])
+  schoolId       String          @db.ObjectId
+  school         School          @relation(fields: [schoolId], references: [id])
+  attendances    Attendance[]
+  attendanceRows AttendanceRow[]
+}
+
+model AttendanceRow {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
@@ -426,13 +447,15 @@ model AttendanceTitle {
   endDate   DateTime
   note      String?
 
-  subjectId   String       @db.ObjectId
-  subject     Subject      @relation(fields: [subjectId], references: [id])
-  teamId      String       @db.ObjectId
-  team        Team         @relation(fields: [teamId], references: [id])
-  schoolId    String       @db.ObjectId
-  school      School       @relation(fields: [schoolId], references: [id])
-  attendances Attendance[]
+  attendanceTableId String          @db.ObjectId
+  attendanceTable   AttendanceTable @relation(fields: [attendanceTableId], references: [id])
+  subjectId         String          @db.ObjectId
+  subject           Subject         @relation(fields: [subjectId], references: [id])
+  teamId            String          @db.ObjectId
+  team              Team            @relation(fields: [teamId], references: [id])
+  schoolId          String          @db.ObjectId
+  school            School          @relation(fields: [schoolId], references: [id])
+  attendances       Attendance[]
 }
 
 model Attendance {
@@ -450,10 +473,12 @@ model Attendance {
   late    Boolean @default(false)
   note    String?
 
+  attendanceTableId  String           @db.ObjectId
+  attendanceTable    AttendanceTable  @relation(fields: [attendanceTableId], references: [id])
   studentId          String           @db.ObjectId
   student            Student          @relation(fields: [studentId], references: [id])
-  attendanceTitleId  String           @db.ObjectId
-  attendanceTitle    AttendanceTitle  @relation(fields: [attendanceTitleId], references: [id])
+  attendanceRowId    String           @db.ObjectId
+  attendanceRow      AttendanceRow    @relation(fields: [attendanceRowId], references: [id])
   studentOnSubjectId String           @db.ObjectId
   studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
   teamId             String           @db.ObjectId

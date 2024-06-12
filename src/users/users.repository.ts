@@ -10,7 +10,7 @@ import {
   RequestUpdatePassword,
   RequestUpdateResetToken,
   RequestUpdateVerified,
-} from './model';
+} from './interfaces';
 
 export type UserRepositoryType = {
   findByEmail(request: RequestFindByEmail): Promise<User>;
