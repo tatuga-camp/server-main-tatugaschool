@@ -12,9 +12,9 @@ import {
   CreateMemberOnSchoolDto,
   DeleteMemberOnSchoolDto,
   GetMemberOnSchoolDto,
+  GetSchoolByMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchool } from '@prisma/client';
-import { GetSchoolByMemberOnSchoolDto } from './dto/get-school-by-memberonschool.dto';
 
 @Controller('v1/member-on-school')
 export class MemberOnSchoolController {
@@ -34,7 +34,9 @@ export class MemberOnSchoolController {
   async getSchoolByMemberOnSchoolId(
     @Param() params: GetSchoolByMemberOnSchoolDto,
   ) {
-    return this.memberOnSchoolService.getSchoolByMemberOnSchoolId(params.id);
+    return this.memberOnSchoolService.getSchoolByMemberOnSchoolId(
+      params.memberOnSchoolId,
+    );
   }
 
   @Post()
@@ -54,7 +56,7 @@ export class MemberOnSchoolController {
     @Body() dto: CreateMemberOnSchoolDto,
   ): Promise<MemberOnSchool> {
     return await this.memberOnSchoolService.updateMemberOnSchool(
-      params.id,
+      params.memberOnSchoolId,
       dto,
     );
   }

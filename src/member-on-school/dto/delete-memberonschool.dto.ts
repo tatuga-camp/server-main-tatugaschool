@@ -4,5 +4,5 @@ export class DeleteMemberOnSchoolDto {
   @IsNotEmpty()
   @IsString()
   @IsMongoId()
-  id: string;
+  memberOnSchoolId: string;
 }

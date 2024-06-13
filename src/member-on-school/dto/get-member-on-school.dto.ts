@@ -4,5 +4,12 @@ export class GetMemberOnSchoolDto {
   @IsNotEmpty()
   @IsString()
   @IsMongoId()
-  id: string;
+  memberOnSchoolId: string;
+}
+
+export class GetSchoolByMemberOnSchoolDto {
+  @IsNotEmpty()
+  @IsString()
+  @IsMongoId()
+  memberOnSchoolId: string;
 }

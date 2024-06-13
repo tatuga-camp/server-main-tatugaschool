@@ -8,12 +8,13 @@ import { MemberOnSchool } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 export type MemberOnSchoolRepositoryType = {
-  create: (request: RequestCreateMemberOnSchool) => Promise<MemberOnSchool>;
-  updateMemberOnSchool: (
+  create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool>;
+  updateMemberOnSchool(
     request: RequestUpdateMemberOnSchool,
-  ) => Promise<MemberOnSchool>;
-  delete: (id: string) => Promise<MemberOnSchool>;
-  getMemberOnSchoolById: (id: string) => Promise<MemberOnSchool>;
+  ): Promise<MemberOnSchool>;
+  delete(id: string): Promise<MemberOnSchool>;
+  getAllMemberOnSchools(): Promise<MemberOnSchool[]>;
+  getMemberOnSchoolById(id: string): Promise<MemberOnSchool>;
   getMemberOnSchoolByEmailAndSchool: (
     request: RequestGetMemberOnSchoolByEmail,
   ) => Promise<MemberOnSchool>;
@@ -68,11 +69,23 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     }
   }
 
+  async getAllMemberOnSchools(): Promise<MemberOnSchool[]> {
+    try {
+      return this.prisma.memberOnSchool.findMany();
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async getMemberOnSchoolById(id: string): Promise<MemberOnSchool> {
     try {
       return await this.prisma.memberOnSchool.findUnique({
         where: {
           id,
+        },
+        include: {
+          school: true,
         },
       });
     } catch (error) {
