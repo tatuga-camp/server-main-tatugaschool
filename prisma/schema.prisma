@@ -208,6 +208,7 @@ model Subject {
   attendanceRows    AttendanceRow[]
   teacherOnSubjects TeacherOnSubject[]
   attendanceTables  AttendanceTable[]
+  attendances       Attendance[]
 }
 
 model TeacherOnSubject {
@@ -485,6 +486,10 @@ model Attendance {
   team               Team             @relation(fields: [teamId], references: [id])
   schoolId           String           @db.ObjectId
   school             School           @relation(fields: [schoolId], references: [id])
+  subjectId          String           @db.ObjectId
+  subject            Subject          @relation(fields: [subjectId], references: [id])
+
+  @@unique([studentOnSubjectId, attendanceRowId])
 }
 
 model Skill {

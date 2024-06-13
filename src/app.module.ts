@@ -9,6 +9,8 @@ import { ConfigModule } from '@nestjs/config';
 import { GoogleStorageModule } from './google-storage/google-storage.module';
 import { StripeModule } from './stripe/stripe.module';
 import { AttendanceTableModule } from './attendance-table/attendance-table.module';
+import { AttendanceRowModule } from './attendance-row/attendance-row.module';
+import { AttendanceModule } from './attendance/attendance.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { AttendanceTableModule } from './attendance-table/attendance-table.modul
     GoogleStorageModule,
     StripeModule,
     AttendanceTableModule,
+    AttendanceRowModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
