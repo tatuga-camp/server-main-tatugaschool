@@ -1,1 +1,1 @@
-export * from './member-on-school.interface';
+export * from './request-member-on-school.interface';
