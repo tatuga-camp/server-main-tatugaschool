@@ -17,11 +17,8 @@ export interface RequestUpdateMemberOnSchool {
     id: string;
   };
   data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    photo: string;
-    phone: string;
+    status: Status;
+    role: MemberRole;
   };
 }
 

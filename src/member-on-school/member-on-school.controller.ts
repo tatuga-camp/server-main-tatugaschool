@@ -13,8 +13,10 @@ import {
   DeleteMemberOnSchoolDto,
   GetMemberOnSchoolDto,
   GetSchoolByMemberOnSchoolDto,
+  UpdateMemberOnSchoolDto,
 } from './dto';
-import { MemberOnSchool } from '@prisma/client';
+import { MemberOnSchool, User } from '@prisma/client';
+import { GetUser } from 'src/auth/decorators';
 
 @Controller('v1/member-on-school')
 export class MemberOnSchoolController {
@@ -40,8 +42,11 @@ export class MemberOnSchoolController {
   }
 
   @Post()
-  createMemberOnSchool(@Body() dto: CreateMemberOnSchoolDto) {
-    return this.memberOnSchoolService.createMemberOnSchool(dto);
+  createMemberOnSchool(
+    @Body() dto: CreateMemberOnSchoolDto,
+    @GetUser() user: User,
+  ) {
+    return this.memberOnSchoolService.createMemberOnSchool(dto, user);
   }
 
   @Delete(':id')
@@ -53,11 +58,13 @@ export class MemberOnSchoolController {
   @Patch(':id')
   async updateMemberOnSchool(
     @Param() params: GetMemberOnSchoolDto,
-    @Body() dto: CreateMemberOnSchoolDto,
+    @Body() dto: UpdateMemberOnSchoolDto,
+    @GetUser() user: User,
   ): Promise<MemberOnSchool> {
     return await this.memberOnSchoolService.updateMemberOnSchool(
       params.memberOnSchoolId,
       dto,
+      user,
     );
   }
 }

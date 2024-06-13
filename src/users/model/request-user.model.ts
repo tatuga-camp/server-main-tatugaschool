@@ -28,21 +28,6 @@ export type RequestCreateUser = {
   verifyEmailTokenExpiresAt: string;
 };
 
-export type RequestUpdateUser = {
-  query: {
-    id: string;
-  };
-  data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    role?: UserRole;
-    provider?: Provider;
-    photo: string;
-  };
-};
-
 export type RequestFindByVerifyToken = {
   verifyEmailToken: string;
 };

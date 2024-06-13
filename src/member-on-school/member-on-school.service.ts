@@ -10,7 +10,13 @@ import {
   GetMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
-import { MemberOnSchool, Provider, UserRole } from '@prisma/client';
+import {
+  MemberOnSchool,
+  MemberRole,
+  Provider,
+  User,
+  UserRole,
+} from '@prisma/client';
 import {
   MemberOnSchoolRepository,
   MemberOnSchoolRepositoryType,
@@ -82,8 +88,19 @@ export class MemberOnSchoolService {
 
   async createMemberOnSchool(
     dto: CreateMemberOnSchoolDto,
+    user: User,
   ): Promise<MemberOnSchool> {
     try {
+      const isAdminMemberonSchool =
+        await this.memberOnSchoolRepository.getMemberOnSchoolByEmailAndSchool({
+          email: user.email,
+          schoolId: dto.schoolId,
+        });
+
+      if (isAdminMemberonSchool.role !== MemberRole.ADMIN) {
+        throw new ForbiddenException('คุณไม่มีสิทธิ์ใช้งานนี้');
+      }
+
       const existingMemberOnSchool =
         await this.memberOnSchoolRepository.getMemberOnSchoolByEmailAndSchool({
           email: dto.email,
@@ -115,19 +132,6 @@ export class MemberOnSchoolService {
           userId: user.id,
         });
       }
-      await this.userRepository.updateUser({
-        query: {
-          id: existingUser.id,
-        },
-        data: {
-          email: dto.email,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          phone: dto.phone,
-          photo: dto.photo,
-        },
-      });
-
       return await this.memberOnSchoolRepository.create({
         ...dto,
         userId: existingUser.id,
@@ -140,31 +144,28 @@ export class MemberOnSchoolService {
   async updateMemberOnSchool(
     id: string,
     dto: UpdateMemberOnSchoolDto,
+    user: User,
   ): Promise<MemberOnSchool> {
     try {
+      const isAdminMemberonSchool =
+        await this.memberOnSchoolRepository.getMemberOnSchoolByEmailAndSchool({
+          email: user.email,
+          schoolId: id,
+        });
+
+      if (isAdminMemberonSchool.role !== MemberRole.ADMIN) {
+        throw new ForbiddenException('คุณไม่มีสิทธิ์ใช้งานนี้');
+      }
+
       const memberOnSchool =
         await this.memberOnSchoolRepository.getMemberOnSchoolById(id);
       if (!memberOnSchool) {
         throw new NotFoundException(`ไม่พบ MemberOnSchool ที่ต้องการอัพเดท`);
       }
 
-      const data = {
-        email: dto.email,
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        phone: dto.phone,
-        photo: dto.photo,
-      };
-      await this.userRepository.updateUser({
-        query: {
-          id: memberOnSchool.userId,
-        },
-        data: data,
-      });
-
       return await this.memberOnSchoolRepository.updateMemberOnSchool({
         query: { id: memberOnSchool.id },
-        data: data,
+        data: dto,
       });
     } catch (error) {
       this.logger.error(error);
@@ -190,19 +191,5 @@ export class MemberOnSchoolService {
       this.logger.error(error);
       throw error;
     }
-
-    // const userId = memberOnSchool.userId;
-
-    // Check if there are other MemberOnSchool entries for this user
-    // const remainingEntries = await this.prisma.memberOnSchool.findMany({
-    //   where: { userId },
-    // });
-
-    // // If there are no remaining entries, delete the user
-    // if (remainingEntries.length === 0) {
-    //   await this.prisma.user.delete({
-    //     where: { id: userId },
-    //   });
-    // }
   }
 }
