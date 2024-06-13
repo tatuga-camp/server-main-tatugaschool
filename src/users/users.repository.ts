@@ -15,16 +15,16 @@ import {
 } from './model';
 
 export type UserRepositoryType = {
-  findById: (request: RequestFindById) => Promise<User>;
-  findByEmail: (request: RequestFindByEmail) => Promise<User>;
-  updateResetToken: (request: RequestUpdateResetToken) => Promise<void>;
-  createUser: (request: RequestCreateUser) => Promise<User>;
-  updateUser: (request: RequestUpdateUser) => Promise<User>;
-  findByVerifyToken: (request: RequestFindByVerifyToken) => Promise<User>;
-  updateVerified: (request: RequestUpdateVerified) => Promise<void>;
-  findByResetToken: (request: RequestFindByResetToken) => Promise<User>;
-  updatePassword: (request: RequestUpdatePassword) => Promise<void>;
-  updateLastActiveAt: (request: RequestUpdateLastActiveAt) => Promise<void>;
+  findById(request: RequestFindById): Promise<User>;
+  findByEmail(request: RequestFindByEmail): Promise<User>;
+  updateResetToken(request: RequestUpdateResetToken): Promise<void>;
+  createUser(request: RequestCreateUser): Promise<User>;
+  updateUser(request: RequestUpdateUser): Promise<User>;
+  findByVerifyToken(request: RequestFindByVerifyToken): Promise<User>;
+  updateVerified(request: RequestUpdateVerified): Promise<void>;
+  findByResetToken(request: RequestFindByResetToken): Promise<User>;
+  updatePassword(request: RequestUpdatePassword): Promise<void>;
+  updateLastActiveAt(request: RequestUpdateLastActiveAt): Promise<void>;
 };
 
 @Injectable()

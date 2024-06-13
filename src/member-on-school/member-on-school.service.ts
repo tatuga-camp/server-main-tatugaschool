@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateMemberOnSchoolDto,
+  DeleteMemberOnSchoolDto,
   GetMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
@@ -21,7 +22,6 @@ import {
   VERIFY_EMAIL_TOKEN,
   VERIFY_EMAIL_TOKEN_EXPIRES_AT,
 } from 'src/common/constants';
-import { RequestDeleteMemberOnSchool } from './interfaces';
 
 @Injectable()
 export class MemberOnSchoolService {
@@ -35,18 +35,14 @@ export class MemberOnSchoolService {
 
   async getSchoolByMemberOnSchoolId(id: string) {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
-        where: { id },
-        include: {
-          school: true,
-        },
-      });
+      const memberOnSchool =
+        await this.memberOnSchoolRepository.getMemberOnSchoolById(id);
 
       if (!memberOnSchool) {
         throw new NotFoundException(`MemberOnSchool with ID ${id} not found`);
       }
 
-      return memberOnSchool.school;
+      return memberOnSchool;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -55,7 +51,7 @@ export class MemberOnSchoolService {
 
   async getAllMemberOnSchools() {
     try {
-      return this.prisma.memberOnSchool.findMany();
+      return this.memberOnSchoolRepository.getAllMemberOnSchools;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -66,13 +62,14 @@ export class MemberOnSchoolService {
     dto: GetMemberOnSchoolDto,
   ): Promise<MemberOnSchool> {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
-        where: { ...dto },
-      });
+      const memberOnSchool =
+        await this.memberOnSchoolRepository.getMemberOnSchoolById(
+          dto.memberOnSchoolId,
+        );
 
       if (!memberOnSchool) {
         throw new NotFoundException(
-          `MemberOnSchool with ID ${dto.id} not found`,
+          `MemberOnSchool with ID ${dto.memberOnSchoolId} not found`,
         );
       }
 
@@ -175,22 +172,20 @@ export class MemberOnSchoolService {
     }
   }
 
-  async deleteMemberOnSchool(
-    request: RequestDeleteMemberOnSchool,
-  ): Promise<void> {
+  async deleteMemberOnSchool(request: DeleteMemberOnSchoolDto): Promise<void> {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
-        where: { ...request },
-      });
+      const memberOnSchool =
+        await this.memberOnSchoolRepository.getMemberOnSchoolById(
+          request.memberOnSchoolId,
+        );
+
       if (!memberOnSchool) {
         throw new NotFoundException(
-          `MemberOnSchool with ID ${request.id} not found`,
+          `MemberOnSchool with ID ${request.memberOnSchoolId} not found`,
         );
       }
 
-      await this.prisma.memberOnSchool.delete({
-        where: { ...request },
-      });
+      await this.memberOnSchoolRepository.delete(request.memberOnSchoolId);
     } catch (error) {
       this.logger.error(error);
       throw error;
