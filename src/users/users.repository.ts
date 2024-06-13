@@ -10,7 +10,6 @@ import {
   RequestUpdateLastActiveAt,
   RequestUpdatePassword,
   RequestUpdateResetToken,
-  RequestUpdateUser,
   RequestUpdateVerified,
 } from './interfaces';
 
@@ -19,7 +18,6 @@ export type UserRepositoryType = {
   findByEmail(request: RequestFindByEmail): Promise<User>;
   updateResetToken(request: RequestUpdateResetToken): Promise<void>;
   createUser(request: RequestCreateUser): Promise<User>;
-  updateUser(request: RequestUpdateUser): Promise<User>;
   findByVerifyToken(request: RequestFindByVerifyToken): Promise<User>;
   updateVerified(request: RequestUpdateVerified): Promise<void>;
   findByResetToken(request: RequestFindByResetToken): Promise<User>;
@@ -80,22 +78,6 @@ export class UserRepository implements UserRepositoryType {
         data: {
           ...request,
           lastActiveAt: new Date(),
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async updateUser(request: RequestUpdateUser): Promise<User> {
-    try {
-      return this.prisma.user.update({
-        where: {
-          ...request.query,
-        },
-        data: {
-          ...request.data,
         },
       });
     } catch (error) {
