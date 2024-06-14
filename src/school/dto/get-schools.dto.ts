@@ -1,4 +1,4 @@
-import { IsOptional, IsInt, Min } from 'class-validator';
+import { IsOptional, IsInt, Min, IsNotEmpty, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GetSchoolsDto {
@@ -13,4 +13,10 @@ export class GetSchoolsDto {
   @IsInt()
   @Min(1)
   limit?: number = 10;
+}
+
+export class GetSchoolByIdDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  schoolId: string;
 }

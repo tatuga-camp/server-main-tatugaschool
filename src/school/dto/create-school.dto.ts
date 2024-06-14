@@ -1,28 +1,21 @@
 import { Plan } from '@prisma/client';
-import { IsString, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsNotEmpty,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
 
 export class CreateSchoolDto {
+  @IsNotEmpty()
   @IsString()
-  readonly title: string;
+  @MaxLength(999)
+  title: string;
 
+  @IsNotEmpty()
+  @MaxLength(999)
   @IsString()
-  readonly description: string;
-
-  @IsString()
-  readonly plan: Plan;
-
-  @IsString()
-  readonly stripe_customer_id: string;
-
-  @IsOptional()
-  @IsString()
-  readonly stripe_price_id?: string;
-
-  @IsOptional()
-  @IsString()
-  readonly stripe_subscription_id?: string;
-
-  @IsOptional()
-  @IsDateString()
-  readonly stripe_subscription_expireAt?: Date;
+  description: string;
 }

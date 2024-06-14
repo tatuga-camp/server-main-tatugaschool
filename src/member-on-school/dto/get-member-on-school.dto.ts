@@ -1,15 +1,13 @@
 import { IsNotEmpty, IsString, IsMongoId } from 'class-validator';
 
-export class GetMemberOnSchoolDto {
+export class GetMemberOnSchoolByIdDto {
   @IsNotEmpty()
-  @IsString()
   @IsMongoId()
   memberOnSchoolId: string;
 }
 
-export class GetSchoolByMemberOnSchoolDto {
+export class GetMemberOnSchoolsDto {
   @IsNotEmpty()
-  @IsString()
   @IsMongoId()
-  memberOnSchoolId: string;
+  schoolId: string;
 }

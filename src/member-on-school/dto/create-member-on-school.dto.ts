@@ -1,35 +1,23 @@
-import { IsString, IsEnum, IsOptional, IsMongoId } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  IsMongoId,
+  IsNotEmpty,
+  IsEmail,
+} from 'class-validator';
 import { Status, MemberRole } from '@prisma/client';
 
 export class CreateMemberOnSchoolDto {
-  @IsOptional()
-  @IsEnum(Status)
-  readonly status?: Status;
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsEnum(MemberRole)
-  readonly role?: MemberRole;
-
-  @IsString()
-  readonly firstName: string;
-
-  @IsString()
-  readonly lastName: string;
-
-  @IsString()
-  readonly email: string;
-
-  @IsString()
-  readonly photo: string;
-
-  @IsString()
-  readonly phone: string;
-
-  @IsString()
-  @IsOptional()
-  readonly userId?: string;
+  role: MemberRole;
 
   @IsString()
   @IsMongoId()
-  readonly schoolId: string;
+  schoolId: string;
 }

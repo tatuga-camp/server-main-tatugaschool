@@ -17,8 +17,8 @@ export interface RequestUpdateMemberOnSchool {
     id: string;
   };
   data: {
-    status: Status;
-    role: MemberRole;
+    status?: Status;
+    role?: MemberRole;
   };
 }
 

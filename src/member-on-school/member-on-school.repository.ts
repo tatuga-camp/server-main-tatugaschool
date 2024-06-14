@@ -4,7 +4,7 @@ import {
   RequestGetMemberOnSchoolByEmail,
   RequestUpdateMemberOnSchool,
 } from './interfaces';
-import { MemberOnSchool } from '@prisma/client';
+import { $Enums, MemberOnSchool } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 export type MemberOnSchoolRepositoryType = {
@@ -12,18 +12,25 @@ export type MemberOnSchoolRepositoryType = {
   updateMemberOnSchool(
     request: RequestUpdateMemberOnSchool,
   ): Promise<MemberOnSchool>;
-  delete(id: string): Promise<MemberOnSchool>;
-  getAllMemberOnSchools(): Promise<MemberOnSchool[]>;
-  getMemberOnSchoolById(id: string): Promise<MemberOnSchool>;
-  getMemberOnSchoolByEmailAndSchool: (
-    request: RequestGetMemberOnSchoolByEmail,
-  ) => Promise<MemberOnSchool>;
+  delete(request: { memberOnSchoolId: string }): Promise<{ message: string }>;
+  getAllMemberOnSchoolsBySchoolId(request: {
+    schoolId: string;
+  }): Promise<MemberOnSchool[]>;
+  getMemberOnSchoolById(request: {
+    memberOnSchoolId: string;
+  }): Promise<MemberOnSchool>;
+  getMemberOnSchoolByEmailAndSchool(request: {
+    email: string;
+    schoolId: string;
+  }): Promise<MemberOnSchool>;
 };
 
 @Injectable()
 export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
-  logger: Logger = new Logger(MemberOnSchoolRepository.name);
-  constructor(private prisma: PrismaService) {}
+  logger: Logger;
+  constructor(private prisma: PrismaService) {
+    this.logger = new Logger(MemberOnSchoolRepository.name);
+  }
 
   async create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool> {
     try {
@@ -56,11 +63,38 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     }
   }
 
-  async delete(id: string): Promise<MemberOnSchool> {
+  async delete(request: {
+    memberOnSchoolId: string;
+  }): Promise<{ message: string }> {
     try {
-      return await this.prisma.memberOnSchool.delete({
+      // Delete related MemberOnTeam records first
+      await this.prisma.memberOnTeam.deleteMany({
         where: {
-          id,
+          memberOnSchoolId: request.memberOnSchoolId,
+        },
+      });
+
+      // Finally, delete the MemberOnSchool record
+      await this.prisma.memberOnSchool.delete({
+        where: {
+          id: request.memberOnSchoolId,
+        },
+      });
+
+      return { message: 'MemberOnSchool deleted successfully' };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getAllMemberOnSchoolsBySchoolId(request: {
+    schoolId: string;
+  }): Promise<MemberOnSchool[]> {
+    try {
+      return this.prisma.memberOnSchool.findMany({
+        where: {
+          schoolId: request.schoolId,
         },
       });
     } catch (error) {
@@ -69,23 +103,13 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     }
   }
 
-  async getAllMemberOnSchools(): Promise<MemberOnSchool[]> {
-    try {
-      return this.prisma.memberOnSchool.findMany();
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async getMemberOnSchoolById(id: string): Promise<MemberOnSchool> {
+  async getMemberOnSchoolById(request: {
+    memberOnSchoolId: string;
+  }): Promise<MemberOnSchool> {
     try {
       return await this.prisma.memberOnSchool.findUnique({
         where: {
-          id,
-        },
-        include: {
-          school: true,
+          id: request.memberOnSchoolId,
         },
       });
     } catch (error) {
@@ -93,13 +117,15 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       throw error;
     }
   }
-  async getMemberOnSchoolByEmailAndSchool(
-    requrst: RequestGetMemberOnSchoolByEmail,
-  ): Promise<MemberOnSchool> {
+  async getMemberOnSchoolByEmailAndSchool(request: {
+    email: string;
+    schoolId: string;
+  }): Promise<MemberOnSchool> {
     try {
       return await this.prisma.memberOnSchool.findFirst({
         where: {
-          ...requrst,
+          email: request.email,
+          schoolId: request.schoolId,
         },
       });
     } catch (error) {

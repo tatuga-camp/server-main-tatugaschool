@@ -37,6 +37,7 @@ model User {
   memberOnTeams               MemberOnTeam[]
   commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
   teacherOnSubjects           TeacherOnSubject[]
+  school                      School[]
 }
 
 model School {
@@ -46,25 +47,36 @@ model School {
 
   title       String
   description String
-  plan        Plan   @default(FREE)
+  plan        Plan    @default(FREE)
+  isDeleted   Boolean @default(false)
 
   stripe_customer_id           String    @unique
   stripe_price_id              String?
   stripe_subscription_id       String?
   stripe_subscription_expireAt DateTime?
 
-  memberOnSchools      MemberOnSchool[]
-  classes              Class[]
-  teams                Team[]
-  students             Student[]
-  subjects             Subject[]
-  memberOnTeams        MemberOnTeam[]
-  assignments          Assignment[]
-  studentOnAssignments StudentOnAssignment[]
-  attendanceRows       AttendanceRow[]
-  attendances          Attendance[]
-  teacherOnSubjects    TeacherOnSubject[]
-  attendanceTables     AttendanceTable[]
+  billingManagerId String? @db.ObjectId
+  billingManager   User?   @relation(fields: [billingManagerId], references: [id])
+
+  memberOnSchools             MemberOnSchool[]
+  classes                     Class[]
+  teams                       Team[]
+  students                    Student[]
+  subjects                    Subject[]
+  memberOnTeams               MemberOnTeam[]
+  assignments                 Assignment[]
+  studentOnAssignments        StudentOnAssignment[]
+  attendanceRows              AttendanceRow[]
+  attendances                 Attendance[]
+  teacherOnSubjects           TeacherOnSubject[]
+  attendanceTables            AttendanceTable[]
+  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
+  commentOnAssignmentStudents CommentOnAssignmentStudent[]
+  scoreOnStudents             ScoreOnStudent[]
+  scoreOnSubjects             ScoreOnSubject[]
+  fileOnStudentOnAssignments  FileOnStudentOnAssignment[]
+  fileOnAssignments           FileOnAssignment[]
+  studentOnSubjects           StudentOnSubject[]
 }
 
 model MemberOnSchool {
@@ -88,6 +100,8 @@ model MemberOnSchool {
   school School @relation(fields: [schoolId], references: [id])
 
   memberOnTeams MemberOnTeam[]
+
+  @@unique([userId, schoolId])
 }
 
 model Class {
@@ -175,10 +189,6 @@ model MemberOnTeam {
   memberOnSchool MemberOnSchool @relation(fields: [memberOnSchoolId], references: [id])
   team           Team           @relation(fields: [teamId], references: [id])
   school         School         @relation(fields: [schoolId], references: [id])
-
-  subjects                    Subject[]
-  assignments                 Assignment[]
-  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
 }
 
 model Subject {
@@ -190,17 +200,15 @@ model Subject {
   educationYear DateTime
   description   String
 
-  classId        String @db.ObjectId
-  teamId         String @db.ObjectId
-  userId         String @db.ObjectId
-  schoolId       String @db.ObjectId
-  memberOnTeamId String @db.ObjectId
+  classId  String @db.ObjectId
+  teamId   String @db.ObjectId
+  userId   String @db.ObjectId
+  schoolId String @db.ObjectId
 
-  class        Class        @relation(fields: [classId], references: [id])
-  team         Team         @relation(fields: [teamId], references: [id])
-  memberOnTeam MemberOnTeam @relation(fields: [memberOnTeamId], references: [id])
-  user         User         @relation(fields: [userId], references: [id])
-  school       School       @relation(fields: [schoolId], references: [id])
+  class  Class  @relation(fields: [classId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+  school School @relation(fields: [schoolId], references: [id])
 
   studentOnSubjects StudentOnSubject[]
   assignments       Assignment[]
@@ -249,7 +257,9 @@ model StudentOnSubject {
   studentId String @db.ObjectId
   classId   String @db.ObjectId
   subjectId String @db.ObjectId
+  schoolId  String @db.ObjectId
 
+  school               School                @relation(fields: [schoolId], references: [id])
   class                Class                 @relation(fields: [classId], references: [id])
   subject              Subject               @relation(fields: [subjectId], references: [id])
   student              Student               @relation(fields: [studentId], references: [id])
@@ -274,9 +284,6 @@ model Assignment {
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
 
-  memberOnTeamId String       @db.ObjectId
-  memberOnTeam   MemberOnTeam @relation(fields: [memberOnTeamId], references: [id])
-
   teamId String @db.ObjectId
   team   Team   @relation(fields: [teamId], references: [id])
 
@@ -297,6 +304,8 @@ model FileOnAssignment {
   url  String
   size Float
 
+  schoolId     String     @db.ObjectId
+  school       School     @relation(fields: [schoolId], references: [id])
   assignmentId String     @db.ObjectId
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
 }
@@ -343,6 +352,8 @@ model FileOnStudentOnAssignment {
   url  String
   size Float
 
+  schoolId              String              @db.ObjectId
+  school                School              @relation(fields: [schoolId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
 }
@@ -360,6 +371,8 @@ model CommentOnAssignmentStudent {
   picture   String
   number    String
 
+  schoolId              String              @db.ObjectId
+  school                School              @relation(fields: [schoolId], references: [id])
   studentId             String              @db.ObjectId
   student               Student             @relation(fields: [studentId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
@@ -383,8 +396,8 @@ model CommentOnAssignmentTeacher {
 
   userId                String              @db.ObjectId
   user                  User                @relation(fields: [userId], references: [id])
-  memberOnTeamId        String              @db.ObjectId
-  memberOnTeam          MemberOnTeam        @relation(fields: [memberOnTeamId], references: [id])
+  schoolId              String              @db.ObjectId
+  school                School              @relation(fields: [schoolId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
 }
@@ -398,6 +411,8 @@ model ScoreOnSubject {
   title String
   icon  String
 
+  schoolId  String  @db.ObjectId
+  school    School  @relation(fields: [schoolId], references: [id])
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
   teamId    String  @db.ObjectId
@@ -413,6 +428,8 @@ model ScoreOnStudent {
   title String
   icon  String
 
+  schoolId           String           @db.ObjectId
+  school             School           @relation(fields: [schoolId], references: [id])
   studentId          String           @db.ObjectId
   student            Student          @relation(fields: [studentId], references: [id])
   studentOnSubjectId String           @db.ObjectId
@@ -580,4 +597,5 @@ enum Provider {
 enum Status {
   PENDDING
   ACCEPT
+  REJECT
 }

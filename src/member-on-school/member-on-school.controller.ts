@@ -1,3 +1,4 @@
+import { Public } from './../auth/decorators/public.decorator';
 import {
   Body,
   Controller,
@@ -6,39 +7,41 @@ import {
   Param,
   Post,
   Patch,
+  UseGuards,
+  Query,
+  HttpCode,
 } from '@nestjs/common';
 import { MemberOnSchoolService } from './member-on-school.service';
 import {
   CreateMemberOnSchoolDto,
   DeleteMemberOnSchoolDto,
-  GetMemberOnSchoolDto,
-  GetSchoolByMemberOnSchoolDto,
+  GetMemberOnSchoolByIdDto,
+  GetMemberOnSchoolsDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchool, User } from '@prisma/client';
 import { GetUser } from 'src/auth/decorators';
+import { UserGuard } from '../auth/guard';
 
-@Controller('v1/member-on-school')
+@UseGuards(UserGuard)
+@Controller('v1/member-on-schools')
 export class MemberOnSchoolController {
   constructor(private memberOnSchoolService: MemberOnSchoolService) {}
 
   @Get()
-  async getAllMemberOnSchools() {
-    return this.memberOnSchoolService.getAllMemberOnSchools();
-  }
-
-  @Get(':id')
-  async getMemberOnSchoolById(@Param() params: GetMemberOnSchoolDto) {
-    return this.memberOnSchoolService.getMemberOnSchoolById(params);
-  }
-
-  @Get(':id/school')
-  async getSchoolByMemberOnSchoolId(
-    @Param() params: GetSchoolByMemberOnSchoolDto,
+  async getAllMemberOnSchools(
+    @Query() dto: GetMemberOnSchoolsDto,
+    @GetUser() user: User,
   ) {
-    return this.memberOnSchoolService.getSchoolByMemberOnSchoolId(
-      params.memberOnSchoolId,
-    );
+    return this.memberOnSchoolService.getAllMemberOnSchools(dto, user);
+  }
+
+  @Get(':memberOnSchoolId')
+  async getMemberOnSchoolById(
+    @Param() dto: GetMemberOnSchoolByIdDto,
+    @GetUser() user: User,
+  ) {
+    return this.memberOnSchoolService.getMemberOnSchoolById(dto, user);
   }
 
   @Post()
@@ -49,22 +52,26 @@ export class MemberOnSchoolController {
     return this.memberOnSchoolService.createMemberOnSchool(dto, user);
   }
 
-  @Delete(':id')
+  @Delete(':memberOnSchoolId')
   async deleteMemberOnSchool(
-    @Param() params: DeleteMemberOnSchoolDto,
+    @Param() dto: DeleteMemberOnSchoolDto,
+    @GetUser() user: User,
   ): Promise<void> {
-    await this.memberOnSchoolService.deleteMemberOnSchool(params);
+    await this.memberOnSchoolService.deleteMemberOnSchool(dto, user);
   }
-  @Patch(':id')
+
+  @Patch(':memberOnSchoolId')
   async updateMemberOnSchool(
-    @Param() params: GetMemberOnSchoolDto,
     @Body() dto: UpdateMemberOnSchoolDto,
     @GetUser() user: User,
   ): Promise<MemberOnSchool> {
-    return await this.memberOnSchoolService.updateMemberOnSchool(
-      params.memberOnSchoolId,
-      dto,
-      user,
-    );
+    return await this.memberOnSchoolService.updateMemberOnSchool(dto, user);
+  }
+
+  @Public()
+  @HttpCode(200)
+  @Patch('invitation')
+  async updateInvitation(@Body() dto: UpdateMemberOnSchoolDto): Promise<void> {
+    return await this.memberOnSchoolService.AcceptMemberOnSchool(dto);
   }
 }

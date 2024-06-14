@@ -37,7 +37,15 @@ export class EmailService {
     });
   }
 
-  async sendMail(to: string, subject: string, text: string): Promise<void> {
+  async sendMail({
+    to,
+    subject,
+    text,
+  }: {
+    to: string;
+    subject: string;
+    text: string;
+  }): Promise<void> {
     try {
       const mailOptions = {
         from: process.env.GMAIL_USER,

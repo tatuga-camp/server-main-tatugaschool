@@ -7,17 +7,21 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { CreateSchoolDto, UpdateSchoolDto } from './dto';
+import { CreateSchoolDto, DeleteSchoolDto, UpdateSchoolDto } from './dto';
 import { SchoolService } from './school.service';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
-import { GetSchoolsDto } from './dto/get-schools.dto';
+import { GetSchoolByIdDto, GetSchoolsDto } from './dto/get-schools.dto';
+import { AdminGuard, UserGuard } from '../auth/guard';
 
-@Controller('v1/school')
+@UseGuards(UserGuard)
+@Controller('v1/schools')
 export class SchoolController {
   constructor(private schoolService: SchoolService) {}
 
+  @UseGuards(AdminGuard)
   @Get()
   async getSchools(@Query() query: GetSchoolsDto) {
     const { page, limit } = query;
@@ -26,18 +30,18 @@ export class SchoolController {
 
   @Post()
   async create(@GetUser() user: User, @Body() dto: CreateSchoolDto) {
-    return await this.schoolService.createSchool(user, dto);
+    return await this.schoolService.createSchool(dto, user);
   }
-  @Patch(':id')
-  async update(@Param('id') id: string, @Body() dto: UpdateSchoolDto) {
-    return await this.schoolService.updateSchool(id, dto);
+  @Patch()
+  async update(@Body() dto: UpdateSchoolDto, @GetUser() user: User) {
+    return await this.schoolService.updateSchool(dto, user);
   }
-  @Delete(':id')
-  async remove(@Param('id') id: string) {
-    return this.schoolService.deleteSchool(id);
+  @Delete(':schoolId')
+  async remove(@Param() dto: DeleteSchoolDto, @GetUser() user: User) {
+    return this.schoolService.deleteSchool(dto, user);
   }
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.schoolService.getSchoolById(id);
+  @Get(':schoolId')
+  async findOne(@Param() dto: GetSchoolByIdDto, @GetUser() user: User) {
+    return this.schoolService.getSchoolById(dto, user);
   }
 }

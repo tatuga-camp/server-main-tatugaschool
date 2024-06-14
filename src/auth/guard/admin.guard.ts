@@ -1,55 +1,26 @@
 import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
   Injectable,
+  ExecutionContext,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from '@nestjs/passport';
+import { User } from '@prisma/client';
 
 @Injectable()
-export class AdminGuard implements CanActivate {
-  constructor(
-    private config: ConfigService,
-    private jwtService: JwtService,
-    private reflector: Reflector,
-  ) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (isPublic) {
-      return true;
-    }
-
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
-    if (!token) {
-      throw new UnauthorizedException();
-    }
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: this.config.get('JWT_ACCESS_SECRET'),
-      });
-      request['user'] = payload;
-
-      if (payload.role !== 'ADMIN') {
-        throw new ForbiddenException('Access denied');
-      }
-    } catch {
-      throw new ForbiddenException('Access denied');
-    }
-    return true;
+export class AdminGuard extends AuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    return super.canActivate(context);
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+  handleRequest(err, user, info) {
+    if (err || !user) {
+      throw new ForbiddenException('Access denied');
+    }
+    if (user.role === 'ADMIN') {
+      return user;
+    } else {
+      throw new ForbiddenException('Access denied');
+    }
   }
 }

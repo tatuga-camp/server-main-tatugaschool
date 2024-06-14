@@ -20,7 +20,6 @@ import { AttendanceModule } from './attendance/attendance.module';
     UsersModule,
     PrismaModule,
     EmailModule,
-    SchoolModule,
     MemberOnSchoolModule,
     ConfigModule.forRoot({
       isGlobal: true,
@@ -30,6 +29,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     AttendanceTableModule,
     AttendanceRowModule,
     AttendanceModule,
+    SchoolModule,
   ],
   controllers: [AppController],
   providers: [AppService],
