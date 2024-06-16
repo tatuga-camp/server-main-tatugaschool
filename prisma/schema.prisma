@@ -113,6 +113,7 @@ model Class {
   level         String
   description   String?
   educationYear DateTime
+  order         Int
 
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
