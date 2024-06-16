@@ -13,6 +13,7 @@ import { StripeModule } from './stripe/stripe.module';
 import { AttendanceTableModule } from './attendance-table/attendance-table.module';
 import { AttendanceRowModule } from './attendance-row/attendance-row.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { ClassModule } from './class/class.module';
 import { SubjectModule } from './subject/subject.module';
 
 @Module({
@@ -31,6 +32,7 @@ import { SubjectModule } from './subject/subject.module';
     AttendanceRowModule,
     AttendanceModule,
     SchoolModule,
+    ClassModule,
     SubjectModule,
   ],
   controllers: [AppController],
