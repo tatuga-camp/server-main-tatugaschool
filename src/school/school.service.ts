@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   MemberOnSchool,
   MemberRole,
@@ -96,6 +101,7 @@ export class SchoolService {
   async createSchool(dto: CreateSchoolDto, user: User): Promise<School> {
     try {
       //create stripe customer
+
       const customer = await this.stripe.CreateCustomer({
         email: user.email,
         name: user.firstName + ' ' + user.lastName,
@@ -105,6 +111,7 @@ export class SchoolService {
         ...dto,
         stripe_customer_id: customer.id,
         plan: 'FREE',
+        billingManagerId: user.id,
       });
 
       await this.memberOnSchoolRepository.create({
@@ -137,6 +144,30 @@ export class SchoolService {
 
       if (member.role !== MemberRole.ADMIN) {
         throw new ForbiddenException('Access denied');
+      }
+
+      //if there is a new billing manager update stripe customer
+      if (dto.body.billingManagerId) {
+        const newBillingManager = await this.prisma.user.findUnique({
+          where: {
+            id: dto.body.billingManagerId,
+          },
+        });
+
+        if (!newBillingManager) {
+          throw new NotFoundException('User not found');
+        }
+
+        const updateStripeCustomer = await this.stripe.UpdateCustomer({
+          query: {
+            stripeCustomerId: school.stripe_customer_id,
+          },
+          body: {
+            email: newBillingManager.email,
+            name:
+              newBillingManager.firstName + ' ' + newBillingManager.lastName,
+          },
+        });
       }
 
       return await this.schoolRepository.update({

@@ -26,6 +26,10 @@ class UpdateSchoolBody {
   @MaxLength(999)
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  billingManagerId?: string;
 }
 
 export class UpdateSchoolDto {

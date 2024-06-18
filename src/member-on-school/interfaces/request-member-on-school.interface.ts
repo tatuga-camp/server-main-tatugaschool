@@ -19,6 +19,7 @@ export interface RequestUpdateMemberOnSchool {
   data: {
     status?: Status;
     role?: MemberRole;
+    billingManagerId?: string;
   };
 }
 

@@ -1,10 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
-import { RequestCreateCustomer } from './interfaces';
+import { RequestCreateCustomer, RequestUpdateCustomer } from './interfaces';
 
 type StripeServiceType = {
   CreateCustomer(request: RequestCreateCustomer): Promise<Stripe.Customer>;
+  UpdateCustomer(request: RequestUpdateCustomer): Promise<Stripe.Customer>;
 };
 
 @Injectable()
@@ -25,6 +26,22 @@ export class StripeService implements StripeServiceType {
       return await this.stripe.customers.create({
         ...request,
       });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async UpdateCustomer(
+    request: RequestUpdateCustomer,
+  ): Promise<Stripe.Customer> {
+    try {
+      return await this.stripe.customers.update(
+        request.query.stripeCustomerId,
+        {
+          ...request.body,
+        },
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;

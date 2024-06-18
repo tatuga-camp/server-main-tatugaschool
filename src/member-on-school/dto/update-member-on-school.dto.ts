@@ -18,11 +18,11 @@ class UpdateMemberOnSchoolQuery {
 class UpdateMemberOnSchoolBody {
   @IsOptional()
   @IsEnum(Status)
-  status: Status;
+  status?: Status;
 
   @IsOptional()
   @IsEnum(MemberRole)
-  role: MemberRole;
+  role?: MemberRole;
 }
 
 export class UpdateMemberOnSchoolDto {
