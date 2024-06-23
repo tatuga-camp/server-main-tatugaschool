@@ -16,7 +16,7 @@ import { User } from '@prisma/client';
 import { GetSchoolByIdDto, GetSchoolsDto } from './dto/get-schools.dto';
 import { AdminGuard, UserGuard } from '../auth/guard';
 
-@UseGuards(UserGuard)
+// @UseGuards(UserGuard)
 @Controller('v1/schools')
 export class SchoolController {
   constructor(private schoolService: SchoolService) {}
