@@ -124,7 +124,7 @@ export class AuthService {
       });
       const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
 
-      await this.emailService.sendMail({
+      this.emailService.sendMail({
         to: dto.email,
         subject: 'Welcome to TATUGA SCHOOL',
         text: `Hello ${dto.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,

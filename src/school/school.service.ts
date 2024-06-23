@@ -101,7 +101,6 @@ export class SchoolService {
   async createSchool(dto: CreateSchoolDto, user: User): Promise<School> {
     try {
       //create stripe customer
-
       const customer = await this.stripe.CreateCustomer({
         email: user.email,
         name: user.firstName + ' ' + user.lastName,
