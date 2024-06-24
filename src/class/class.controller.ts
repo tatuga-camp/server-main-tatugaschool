@@ -13,6 +13,8 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { ReorderClassDto, UpdateClassDto } from './dto/update-class.dto';
 import { GetClassByPageDto, GetClassDto } from './dto/get-class.dto';
 import { DeleteClassDto } from './dto/delete-class.dto';
+import { GetUser } from 'src/auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('v1/class')
 export class ClassController {
@@ -40,16 +42,20 @@ export class ClassController {
   }
 
   @Post()
-  async createClass(@Body() createClassDto: CreateClassDto) {
-    return this.classService.createClass(createClassDto);
+  async createClass(
+    @Body() createClassDto: CreateClassDto,
+    @GetUser() user: User,
+  ) {
+    return this.classService.createClass(createClassDto, user);
   }
 
   @Patch(':classId')
   async updateClass(
     @Param() classId: UpdateClassDto['classId'],
     @Body() updateClassDto: UpdateClassDto,
+    @GetUser() user: User,
   ) {
-    return this.classService.updateClass(classId, updateClassDto);
+    return this.classService.updateClass(classId, updateClassDto, user);
   }
 
   @Delete(':classId')
