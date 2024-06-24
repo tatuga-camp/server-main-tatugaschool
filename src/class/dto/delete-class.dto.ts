@@ -4,5 +4,5 @@ export class DeleteClassDto {
   @IsNotEmpty()
   @IsString()
   @IsMongoId()
-  id: string;
+  classId: string;
 }
