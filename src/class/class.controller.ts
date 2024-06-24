@@ -59,6 +59,6 @@ export class ClassController {
 
   @Delete(':classId')
   async deleteClass(@Param() params: DeleteClassDto) {
-    return this.classService.deleteClass(params.id);
+    return this.classService.deleteClass(params.classId);
   }
 }
