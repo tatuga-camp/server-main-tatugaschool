@@ -26,19 +26,16 @@ export class ClassService {
     return this.classRepository.create(createClassDto);
   }
 
-  async updateClass(
-    classId: string,
-    updateClassDto: UpdateClassDto,
-    user: User,
-  ) {
+  async updateClass(updateClassDto: UpdateClassDto, user: User) {
+    const { classId } = updateClassDto.query;
     await this.memberOnSchoolService.validateAccess({
       user: user,
-      schoolId: updateClassDto.schoolId,
+      schoolId: updateClassDto.body.schoolId,
     });
 
     const existingClass = await this.classRepository.update({
       query: { classId },
-      data: { ...updateClassDto },
+      data: { ...updateClassDto.body },
     });
     if (!existingClass) {
       throw new NotFoundException(`Class with ID ${classId} not found`);
