@@ -51,11 +51,10 @@ export class ClassController {
 
   @Patch(':classId')
   async updateClass(
-    @Param() classId: UpdateClassDto['classId'],
     @Body() updateClassDto: UpdateClassDto,
     @GetUser() user: User,
   ) {
-    return this.classService.updateClass(classId, updateClassDto, user);
+    return this.classService.updateClass(updateClassDto, user);
   }
 
   @Delete(':classId')

@@ -5,10 +5,26 @@ import {
   IsMongoId,
   IsArray,
   IsNotEmpty,
+  IsObject,
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class UpdateClassDto {
+export class ReorderClassDto {
+  @IsArray()
+  @IsNotEmpty({ each: true })
+  @IsString({ each: true })
+  @IsMongoId({ each: true })
+  classIds: string[];
+}
+
+class UpdateClassQuery {
+  @IsNotEmpty()
+  @IsMongoId()
+  classId: string;
+}
+
+class UpdateClassBody {
   @IsOptional()
   @IsString()
   title?: string;
@@ -26,19 +42,21 @@ export class UpdateClassDto {
   @Type(() => Date)
   educationYear?: Date;
 
-  @IsOptional()
-  @IsMongoId()
-  classId?: string;
-
   @IsNotEmpty()
   @IsMongoId()
   schoolId: string;
 }
 
-export class ReorderClassDto {
-  @IsArray()
-  @IsNotEmpty({ each: true })
-  @IsString({ each: true })
-  @IsMongoId({ each: true })
-  classIds: string[];
+export class UpdateClassDto {
+  @IsNotEmpty()
+  @IsObject()
+  @Type(() => UpdateClassQuery)
+  @ValidateNested()
+  query: UpdateClassQuery;
+
+  @IsNotEmpty()
+  @IsObject()
+  @Type(() => UpdateClassQuery)
+  @ValidateNested()
+  body: UpdateClassBody;
 }
