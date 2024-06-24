@@ -29,6 +29,10 @@ export class UpdateClassDto {
   @IsOptional()
   @IsMongoId()
   classId?: string;
+
+  @IsNotEmpty()
+  @IsMongoId()
+  schoolId: string;
 }
 
 export class ReorderClassDto {
