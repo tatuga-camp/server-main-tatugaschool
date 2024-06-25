@@ -79,14 +79,14 @@ export class ClassRepository {
 
   async reorder(request: RequestReorderClass): Promise<Class[]> {
     const { classIds } = request;
-    const updatePromises = classIds.map((id, index) =>
+    const transaction = classIds.map((id, index) =>
       this.prisma.class.update({
         where: { id },
         data: { order: index },
       }),
     );
 
-    return Promise.all(updatePromises);
+    return this.prisma.$transaction(transaction);
   }
 
   async delete(request: RequestDeleteClass): Promise<Class> {
