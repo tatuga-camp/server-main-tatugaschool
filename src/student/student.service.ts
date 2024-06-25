@@ -15,14 +15,15 @@ import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.ser
 import { MemberOnSchool, User } from '@prisma/client';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class StudentService {
-  prisma: any;
   constructor(
     private studentRepository: StudentRepository,
     private userService: UsersService,
     private memberOnSchoolService: MemberOnSchoolService,
+    private prisma: PrismaService,
   ) {}
 
   async validateAccessMember({
