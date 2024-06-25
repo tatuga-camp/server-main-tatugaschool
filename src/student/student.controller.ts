@@ -63,7 +63,6 @@ export class StudentController {
   }
 
   @Delete(':studentId')
-  @UseGuards(AuthGuard)
   async deleteStudent(@Param() dto: DeleteStudentDto, @GetUser() user: User) {
     return this.studentService.deleteStudent(dto, user);
   }
