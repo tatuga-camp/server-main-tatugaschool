@@ -1,7 +1,7 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { StudentRepository } from './repository/student.repository';
 import {
@@ -12,18 +12,40 @@ import {
 import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
 import { UsersService } from 'src/users/users.service';
 import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
-import { User } from '@prisma/client';
+import { MemberOnSchool, User } from '@prisma/client';
+import { UpdateStudentDto } from './dto/update-student.dto';
+import { DeleteStudentDto } from './dto/delete-student.dto';
 
 @Injectable()
 export class StudentService {
+  prisma: any;
   constructor(
     private studentRepository: StudentRepository,
     private userService: UsersService,
     private memberOnSchoolService: MemberOnSchoolService,
   ) {}
 
+  async validateAccessMember({
+    user,
+    schoolId,
+  }: {
+    user: User;
+    schoolId: string;
+  }): Promise<MemberOnSchool> {
+    const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+      where: {
+        userId: user.id,
+        schoolId: schoolId,
+      },
+    });
+
+    if (!memberOnSchool) {
+      throw new ForbiddenException('Access denied');
+    }
+    return memberOnSchool;
+  }
+
   async createStudent(createStudentDto: CreateStudentDto, user: User) {
-    // const user = await this.userService.getUserById(userId);
     await this.memberOnSchoolService.validateAccess({
       user: user,
       schoolId: createStudentDto.schoolId,
@@ -35,24 +57,12 @@ export class StudentService {
 
   async createManyStudents(
     createManyStudentsDto: CreateManyStudentsDto,
-    userId: string,
+    user: User,
   ) {
-    const user = await this.userService.getUserById(userId);
-
-    if (
-      !user ||
-      !user.isMemberOfSchool(createManyStudentsDto.students[0].schoolId)
-    ) {
-      throw new ForbiddenException(
-        'You do not have access to create students in this school',
-      );
-    }
-
-    if (!user.isAdminOfSchool(createManyStudentsDto.students[0].schoolId)) {
-      throw new ForbiddenException(
-        'You must be an admin to create students in this school',
-      );
-    }
+    await this.memberOnSchoolService.validateAccess({
+      user: user,
+      schoolId: createManyStudentsDto.students[0].schoolId,
+    });
 
     const request = { data: createManyStudentsDto };
     return this.studentRepository.createMany(request);
@@ -62,33 +72,58 @@ export class StudentService {
     const user = await this.userService.getUserById(userId);
 
     const student = await this.studentRepository.findById({
-      id: getStudentDto.studentId,
+      studentId: getStudentDto.studentId,
+    });
+
+    if (!student) {
+      throw new NotFoundException('Student not found');
+    }
+    await this.validateAccessMember({
+      user: user,
+      schoolId: student.schoolId,
+    });
+
+    return student;
+  }
+
+  async getAllStudents(getAllStudentsDto: GetAllStudentsDto, user: User) {
+    await this.validateAccessMember({
+      user: user,
+      schoolId: getAllStudentsDto.schoolId,
+    });
+
+    return this.studentRepository.findAll({
+      classId: getAllStudentsDto.classId,
+    });
+  }
+
+  async updateStudent(updateStudentDto: UpdateStudentDto, user: User) {
+    await this.memberOnSchoolService.validateAccess({
+      user: user,
+      schoolId: updateStudentDto.body.schoolId,
+    });
+
+    const request = {
+      studentId: updateStudentDto.query.studentId,
+      data: updateStudentDto,
+    };
+    return this.studentRepository.update(request);
+  }
+
+  async deleteStudent(deleteStudentDto: DeleteStudentDto, user: User) {
+    const student = await this.studentRepository.findById({
+      studentId: deleteStudentDto.id,
     });
 
     if (!student) {
       throw new NotFoundException('Student not found');
     }
 
-    if (!user || !user.isMemberOfSchool(student.schoolId)) {
-      throw new ForbiddenException(
-        'You do not have access to view this student',
-      );
-    }
-
-    return student;
-  }
-
-  async getAllStudents(getAllStudentsDto: GetAllStudentsDto, userId: string) {
-    const user = await this.userService.getUserById(userId);
-
-    if (!user || !user.isMemberOfSchool(getAllStudentsDto.classId)) {
-      throw new ForbiddenException(
-        'You do not have access to view these students',
-      );
-    }
-
-    return this.studentRepository.findAll({
-      classId: getAllStudentsDto.classId,
+    await this.memberOnSchoolService.validateAccess({
+      user: user,
+      schoolId: student.schoolId,
     });
+
+    return this.studentRepository.delete({ studentId: deleteStudentDto.id });
   }
 }

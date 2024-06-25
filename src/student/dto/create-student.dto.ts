@@ -4,6 +4,10 @@ import { IsArray } from 'class-validator';
 export class CreateStudentDto {
   @IsNotEmpty()
   @IsString()
+  title: string;
+
+  @IsNotEmpty()
+  @IsString()
   firstName: string;
 
   @IsNotEmpty()

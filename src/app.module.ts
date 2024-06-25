@@ -15,6 +15,7 @@ import { AttendanceRowModule } from './attendance-row/attendance-row.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ClassModule } from './class/class.module';
 import { SubjectModule } from './subject/subject.module';
+import { StudentModule } from './student/student.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SubjectModule } from './subject/subject.module';
     AttendanceModule,
     SchoolModule,
     ClassModule,
+    StudentModule,
     SubjectModule,
   ],
   controllers: [AppController],
