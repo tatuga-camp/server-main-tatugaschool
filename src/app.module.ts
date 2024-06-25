@@ -16,6 +16,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { ClassModule } from './class/class.module';
 import { SubjectModule } from './subject/subject.module';
 import { StudentOnSubjectModule } from './student-on-subject/student-on-subject.module';
+import { StudentModule } from './student/student.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { StudentOnSubjectModule } from './student-on-subject/student-on-subject.
     AttendanceModule,
     SchoolModule,
     ClassModule,
+    StudentModule,
     SubjectModule,
     StudentOnSubjectModule,
   ],

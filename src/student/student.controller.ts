@@ -3,19 +3,22 @@ import {
   Get,
   Param,
   Post,
+  Delete,
+  Put,
   Body,
-  UsePipes,
-  ValidationPipe,
   UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
-import { CreateStudentDto } from './dto/create-student.dto';
-import { CreateManyStudentsDto } from './dto/create-many-students.dto';
-import { GetStudentDto } from './dto/get-student.dto';
-import { AuthGuard } from '../auth/auth.guard';
-import { User } from '../auth/user.decorator';
-import { User as UserEntity } from '@prisma/client';
 import { GetUser } from 'src/auth/decorators';
+import { AuthGuard } from '@nestjs/passport';
+import { User } from '@prisma/client';
+import {
+  CreateStudentDto,
+  CreateManyStudentsDto,
+} from './dto/create-student.dto';
+import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
+import { UpdateStudentDto } from './dto/update-student.dto';
+import { DeleteStudentDto } from './dto/delete-student.dto';
 
 @Controller('v1/students')
 @UseGuards(AuthGuard)
@@ -25,15 +28,14 @@ export class StudentController {
   @Get('class/:classId')
   async getAllStudentsInClass(
     @GetUser() user: User,
-    @Param('classId') classId: string,
+    @Param() dto: GetAllStudentsDto,
   ) {
-    return this.studentService.getAllStudents(user, classId);
+    return this.studentService.getAllStudents(dto, user);
   }
 
-  @Get(':id')
-  // eslint-disable-next-line prettier/prettier
-  async getStudentById(@GetUser() user: User, @Param() params: GetStudentDto) {
-    return this.studentService.getStudentById(user, params.id);
+  @Get(':studentId')
+  async getStudentById(@GetUser() user: User, @Param() dto: GetStudentDto) {
+    return this.studentService.getStudentById(dto, user.id);
   }
 
   @Post()
@@ -41,18 +43,28 @@ export class StudentController {
     @GetUser() user: User,
     @Body() createStudentDto: CreateStudentDto,
   ) {
-    return this.studentService.createStudent(user, createStudentDto);
+    return this.studentService.createStudent(createStudentDto, user);
   }
 
   @Post('create-many')
   async createManyStudents(
+    @GetUser() user: User,
     @Body() createManyStudentsDto: CreateManyStudentsDto,
-    @Req() req: Request,
   ) {
-    const userId = req.user.id;
-    return this.studentService.createManyStudents(
-      createManyStudentsDto,
-      userId,
-    );
+    return this.studentService.createManyStudents(createManyStudentsDto, user);
+  }
+
+  @Put(':studentId')
+  async updateStudent(
+    @GetUser() user: User,
+    @Body() updateStudentDto: UpdateStudentDto,
+  ) {
+    return this.studentService.updateStudent(updateStudentDto, user);
+  }
+
+  @Delete(':studentId')
+  @UseGuards(AuthGuard)
+  async deleteStudent(@Param() dto: DeleteStudentDto, @GetUser() user: User) {
+    return this.studentService.deleteStudent(dto, user);
   }
 }
