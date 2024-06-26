@@ -34,4 +34,8 @@ export class GetClassByPageDto {
   @IsInt()
   @Min(1)
   limit?: number = 10;
+
+  @IsOptional()
+  @IsString()
+  schoolId?: string;
 }

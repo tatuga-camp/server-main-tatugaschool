@@ -54,13 +54,20 @@ export class ClassService {
     }
   }
 
-  async getClassById(classId: string) {
+  async getClassById(classId: string, user: User) {
     try {
       const request: RequestGetClass = { classId };
       const existingClass = await this.classRepository.findById(request);
+
       if (!existingClass) {
         throw new NotFoundException(`Class with ID ${classId} not found`);
       }
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: existingClass.schoolId,
+      });
+
       return existingClass;
     } catch (error) {
       this.logger.error(error);
@@ -68,8 +75,13 @@ export class ClassService {
     }
   }
 
-  async getAllClasses() {
+  async getAllClasses(user: User, schoolId: string) {
     try {
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: schoolId,
+      });
+
       return this.classRepository.findAll();
     } catch (error) {
       this.logger.error(error);
@@ -77,9 +89,20 @@ export class ClassService {
     }
   }
 
-  async getClassesWithPagination(page: number, limit: number) {
+  async getClassesWithPagination(
+    page: number,
+    limit: number,
+    schoolId: string,
+    user: User,
+  ) {
     try {
       const request: RequestGetClassByPage = { page, limit };
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: schoolId,
+      });
+
       return this.classRepository.findWithPagination(request);
     } catch (error) {
       this.logger.error(error);
@@ -87,8 +110,13 @@ export class ClassService {
     }
   }
 
-  async reorderClasses(reorderClassDto: ReorderClassDto) {
+  async reorderClasses(reorderClassDto: ReorderClassDto, user: User) {
     try {
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: reorderClassDto.schoolId,
+      });
+
       const request: RequestReorderClass = {
         classIds: reorderClassDto.classIds,
       };
@@ -99,13 +127,19 @@ export class ClassService {
     }
   }
 
-  async deleteClass(classId: string) {
+  async deleteClass(classId: string, user: User) {
     try {
       const request: RequestDeleteClass = { classId };
       const existingClass = await this.classRepository.findById({ classId });
       if (!existingClass) {
         throw new NotFoundException(`Class with ID ${classId} not found`);
       }
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: existingClass.schoolId,
+      });
+
       return this.classRepository.delete(request);
     } catch (error) {
       this.logger.error(error);
