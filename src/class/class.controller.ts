@@ -26,11 +26,6 @@ export class ClassController {
   }
 
   @Get()
-  async getAllClasses(@Query() dto: GetClassByPageDto, @GetUser() user: User) {
-    return this.classService.getAllClasses(user, dto.schoolId);
-  }
-
-  @Get()
   async getClassesWithPagination(
     @Query() query: GetClassByPageDto,
     @GetUser() user: User,
