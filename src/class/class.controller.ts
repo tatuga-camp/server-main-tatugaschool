@@ -16,7 +16,7 @@ import { DeleteClassDto } from './dto/delete-class.dto';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 
-@Controller('v1/class')
+@Controller('v1/classes')
 export class ClassController {
   constructor(private classService: ClassService) {}
 
@@ -30,7 +30,7 @@ export class ClassController {
     return this.classService.getAllClasses();
   }
 
-  @Get('pagination')
+  @Get()
   async getClassesWithPagination(@Query() query: GetClassByPageDto) {
     const { page, limit } = query;
     return this.classService.getClassesWithPagination(page, limit);
