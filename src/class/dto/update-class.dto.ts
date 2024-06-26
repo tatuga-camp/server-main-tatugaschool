@@ -24,7 +24,7 @@ export class ReorderClassDto {
 
 class UpdateClassQuery {
   @IsNotEmpty()
-  @IsMongoId()
+  // @IsMongoId()
   classId: string;
 }
 
@@ -60,7 +60,7 @@ export class UpdateClassDto {
 
   @IsNotEmpty()
   @IsObject()
-  @Type(() => UpdateClassQuery)
+  @Type(() => UpdateClassBody)
   @ValidateNested()
   body: UpdateClassBody;
 }
