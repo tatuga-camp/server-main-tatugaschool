@@ -6,11 +6,9 @@ import {
   Delete,
   Put,
   Body,
-  UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { GetUser } from 'src/auth/decorators';
-import { AuthGuard } from '@nestjs/passport';
 import { User } from '@prisma/client';
 import {
   CreateStudentDto,
@@ -21,7 +19,6 @@ import { UpdateStudentDto } from './dto/update-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
 
 @Controller('v1/students')
-@UseGuards(AuthGuard)
 export class StudentController {
   constructor(private studentService: StudentService) {}
 

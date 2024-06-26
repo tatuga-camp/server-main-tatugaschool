@@ -3,10 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  StudentRepository,
-  StudentRepositoryType,
-} from './repository/student.repository';
+import { StudentRepository, StudentRepositoryType } from './student.repository';
 import {
   CreateManyStudentsDto,
   CreateStudentDto,
@@ -24,9 +21,9 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class StudentService {
   studentRepository: StudentRepositoryType;
   constructor(
+    private prisma: PrismaService,
     private userService: UsersService,
     private memberOnSchoolService: MemberOnSchoolService,
-    private prisma: PrismaService,
   ) {
     this.studentRepository = new StudentRepository(prisma);
   }

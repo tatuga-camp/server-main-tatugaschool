@@ -120,7 +120,7 @@ export class ClassService {
       const request: RequestReorderClass = {
         classIds: reorderClassDto.classIds,
       };
-      return this.classRepository.reorder(request);
+      return this.classRepository.reorder(request, user);
     } catch (error) {
       this.logger.error(error);
       throw error;
