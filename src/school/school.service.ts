@@ -32,7 +32,6 @@ export class SchoolService {
   schoolRepository: SchoolRepositoryType;
   memberOnSchoolRepository: MemberOnSchoolRepositoryType;
   constructor(
-    logger: Logger,
     private prisma: PrismaService,
     private stripe: StripeService,
   ) {
