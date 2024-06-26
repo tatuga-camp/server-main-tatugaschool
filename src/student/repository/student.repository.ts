@@ -31,10 +31,15 @@ export class StudentRepository implements StudentRepositoryType {
     private memberOnSchoolService: MemberOnSchoolService,
   ) {}
   async update(request: RequestUpdateStudent): Promise<Student> {
-    return this.prisma.student.update({
-      where: { id: request.studentId },
-      data: request.data.body,
-    });
+    try {
+      return this.prisma.student.update({
+        where: { id: request.studentId },
+        data: request.data.body,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async create(request: RequestCreateStudent): Promise<Student> {
@@ -65,20 +70,35 @@ export class StudentRepository implements StudentRepositoryType {
   }
 
   async findById(request: RequestGetStudent): Promise<Student | null> {
-    return this.prisma.student.findUnique({
-      where: { id: request.studentId },
-    });
+    try {
+      return this.prisma.student.findUnique({
+        where: { id: request.studentId },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async findAll(request: RequestGetAllStudents): Promise<Student[]> {
-    return this.prisma.student.findMany({
-      where: { classId: request.classId },
-    });
+    try {
+      return this.prisma.student.findMany({
+        where: { classId: request.classId },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async delete(request: RequestDeleteStudent): Promise<Student> {
-    return this.prisma.student.delete({
-      where: { id: request.studentId },
-    });
+    try {
+      return this.prisma.student.delete({
+        where: { id: request.studentId },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 }

@@ -33,17 +33,22 @@ export class StudentService {
     user: User;
     schoolId: string;
   }): Promise<MemberOnSchool> {
-    const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-      where: {
-        userId: user.id,
-        schoolId: schoolId,
-      },
-    });
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+        where: {
+          userId: user.id,
+          schoolId: schoolId,
+        },
+      });
 
-    if (!memberOnSchool) {
-      throw new ForbiddenException('Access denied');
+      if (!memberOnSchool) {
+        throw new ForbiddenException('Access denied');
+      }
+      return memberOnSchool;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-    return memberOnSchool;
   }
 
   async createStudent(createStudentDto: CreateStudentDto, user: User) {
