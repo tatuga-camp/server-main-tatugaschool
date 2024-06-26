@@ -16,24 +16,13 @@ import {
   GetMemberOnSchoolsDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
-import {
-  MemberOnSchool,
-  MemberRole,
-  Provider,
-  User,
-  UserRole,
-} from '@prisma/client';
+import { MemberOnSchool, MemberRole, User } from '@prisma/client';
 import {
   MemberOnSchoolRepository,
   MemberOnSchoolRepositoryType,
 } from './member-on-school.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UserRepository, UserRepositoryType } from '../users/users.repository';
-import {
-  DEFAULT_PASSWORD,
-  VERIFY_EMAIL_TOKEN,
-  VERIFY_EMAIL_TOKEN_EXPIRES_AT,
-} from 'src/common/constants';
 
 @Injectable()
 export class MemberOnSchoolService {
