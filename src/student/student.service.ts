@@ -1,6 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { StudentRepository, StudentRepositoryType } from './student.repository';
@@ -19,6 +20,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class StudentService {
+  logger: Logger;
   studentRepository: StudentRepositoryType;
   constructor(
     private prisma: PrismaService,
@@ -54,84 +56,113 @@ export class StudentService {
   }
 
   async createStudent(createStudentDto: CreateStudentDto, user: User) {
-    await this.memberOnSchoolService.validateAccess({
-      user: user,
-      schoolId: createStudentDto.schoolId,
-    });
+    try {
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: createStudentDto.schoolId,
+      });
 
-    const request = { data: createStudentDto };
-    return this.studentRepository.create(request);
+      const request = { data: createStudentDto };
+      return this.studentRepository.create(request);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async createManyStudents(
     createManyStudentsDto: CreateManyStudentsDto,
     user: User,
   ) {
-    await this.memberOnSchoolService.validateAccess({
-      user: user,
-      schoolId: createManyStudentsDto.students[0].schoolId,
-    });
+    try {
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: createManyStudentsDto.students[0].schoolId,
+      });
 
-    const request = { data: createManyStudentsDto };
-    return this.studentRepository.createMany(request);
+      const request = { data: createManyStudentsDto };
+      return this.studentRepository.createMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getStudentById(getStudentDto: GetStudentDto, userId: string) {
-    const user = await this.userService.getUserById(userId);
+    try {
+      const user = await this.userService.getUserById(userId);
 
-    const student = await this.studentRepository.findById({
-      studentId: getStudentDto.studentId,
-    });
+      const student = await this.studentRepository.findById({
+        studentId: getStudentDto.studentId,
+      });
 
-    if (!student) {
-      throw new NotFoundException('Student not found');
+      if (!student) {
+        throw new NotFoundException('Student not found');
+      }
+      await this.validateAccessMember({
+        user: user,
+        schoolId: student.schoolId,
+      });
+
+      return student;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-    await this.validateAccessMember({
-      user: user,
-      schoolId: student.schoolId,
-    });
-
-    return student;
   }
 
   async getAllStudents(getAllStudentsDto: GetAllStudentsDto, user: User) {
-    await this.validateAccessMember({
-      user: user,
-      schoolId: getAllStudentsDto.schoolId,
-    });
+    try {
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: getAllStudentsDto.schoolId,
+      });
 
-    return this.studentRepository.findAll({
-      classId: getAllStudentsDto.classId,
-    });
+      const request = { classId: getAllStudentsDto.classId };
+      return this.studentRepository.findAll(request);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async updateStudent(updateStudentDto: UpdateStudentDto, user: User) {
-    await this.memberOnSchoolService.validateAccess({
-      user: user,
-      schoolId: updateStudentDto.body.schoolId,
-    });
+    try {
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: updateStudentDto.body.schoolId,
+      });
 
-    const request = {
-      studentId: updateStudentDto.query.studentId,
-      data: updateStudentDto,
-    };
-    return this.studentRepository.update(request);
+      const request = {
+        studentId: updateStudentDto.query.studentId,
+        data: updateStudentDto,
+      };
+      return this.studentRepository.update(request);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async deleteStudent(deleteStudentDto: DeleteStudentDto, user: User) {
-    const student = await this.studentRepository.findById({
-      studentId: deleteStudentDto.id,
-    });
+    try {
+      const student = await this.studentRepository.findById({
+        studentId: deleteStudentDto.id,
+      });
 
-    if (!student) {
-      throw new NotFoundException('Student not found');
+      if (!student) {
+        throw new NotFoundException('Student not found');
+      }
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: student.schoolId,
+      });
+
+      return this.studentRepository.delete({ studentId: deleteStudentDto.id });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-
-    await this.memberOnSchoolService.validateAccess({
-      user: user,
-      schoolId: student.schoolId,
-    });
-
-    return this.studentRepository.delete({ studentId: deleteStudentDto.id });
   }
 }
