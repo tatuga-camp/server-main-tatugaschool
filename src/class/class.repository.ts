@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Class } from '@prisma/client';
 import {
@@ -24,74 +24,110 @@ export type ClassRepositoryType = {
 
 @Injectable()
 export class ClassRepository {
+  logger = new Logger(ClassRepository.name);
   constructor(private prisma: PrismaService) {}
 
   async create(request: RequestCreateClass) {
-    const totalClass = await this.prisma.class.count({
-      where: {
-        schoolId: request.schoolId,
-      },
-    });
-    return this.prisma.class.create({
-      data: {
-        ...request,
-        order: totalClass || 1,
-      },
-    });
+    try {
+      const totalClass = await this.prisma.class.count({
+        where: {
+          schoolId: request.schoolId,
+        },
+      });
+      return this.prisma.class.create({
+        data: {
+          ...request,
+          order: totalClass || 1,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async update(request: RequestUpdateClass): Promise<Class> {
-    return this.prisma.class.update({
-      where: {
-        id: request.query.classId,
-      },
-      data: {
-        ...request.data,
-      },
-    });
+    try {
+      return this.prisma.class.update({
+        where: {
+          id: request.query.classId,
+        },
+        data: {
+          ...request.data,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async findById(request: RequestGetClass): Promise<Class | null> {
-    return this.prisma.class.findUnique({
-      where: { id: request.classId },
-    });
+    try {
+      return this.prisma.class.findUnique({
+        where: { id: request.classId },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async findAll(): Promise<Class[]> {
-    return this.prisma.class.findMany();
+    try {
+      return this.prisma.class.findMany();
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async findWithPagination(
     request: RequestGetClassByPage,
   ): Promise<{ data: Class[]; total: number; page: number; limit: number }> {
-    const { page, limit } = request;
-    const skip = (page - 1) * limit;
-    const [data, total] = await Promise.all([
-      this.prisma.class.findMany({
-        skip,
-        take: limit,
-      }),
-      this.prisma.class.count(),
-    ]);
+    try {
+      const { page, limit } = request;
+      const skip = (page - 1) * limit;
+      const [data, total] = await Promise.all([
+        this.prisma.class.findMany({
+          skip,
+          take: limit,
+        }),
+        this.prisma.class.count(),
+      ]);
 
-    return { data, total, page, limit };
+      return { data, total, page, limit };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async reorder(request: RequestReorderClass): Promise<Class[]> {
-    const { classIds } = request;
-    const transaction = classIds.map((id, index) =>
-      this.prisma.class.update({
-        where: { id },
-        data: { order: index },
-      }),
-    );
+    try {
+      const { classIds } = request;
+      const transaction = classIds.map((id, index) =>
+        this.prisma.class.update({
+          where: { id },
+          data: { order: index },
+        }),
+      );
 
-    return this.prisma.$transaction(transaction);
+      return this.prisma.$transaction(transaction);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async delete(request: RequestDeleteClass): Promise<Class> {
-    return this.prisma.class.delete({
-      where: { id: request.classId },
-    });
+    try {
+      return this.prisma.class.delete({
+        where: { id: request.classId },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 }
