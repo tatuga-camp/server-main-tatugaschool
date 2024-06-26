@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { Student } from '@prisma/client';
 
-import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
 import {
   RequestCreateManyStudents,
   RequestCreateStudent,
@@ -10,7 +9,7 @@ import {
   RequestGetAllStudents,
   RequestGetStudent,
   RequestUpdateStudent,
-} from '../interface/student.interface';
+} from './interface/student.interface';
 
 import { Logger } from '@nestjs/common';
 
@@ -26,10 +25,7 @@ export type StudentRepositoryType = {
 @Injectable()
 export class StudentRepository implements StudentRepositoryType {
   logger = new Logger(StudentRepository.name);
-  constructor(
-    private prisma: PrismaService,
-    private memberOnSchoolService: MemberOnSchoolService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
   async update(request: RequestUpdateStudent): Promise<Student> {
     try {
       return this.prisma.student.update({

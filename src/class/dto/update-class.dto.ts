@@ -16,6 +16,10 @@ export class ReorderClassDto {
   @IsString({ each: true })
   @IsMongoId({ each: true })
   classIds: string[];
+
+  @IsNotEmpty()
+  @IsMongoId()
+  schoolId: string;
 }
 
 class UpdateClassQuery {

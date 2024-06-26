@@ -16,29 +16,40 @@ import { DeleteClassDto } from './dto/delete-class.dto';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 
-@Controller('v1/class')
+@Controller('v1/classes')
 export class ClassController {
   constructor(private classService: ClassService) {}
 
   @Get(':classId')
-  async getClassById(@Param() params: GetClassDto) {
-    return this.classService.getClassById(params.id);
+  async getClassById(@Param() params: GetClassDto, @GetUser() user: User) {
+    return this.classService.getClassById(params.id, user);
   }
 
   @Get()
-  async getAllClasses() {
-    return this.classService.getAllClasses();
+  async getAllClasses(@Query() dto: GetClassByPageDto, @GetUser() user: User) {
+    return this.classService.getAllClasses(user, dto.schoolId);
   }
 
-  @Get('pagination')
-  async getClassesWithPagination(@Query() query: GetClassByPageDto) {
-    const { page, limit } = query;
-    return this.classService.getClassesWithPagination(page, limit);
+  @Get()
+  async getClassesWithPagination(
+    @Query() query: GetClassByPageDto,
+    @GetUser() user: User,
+  ) {
+    const { page, limit, schoolId } = query;
+    return this.classService.getClassesWithPagination(
+      page,
+      limit,
+      schoolId,
+      user,
+    );
   }
 
   @Post('reorder')
-  async reorderClasses(@Body() reorderClassDto: ReorderClassDto) {
-    return this.classService.reorderClasses(reorderClassDto);
+  async reorderClasses(
+    @Body() reorderClassDto: ReorderClassDto,
+    @GetUser() user: User,
+  ) {
+    return this.classService.reorderClasses(reorderClassDto, user);
   }
 
   @Post()
@@ -58,7 +69,7 @@ export class ClassController {
   }
 
   @Delete(':classId')
-  async deleteClass(@Param() params: DeleteClassDto) {
-    return this.classService.deleteClass(params.classId);
+  async deleteClass(@Param() params: DeleteClassDto, @GetUser() user: User) {
+    return this.classService.deleteClass(params.classId, user);
   }
 }
