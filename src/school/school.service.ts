@@ -32,6 +32,7 @@ export class SchoolService {
   schoolRepository: SchoolRepositoryType;
   memberOnSchoolRepository: MemberOnSchoolRepositoryType;
   constructor(
+    logger: Logger,
     private prisma: PrismaService,
     private stripe: StripeService,
   ) {
@@ -70,18 +71,23 @@ export class SchoolService {
     user: User;
     schoolId: string;
   }): Promise<MemberOnSchool> {
-    const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-      where: {
-        userId: user.id,
-        schoolId: schoolId,
-      },
-    });
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+        where: {
+          userId: user.id,
+          schoolId: schoolId,
+        },
+      });
 
-    if (!memberOnSchool && user.role !== 'ADMIN') {
-      throw new ForbiddenException('Access denied');
+      if (!memberOnSchool && user.role !== 'ADMIN') {
+        throw new ForbiddenException('Access denied');
+      }
+
+      return memberOnSchool;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-
-    return memberOnSchool;
   }
 
   async getSchoolById(dto: GetSchoolByIdDto, user: User): Promise<School> {
