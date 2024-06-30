@@ -22,7 +22,7 @@ export class ClassController {
 
   @Get(':classId')
   async getClassById(@Param() params: GetClassDto, @GetUser() user: User) {
-    return this.classService.getClassById(params.id, user);
+    return this.classService.getClassById(params.classId, user);
   }
 
   @Get()

@@ -1,6 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Class, User, Subject } from '@prisma/client';
+import { Class, User } from '@prisma/client';
 import {
   RequestCreateClass,
   RequestDeleteClass,
@@ -103,45 +103,32 @@ export class ClassRepository {
       throw error;
     }
   }
-  async checkPermission(classData: Class, user: User): Promise<boolean> {
-    try {
-      if (!classData) {
-        return false;
-      }
-
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: classData.schoolId,
-        },
-      });
-
-      if (!memberOnSchool && user.role !== 'ADMIN') {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
 
   async reorder(request: RequestReorderClass, user: User): Promise<Class[]> {
     try {
       const { classIds } = request;
       const updates = classIds.map(async (id, index) => {
-        const classData = await this.prisma.class.findUnique({ where: { id } });
+        const classData = await this.prisma.class.findUnique({
+          where: {
+            id,
+            AND: {
+              school: {
+                memberOnSchools: {
+                  some: {
+                    userId: user.id,
+                    role: 'ADMIN',
+                  },
+                },
+              },
+            },
+          },
+        });
 
         if (!classData) {
-          throw new Error(`Permission denied for class with id ${id}`);
+          throw new ForbiddenException(
+            `Permission denied for class with id ${id}`,
+          );
         }
-        const permissionGranted = await this.checkPermission(classData, user);
-
-        if (!permissionGranted) {
-          throw new Error(`Permission denied for class with id ${id}`);
-        }
-
         return {
           where: { id },
           data: { order: index },
@@ -163,14 +150,34 @@ export class ClassRepository {
 
   async delete(request: RequestDeleteClass): Promise<Class> {
     try {
-      return this.prisma.class.delete({
-        where: { id: request.classId },
-        include: {
-          students: true,
-          subjects: true,
-          studentOnSubjects: true,
-        },
+      const deletedClass = await this.prisma.$transaction(async (prisma) => {
+        await this.prisma.studentOnSubject.deleteMany({
+          where: {
+            classId: request.classId,
+          },
+        });
+        await this.prisma.student.deleteMany({
+          where: {
+            classId: request.classId,
+          },
+        });
+        await this.prisma.subject.deleteMany({
+          where: {
+            classId: request.classId,
+          },
+        });
+        return prisma.class.delete({
+          where: {
+            id: request.classId,
+          },
+        });
       });
+
+      console.log(
+        'Class and related entities deleted successfully:',
+        deletedClass,
+      );
+      return deletedClass;
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -4,8 +4,8 @@ import {
   Param,
   Post,
   Delete,
-  Put,
   Body,
+  Patch,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { GetUser } from 'src/auth/decorators';
@@ -22,7 +22,7 @@ import { DeleteStudentDto } from './dto/delete-student.dto';
 export class StudentController {
   constructor(private studentService: StudentService) {}
 
-  @Get('class/:classId')
+  @Get('schoolId/:schoolId/class/:classId')
   async getAllStudentsInClass(
     @GetUser() user: User,
     @Param() dto: GetAllStudentsDto,
@@ -51,7 +51,7 @@ export class StudentController {
     return this.studentService.createManyStudents(createManyStudentsDto, user);
   }
 
-  @Put(':studentId')
+  @Patch(':studentId')
   async updateStudent(
     @GetUser() user: User,
     @Body() updateStudentDto: UpdateStudentDto,

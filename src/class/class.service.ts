@@ -40,14 +40,19 @@ export class ClassService {
         schoolId: updateClassDto.body.schoolId,
       });
 
-      const existingClass = await this.classRepository.update({
-        query: { classId },
-        data: { ...updateClassDto.body },
+      const existingClass = await this.classRepository.findById({
+        classId: classId,
       });
       if (!existingClass) {
         throw new NotFoundException(`Class with ID ${classId} not found`);
       }
-      return existingClass;
+
+      const updateClasses = await this.classRepository.update({
+        query: { classId },
+        data: { ...updateClassDto.body },
+      });
+
+      return updateClasses;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -112,17 +117,14 @@ export class ClassService {
 
   async reorderClasses(reorderClassDto: ReorderClassDto, user: User) {
     try {
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: reorderClassDto.schoolId,
-      });
-
       const request: RequestReorderClass = {
         classIds: reorderClassDto.classIds,
       };
       return this.classRepository.reorder(request, user);
     } catch (error) {
       this.logger.error(error);
+      console.log('error', error);
+
       throw error;
     }
   }

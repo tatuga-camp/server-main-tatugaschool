@@ -13,14 +13,14 @@ import {
 import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
 import { UsersService } from 'src/users/users.service';
 import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
-import { MemberOnSchool, User } from '@prisma/client';
+import { MemberOnSchool, Student, User } from '@prisma/client';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class StudentService {
-  logger: Logger;
+  logger = new Logger(StudentService.name);
   studentRepository: StudentRepositoryType;
   constructor(
     private prisma: PrismaService,
@@ -88,7 +88,10 @@ export class StudentService {
     }
   }
 
-  async getStudentById(getStudentDto: GetStudentDto, userId: string) {
+  async getStudentById(
+    getStudentDto: GetStudentDto,
+    userId: string,
+  ): Promise<Student> {
     try {
       const user = await this.userService.getUserById(userId);
 
@@ -99,6 +102,7 @@ export class StudentService {
       if (!student) {
         throw new NotFoundException('Student not found');
       }
+
       await this.validateAccessMember({
         user: user,
         schoolId: student.schoolId,
@@ -147,7 +151,7 @@ export class StudentService {
   async deleteStudent(deleteStudentDto: DeleteStudentDto, user: User) {
     try {
       const student = await this.studentRepository.findById({
-        studentId: deleteStudentDto.id,
+        studentId: deleteStudentDto.studentId,
       });
 
       if (!student) {
@@ -159,7 +163,9 @@ export class StudentService {
         schoolId: student.schoolId,
       });
 
-      return this.studentRepository.delete({ studentId: deleteStudentDto.id });
+      return this.studentRepository.delete({
+        studentId: deleteStudentDto.studentId,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
