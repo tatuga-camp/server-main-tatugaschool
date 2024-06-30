@@ -1,6 +1,6 @@
 import {
   IsString,
-  IsDate,
+  IsDateString,
   IsOptional,
   IsMongoId,
   IsArray,
@@ -42,7 +42,7 @@ class UpdateClassBody {
   description?: string;
 
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   @Type(() => Date)
   educationYear?: Date;
 

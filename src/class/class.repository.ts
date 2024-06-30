@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Class, User } from '@prisma/client';
+import { Class, User, Subject } from '@prisma/client';
 import {
   RequestCreateClass,
   RequestDeleteClass,
@@ -32,6 +32,7 @@ export class ClassRepository {
       const totalClass = await this.prisma.class.count({
         where: {
           schoolId: request.schoolId,
+          educationYear: request.educationYear,
         },
       });
       return this.prisma.class.create({
@@ -164,6 +165,11 @@ export class ClassRepository {
     try {
       return this.prisma.class.delete({
         where: { id: request.classId },
+        include: {
+          students: true,
+          subjects: true,
+          studentOnSubjects: true,
+        },
       });
     } catch (error) {
       this.logger.error(error);
