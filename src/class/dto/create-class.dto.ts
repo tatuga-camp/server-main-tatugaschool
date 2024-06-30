@@ -1,7 +1,7 @@
 import {
   IsNotEmpty,
   IsString,
-  IsDate,
+  IsDateString,
   IsOptional,
   IsMongoId,
 } from 'class-validator';
@@ -21,7 +21,7 @@ export class CreateClassDto {
   description?: string;
 
   @IsNotEmpty()
-  @IsDate()
+  @IsDateString()
   @Type(() => Date)
   educationYear: Date;
 
