@@ -9,6 +9,7 @@ import {
   RequestReorderClass,
   RequestUpdateClass,
 } from './interfaces/class.interface';
+import { Pagination } from 'src/interfaces';
 
 export type ClassRepositoryType = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -85,19 +86,40 @@ export class ClassRepository {
 
   async findWithPagination(
     request: RequestGetClassByPage,
-  ): Promise<{ data: Class[]; total: number; page: number; limit: number }> {
+  ): Promise<Pagination<Class>> {
     try {
       const { page, limit } = request;
       const skip = (page - 1) * limit;
-      const [data, total] = await Promise.all([
+      const [data, count] = await Promise.all([
         this.prisma.class.findMany({
           skip,
           take: limit,
         }),
         this.prisma.class.count(),
       ]);
-
-      return { data, total, page, limit };
+      const total = Math.ceil(count / limit);
+      if (page > total) {
+        return {
+          data: [],
+          meta: {
+            total: 1,
+            lastPage: 1,
+            currentPage: 1,
+            prev: 1,
+            next: 1,
+          },
+        };
+      }
+      return {
+        data,
+        meta: {
+          total: total,
+          lastPage: total,
+          currentPage: page,
+          prev: page - 1 < 0 ? page : page - 1,
+          next: page + 1 > total ? page : page + 1,
+        },
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -105,16 +127,13 @@ export class ClassRepository {
   }
 
   async reorder(request: RequestReorderClass): Promise<Class[]> {
-    try {
-      const { classIds } = request;
-      const updates = classIds.map(async (id, index) => {
-        return {
-          where: { id },
-          data: { order: index },
-        };
-      });
+    const { classIds } = request;
 
-      const updateOperations = await Promise.all(updates);
+    try {
+      const updateOperations = classIds.map((id, index) => ({
+        where: { id },
+        data: { order: index },
+      }));
 
       const data = await this.prisma.$transaction(
         updateOperations.map((update) => this.prisma.class.update(update)),
