@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { ClassRepository } from './class.repository';
 import { CreateClassDto } from './dto/create-class.dto';
 import { ReorderClassDto, UpdateClassDto } from './dto/update-class.dto';
@@ -10,6 +15,7 @@ import {
 } from './interfaces/class.interface';
 import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
 import { User } from '@prisma/client';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class ClassService {
@@ -17,6 +23,7 @@ export class ClassService {
   constructor(
     private classRepository: ClassRepository,
     private memberOnSchoolService: MemberOnSchoolService,
+    private prisma: PrismaService,
   ) {}
 
   async createClass(createClassDto: CreateClassDto, user: User) {
@@ -120,13 +127,45 @@ export class ClassService {
       const request: RequestReorderClass = {
         classIds: reorderClassDto.classIds,
       };
-      return this.classRepository.reorder(request, user);
+      await this.validateClasses(request, user);
+      return this.classRepository.reorder(request);
     } catch (error) {
       this.logger.error(error);
       console.log('error', error);
 
       throw error;
     }
+  }
+
+  private async validateClasses(request: RequestReorderClass, user: User) {
+    await Promise.all(
+      request.classIds.map(async (id) => {
+        const classData = await this.prisma.class.findUnique({
+          where: { id },
+          include: {
+            school: {
+              include: {
+                memberOnSchools: true,
+              },
+            },
+          },
+        });
+
+        if (!classData) {
+          throw new ForbiddenException(`Class with id ${id} not found`);
+        }
+
+        const hasPermission = classData.school.memberOnSchools.some(
+          (member) => member.userId === user.id && member.role === 'ADMIN',
+        );
+
+        if (!hasPermission) {
+          throw new ForbiddenException(
+            `Permission denied for class with id ${id}`,
+          );
+        }
+      }),
+    );
   }
 
   async deleteClass(classId: string, user: User) {

@@ -1,6 +1,6 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Class, User } from '@prisma/client';
+import { Class } from '@prisma/client';
 import {
   RequestCreateClass,
   RequestDeleteClass,
@@ -104,31 +104,10 @@ export class ClassRepository {
     }
   }
 
-  async reorder(request: RequestReorderClass, user: User): Promise<Class[]> {
+  async reorder(request: RequestReorderClass): Promise<Class[]> {
     try {
       const { classIds } = request;
       const updates = classIds.map(async (id, index) => {
-        const classData = await this.prisma.class.findUnique({
-          where: {
-            id,
-            AND: {
-              school: {
-                memberOnSchools: {
-                  some: {
-                    userId: user.id,
-                    role: 'ADMIN',
-                  },
-                },
-              },
-            },
-          },
-        });
-
-        if (!classData) {
-          throw new ForbiddenException(
-            `Permission denied for class with id ${id}`,
-          );
-        }
         return {
           where: { id },
           data: { order: index },

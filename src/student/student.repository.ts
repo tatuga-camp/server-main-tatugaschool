@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Student } from '@prisma/client';
 
@@ -55,10 +55,6 @@ export class StudentRepository implements StudentRepositoryType {
     request: RequestCreateManyStudents,
   ): Promise<Student[] | any> {
     try {
-      await this.validateSchool(request);
-
-      await this.validateClass(request);
-
       const createdStudents = await this.prisma.student.createMany({
         data: request.data.students,
       });
@@ -67,60 +63,6 @@ export class StudentRepository implements StudentRepositoryType {
     } catch (err) {
       this.logger.error(err);
       throw err;
-    }
-  }
-
-  private async validateClass(request: RequestCreateManyStudents) {
-    const classIds = [
-      ...new Set(request.data.students.map((student) => student.classId)),
-    ];
-
-    const existingClasses = await this.prisma.class.findMany({
-      where: {
-        id: {
-          in: classIds,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    const existingClassIds = existingClasses.map((cls) => cls.id);
-    const invalidClassIds = classIds.filter(
-      (classId) => !existingClassIds.includes(classId),
-    );
-
-    if (invalidClassIds.length > 0) {
-      throw new ForbiddenException(
-        `Invalid classIds found: ${invalidClassIds.join(', ')}`,
-      );
-    }
-  }
-
-  private async validateSchool(request: RequestCreateManyStudents) {
-    const schoolIds = [
-      ...new Set(request.data.students.map((student) => student.schoolId)),
-    ];
-    const existingSchools = await this.prisma.school.findMany({
-      where: {
-        id: {
-          in: schoolIds,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-    const existingSchoolIds = existingSchools.map((school) => school.id);
-    const invalidSchoolIds = schoolIds.filter(
-      (schoolId) => !existingSchoolIds.includes(schoolId),
-    );
-
-    if (invalidSchoolIds.length > 0) {
-      throw new ForbiddenException(
-        `Invalid schoolIds found: ${invalidSchoolIds.join(', ')}`,
-      );
     }
   }
 
