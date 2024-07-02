@@ -14,6 +14,7 @@ import { AttendanceTableModule } from './attendance-table/attendance-table.modul
 import { AttendanceRowModule } from './attendance-row/attendance-row.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { SubjectModule } from './subject/subject.module';
+import { StudentOnSubjectModule } from './student-on-subject/student-on-subject.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SubjectModule } from './subject/subject.module';
     AttendanceModule,
     SchoolModule,
     SubjectModule,
+    StudentOnSubjectModule,
   ],
   controllers: [AppController],
   providers: [AppService],
