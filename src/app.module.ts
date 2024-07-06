@@ -17,6 +17,7 @@ import { ClassModule } from './class/class.module';
 import { SubjectModule } from './subject/subject.module';
 import { StudentOnSubjectModule } from './student-on-subject/student-on-subject.module';
 import { StudentModule } from './student/student.module';
+import { TeamModule } from './team/team.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { StudentModule } from './student/student.module';
     PrismaModule,
     EmailModule,
     MemberOnSchoolModule,
+    TeamModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
