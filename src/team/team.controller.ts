@@ -36,11 +36,12 @@ export class TeamController {
     return this.teamService.updateTeam(updateTeamDto, user);
   }
 
-  @Delete()
+  @Delete(':teamId')
   async deleteTeam(
-    @Body() deleteTeamDto: DeleteTeamDto,
+    @Param() deleteTeamDto: DeleteTeamDto,
     @GetUser() user: User,
   ) {
+    console.log('deleteTeamDto', deleteTeamDto);
     return this.teamService.deleteTeam(deleteTeamDto, user);
   }
 
