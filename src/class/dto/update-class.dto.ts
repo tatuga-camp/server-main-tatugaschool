@@ -16,10 +16,6 @@ export class ReorderClassDto {
   @IsString({ each: true })
   @IsMongoId({ each: true })
   classIds: string[];
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 }
 
 class UpdateClassQuery {
@@ -43,7 +39,7 @@ class UpdateClassBody {
 
   @IsOptional()
   @IsDateString()
-  @Type(() => Date)
+  // @Type(() => Date)
   educationYear?: Date;
 
   @IsNotEmpty()

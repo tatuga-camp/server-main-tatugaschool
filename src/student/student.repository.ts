@@ -58,6 +58,7 @@ export class StudentRepository implements StudentRepositoryType {
       const createdStudents = await this.prisma.student.createMany({
         data: request.data.students,
       });
+      console.log('Students created successfully:', createdStudents);
       return createdStudents;
     } catch (err) {
       this.logger.error(err);

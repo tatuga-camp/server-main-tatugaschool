@@ -278,6 +278,8 @@ model StudentOnSubject {
   studentOnAssignments StudentOnAssignment[]
   scoreOnStudents      ScoreOnStudent[]
   attendances          Attendance[]
+
+  @@unique([studentId, subjectId])
 }
 
 model Assignment {

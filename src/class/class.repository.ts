@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Class, User, Subject } from '@prisma/client';
+import { Class } from '@prisma/client';
 import {
   RequestCreateClass,
   RequestDeleteClass,
@@ -9,6 +9,7 @@ import {
   RequestReorderClass,
   RequestUpdateClass,
 } from './interfaces/class.interface';
+import { Pagination } from 'src/interfaces';
 
 export type ClassRepositoryType = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -85,70 +86,54 @@ export class ClassRepository {
 
   async findWithPagination(
     request: RequestGetClassByPage,
-  ): Promise<{ data: Class[]; total: number; page: number; limit: number }> {
+  ): Promise<Pagination<Class>> {
     try {
       const { page, limit } = request;
       const skip = (page - 1) * limit;
-      const [data, total] = await Promise.all([
+      const [data, count] = await Promise.all([
         this.prisma.class.findMany({
           skip,
           take: limit,
         }),
         this.prisma.class.count(),
       ]);
-
-      return { data, total, page, limit };
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-  async checkPermission(classData: Class, user: User): Promise<boolean> {
-    try {
-      if (!classData) {
-        return false;
-      }
-
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: classData.schoolId,
-        },
-      });
-
-      if (!memberOnSchool && user.role !== 'ADMIN') {
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async reorder(request: RequestReorderClass, user: User): Promise<Class[]> {
-    try {
-      const { classIds } = request;
-      const updates = classIds.map(async (id, index) => {
-        const classData = await this.prisma.class.findUnique({ where: { id } });
-
-        if (!classData) {
-          throw new Error(`Permission denied for class with id ${id}`);
-        }
-        const permissionGranted = await this.checkPermission(classData, user);
-
-        if (!permissionGranted) {
-          throw new Error(`Permission denied for class with id ${id}`);
-        }
-
+      const total = Math.ceil(count / limit);
+      if (page > total) {
         return {
-          where: { id },
-          data: { order: index },
+          data: [],
+          meta: {
+            total: 1,
+            lastPage: 1,
+            currentPage: 1,
+            prev: 1,
+            next: 1,
+          },
         };
-      });
+      }
+      return {
+        data,
+        meta: {
+          total: total,
+          lastPage: total,
+          currentPage: page,
+          prev: page - 1 < 0 ? page : page - 1,
+          next: page + 1 > total ? page : page + 1,
+        },
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 
-      const updateOperations = await Promise.all(updates);
+  async reorder(request: RequestReorderClass): Promise<Class[]> {
+    const { classIds } = request;
+
+    try {
+      const updateOperations = classIds.map((id, index) => ({
+        where: { id },
+        data: { order: index },
+      }));
 
       const data = await this.prisma.$transaction(
         updateOperations.map((update) => this.prisma.class.update(update)),
@@ -163,14 +148,34 @@ export class ClassRepository {
 
   async delete(request: RequestDeleteClass): Promise<Class> {
     try {
-      return this.prisma.class.delete({
-        where: { id: request.classId },
-        include: {
-          students: true,
-          subjects: true,
-          studentOnSubjects: true,
-        },
+      const deletedClass = await this.prisma.$transaction(async (prisma) => {
+        await this.prisma.studentOnSubject.deleteMany({
+          where: {
+            classId: request.classId,
+          },
+        });
+        await this.prisma.student.deleteMany({
+          where: {
+            classId: request.classId,
+          },
+        });
+        await this.prisma.subject.deleteMany({
+          where: {
+            classId: request.classId,
+          },
+        });
+        return prisma.class.delete({
+          where: {
+            id: request.classId,
+          },
+        });
       });
+
+      console.log(
+        'Class and related entities deleted successfully:',
+        deletedClass,
+      );
+      return deletedClass;
     } catch (error) {
       this.logger.error(error);
       throw error;

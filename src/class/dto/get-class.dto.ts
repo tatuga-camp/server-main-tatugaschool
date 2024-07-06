@@ -12,7 +12,7 @@ export class GetClassDto {
   @IsNotEmpty()
   @IsString()
   @IsMongoId()
-  id: string;
+  classId: string;
 }
 
 export class GetClassByClassIdDto {
