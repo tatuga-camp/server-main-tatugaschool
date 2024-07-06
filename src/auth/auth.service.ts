@@ -224,9 +224,13 @@ export class AuthService {
     dto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
-      const verify = await this.jwtService.verifyAsync<User>(dto.refreshToken, {
-        secret: this.config.get('JWT_REFRESH_SECRET'),
-      });
+      const verify = await this.jwtService
+        .verifyAsync<User>(dto.refreshToken, {
+          secret: this.config.get('JWT_REFRESH_SECRET'),
+        })
+        .catch(() => {
+          throw new BadRequestException('Refresh token is Expired or Invalid');
+        });
 
       const user = await this.usersRepository.findByEmail({
         email: verify.email,

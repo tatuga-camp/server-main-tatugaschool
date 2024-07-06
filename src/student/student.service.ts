@@ -13,14 +13,15 @@ import {
 import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
 import { UsersService } from 'src/users/users.service';
 import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
-import { MemberOnSchool, User } from '@prisma/client';
+import { MemberOnSchool, Student, User } from '@prisma/client';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { RequestCreateManyStudents } from './interface/student.interface';
 
 @Injectable()
 export class StudentService {
-  logger: Logger;
+  logger = new Logger(StudentService.name);
   studentRepository: StudentRepositoryType;
   constructor(
     private prisma: PrismaService,
@@ -81,6 +82,10 @@ export class StudentService {
       });
 
       const request = { data: createManyStudentsDto };
+
+      await this.validateSchool(request);
+
+      await this.validateClass(request);
       return this.studentRepository.createMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -88,7 +93,10 @@ export class StudentService {
     }
   }
 
-  async getStudentById(getStudentDto: GetStudentDto, userId: string) {
+  async getStudentById(
+    getStudentDto: GetStudentDto,
+    userId: string,
+  ): Promise<Student> {
     try {
       const user = await this.userService.getUserById(userId);
 
@@ -99,6 +107,7 @@ export class StudentService {
       if (!student) {
         throw new NotFoundException('Student not found');
       }
+
       await this.validateAccessMember({
         user: user,
         schoolId: student.schoolId,
@@ -147,7 +156,7 @@ export class StudentService {
   async deleteStudent(deleteStudentDto: DeleteStudentDto, user: User) {
     try {
       const student = await this.studentRepository.findById({
-        studentId: deleteStudentDto.id,
+        studentId: deleteStudentDto.studentId,
       });
 
       if (!student) {
@@ -159,7 +168,73 @@ export class StudentService {
         schoolId: student.schoolId,
       });
 
-      return this.studentRepository.delete({ studentId: deleteStudentDto.id });
+      return this.studentRepository.delete({
+        studentId: deleteStudentDto.studentId,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  private async validateClass(request: RequestCreateManyStudents) {
+    try {
+      const classIds = [
+        ...new Set(request.data.students.map((student) => student.classId)),
+      ];
+
+      const existingClasses = await this.prisma.class.findMany({
+        where: {
+          id: {
+            in: classIds,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const existingClassIds = existingClasses.map((cls) => cls.id);
+      const invalidClassIds = classIds.filter(
+        (classId) => !existingClassIds.includes(classId),
+      );
+
+      if (invalidClassIds.length > 0) {
+        throw new ForbiddenException(
+          `Invalid classIds found: ${invalidClassIds.join(', ')}`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  private async validateSchool(request: RequestCreateManyStudents) {
+    try {
+      const schoolIds = [
+        ...new Set(request.data.students.map((student) => student.schoolId)),
+      ];
+      const existingSchools = await this.prisma.school.findMany({
+        where: {
+          id: {
+            in: schoolIds,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+      const existingSchoolIds = existingSchools.map((school) => school.id);
+      const invalidSchoolIds = schoolIds.filter(
+        (schoolId) => !existingSchoolIds.includes(schoolId),
+      );
+
+      if (invalidSchoolIds.length > 0) {
+        throw new ForbiddenException(
+          `Invalid schoolIds found: ${invalidSchoolIds.join(', ')}`,
+        );
+      }
     } catch (error) {
       this.logger.error(error);
       throw error;

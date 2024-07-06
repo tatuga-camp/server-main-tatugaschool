@@ -46,17 +46,29 @@ export class MemberOnSchoolService {
     user: User;
     schoolId: string;
   }): Promise<MemberOnSchool> {
-    const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-      where: {
-        userId: user.id,
-        schoolId: schoolId,
-      },
-    });
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+        where: {
+          userId: user.id,
+          schoolId: schoolId,
+        },
+      });
 
-    if (!memberOnSchool && user.role !== 'ADMIN') {
-      throw new ForbiddenException('Access denied');
+      if (!memberOnSchool) {
+        throw new ForbiddenException(
+          'Access denied: User is not a member of the school',
+        );
+      }
+
+      if (memberOnSchool.role !== 'ADMIN') {
+        throw new ForbiddenException('Access denied: User is not an admin');
+      }
+
+      return memberOnSchool;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-    return memberOnSchool;
   }
 
   async getSchoolByMemberOnSchoolById(

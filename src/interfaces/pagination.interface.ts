@@ -1,4 +1,4 @@
-export class Pagination<T> {
+export type Pagination<T> = {
   data: T[];
   meta: {
     total: number;
@@ -7,4 +7,4 @@ export class Pagination<T> {
     prev: number | null;
     next: number | null;
   };
-}
+};
