@@ -2,17 +2,12 @@ export type RequestGetSubjectById = {
   subjectId: string;
 };
 
-export type RequestGetSubjectsByTeamId = {
-  teamId: string;
-};
-
 export type RequestCreateSubject = {
   title: string;
   educationYear: Date;
   description: string;
   order: number;
   classId: string;
-  teamId: string;
   userId: string;
   schoolId: string;
 };
