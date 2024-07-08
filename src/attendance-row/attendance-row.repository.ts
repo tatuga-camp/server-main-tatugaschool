@@ -99,7 +99,6 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
           studentId: student.studentId,
           attendanceRowId: row.id,
           studentOnSubjectId: student.id,
-          teamId: row.teamId,
           schoolId: row.schoolId,
           subjectId: row.subjectId,
         };

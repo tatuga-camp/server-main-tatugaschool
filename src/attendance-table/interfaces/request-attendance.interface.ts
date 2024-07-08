@@ -10,7 +10,6 @@ export type RequestCreateAttendanceTable = {
   title: string;
   description?: string;
   subjectId: string;
-  teamId: string;
   schoolId: string;
 };
 

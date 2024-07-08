@@ -11,7 +11,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 
 export type SubjectRepositoryType = {
-  getSubjectById(request: RequestGetSubjectById): Promise<Subject>;
+  getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
   updateSubject(request: RequestUpdateSubject): Promise<Subject>;
   deleteSubject(request: RequestDeleteSubject): Promise<{ message: string }>;
@@ -25,7 +25,9 @@ export class SubjectRepository implements SubjectRepositoryType {
     private googleStorageService: GoogleStorageService,
   ) {}
 
-  async getSubjectById(request: RequestGetSubjectById): Promise<Subject> {
+  async getSubjectById(
+    request: RequestGetSubjectById,
+  ): Promise<Subject | null> {
     try {
       return this.prisma.subject.findUnique({
         where: {
