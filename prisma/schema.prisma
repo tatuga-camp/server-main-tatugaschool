@@ -157,7 +157,6 @@ model Team {
   schoolId             String                @db.ObjectId
   school               School                @relation(fields: [schoolId], references: [id])
   memberOnTeams        MemberOnTeam[]
-  subjects             Subject[]
   assignments          Assignment[]
   studentOnAssignments StudentOnAssignment[]
   scoreOnSubjects      ScoreOnSubject[]
@@ -205,12 +204,10 @@ model Subject {
   backgroundImage String?
 
   classId  String @db.ObjectId
-  teamId   String @db.ObjectId
   userId   String @db.ObjectId
   schoolId String @db.ObjectId
 
   class  Class  @relation(fields: [classId], references: [id])
-  team   Team   @relation(fields: [teamId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
 

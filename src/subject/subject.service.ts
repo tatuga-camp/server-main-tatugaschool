@@ -67,32 +67,6 @@ export class SubjectService {
     }
   }
 
-  async getAllSubjectsByTeamId(
-    dto: getAllSubjectsByTeamIdParam & getAllSubjectsByTeamIdQuery,
-    user: User,
-  ): Promise<Subject[]> {
-    try {
-      const memberOnTeam = await this.prisma.memberOnTeam.findFirst({
-        where: {
-          userId: user.id,
-          teamId: dto.teamId,
-        },
-      });
-
-      if (!memberOnTeam && user.role !== 'ADMIN') {
-        throw new ForbiddenException('Access denied');
-      }
-      return this.prisma.subject.findMany({
-        where: {
-          teamId: dto.teamId,
-          educationYear: dto.educationYear,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
   async getSubjectById(dto: GetSubjectByIdDto, user: User): Promise<Subject> {
     try {
       await this.validateAccessOnSubject({
@@ -113,20 +87,21 @@ export class SubjectService {
     user: User,
   ): Promise<Pagination<Subject>> {
     try {
-      const memberOnTeam = await this.prisma.memberOnTeam.findFirst({
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
-          teamId: dto.teamId,
+          schoolId: dto.schoolId,
         },
       });
 
-      if (!memberOnTeam && user.role !== 'ADMIN') {
+      if (!memberOnSchool && user.role !== 'ADMIN') {
         throw new ForbiddenException('Access denied');
       }
 
       const counts = await this.prisma.subject.count({
         where: {
-          teamId: dto.teamId,
+          userId: user.id,
+          schoolId: dto.schoolId,
           educationYear: dto.educationYear,
           OR: [
             {
@@ -161,7 +136,8 @@ export class SubjectService {
 
       const subjects = await this.prisma.subject.findMany({
         where: {
-          teamId: dto.teamId,
+          userId: user.id,
+          schoolId: dto.schoolId,
           educationYear: dto.educationYear,
           OR: [
             {
@@ -209,9 +185,9 @@ export class SubjectService {
         throw new ForbiddenException('Access denied');
       }
 
-      const totalSubjectInTeams = await this.prisma.subject.count({
+      const totalSubject = await this.prisma.subject.count({
         where: {
-          teamId: dto.teamId,
+          userId: user.id,
           educationYear: dto.educationYear,
         },
       });
@@ -219,7 +195,7 @@ export class SubjectService {
       const subject = await this.subjectRepository.createSubject({
         ...dto,
         userId: user.id,
-        order: totalSubjectInTeams + 1,
+        order: totalSubject + 1,
       });
 
       const member = await this.prisma.teacherOnSubject.create({
@@ -268,17 +244,16 @@ export class SubjectService {
     user: User,
   ): Promise<Subject[]> {
     try {
-      const memberOnTeam = await this.prisma.memberOnTeam.findFirst({
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
-          teamId: dto.teamId,
+          schoolId: dto.schoolId,
         },
       });
 
-      if (!memberOnTeam && user.role !== 'ADMIN') {
+      if (!memberOnSchool && user.role !== 'ADMIN') {
         throw new ForbiddenException('Access denied');
       }
-
       const subjects = await this.prisma.subject.findMany({
         where: {
           id: {
@@ -296,8 +271,10 @@ export class SubjectService {
         if (!subject.id) {
           throw new NotFoundException("Subject doesn't have id");
         }
-        if (subject.teamId !== dto.teamId) {
-          throw new BadRequestException('Invalid teamId');
+        if (subject.userId !== user.id) {
+          throw new ForbiddenException(
+            'You do not have access to this subject',
+          );
         }
       });
 

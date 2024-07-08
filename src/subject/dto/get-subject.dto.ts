@@ -22,7 +22,7 @@ export class GetSubjectByIdDto {
 export class GetSubjectByPageDto {
   @IsNotEmpty()
   @IsMongoId()
-  teamId: string;
+  schoolId: string;
 
   @IsNotEmpty()
   @IsNumber()

@@ -5,7 +5,6 @@ import {
   RequestCreateSubject,
   RequestDeleteSubject,
   RequestGetSubjectById,
-  RequestGetSubjectsByTeamId,
   RequestReorderSubjects,
   RequestUpdateSubject,
 } from './interfaces';
@@ -13,7 +12,6 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export type SubjectRepositoryType = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject>;
-  getSubjectsByTeamId(request: RequestGetSubjectsByTeamId): Promise<Subject[]>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
   updateSubject(request: RequestUpdateSubject): Promise<Subject>;
   deleteSubject(request: RequestDeleteSubject): Promise<{ message: string }>;
@@ -32,21 +30,6 @@ export class SubjectRepository implements SubjectRepositoryType {
       return this.prisma.subject.findUnique({
         where: {
           id: request.subjectId,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async getSubjectsByTeamId(
-    request: RequestGetSubjectsByTeamId,
-  ): Promise<Subject[]> {
-    try {
-      return this.prisma.subject.findMany({
-        where: {
-          teamId: request.teamId,
         },
       });
     } catch (error) {

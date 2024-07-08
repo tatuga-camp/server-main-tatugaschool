@@ -62,7 +62,7 @@ export class ReorderSubjectsDto {
 
   @IsNotEmpty()
   @IsMongoId()
-  teamId: string;
+  schoolId: string;
 
   @IsNotEmpty()
   @IsDateString()

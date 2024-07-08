@@ -34,16 +34,6 @@ export class SubjectController {
     return this.subjectService.getSubjectById(dto, user);
   }
 
-  @Get('team/:teamId')
-  async getAllSubjectsByTeamId(
-    @Param() param: getAllSubjectsByTeamIdParam,
-    @Query() query: getAllSubjectsByTeamIdQuery,
-    @GetUser() user: User,
-  ) {
-    const dto = { ...param, ...query };
-    return this.subjectService.getAllSubjectsByTeamId(dto, user);
-  }
-
   @Get()
   async getSubjectByPage(
     @Query() dto: GetSubjectByPageDto,
