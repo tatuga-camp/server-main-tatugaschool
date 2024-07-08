@@ -174,14 +174,14 @@ export class SubjectService {
 
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
     try {
-      const memberOnTeam = await this.prisma.memberOnTeam.findFirst({
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
-          teamId: dto.teamId,
+          schoolId: dto.schoolId,
         },
       });
 
-      if (!memberOnTeam && user.role !== 'ADMIN') {
+      if (!memberOnSchool && user.role !== 'ADMIN') {
         throw new ForbiddenException('Access denied');
       }
 
@@ -208,7 +208,6 @@ export class SubjectService {
           role: 'ADMIN',
           photo: user.photo,
           subjectId: subject.id,
-          teamId: dto.teamId,
           schoolId: dto.schoolId,
         },
       });

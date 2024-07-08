@@ -32,6 +32,7 @@ export type RequestUpdateStudentOnSubject = {
     lastName?: string;
     picture?: string;
     number?: string;
+    totalSpeicalScore?: number;
   };
 };
 

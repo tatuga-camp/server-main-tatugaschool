@@ -154,17 +154,9 @@ model Team {
   description String?
   icon        String
 
-  schoolId             String                @db.ObjectId
-  school               School                @relation(fields: [schoolId], references: [id])
-  memberOnTeams        MemberOnTeam[]
-  assignments          Assignment[]
-  studentOnAssignments StudentOnAssignment[]
-  scoreOnSubjects      ScoreOnSubject[]
-  scoreOnStudents      ScoreOnStudent[]
-  attendanceRows       AttendanceRow[]
-  attendances          Attendance[]
-  teacherOnSubjects    TeacherOnSubject[]
-  attendanceTables     AttendanceTable[]
+  schoolId      String         @db.ObjectId
+  school        School         @relation(fields: [schoolId], references: [id])
+  memberOnTeams MemberOnTeam[]
 }
 
 model MemberOnTeam {
@@ -244,12 +236,10 @@ model TeacherOnSubject {
   userId    String @db.ObjectId
   subjectId String @db.ObjectId
   schoolId  String @db.ObjectId
-  teamId    String @db.ObjectId
 
   user    User    @relation(fields: [userId], references: [id])
   subject Subject @relation(fields: [subjectId], references: [id])
   school  School  @relation(fields: [schoolId], references: [id])
-  team    Team    @relation(fields: [teamId], references: [id])
 }
 
 model StudentOnSubject {
@@ -262,6 +252,8 @@ model StudentOnSubject {
   lastName  String
   picture   String
   number    String
+
+  totalSpeicalScore Float @default(0)
 
   studentId String @db.ObjectId
   classId   String @db.ObjectId
@@ -294,9 +286,6 @@ model Assignment {
 
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
-
-  teamId String @db.ObjectId
-  team   Team   @relation(fields: [teamId], references: [id])
 
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
@@ -342,12 +331,10 @@ model StudentOnAssignment {
   studentId          String @db.ObjectId
   assignmentId       String @db.ObjectId
   studentOnSubjectId String @db.ObjectId
-  teamId             String @db.ObjectId
   schoolId           String @db.ObjectId
 
   subjectId                   String                       @db.ObjectId
   subject                     Subject                      @relation(fields: [subjectId], references: [id])
-  team                        Team                         @relation(fields: [teamId], references: [id])
   school                      School                       @relation(fields: [schoolId], references: [id])
   student                     Student                      @relation(fields: [studentId], references: [id])
   assignment                  Assignment                   @relation(fields: [assignmentId], references: [id])
@@ -428,16 +415,17 @@ model ScoreOnSubject {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  score Float
-  title String
-  icon  String
+  score     Float
+  title     String
+  icon      String
+  isDeleted Boolean @default(false)
 
   schoolId  String  @db.ObjectId
   school    School  @relation(fields: [schoolId], references: [id])
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
-  teamId    String  @db.ObjectId
-  team      Team    @relation(fields: [teamId], references: [id])
+
+  scoreOnStudents ScoreOnStudent[]
 }
 
 model ScoreOnStudent {
@@ -451,14 +439,14 @@ model ScoreOnStudent {
 
   subjectId          String           @db.ObjectId
   subject            Subject          @relation(fields: [subjectId], references: [id])
+  scoreOnSubjectId   String           @db.ObjectId
+  scoreOnSubject     ScoreOnSubject   @relation(fields: [scoreOnSubjectId], references: [id])
   schoolId           String           @db.ObjectId
   school             School           @relation(fields: [schoolId], references: [id])
   studentId          String           @db.ObjectId
   student            Student          @relation(fields: [studentId], references: [id])
   studentOnSubjectId String           @db.ObjectId
   studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
-  teamId             String           @db.ObjectId
-  team               Team             @relation(fields: [teamId], references: [id])
 }
 
 model AttendanceTable {
@@ -469,10 +457,9 @@ model AttendanceTable {
   title       String
   description String?
 
-  subjectId      String          @db.ObjectId
-  subject        Subject         @relation(fields: [subjectId], references: [id])
-  teamId         String          @db.ObjectId
-  team           Team            @relation(fields: [teamId], references: [id])
+  subjectId String  @db.ObjectId
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
   schoolId       String          @db.ObjectId
   school         School          @relation(fields: [schoolId], references: [id])
   attendances    Attendance[]
@@ -492,11 +479,10 @@ model AttendanceRow {
   attendanceTable   AttendanceTable @relation(fields: [attendanceTableId], references: [id])
   subjectId         String          @db.ObjectId
   subject           Subject         @relation(fields: [subjectId], references: [id])
-  teamId            String          @db.ObjectId
-  team              Team            @relation(fields: [teamId], references: [id])
-  schoolId          String          @db.ObjectId
-  school            School          @relation(fields: [schoolId], references: [id])
-  attendances       Attendance[]
+
+  schoolId    String       @db.ObjectId
+  school      School       @relation(fields: [schoolId], references: [id])
+  attendances Attendance[]
 }
 
 model Attendance {
@@ -522,12 +508,11 @@ model Attendance {
   attendanceRow      AttendanceRow    @relation(fields: [attendanceRowId], references: [id])
   studentOnSubjectId String           @db.ObjectId
   studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
-  teamId             String           @db.ObjectId
-  team               Team             @relation(fields: [teamId], references: [id])
-  schoolId           String           @db.ObjectId
-  school             School           @relation(fields: [schoolId], references: [id])
-  subjectId          String           @db.ObjectId
-  subject            Subject          @relation(fields: [subjectId], references: [id])
+
+  schoolId  String  @db.ObjectId
+  school    School  @relation(fields: [schoolId], references: [id])
+  subjectId String  @db.ObjectId
+  subject   Subject @relation(fields: [subjectId], references: [id])
 
   @@unique([studentOnSubjectId, attendanceRowId])
 }

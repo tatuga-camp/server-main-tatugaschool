@@ -20,6 +20,7 @@ import {
 } from './dto';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators';
+import { User } from '@prisma/client';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -28,11 +29,11 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('sign-up')
-  async signup(
+  signup(
     @Body()
     dto: SignUpDto,
-  ): Promise<void> {
-    await this.authService.signup(dto);
+  ): Promise<User> {
+    return this.authService.signup(dto);
   }
 
   @Public()

@@ -26,9 +26,5 @@ export class CreateSubjectDto {
 
   @IsNotEmpty()
   @IsMongoId()
-  teamId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
   schoolId: string;
 }

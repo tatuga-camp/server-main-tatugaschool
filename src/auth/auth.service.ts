@@ -96,7 +96,7 @@ export class AuthService {
     }
   }
 
-  async signup(dto: SignUpDto): Promise<void> {
+  async signup(dto: SignUpDto): Promise<User> {
     try {
       const existingUser = await this.usersRepository.findByEmail({
         email: dto.email,
@@ -115,7 +115,7 @@ export class AuthService {
         dto.email.charAt(0).toUpperCase(),
       );
 
-      await this.usersRepository.createUser({
+      const user = await this.usersRepository.createUser({
         ...dto,
         photo,
         verifyEmailToken: token,
@@ -129,6 +129,7 @@ export class AuthService {
         subject: 'Welcome to TATUGA SCHOOL',
         text: `Hello ${dto.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
       });
+      return user;
     } catch (error) {
       this.logger.error(error);
       throw error;

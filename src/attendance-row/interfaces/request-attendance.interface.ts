@@ -11,7 +11,6 @@ export type RequestCreateAttendanceRow = {
   note?: string;
   attendanceTableId: string;
   subjectId: string;
-  teamId: string;
   schoolId: string;
 };
 

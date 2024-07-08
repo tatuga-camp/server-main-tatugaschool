@@ -17,6 +17,8 @@ import { ClassModule } from './class/class.module';
 import { SubjectModule } from './subject/subject.module';
 import { StudentOnSubjectModule } from './student-on-subject/student-on-subject.module';
 import { StudentModule } from './student/student.module';
+import { ScoreOnSubjectModule } from './score-on-subject/score-on-subject.module';
+import { ScoreOnStudentModule } from './score-on-student/score-on-student.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { StudentModule } from './student/student.module';
     StudentModule,
     SubjectModule,
     StudentOnSubjectModule,
+    ScoreOnSubjectModule,
+    ScoreOnStudentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
