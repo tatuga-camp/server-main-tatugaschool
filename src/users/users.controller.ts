@@ -1,10 +1,8 @@
 import { UsersService } from './users.service';
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { UserGuard } from '../auth/guard';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 
-@UseGuards(UserGuard)
 @Controller('v1/users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
