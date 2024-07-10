@@ -240,6 +240,8 @@ model TeacherOnSubject {
   user    User    @relation(fields: [userId], references: [id])
   subject Subject @relation(fields: [subjectId], references: [id])
   school  School  @relation(fields: [schoolId], references: [id])
+
+  @@unique([userId, subjectId])
 }
 
 model StudentOnSubject {

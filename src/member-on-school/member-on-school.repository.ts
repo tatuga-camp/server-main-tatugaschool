@@ -16,6 +16,10 @@ export type MemberOnSchoolRepositoryType = {
   getAllMemberOnSchoolsBySchoolId(request: {
     schoolId: string;
   }): Promise<MemberOnSchool[]>;
+  getMemberOnSchoolByUserIdAndSchoolId(request: {
+    userId: string;
+    schoolId: string;
+  }): Promise<MemberOnSchool>;
   getMemberOnSchoolById(request: {
     memberOnSchoolId: string;
   }): Promise<MemberOnSchool>;
@@ -37,6 +41,23 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       return await this.prisma.memberOnSchool.create({
         data: {
           ...request,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getMemberOnSchoolByUserIdAndSchoolId(request: {
+    userId: string;
+    schoolId: string;
+  }): Promise<MemberOnSchool> {
+    try {
+      return await this.prisma.memberOnSchool.findFirst({
+        where: {
+          userId: request.userId,
+          schoolId: request.schoolId,
         },
       });
     } catch (error) {

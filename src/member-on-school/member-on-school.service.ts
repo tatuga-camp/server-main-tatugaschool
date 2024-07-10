@@ -191,7 +191,7 @@ export class MemberOnSchoolService {
       this.emailService.sendMail({
         to: newMember.email,
         subject: 'Invite to join school',
-        text: `You have been invited to join ${school.title}. 
+        html: `You have been invited to join ${school.title}. 
         Please click the link to join. ${process.env.CLIENT_URL}/invite/${create.id}`,
       });
 

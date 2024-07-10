@@ -84,11 +84,11 @@ export class AuthService {
 
   private async sendResetEmail(email: string, token: string): Promise<void> {
     try {
-      const resetUrl = `${process.env.FRONTEND_URL}/auth/reset-password?token=${token}`;
+      const resetUrl = `${process.env.CLIENT_URL}/auth/reset-password?token=${token}`;
       await this.emailService.sendMail({
         to: email,
         subject: 'Reset your password',
-        text: `You requested a password reset. Click here to reset your password: ${resetUrl}`,
+        html: `You requested a password reset. Click here to reset your password: ${resetUrl}`,
       });
     } catch (error) {
       this.logger.error(error);
@@ -122,12 +122,12 @@ export class AuthService {
         verifyEmailTokenExpiresAt: expiration.toISOString(),
         password: hashedPassword,
       });
-      const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
+      const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
 
       this.emailService.sendMail({
         to: dto.email,
         subject: 'Welcome to TATUGA SCHOOL',
-        text: `Hello ${dto.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
+        html: `Hello ${dto.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
       });
       return user;
     } catch (error) {
@@ -297,12 +297,12 @@ export class AuthService {
       expiration,
       hashedPassword,
     });
-    const resetUrl = `${process.env.FRONTEND_URL}/auth/verify-email?token=${token}`;
+    const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
 
     await this.emailService.sendMail({
       to: data.email,
       subject: 'Welcome to TATUGA SCHOOL',
-      text: `Hello ${data.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
+      html: `Hello ${data.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
     });
   }
 }
