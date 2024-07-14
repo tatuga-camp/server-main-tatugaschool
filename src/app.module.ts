@@ -26,6 +26,7 @@ import { FileAssignmentModule } from './file-assignment/file-assignment.module';
 import { StudentOnAssignmentModule } from './student-on-assignment/student-on-assignment.module';
 import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
+import { BoardModule } from './board-task/board/board.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { CommentAssignmentModule } from './comment-assignment/comment-assignment
     EmailModule,
     MemberOnSchoolModule,
     TeamModule,
+    BoardModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

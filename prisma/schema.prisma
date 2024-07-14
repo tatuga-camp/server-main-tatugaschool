@@ -61,24 +61,28 @@ model School {
   billingManagerId String? @db.ObjectId
   billingManager   User?   @relation(fields: [billingManagerId], references: [id])
 
-  memberOnSchools          MemberOnSchool[]
-  classes                  Class[]
-  teams                    Team[]
-  students                 Student[]
-  subjects                 Subject[]
-  memberOnTeams            MemberOnTeam[]
-  assignments              Assignment[]
-  studentOnAssignments     StudentOnAssignment[]
-  attendanceRows           AttendanceRow[]
-  attendances              Attendance[]
-  teacherOnSubjects        TeacherOnSubject[]
-  attendanceTables         AttendanceTable[]
-  commentOnAssignments     CommentOnAssignment[]
-  scoreOnStudents          ScoreOnStudent[]
-  scoreOnSubjects          ScoreOnSubject[]
-  fileOnStudentAssignments FileOnStudentAssignment[]
-  fileOnAssignments        FileOnAssignment[]
-  studentOnSubjects        StudentOnSubject[]
+  memberOnSchools             MemberOnSchool[]
+  classes                     Class[]
+  teams                       Team[]
+  students                    Student[]
+  subjects                    Subject[]
+  memberOnTeams               MemberOnTeam[]
+  assignments                 Assignment[]
+  studentOnAssignments        StudentOnAssignment[]
+  attendanceRows              AttendanceRow[]
+  attendances                 Attendance[]
+  teacherOnSubjects           TeacherOnSubject[]
+  attendanceTables            AttendanceTable[]
+  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
+  commentOnAssignmentStudents CommentOnAssignmentStudent[]
+  scoreOnStudents             ScoreOnStudent[]
+  scoreOnSubjects             ScoreOnSubject[]
+  fileOnStudentOnAssignments  FileOnStudentOnAssignment[]
+  fileOnAssignments           FileOnAssignment[]
+  studentOnSubjects           StudentOnSubject[]
+  Board                       Board[]
+  Colum                       Colum[]
+  Task                        Task[]
 }
 
 model MemberOnSchool {
@@ -161,6 +165,9 @@ model Team {
   schoolId      String         @db.ObjectId
   school        School         @relation(fields: [schoolId], references: [id])
   memberOnTeams MemberOnTeam[]
+  Board         Board[]
+  Colum         Colum[]
+  Task          Task[]
 }
 
 model MemberOnTeam {
@@ -185,6 +192,7 @@ model MemberOnTeam {
   memberOnSchool MemberOnSchool @relation(fields: [memberOnSchoolId], references: [id])
   team           Team           @relation(fields: [teamId], references: [id])
   school         School         @relation(fields: [schoolId], references: [id])
+  Task           Task[]
 }
 
 model Subject {
@@ -586,6 +594,71 @@ model SkillOnCareer {
 
   skill  Skill  @relation(fields: [skillId], references: [id])
   career Career @relation(fields: [careerId], references: [id])
+}
+
+model Board {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String
+  isCompleted Boolean @default(false)
+
+  teamId String @db.ObjectId
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  schoolId String @db.ObjectId
+  school   School @relation(fields: [schoolId], references: [id])
+
+  colums Colum[]
+
+  Task Task[]
+}
+
+model Colum {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+  color       String
+
+  teamId   String @db.ObjectId
+  team     Team   @relation(fields: [teamId], references: [id])
+  schoolId String @db.ObjectId
+  school   School @relation(fields: [schoolId], references: [id])
+  boardId  String @db.ObjectId
+  board    Board  @relation(fields: [boardId], references: [id])
+
+  tasks Task[]
+}
+
+model Task {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+  deadline    DateTime?
+  isCompleted Boolean   @default(false)
+
+  assigneeId String?       @db.ObjectId
+  assignee   MemberOnTeam? @relation(fields: [assigneeId], references: [id])
+
+  teamId String @db.ObjectId
+  team   Team   @relation(fields: [teamId], references: [id])
+
+  schoolId String @db.ObjectId
+  school   School @relation(fields: [schoolId], references: [id])
+
+  boardId String @db.ObjectId
+  board   Board  @relation(fields: [boardId], references: [id])
+
+  columId String @db.ObjectId
+  colum   Colum  @relation(fields: [columId], references: [id])
 }
 
 enum UserRole {
