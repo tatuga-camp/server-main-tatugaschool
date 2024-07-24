@@ -21,6 +21,7 @@ import { ScoreOnSubjectModule } from './score-on-subject/score-on-subject.module
 import { ScoreOnStudentModule } from './score-on-student/score-on-student.module';
 import { TeamModule } from './team/team.module';
 import { TeacherOnSubjectModule } from './teacher-on-subject/teacher-on-subject.module';
+import { AssignmentModule } from './assignment/assignment.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { TeacherOnSubjectModule } from './teacher-on-subject/teacher-on-subject.
     ScoreOnSubjectModule,
     ScoreOnStudentModule,
     TeacherOnSubjectModule,
+    AssignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
