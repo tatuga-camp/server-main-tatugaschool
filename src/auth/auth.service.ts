@@ -1,3 +1,4 @@
+import { StudentRepository } from './../student/student.repository';
 import {
   BadRequestException,
   ConflictException,
@@ -19,16 +20,18 @@ import {
   ResetPasswordDto,
   SignInDto,
   SignUpDto,
+  StudentSignInDto,
   VerifyEmailDto,
 } from './dto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { Student, User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
   logger: Logger;
   usersRepository: UserRepositoryType;
+  studentRepository: StudentRepository;
   constructor(
     private emailService: EmailService,
     private jwtService: JwtService,
@@ -38,6 +41,7 @@ export class AuthService {
   ) {
     this.logger = new Logger(AuthService.name);
     this.usersRepository = new UserRepository(prisma);
+    this.studentRepository = new StudentRepository(prisma);
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
@@ -208,8 +212,12 @@ export class AuthService {
       delete user.verifyEmailTokenExpiresAt;
       delete user.resetPasswordToken;
       delete user.resetPasswordTokenExpiresAt;
+      delete user.photo;
       return {
-        accessToken: await this.jwtService.signAsync(user),
+        accessToken: await this.jwtService.signAsync(user, {
+          secret: this.config.get('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        }),
         refreshToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: '7d',
@@ -221,7 +229,45 @@ export class AuthService {
     }
   }
 
-  async refreshToken(
+  async studentSignIn(dto: StudentSignInDto) {
+    try {
+      const student = await this.studentRepository.findById({
+        studentId: dto.studentId,
+      });
+      if (!student) {
+        throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
+      }
+
+      if (student.password && !dto.password) {
+        throw new UnauthorizedException('กรุณากรอกรหัสผ่าน');
+      }
+
+      if (student.password) {
+        const isMatch = await bcrypt.compare(dto.password, student.password);
+        if (!isMatch) {
+          throw new UnauthorizedException('รหัสผ่านไม่ถูกต้อง');
+        }
+      }
+
+      delete student.password;
+
+      return {
+        accessToken: await this.jwtService.signAsync(student, {
+          secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        }),
+        refreshToken: await this.jwtService.signAsync(student, {
+          secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        }),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async UserRefreshToken(
     dto: RefreshTokenDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
@@ -244,10 +290,50 @@ export class AuthService {
       delete user.verifyEmailTokenExpiresAt;
       delete user.resetPasswordToken;
       delete user.resetPasswordTokenExpiresAt;
+      delete user.photo;
       return {
-        accessToken: await this.jwtService.signAsync(user),
+        accessToken: await this.jwtService.signAsync(user, {
+          secret: this.config.get('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        }),
         refreshToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        }),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async StudnetRefreshToken(
+    dto: RefreshTokenDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    try {
+      const verify = await this.jwtService
+        .verifyAsync<Student>(dto.refreshToken, {
+          secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
+        })
+        .catch(() => {
+          throw new BadRequestException('Refresh token is Expired or Invalid');
+        });
+
+      const student = await this.studentRepository.findById({
+        studentId: verify.id,
+      });
+      if (!student) {
+        throw new BadRequestException('Refresh token is invalid');
+      }
+      delete student.password;
+
+      return {
+        accessToken: await this.jwtService.signAsync(student, {
+          secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        }),
+        refreshToken: await this.jwtService.signAsync(student, {
+          secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
           expiresIn: '7d',
         }),
       };
@@ -274,8 +360,12 @@ export class AuthService {
       delete user.verifyEmailTokenExpiresAt;
       delete user.resetPasswordToken;
       delete user.resetPasswordTokenExpiresAt;
+      delete user.photo;
       return {
-        accessToken: await this.jwtService.signAsync(user),
+        accessToken: await this.jwtService.signAsync(user, {
+          secret: this.config.get('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        }),
         refreshToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: '7d',

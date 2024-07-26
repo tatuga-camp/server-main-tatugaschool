@@ -34,7 +34,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestGetAssignmentById,
   ): Promise<Assignment> {
     try {
-      return this.prisma.assignment.findUnique({
+      return await this.prisma.assignment.findUnique({
         where: {
           id: request.assignmentId,
         },
@@ -54,7 +54,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestGetAssignmentBySubjectId,
   ): Promise<Assignment[]> {
     try {
-      return this.prisma.assignment.findMany({
+      return await this.prisma.assignment.findMany({
         where: {
           subjectId: request.subjectId,
         },
@@ -74,7 +74,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestCreateAssignment,
   ): Promise<Assignment> {
     try {
-      return this.prisma.assignment.create({
+      return await this.prisma.assignment.create({
         data: request,
       });
     } catch (error) {
@@ -92,7 +92,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestUpdateAssignment,
   ): Promise<Assignment> {
     try {
-      return this.prisma.assignment.update({
+      return await this.prisma.assignment.update({
         where: {
           id: request.query.assignmentId,
         },

@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import {
   RequestCreateMemberOnSchool,
   RequestGetMemberOnSchoolByEmail,
@@ -6,6 +10,7 @@ import {
 } from './interfaces';
 import { $Enums, MemberOnSchool } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type MemberOnSchoolRepositoryType = {
   create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool>;
@@ -16,6 +21,7 @@ export type MemberOnSchoolRepositoryType = {
   getAllMemberOnSchoolsBySchoolId(request: {
     schoolId: string;
   }): Promise<MemberOnSchool[]>;
+  getByUserId(request: { userId: string }): Promise<MemberOnSchool[]>;
   getMemberOnSchoolByUserIdAndSchoolId(request: {
     userId: string;
     schoolId: string;
@@ -36,6 +42,24 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     this.logger = new Logger(MemberOnSchoolRepository.name);
   }
 
+  async getByUserId(request: { userId: string }): Promise<MemberOnSchool[]> {
+    try {
+      return await this.prisma.memberOnSchool.findMany({
+        where: {
+          userId: request.userId,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
   async create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool> {
     try {
       return await this.prisma.memberOnSchool.create({
@@ -45,6 +69,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -62,6 +91,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -80,6 +114,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -105,6 +144,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       return { message: 'MemberOnSchool deleted successfully' };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -113,13 +157,18 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     schoolId: string;
   }): Promise<MemberOnSchool[]> {
     try {
-      return this.prisma.memberOnSchool.findMany({
+      return await this.prisma.memberOnSchool.findMany({
         where: {
           schoolId: request.schoolId,
         },
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -135,6 +184,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -151,6 +205,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

@@ -32,7 +32,7 @@ export class ClassService {
         user: user,
         schoolId: createClassDto.schoolId,
       });
-      return this.classRepository.create(createClassDto);
+      return await this.classRepository.create(createClassDto);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -94,7 +94,7 @@ export class ClassService {
         schoolId: schoolId,
       });
 
-      return this.classRepository.findAll();
+      return await this.classRepository.findAll();
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -115,7 +115,7 @@ export class ClassService {
         schoolId: schoolId,
       });
 
-      return this.classRepository.findWithPagination(request);
+      return await this.classRepository.findWithPagination(request);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -128,7 +128,7 @@ export class ClassService {
         classIds: reorderClassDto.classIds,
       };
       await this.validateClasses(request, user);
-      return this.classRepository.reorder(request);
+      return await this.classRepository.reorder(request);
     } catch (error) {
       this.logger.error(error);
       console.log('error', error);
@@ -181,7 +181,7 @@ export class ClassService {
         schoolId: existingClass.schoolId,
       });
 
-      return this.classRepository.delete(request);
+      return await this.classRepository.delete(request);
     } catch (error) {
       this.logger.error(error);
       throw error;

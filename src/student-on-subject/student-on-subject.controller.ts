@@ -6,6 +6,7 @@ import {
   Param,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { StudentOnSubjectService } from './student-on-subject.service';
 import { GetUser } from '../auth/decorators';
@@ -21,7 +22,9 @@ import {
   GetStudentOnSubjectsBySubjectIdDto,
 } from './dto';
 import { User } from '@prisma/client';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/student-on-subjects')
 export class StudentOnSubjectController {
   constructor(private studentOnSubjectService: StudentOnSubjectService) {}

@@ -6,8 +6,18 @@ import {
   GetFileOnAssignmentByAssignmentIdDto,
 } from './dto';
 import { FileAssignmentService } from './file-assignment.service';
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/file-assignments')
 export class FileAssignmentController {
   constructor(private fileAssignmentService: FileAssignmentService) {}

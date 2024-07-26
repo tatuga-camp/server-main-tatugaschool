@@ -55,7 +55,7 @@ export class FileAssignmentService {
         );
       }
 
-      return this.fileAssignmentRepository.getByAssignmentId({
+      return await this.fileAssignmentRepository.getByAssignmentId({
         assignmentId: dto.assignmentId,
       });
     } catch (error) {
@@ -88,7 +88,7 @@ export class FileAssignmentService {
         );
       }
 
-      return this.fileAssignmentRepository.create({
+      return await this.fileAssignmentRepository.create({
         ...dto,
         schoolId: assignment.schoolId,
         subjectId: assignment.subjectId,

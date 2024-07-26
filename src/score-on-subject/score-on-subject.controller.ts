@@ -1,5 +1,13 @@
 import { ScoreOnSubjectService } from './score-on-subject.service';
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   CreateScoreOnSubjectDto,
   GetAllScoreOnSubjectBySujectIdDto,
@@ -7,7 +15,9 @@ import {
 } from './dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/score-on-subjects')
 export class ScoreOnSubjectController {
   constructor(private scoreOnSubjectService: ScoreOnSubjectService) {}

@@ -97,7 +97,7 @@ export class AttendanceService {
         schoolId: attendance.schoolId,
         subjectId: attendance.subjectId,
       });
-      return this.attendanceRepository.updateAttendanceById(dto);
+      return await this.attendanceRepository.updateAttendanceById(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;

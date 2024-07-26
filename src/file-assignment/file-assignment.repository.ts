@@ -33,7 +33,7 @@ export class FileAssignmentRepository implements FileAssignmentRepositoryType {
 
   async getById(request: RequestGetFileById): Promise<FileOnAssignment> {
     try {
-      return this.prisma.fileOnAssignment.findUnique({
+      return await this.prisma.fileOnAssignment.findUnique({
         where: {
           id: request.fileOnAssignmentId,
         },
@@ -53,7 +53,7 @@ export class FileAssignmentRepository implements FileAssignmentRepositoryType {
     request: RequestGetFilesByAssignmentId,
   ): Promise<FileOnAssignment[]> {
     try {
-      return this.prisma.fileOnAssignment.findMany({
+      return await this.prisma.fileOnAssignment.findMany({
         where: {
           assignmentId: request.assignmentId,
         },
@@ -73,7 +73,7 @@ export class FileAssignmentRepository implements FileAssignmentRepositoryType {
     request: RequestCreateFileAssignment,
   ): Promise<FileOnAssignment> {
     try {
-      return this.prisma.fileOnAssignment.create({
+      return await this.prisma.fileOnAssignment.create({
         data: request,
       });
     } catch (error) {

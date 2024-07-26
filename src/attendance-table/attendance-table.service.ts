@@ -142,7 +142,7 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      return this.attendanceTableRepository.createAttendanceTable(dto);
+      return await this.attendanceTableRepository.createAttendanceTable(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -170,7 +170,7 @@ export class AttendanceTableService {
         subjectId: table.subjectId,
       });
 
-      return this.attendanceTableRepository.updateAttendanceTable(dto);
+      return await this.attendanceTableRepository.updateAttendanceTable(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -198,7 +198,7 @@ export class AttendanceTableService {
         subjectId: table.subjectId,
       });
 
-      return this.attendanceTableRepository.deleteAttendanceTable(dto);
+      return await this.attendanceTableRepository.deleteAttendanceTable(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;

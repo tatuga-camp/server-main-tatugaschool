@@ -1,10 +1,21 @@
+import { Student } from '@prisma/client';
 import {
   CreateFileOnStudentAssignmentDto,
   DeleteFileOnStudentAssignmentDto,
   GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
 } from './dto';
 import { FileOnStudentAssignmentService } from './file-on-student-assignment.service';
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { StudentGuard, UserGuard } from '../auth/guard';
+import { GetStudnet } from '../auth/decorators';
 
 @Controller('v1/file-on-student-assignments')
 export class FileOnStudentAssignmentController {
@@ -21,8 +32,12 @@ export class FileOnStudentAssignmentController {
     );
   }
 
+  @UseGuards(StudentGuard)
   @Post()
-  createFileOnStudentAssignment(@Body() dto: CreateFileOnStudentAssignmentDto) {
+  createFileOnStudentAssignment(
+    @Body() dto: CreateFileOnStudentAssignmentDto,
+    @GetStudnet() student: Student,
+  ) {
     return this.fileOnStudentAssignmentService.createFileOnStudentAssignment(
       dto,
     );

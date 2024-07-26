@@ -3,27 +3,23 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { ImageService } from 'src/image/image.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AccessTokenStrategy, RefreshTokenStrategy } from './strategy';
+import {
+  StudentAccessTokenStrategy,
+  StudentRefreshTokenStrategy,
+  UserAccessTokenStrategy,
+  UserRefreshTokenStrategy,
+} from './strategy';
 import { GoogleStrategy } from './strategy/google-oauth.strategy';
 
 @Module({
-  imports: [
-    JwtModule.registerAsync({
-      imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: '60s' },
-        global: true,
-      }),
-      inject: [ConfigService],
-    }),
-  ],
+  imports: [JwtModule.register({})],
   providers: [
     AuthService,
     ImageService,
-    AccessTokenStrategy,
-    RefreshTokenStrategy,
+    UserAccessTokenStrategy,
+    UserRefreshTokenStrategy,
+    StudentAccessTokenStrategy,
+    StudentRefreshTokenStrategy,
     GoogleStrategy,
   ],
   controllers: [AuthController],

@@ -87,7 +87,7 @@ export class AssignmentService {
         );
       }
 
-      return this.assignmentRepository.getAssignmentBySubjectId({
+      return await this.assignmentRepository.getAssignmentBySubjectId({
         subjectId: dto.subjectId,
       });
     } catch (error) {
@@ -113,7 +113,7 @@ export class AssignmentService {
         );
       }
 
-      return this.assignmentRepository.createAssignment({
+      return await this.assignmentRepository.createAssignment({
         ...dto,
         schoolId: teacherOnSubject.schoolId,
       });
@@ -148,7 +148,7 @@ export class AssignmentService {
         );
       }
 
-      return this.assignmentRepository.updateAssignment({
+      return await this.assignmentRepository.updateAssignment({
         query: dto.query,
         data: dto.data,
       });
@@ -182,7 +182,7 @@ export class AssignmentService {
         );
       }
 
-      return this.assignmentRepository.deleteAssignment(dto);
+      return await this.assignmentRepository.deleteAssignment(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;

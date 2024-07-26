@@ -69,9 +69,11 @@ export class ScoreOnStudentService {
         userId: user.id,
         subjectId: dto.subjectId,
       });
-      return this.scoreOnStudentRepository.getAllScoreOnStudentBySubjectId({
-        subjectId: dto.subjectId,
-      });
+      return await this.scoreOnStudentRepository.getAllScoreOnStudentBySubjectId(
+        {
+          subjectId: dto.subjectId,
+        },
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -98,9 +100,11 @@ export class ScoreOnStudentService {
         subjectId: student.subjectId,
       });
 
-      return this.scoreOnStudentRepository.getAllScoreOnStudentByStudentId({
-        studentOnSubjectId: dto.studentOnSubjectId,
-      });
+      return await this.scoreOnStudentRepository.getAllScoreOnStudentByStudentId(
+        {
+          studentOnSubjectId: dto.studentOnSubjectId,
+        },
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;

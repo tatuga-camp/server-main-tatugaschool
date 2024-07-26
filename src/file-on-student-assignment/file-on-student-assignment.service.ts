@@ -32,7 +32,7 @@ export class FileOnStudentAssignmentService {
     dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
   ) {
     try {
-      return this.fileOnStudentAssignmentRepository.getByStudentOnAssignmentId(
+      return await this.fileOnStudentAssignmentRepository.getByStudentOnAssignmentId(
         dto,
       );
     } catch (error) {
@@ -48,7 +48,7 @@ export class FileOnStudentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
-      return this.fileOnStudentAssignmentRepository.create({
+      return await this.fileOnStudentAssignmentRepository.create({
         ...dto,
         schoolId: studnetOnAssignment.schoolId,
         subjectId: studnetOnAssignment.subjectId,
@@ -84,7 +84,7 @@ export class FileOnStudentAssignmentService {
           'This assignment is not allow to delete work',
         );
       }
-      return this.fileOnStudentAssignmentRepository.delete({
+      return await this.fileOnStudentAssignmentRepository.delete({
         fileOnStudentAssignmentId: dto.fileOnStudentAssignmentId,
       });
     } catch (error) {

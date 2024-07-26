@@ -29,7 +29,7 @@ export class SubjectRepository implements SubjectRepositoryType {
     request: RequestGetSubjectById,
   ): Promise<Subject | null> {
     try {
-      return this.prisma.subject.findUnique({
+      return await this.prisma.subject.findUnique({
         where: {
           id: request.subjectId,
         },
@@ -42,7 +42,7 @@ export class SubjectRepository implements SubjectRepositoryType {
 
   async createSubject(request: RequestCreateSubject): Promise<Subject> {
     try {
-      return this.prisma.subject.create({
+      return await this.prisma.subject.create({
         data: {
           ...request,
         },
@@ -55,7 +55,7 @@ export class SubjectRepository implements SubjectRepositoryType {
 
   async updateSubject(request: RequestUpdateSubject): Promise<Subject> {
     try {
-      return this.prisma.subject.update({
+      return await this.prisma.subject.update({
         where: {
           id: request.query.subjectId,
         },

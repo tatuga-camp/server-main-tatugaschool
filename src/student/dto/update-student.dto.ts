@@ -7,6 +7,7 @@ import {
   IsNotEmpty,
   IsObject,
   ValidateNested,
+  MinLength,
 } from 'class-validator';
 
 class UpdateStudentQuery {
@@ -37,12 +38,9 @@ class UpdateStudenBody {
   number?: string;
 
   @IsOptional()
-  @IsMongoId()
-  classId?: string;
-
-  @IsOptional()
-  @IsMongoId()
-  schoolId?: string;
+  @IsString()
+  @MinLength(6)
+  password?: string;
 }
 
 export class UpdateStudentDto {

@@ -203,7 +203,7 @@ export class StudentOnAssignmentService {
           'You are not allowed to access this resource',
         );
       }
-      return this.studentOnAssignmentRepository.update({
+      return await this.studentOnAssignmentRepository.update({
         query: dto.query,
         body: dto.body,
       });
@@ -246,7 +246,7 @@ export class StudentOnAssignmentService {
         );
       }
 
-      return this.studentOnAssignmentRepository.delete({
+      return await this.studentOnAssignmentRepository.delete({
         studentOnAssignmentId: dto.studentOnAssignmentId,
       });
     } catch (error) {

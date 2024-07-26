@@ -8,7 +8,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { User } from '@prisma/client';
 
 @Injectable()
-export class AdminGuard extends AuthGuard('jwt') {
+export class AdminGuard extends AuthGuard('user-jwt') {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context);
   }

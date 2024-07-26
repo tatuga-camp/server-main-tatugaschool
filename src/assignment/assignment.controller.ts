@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { AssignmentService } from './assignment.service';
 import {
@@ -18,7 +19,9 @@ import {
 } from './dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/assignments')
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
@@ -28,7 +31,7 @@ export class AssignmentController {
     @Body() dto: CreateAssignmentDto,
     @GetUser() user: User,
   ) {
-    return this.assignmentService.createAssignment(dto, user);
+    return await this.assignmentService.createAssignment(dto, user);
   }
 
   @Get('subject/:subjectId')
@@ -36,7 +39,7 @@ export class AssignmentController {
     @Param() dto: GetAssignmentBySubjectIdDto,
     @GetUser() user: User,
   ) {
-    return this.assignmentService.getAssignmentBySubjectId(dto, user);
+    return await this.assignmentService.getAssignmentBySubjectId(dto, user);
   }
 
   @Get(':assignmentId')
@@ -44,7 +47,7 @@ export class AssignmentController {
     @Param() dto: GetAssignmentByIdDto,
     @GetUser() user: User,
   ) {
-    return this.assignmentService.getAssignmentById(dto, user);
+    return await this.assignmentService.getAssignmentById(dto, user);
   }
 
   @Patch()
@@ -52,7 +55,7 @@ export class AssignmentController {
     @Body() dto: UpdateAssignmentDto,
     @GetUser() user: User,
   ) {
-    return this.assignmentService.updateAssignment(dto, user);
+    return await this.assignmentService.updateAssignment(dto, user);
   }
 
   @Delete(':assignmentId')
@@ -60,6 +63,6 @@ export class AssignmentController {
     @Param() dto: DeleteAssignmentDto,
     @GetUser() user: User,
   ) {
-    return this.assignmentService.deleteAssignment(dto, user);
+    return await this.assignmentService.deleteAssignment(dto, user);
   }
 }

@@ -7,8 +7,18 @@ import {
   GetAllScoreOnStudentBySubjectIdDto,
 } from './dto';
 import { ScoreOnStudentService } from './score-on-student.service';
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/score-on-students')
 export class ScoreOnStudentController {
   constructor(private scoreOnStudentService: ScoreOnStudentService) {}

@@ -26,6 +26,15 @@ export interface RequestDeleteStudent {
 }
 
 export interface RequestUpdateStudent {
-  studentId: string;
-  data: UpdateStudentDto;
+  query: {
+    studentId: string;
+  };
+  data: {
+    title?: string;
+    firstName?: string;
+    lastName?: string;
+    picture?: string;
+    number?: string;
+    password?: string;
+  };
 }

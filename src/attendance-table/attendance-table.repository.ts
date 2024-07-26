@@ -40,7 +40,7 @@ export class AttendanceTableRepository
     request: RequestGetAttendanceTables,
   ): Promise<AttendanceTable[]> {
     try {
-      return this.prisma.attendanceTable.findMany({
+      return await this.prisma.attendanceTable.findMany({
         where: {
           subjectId: request.subjectId,
         },
@@ -102,7 +102,7 @@ export class AttendanceTableRepository
     request: RequestCreateAttendanceTable,
   ): Promise<AttendanceTable> {
     try {
-      return this.prisma.attendanceTable.create({
+      return await this.prisma.attendanceTable.create({
         data: {
           ...request,
         },
@@ -117,7 +117,7 @@ export class AttendanceTableRepository
     request: RequestUpdateAttendanceTable,
   ): Promise<AttendanceTable> {
     try {
-      return this.prisma.attendanceTable.update({
+      return await this.prisma.attendanceTable.update({
         where: {
           id: request.query.attendanceTableId,
         },
