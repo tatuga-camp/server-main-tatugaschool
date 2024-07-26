@@ -92,7 +92,7 @@ export class SchoolRepository implements SchoolRepositoryType {
         },
       });
 
-      await this.prisma.fileOnStudentOnAssignment.deleteMany({
+      await this.prisma.fileOnStudentAssignment.deleteMany({
         where: {
           schoolId: schoolId,
         },

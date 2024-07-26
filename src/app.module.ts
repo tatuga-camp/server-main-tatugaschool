@@ -23,6 +23,8 @@ import { TeamModule } from './team/team.module';
 import { TeacherOnSubjectModule } from './teacher-on-subject/teacher-on-subject.module';
 import { AssignmentModule } from './assignment/assignment.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
+import { StudentOnAssignmentModule } from './student-on-assignment/student-on-assignment.module';
+import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { FileAssignmentModule } from './file-assignment/file-assignment.module';
     TeacherOnSubjectModule,
     AssignmentModule,
     FileAssignmentModule,
+    StudentOnAssignmentModule,
+    FileOnStudentAssignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

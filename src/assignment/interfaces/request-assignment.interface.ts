@@ -22,6 +22,7 @@ export type RequestUpdateAssignment = {
     assignmentId: string;
   };
   data: {
+    isAllowDeleteWork?: boolean;
     title?: string;
     description?: string;
     maxScore?: number;

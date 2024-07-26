@@ -1,5 +1,6 @@
 import { Transform, Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsMongoId,
   IsNotEmpty,
@@ -38,6 +39,10 @@ class UpdateAssignmentBody {
   @IsOptional()
   @IsDateString()
   beginDate: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isAllowDeleteWork?: boolean;
 
   @IsOptional()
   @IsDateString()

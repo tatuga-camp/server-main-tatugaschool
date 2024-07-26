@@ -134,8 +134,8 @@ export class StudentOnSubjectRepository
           },
         });
       // Fetch related entities
-      const fileOnStudentOnAssignments =
-        await this.prisma.fileOnStudentOnAssignment.findMany({
+      const fileOnStudentAssignments =
+        await this.prisma.fileOnStudentAssignment.findMany({
           where: {
             studentOnAssignmentId: {
               in: studentOnAssignments.map(
@@ -160,11 +160,11 @@ export class StudentOnSubjectRepository
         where: { studentOnSubjectId },
       });
 
-      // Delete related fileOnStudentOnAssignments records
-      await this.prisma.fileOnStudentOnAssignment.deleteMany({
+      // Delete related fileOnStudentAssignments records
+      await this.prisma.fileOnStudentAssignment.deleteMany({
         where: {
           id: {
-            in: fileOnStudentOnAssignments.map((file) => file.id),
+            in: fileOnStudentAssignments.map((file) => file.id),
           },
         },
       });
@@ -193,7 +193,7 @@ export class StudentOnSubjectRepository
 
       // Use Promise.allSettled to delete files in Google Storage
       Promise.allSettled(
-        fileOnStudentOnAssignments.map((file) =>
+        fileOnStudentAssignments.map((file) =>
           this.googleStorageService.DeleteFileOnStorage({ fileName: file.url }),
         ),
       );

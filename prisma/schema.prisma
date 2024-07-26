@@ -75,7 +75,7 @@ model School {
   commentOnAssignmentStudents CommentOnAssignmentStudent[]
   scoreOnStudents             ScoreOnStudent[]
   scoreOnSubjects             ScoreOnSubject[]
-  fileOnStudentOnAssignments  FileOnStudentOnAssignment[]
+  fileOnStudentAssignments    FileOnStudentAssignment[]
   fileOnAssignments           FileOnAssignment[]
   studentOnSubjects           StudentOnSubject[]
 }
@@ -144,6 +144,7 @@ model Student {
   commentOnAssignmentStudents CommentOnAssignmentStudent[]
   scoreOnStudents             ScoreOnStudent[]
   attendances                 Attendance[]
+  fileOnStudentAssignments    FileOnStudentAssignment[]
 }
 
 model Team {
@@ -214,7 +215,7 @@ model Subject {
   scoreOnStudents             ScoreOnStudent[]
   fileOnAssignments           FileOnAssignment[]
   studentOnAssignments        StudentOnAssignment[]
-  fileOnStudentOnAssignments  FileOnStudentOnAssignment[]
+  fileOnStudentAssignments    FileOnStudentAssignment[]
   commentOnAssignmentStudents CommentOnAssignmentStudent[]
   commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
   skillOnAssignments          SkillOnAssignment[]
@@ -284,6 +285,8 @@ model Assignment {
   maxScore    Float
   weight      Float  @default(1)
 
+  isAllowDeleteWork Boolean @default(false)
+
   beginDate DateTime
   dueDate   DateTime?
 
@@ -296,9 +299,10 @@ model Assignment {
   userId String? @db.ObjectId
   user   User?   @relation(fields: [userId], references: [id])
 
-  fileOnAssignments    FileOnAssignment[]
-  studentOnAssignments StudentOnAssignment[]
-  skillOnAssignments   SkillOnAssignment[]
+  fileOnAssignments        FileOnAssignment[]
+  studentOnAssignments     StudentOnAssignment[]
+  skillOnAssignments       SkillOnAssignment[]
+  fileOnStudentAssignments FileOnStudentAssignment[]
 }
 
 model FileOnAssignment {
@@ -329,8 +333,8 @@ model StudentOnAssignment {
   picture   String
   number    String
 
-  score       Float
-  body        String
+  score       Float?
+  body        String?
   isCompleted Boolean @default(false)
   isReviewed  Boolean @default(false)
 
@@ -338,20 +342,23 @@ model StudentOnAssignment {
   assignmentId       String @db.ObjectId
   studentOnSubjectId String @db.ObjectId
   schoolId           String @db.ObjectId
+  subjectId          String @db.ObjectId
 
-  subjectId                   String                       @db.ObjectId
-  subject                     Subject                      @relation(fields: [subjectId], references: [id])
-  school                      School                       @relation(fields: [schoolId], references: [id])
-  student                     Student                      @relation(fields: [studentId], references: [id])
-  assignment                  Assignment                   @relation(fields: [assignmentId], references: [id])
-  studentOnSubject            StudentOnSubject             @relation(fields: [studentOnSubjectId], references: [id])
-  fileOnStudentOnAssignments  FileOnStudentOnAssignment[]
+  subject          Subject          @relation(fields: [subjectId], references: [id])
+  school           School           @relation(fields: [schoolId], references: [id])
+  student          Student          @relation(fields: [studentId], references: [id])
+  assignment       Assignment       @relation(fields: [assignmentId], references: [id])
+  studentOnSubject StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
+
+  fileOnStudentAssignments    FileOnStudentAssignment[]
   commentOnAssignmentStudents CommentOnAssignmentStudent[]
   commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
   skillOnStudentAssignments   SkillOnStudentAssignment[]
+
+  @@unique([studentOnSubjectId, assignmentId])
 }
 
-model FileOnStudentOnAssignment {
+model FileOnStudentAssignment {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
@@ -364,6 +371,10 @@ model FileOnStudentOnAssignment {
   subject               Subject             @relation(fields: [subjectId], references: [id])
   schoolId              String              @db.ObjectId
   school                School              @relation(fields: [schoolId], references: [id])
+  assignmentId          String              @db.ObjectId
+  assignment            Assignment          @relation(fields: [assignmentId], references: [id])
+  studentId             String              @db.ObjectId
+  student               Student             @relation(fields: [studentId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
 }

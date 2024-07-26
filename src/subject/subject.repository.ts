@@ -99,8 +99,8 @@ export class SubjectRepository implements SubjectRepositoryType {
           subjectId: subjectId,
         },
       });
-      const fileOnStudentOnAssignments =
-        await this.prisma.fileOnStudentOnAssignment.findMany({
+      const fileOnStudentAssignments =
+        await this.prisma.fileOnStudentAssignment.findMany({
           where: {
             subjectId: subjectId,
           },
@@ -160,7 +160,7 @@ export class SubjectRepository implements SubjectRepositoryType {
         },
       });
 
-      await this.prisma.fileOnStudentOnAssignment.deleteMany({
+      await this.prisma.fileOnStudentAssignment.deleteMany({
         where: {
           subjectId: subjectId,
         },
@@ -204,7 +204,7 @@ export class SubjectRepository implements SubjectRepositoryType {
             fileName: file.url,
           }),
         ),
-        ...fileOnStudentOnAssignments.map((file) =>
+        ...fileOnStudentAssignments.map((file) =>
           this.googleStorageService.DeleteFileOnStorage({
             fileName: file.url,
           }),
