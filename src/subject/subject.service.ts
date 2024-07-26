@@ -73,7 +73,7 @@ export class SubjectService {
         userId: user.id,
         subjectId: dto.subjectId,
       });
-      return this.subjectRepository.getSubjectById({
+      return await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
       });
     } catch (error) {
@@ -226,7 +226,7 @@ export class SubjectService {
         subjectId: dto.query.subjectId,
       });
 
-      return this.subjectRepository.updateSubject({
+      return await this.subjectRepository.updateSubject({
         query: {
           subjectId: dto.query.subjectId,
         },
@@ -277,7 +277,7 @@ export class SubjectService {
         }
       });
 
-      return this.subjectRepository.reorderSubjects({
+      return await this.subjectRepository.reorderSubjects({
         subjectIds: dto.subjectIds,
       });
     } catch (error) {
@@ -296,7 +296,7 @@ export class SubjectService {
         subjectId: dto.subjectId,
       });
 
-      return this.subjectRepository.deleteSubject({
+      return await this.subjectRepository.deleteSubject({
         subjectId: dto.subjectId,
       });
     } catch (error) {

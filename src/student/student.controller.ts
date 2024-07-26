@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { GetUser } from 'src/auth/decorators';
@@ -17,7 +18,9 @@ import {
 import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/students')
 export class StudentController {
   constructor(private studentService: StudentService) {}

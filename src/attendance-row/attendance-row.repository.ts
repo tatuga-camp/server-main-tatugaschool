@@ -38,7 +38,7 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
     request: RequestGetAttendanceRows,
   ): Promise<AttendanceRow[]> {
     try {
-      return this.prisma.attendanceRow.findMany({
+      return await this.prisma.attendanceRow.findMany({
         where: {
           attendanceTableId: request.attendanceTableId,
         },
@@ -119,7 +119,7 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
     request: RequestUpdateAttendanceRow,
   ): Promise<AttendanceRow> {
     try {
-      return this.prisma.attendanceRow.update({
+      return await this.prisma.attendanceRow.update({
         where: {
           id: request.query.attendanceRowId,
         },

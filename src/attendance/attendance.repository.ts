@@ -23,7 +23,7 @@ export class AttendanceRepository implements AttendanceRepositoryType {
     request: RequestGetAttendanceById,
   ): Promise<Attendance> {
     try {
-      return this.prisma.attendance.findUnique({
+      return await this.prisma.attendance.findUnique({
         where: {
           id: request.attendanceId,
         },
@@ -38,7 +38,7 @@ export class AttendanceRepository implements AttendanceRepositoryType {
     request: RequestUpdateAttendanceById,
   ): Promise<Attendance> {
     try {
-      return this.prisma.attendance.update({
+      return await this.prisma.attendance.update({
         where: {
           id: request.query.attendanceId,
         },

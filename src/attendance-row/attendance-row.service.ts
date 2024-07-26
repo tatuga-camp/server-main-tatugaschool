@@ -167,7 +167,7 @@ export class AttendanceRowService {
         subjectId: row.subjectId,
       });
 
-      return this.attendanceRowRepository.updateAttendanceRow(dto);
+      return await this.attendanceRowRepository.updateAttendanceRow(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;

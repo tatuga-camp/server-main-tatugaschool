@@ -6,3 +6,10 @@ export const GetUser = createParamDecorator(
     return request.user;
   },
 );
+
+export const GetStudnet = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.student;
+  },
+);

@@ -44,7 +44,7 @@ export class FileOnStudentAssignmentRepository
     request: RequestGetFileOnStudentAssignmentById,
   ): Promise<FileOnStudentAssignment> {
     try {
-      return this.prisma.fileOnStudentAssignment.findUnique({
+      return await this.prisma.fileOnStudentAssignment.findUnique({
         where: {
           id: request.fileOnStudentAssignmentId,
         },
@@ -64,7 +64,7 @@ export class FileOnStudentAssignmentRepository
     request: RequestGetFileOnStudentAssignmentByStudentOnAssignmentId,
   ): Promise<FileOnStudentAssignment[]> {
     try {
-      return this.prisma.fileOnStudentAssignment.findMany({
+      return await this.prisma.fileOnStudentAssignment.findMany({
         where: {
           studentOnAssignmentId: request.studentOnAssignmentId,
         },
@@ -84,7 +84,7 @@ export class FileOnStudentAssignmentRepository
     request: RequestCreateFileOnStudentAssignment,
   ): Promise<FileOnStudentAssignment> {
     try {
-      return this.prisma.fileOnStudentAssignment.create({
+      return await this.prisma.fileOnStudentAssignment.create({
         data: request,
       });
     } catch (error) {

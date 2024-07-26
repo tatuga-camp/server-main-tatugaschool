@@ -7,16 +7,16 @@ import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
-export class UserGuard extends AuthGuard('user-jwt') {
+export class StudentGuard extends AuthGuard('student-jwt') {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context);
   }
 
-  handleRequest(err, user, info) {
-    if (err || !user) {
+  handleRequest(err, student, info) {
+    if (err || !student) {
       throw new ForbiddenException('Access denied');
     } else {
-      return user;
+      return student;
     }
   }
 }

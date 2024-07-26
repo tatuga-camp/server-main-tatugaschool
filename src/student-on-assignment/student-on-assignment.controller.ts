@@ -16,8 +16,11 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/student-on-assignments')
 export class StudentOnAssignmentController {
   constructor(private studentOnAssignmentService: StudentOnAssignmentService) {}

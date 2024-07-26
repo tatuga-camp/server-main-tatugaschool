@@ -71,6 +71,17 @@ export class MemberOnSchoolService {
     }
   }
 
+  async getMemberOnSchoolByUserId(user: User) {
+    try {
+      return await this.memberOnSchoolRepository.getByUserId({
+        userId: user.id,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async getSchoolByMemberOnSchoolById(
     dto: GetMemberOnSchoolByIdDto,
     user: User,
@@ -103,7 +114,9 @@ export class MemberOnSchoolService {
         user: user,
         schoolId: dto.schoolId,
       });
-      return this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId(dto);
+      return await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId(
+        dto,
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -46,7 +47,7 @@ export class StudentOnAssignmentRepository
     request: RequestGetStudentOnAssignmentById,
   ): Promise<StudentOnAssignment> {
     try {
-      return this.prisma.studentOnAssignment.findUnique({
+      return await this.prisma.studentOnAssignment.findUnique({
         where: {
           id: request.studentOnAssignmentId,
         },
@@ -66,7 +67,7 @@ export class StudentOnAssignmentRepository
     request: RequestGetStudentOnAssignmentByStudentId,
   ): Promise<StudentOnAssignment[]> {
     try {
-      return this.prisma.studentOnAssignment.findMany({
+      return await this.prisma.studentOnAssignment.findMany({
         where: {
           studentId: request.studentId,
         },
@@ -86,7 +87,7 @@ export class StudentOnAssignmentRepository
     request: RequestGetStudentOnAssignmentByAssignmentId,
   ): Promise<StudentOnAssignment[]> {
     try {
-      return this.prisma.studentOnAssignment.findMany({
+      return await this.prisma.studentOnAssignment.findMany({
         where: {
           assignmentId: request.assignmentId,
         },
@@ -106,12 +107,15 @@ export class StudentOnAssignmentRepository
     request: RequestCreateStudentOnAssignment,
   ): Promise<StudentOnAssignment> {
     try {
-      return this.prisma.studentOnAssignment.create({
+      return await this.prisma.studentOnAssignment.create({
         data: request,
       });
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new BadRequestException('Duplicate student on assignment');
+        }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
         );
@@ -124,7 +128,7 @@ export class StudentOnAssignmentRepository
     request: RequestUpdateStudentOnAssignment,
   ): Promise<StudentOnAssignment> {
     try {
-      return this.prisma.studentOnAssignment.update({
+      return await this.prisma.studentOnAssignment.update({
         where: {
           id: request.query.studentOnAssignmentId,
         },

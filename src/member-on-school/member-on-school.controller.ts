@@ -29,8 +29,12 @@ export class MemberOnSchoolController {
   constructor(private memberOnSchoolService: MemberOnSchoolService) {}
 
   @Get()
+  async getByUserId(@GetUser() user: User) {
+    return this.memberOnSchoolService.getMemberOnSchoolByUserId(user);
+  }
+  @Get('schoolId/:schoolId')
   async getAllMemberOnSchools(
-    @Query() dto: GetMemberOnSchoolsDto,
+    @Param() dto: GetMemberOnSchoolsDto,
     @GetUser() user: User,
   ) {
     return this.memberOnSchoolService.getAllMemberOnSchools(dto, user);
@@ -68,7 +72,6 @@ export class MemberOnSchoolController {
     return await this.memberOnSchoolService.updateMemberOnSchool(dto, user);
   }
 
-  @Public()
   @HttpCode(200)
   @Patch('invitation')
   async updateInvitation(@Body() dto: UpdateMemberOnSchoolDto): Promise<void> {

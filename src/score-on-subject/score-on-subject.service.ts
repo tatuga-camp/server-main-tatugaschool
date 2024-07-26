@@ -82,9 +82,11 @@ export class ScoreOnSubjectService {
         subjectId: dto.subjectId,
       });
 
-      return this.scoreOnSubjectRepository.getAllScoreOnSubjectBySubjectId({
-        subjectId: dto.subjectId,
-      });
+      return await this.scoreOnSubjectRepository.getAllScoreOnSubjectBySubjectId(
+        {
+          subjectId: dto.subjectId,
+        },
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -110,7 +112,7 @@ export class ScoreOnSubjectService {
         subjectId: dto.subjectId,
       });
 
-      return this.scoreOnSubjectRepository.createSocreOnSubject({
+      return await this.scoreOnSubjectRepository.createSocreOnSubject({
         ...dto,
         schoolId: subject.schoolId,
       });
@@ -144,7 +146,7 @@ export class ScoreOnSubjectService {
         subjectId: subject.id,
       });
 
-      return this.scoreOnSubjectRepository.updateScoreOnSubject({
+      return await this.scoreOnSubjectRepository.updateScoreOnSubject({
         query: {
           scoreOnSubjectId: dto.query.socreOnSubjectId,
         },

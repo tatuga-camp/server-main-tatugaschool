@@ -28,9 +28,9 @@ export class StudentRepository implements StudentRepositoryType {
   constructor(private prisma: PrismaService) {}
   async update(request: RequestUpdateStudent): Promise<Student> {
     try {
-      return this.prisma.student.update({
-        where: { id: request.studentId },
-        data: request.data.body,
+      return await this.prisma.student.update({
+        where: { id: request.query.studentId },
+        data: request.data,
       });
     } catch (error) {
       this.logger.error(error);
@@ -40,7 +40,7 @@ export class StudentRepository implements StudentRepositoryType {
 
   async create(request: RequestCreateStudent): Promise<Student> {
     try {
-      return this.prisma.student.create({
+      return await this.prisma.student.create({
         data: {
           ...request.data,
         },
@@ -68,7 +68,7 @@ export class StudentRepository implements StudentRepositoryType {
 
   async findById(request: RequestGetStudent): Promise<Student | null> {
     try {
-      return this.prisma.student.findUnique({
+      return await this.prisma.student.findUnique({
         where: { id: request.studentId },
       });
     } catch (error) {
@@ -79,7 +79,7 @@ export class StudentRepository implements StudentRepositoryType {
 
   async findAll(request: RequestGetAllStudents): Promise<Student[]> {
     try {
-      return this.prisma.student.findMany({
+      return await this.prisma.student.findMany({
         where: { classId: request.classId },
       });
     } catch (error) {
@@ -90,7 +90,7 @@ export class StudentRepository implements StudentRepositoryType {
 
   async delete(request: RequestDeleteStudent): Promise<Student> {
     try {
-      return this.prisma.student.delete({
+      return await this.prisma.student.delete({
         where: { id: request.studentId },
       });
     } catch (error) {

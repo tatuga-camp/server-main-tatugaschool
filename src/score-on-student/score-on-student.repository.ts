@@ -36,7 +36,7 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestGetAllScoreOnStudentBySubjectId,
   ): Promise<ScoreOnStudent[]> {
     try {
-      return this.prisma.scoreOnStudent.findMany({
+      return await this.prisma.scoreOnStudent.findMany({
         where: {
           subjectId: request.subjectId,
         },
@@ -51,7 +51,7 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestGetAllScoreOnStudentByStudentId,
   ): Promise<ScoreOnStudent[]> {
     try {
-      return this.prisma.scoreOnStudent.findMany({
+      return await this.prisma.scoreOnStudent.findMany({
         where: {
           studentOnSubjectId: request.studentOnSubjectId,
         },
@@ -66,7 +66,7 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestCreateScoreOnStudent,
   ): Promise<ScoreOnStudent> {
     try {
-      return this.prisma.scoreOnStudent.create({
+      return await this.prisma.scoreOnStudent.create({
         data: {
           ...request,
         },
@@ -81,7 +81,7 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestUpdateScoreOnStudent,
   ): Promise<ScoreOnStudent> {
     try {
-      return this.prisma.scoreOnStudent.update({
+      return await this.prisma.scoreOnStudent.update({
         where: {
           id: request.query.scoreOnStudentId,
         },

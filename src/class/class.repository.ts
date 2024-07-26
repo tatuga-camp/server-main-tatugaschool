@@ -36,7 +36,7 @@ export class ClassRepository {
           educationYear: request.educationYear,
         },
       });
-      return this.prisma.class.create({
+      return await this.prisma.class.create({
         data: {
           ...request,
           order: totalClass || 1,
@@ -50,7 +50,7 @@ export class ClassRepository {
 
   async update(request: RequestUpdateClass): Promise<Class> {
     try {
-      return this.prisma.class.update({
+      return await this.prisma.class.update({
         where: {
           id: request.query.classId,
         },
@@ -66,7 +66,7 @@ export class ClassRepository {
 
   async findById(request: RequestGetClass): Promise<Class | null> {
     try {
-      return this.prisma.class.findUnique({
+      return await this.prisma.class.findUnique({
         where: { id: request.classId },
       });
     } catch (error) {
@@ -77,7 +77,7 @@ export class ClassRepository {
 
   async findAll(): Promise<Class[]> {
     try {
-      return this.prisma.class.findMany();
+      return await this.prisma.class.findMany();
     } catch (error) {
       this.logger.error(error);
       throw error;

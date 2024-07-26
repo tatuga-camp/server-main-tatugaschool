@@ -134,6 +134,7 @@ model Student {
   lastName  String
   picture   String
   number    String
+  password  String?
 
   schoolId                    String                       @db.ObjectId
   classId                     String                       @db.ObjectId

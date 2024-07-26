@@ -7,6 +7,7 @@ import {
   Get,
   Query,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { ClassService } from './class.service';
 import { CreateClassDto } from './dto/create-class.dto';
@@ -15,14 +16,16 @@ import { GetClassByPageDto, GetClassDto } from './dto/get-class.dto';
 import { DeleteClassDto } from './dto/delete-class.dto';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
+import { UserGuard } from '../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/classes')
 export class ClassController {
   constructor(private classService: ClassService) {}
 
   @Get(':classId')
   async getClassById(@Param() params: GetClassDto, @GetUser() user: User) {
-    return this.classService.getClassById(params.classId, user);
+    return await this.classService.getClassById(params.classId, user);
   }
 
   @Get()
@@ -31,7 +34,7 @@ export class ClassController {
     @GetUser() user: User,
   ) {
     const { page, limit, schoolId } = query;
-    return this.classService.getClassesWithPagination(
+    return await this.classService.getClassesWithPagination(
       page,
       limit,
       schoolId,
@@ -44,7 +47,7 @@ export class ClassController {
     @Body() reorderClassDto: ReorderClassDto,
     @GetUser() user: User,
   ) {
-    return this.classService.reorderClasses(reorderClassDto, user);
+    return await this.classService.reorderClasses(reorderClassDto, user);
   }
 
   @Post()
@@ -52,7 +55,7 @@ export class ClassController {
     @Body() createClassDto: CreateClassDto,
     @GetUser() user: User,
   ) {
-    return this.classService.createClass(createClassDto, user);
+    return await this.classService.createClass(createClassDto, user);
   }
 
   @Patch(':classId')
@@ -60,11 +63,11 @@ export class ClassController {
     @Body() updateClassDto: UpdateClassDto,
     @GetUser() user: User,
   ) {
-    return this.classService.updateClass(updateClassDto, user);
+    return await this.classService.updateClass(updateClassDto, user);
   }
 
   @Delete(':classId')
   async deleteClass(@Param() params: DeleteClassDto, @GetUser() user: User) {
-    return this.classService.deleteClass(params.classId, user);
+    return await this.classService.deleteClass(params.classId, user);
   }
 }

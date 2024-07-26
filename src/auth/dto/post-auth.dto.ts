@@ -2,7 +2,9 @@ import { Provider } from '@prisma/client';
 import {
   IsEmail,
   IsIn,
+  IsMongoId,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -73,4 +75,14 @@ export class RefreshTokenDto {
   @IsString()
   @IsNotEmpty()
   refreshToken: string;
+}
+
+export class StudentSignInDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  studentId: string;
+
+  @IsOptional()
+  @IsString()
+  password: string;
 }

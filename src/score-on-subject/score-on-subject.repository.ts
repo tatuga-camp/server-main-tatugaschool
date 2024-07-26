@@ -27,7 +27,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: RequestGetAllScoreOnSubjectBySubjectId,
   ): Promise<ScoreOnSubject[]> {
     try {
-      return this.prisma.scoreOnSubject.findMany({
+      return await this.prisma.scoreOnSubject.findMany({
         where: {
           subjectId: request.subjectId,
           isDeleted: false,
@@ -43,7 +43,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: RequestCreateSocreOnSubject,
   ): Promise<ScoreOnSubject> {
     try {
-      return this.prisma.scoreOnSubject.create({
+      return await this.prisma.scoreOnSubject.create({
         data: {
           ...request,
         },
@@ -58,7 +58,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: RequestUpdateScoreOnSubject,
   ): Promise<ScoreOnSubject> {
     try {
-      return this.prisma.scoreOnSubject.update({
+      return await this.prisma.scoreOnSubject.update({
         where: {
           id: request.query.scoreOnSubjectId,
         },

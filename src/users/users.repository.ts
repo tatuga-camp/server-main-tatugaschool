@@ -32,7 +32,7 @@ export class UserRepository implements UserRepositoryType {
 
   async findById(request: RequestFindById): Promise<User> {
     try {
-      return this.prisma.user.findUnique({
+      return await this.prisma.user.findUnique({
         where: {
           ...request,
         },
@@ -45,7 +45,7 @@ export class UserRepository implements UserRepositoryType {
 
   async findByEmail(request: RequestFindByEmail): Promise<User> {
     try {
-      return this.prisma.user.findUnique({
+      return await this.prisma.user.findUnique({
         where: {
           ...request,
         },
@@ -74,7 +74,7 @@ export class UserRepository implements UserRepositoryType {
 
   async createUser(request: RequestCreateUser): Promise<User> {
     try {
-      return this.prisma.user.create({
+      return await this.prisma.user.create({
         data: {
           ...request,
           lastActiveAt: new Date(),
@@ -88,7 +88,7 @@ export class UserRepository implements UserRepositoryType {
 
   async findByVerifyToken(request: RequestFindByVerifyToken): Promise<User> {
     try {
-      return this.prisma.user.findFirst({
+      return await this.prisma.user.findFirst({
         where: {
           ...request,
         },
@@ -117,7 +117,7 @@ export class UserRepository implements UserRepositoryType {
 
   async findByResetToken(request: RequestFindByResetToken): Promise<User> {
     try {
-      return this.prisma.user.findFirst({
+      return await this.prisma.user.findFirst({
         where: {
           ...request,
         },

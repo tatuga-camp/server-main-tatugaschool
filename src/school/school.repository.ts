@@ -1,7 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { School } from '@prisma/client';
 import { RequestCreateSchool, RequestUpdateSchool } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type SchoolRepositoryType = {
   create(request: RequestCreateSchool): Promise<School>;
@@ -19,20 +24,25 @@ export class SchoolRepository implements SchoolRepositoryType {
 
   async create(request: RequestCreateSchool): Promise<School> {
     try {
-      return this.prisma.school.create({
+      return await this.prisma.school.create({
         data: {
           ...request,
         },
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
 
   async update(request: RequestUpdateSchool): Promise<School> {
     try {
-      return this.prisma.school.update({
+      return await this.prisma.school.update({
         where: {
           id: request.query.schoolId,
         },
@@ -42,6 +52,11 @@ export class SchoolRepository implements SchoolRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -174,18 +189,28 @@ export class SchoolRepository implements SchoolRepositoryType {
       return { message: 'School deleted successfully' };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
   async getSchoolById(request: { schoolId: string }): Promise<School> {
     try {
-      return this.prisma.school.findUnique({
+      return await this.prisma.school.findUnique({
         where: {
           id: request.schoolId,
         },
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
