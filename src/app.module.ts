@@ -25,6 +25,7 @@ import { AssignmentModule } from './assignment/assignment.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
 import { StudentOnAssignmentModule } from './student-on-assignment/student-on-assignment.module';
 import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
+import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file
     FileAssignmentModule,
     StudentOnAssignmentModule,
     FileOnStudentAssignmentModule,
+    CommentAssignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

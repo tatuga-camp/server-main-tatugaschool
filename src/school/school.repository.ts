@@ -95,13 +95,13 @@ export class SchoolRepository implements SchoolRepositoryType {
         },
       });
 
-      await this.prisma.commentOnAssignmentStudent.deleteMany({
+      await this.prisma.commentOnAssignment.deleteMany({
         where: {
           schoolId: schoolId,
         },
       });
 
-      await this.prisma.commentOnAssignmentTeacher.deleteMany({
+      await this.prisma.commentOnAssignment.deleteMany({
         where: {
           schoolId: schoolId,
         },

@@ -184,15 +184,8 @@ export class SubjectRepository implements SubjectRepositoryType {
         },
       });
 
-      // Delete related commentOnAssignmentStudents records
-      await this.prisma.commentOnAssignmentStudent.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related commentOnAssignmentTeachers records
-      await this.prisma.commentOnAssignmentTeacher.deleteMany({
+      // Delete related commentOnAssignments records
+      await this.prisma.commentOnAssignment.deleteMany({
         where: {
           subjectId: subjectId,
         },

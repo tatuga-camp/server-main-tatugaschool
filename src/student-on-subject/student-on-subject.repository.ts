@@ -169,19 +169,8 @@ export class StudentOnSubjectRepository
         },
       });
 
-      // Delete related commentOnAssignmentStudents records
-      await this.prisma.commentOnAssignmentStudent.deleteMany({
-        where: {
-          studentOnAssignmentId: {
-            in: studentOnAssignments.map(
-              (studentOnAssignment) => studentOnAssignment.id,
-            ),
-          },
-        },
-      });
-
-      // Delete related commentOnAssignmentTeachers records
-      await this.prisma.commentOnAssignmentTeacher.deleteMany({
+      // Delete related commentOnAssignments records
+      await this.prisma.commentOnAssignment.deleteMany({
         where: {
           studentOnAssignmentId: {
             in: studentOnAssignments.map(

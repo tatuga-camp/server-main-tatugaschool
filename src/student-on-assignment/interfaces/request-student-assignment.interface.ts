@@ -9,7 +9,10 @@ export type RequestGetStudentOnAssignmentByStudentId = {
 export type RequestGetStudentOnAssignmentByAssignmentId = {
   assignmentId: string;
 };
-
+export type RequestGetStudentOnAssignmentByStudentIdAndAssignmentId = {
+  studentId: string;
+  assignmentId: string;
+};
 export type RequestCreateStudentOnAssignment = {
   title: string;
   firstName: string;
