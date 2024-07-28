@@ -32,13 +32,13 @@ model User {
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
 
-  memberOnSchools             MemberOnSchool[]
-  subjects                    Subject[]
-  memberOnTeams               MemberOnTeam[]
-  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
-  teacherOnSubjects           TeacherOnSubject[]
-  school                      School[]
-  Assignment                  Assignment[]
+  memberOnSchools      MemberOnSchool[]
+  subjects             Subject[]
+  memberOnTeams        MemberOnTeam[]
+  teacherOnSubjects    TeacherOnSubject[]
+  school               School[]
+  Assignment           Assignment[]
+  commentOnAssignments CommentOnAssignment[]
 }
 
 model School {
@@ -59,25 +59,24 @@ model School {
   billingManagerId String? @db.ObjectId
   billingManager   User?   @relation(fields: [billingManagerId], references: [id])
 
-  memberOnSchools             MemberOnSchool[]
-  classes                     Class[]
-  teams                       Team[]
-  students                    Student[]
-  subjects                    Subject[]
-  memberOnTeams               MemberOnTeam[]
-  assignments                 Assignment[]
-  studentOnAssignments        StudentOnAssignment[]
-  attendanceRows              AttendanceRow[]
-  attendances                 Attendance[]
-  teacherOnSubjects           TeacherOnSubject[]
-  attendanceTables            AttendanceTable[]
-  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
-  commentOnAssignmentStudents CommentOnAssignmentStudent[]
-  scoreOnStudents             ScoreOnStudent[]
-  scoreOnSubjects             ScoreOnSubject[]
-  fileOnStudentAssignments    FileOnStudentAssignment[]
-  fileOnAssignments           FileOnAssignment[]
-  studentOnSubjects           StudentOnSubject[]
+  memberOnSchools          MemberOnSchool[]
+  classes                  Class[]
+  teams                    Team[]
+  students                 Student[]
+  subjects                 Subject[]
+  memberOnTeams            MemberOnTeam[]
+  assignments              Assignment[]
+  studentOnAssignments     StudentOnAssignment[]
+  attendanceRows           AttendanceRow[]
+  attendances              Attendance[]
+  teacherOnSubjects        TeacherOnSubject[]
+  attendanceTables         AttendanceTable[]
+  commentOnAssignments     CommentOnAssignment[]
+  scoreOnStudents          ScoreOnStudent[]
+  scoreOnSubjects          ScoreOnSubject[]
+  fileOnStudentAssignments FileOnStudentAssignment[]
+  fileOnAssignments        FileOnAssignment[]
+  studentOnSubjects        StudentOnSubject[]
 }
 
 model MemberOnSchool {
@@ -136,16 +135,16 @@ model Student {
   number    String
   password  String?
 
-  schoolId                    String                       @db.ObjectId
-  classId                     String                       @db.ObjectId
-  school                      School                       @relation(fields: [schoolId], references: [id])
-  class                       Class                        @relation(fields: [classId], references: [id])
-  studentOnSubjects           StudentOnSubject[]
-  studentOnAssignments        StudentOnAssignment[]
-  commentOnAssignmentStudents CommentOnAssignmentStudent[]
-  scoreOnStudents             ScoreOnStudent[]
-  attendances                 Attendance[]
-  fileOnStudentAssignments    FileOnStudentAssignment[]
+  schoolId                 String                    @db.ObjectId
+  classId                  String                    @db.ObjectId
+  school                   School                    @relation(fields: [schoolId], references: [id])
+  class                    Class                     @relation(fields: [classId], references: [id])
+  studentOnSubjects        StudentOnSubject[]
+  studentOnAssignments     StudentOnAssignment[]
+  commentOnAssignments     CommentOnAssignment[]
+  scoreOnStudents          ScoreOnStudent[]
+  attendances              Attendance[]
+  fileOnStudentAssignments FileOnStudentAssignment[]
 }
 
 model Team {
@@ -206,21 +205,20 @@ model Subject {
   user   User   @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
 
-  studentOnSubjects           StudentOnSubject[]
-  assignments                 Assignment[]
-  scoreOnSubjects             ScoreOnSubject[]
-  attendanceRows              AttendanceRow[]
-  teacherOnSubjects           TeacherOnSubject[]
-  attendanceTables            AttendanceTable[]
-  attendances                 Attendance[]
-  scoreOnStudents             ScoreOnStudent[]
-  fileOnAssignments           FileOnAssignment[]
-  studentOnAssignments        StudentOnAssignment[]
-  fileOnStudentAssignments    FileOnStudentAssignment[]
-  commentOnAssignmentStudents CommentOnAssignmentStudent[]
-  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
-  skillOnAssignments          SkillOnAssignment[]
-  skillOnStudentAssignments   SkillOnStudentAssignment[]
+  studentOnSubjects         StudentOnSubject[]
+  assignments               Assignment[]
+  scoreOnSubjects           ScoreOnSubject[]
+  attendanceRows            AttendanceRow[]
+  teacherOnSubjects         TeacherOnSubject[]
+  attendanceTables          AttendanceTable[]
+  attendances               Attendance[]
+  scoreOnStudents           ScoreOnStudent[]
+  fileOnAssignments         FileOnAssignment[]
+  studentOnAssignments      StudentOnAssignment[]
+  fileOnStudentAssignments  FileOnStudentAssignment[]
+  commentOnAssignments      CommentOnAssignment[]
+  skillOnAssignments        SkillOnAssignment[]
+  skillOnStudentAssignments SkillOnStudentAssignment[]
 }
 
 model TeacherOnSubject {
@@ -240,9 +238,10 @@ model TeacherOnSubject {
   subjectId String @db.ObjectId
   schoolId  String @db.ObjectId
 
-  user    User    @relation(fields: [userId], references: [id])
-  subject Subject @relation(fields: [subjectId], references: [id])
-  school  School  @relation(fields: [schoolId], references: [id])
+  user                User                  @relation(fields: [userId], references: [id])
+  subject             Subject               @relation(fields: [subjectId], references: [id])
+  school              School                @relation(fields: [schoolId], references: [id])
+  CommentOnAssignment CommentOnAssignment[]
 
   @@unique([userId, subjectId])
 }
@@ -351,10 +350,9 @@ model StudentOnAssignment {
   assignment       Assignment       @relation(fields: [assignmentId], references: [id])
   studentOnSubject StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
 
-  fileOnStudentAssignments    FileOnStudentAssignment[]
-  commentOnAssignmentStudents CommentOnAssignmentStudent[]
-  commentOnAssignmentTeachers CommentOnAssignmentTeacher[]
-  skillOnStudentAssignments   SkillOnStudentAssignment[]
+  fileOnStudentAssignments  FileOnStudentAssignment[]
+  commentOnAssignments      CommentOnAssignment[]
+  skillOnStudentAssignments SkillOnStudentAssignment[]
 
   @@unique([studentOnSubjectId, assignmentId])
 }
@@ -380,7 +378,7 @@ model FileOnStudentAssignment {
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
 }
 
-model CommentOnAssignmentStudent {
+model CommentOnAssignment {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
@@ -390,42 +388,26 @@ model CommentOnAssignmentStudent {
   title     String
   firstName String
   lastName  String
-  picture   String
-  number    String
+  picture   String?
+  number    String?
+
+  status Status?     @default(PENDDING)
+  role   MemberRole? @default(TEACHER)
+  email  String?
+  phone  String?
 
   subjectId             String              @db.ObjectId
   subject               Subject             @relation(fields: [subjectId], references: [id])
   schoolId              String              @db.ObjectId
   school                School              @relation(fields: [schoolId], references: [id])
-  studentId             String              @db.ObjectId
-  student               Student             @relation(fields: [studentId], references: [id])
+  studentId             String?             @db.ObjectId
+  student               Student?            @relation(fields: [studentId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
-}
-
-model CommentOnAssignmentTeacher {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
-  content String
-
-  status    Status     @default(PENDDING)
-  role      MemberRole @default(TEACHER)
-  firstName String
-  lastName  String
-  email     String
-  photo     String
-  phone     String
-
-  subjectId             String              @db.ObjectId
-  subject               Subject             @relation(fields: [subjectId], references: [id])
-  userId                String              @db.ObjectId
-  user                  User                @relation(fields: [userId], references: [id])
-  schoolId              String              @db.ObjectId
-  school                School              @relation(fields: [schoolId], references: [id])
-  studentOnAssignmentId String              @db.ObjectId
-  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+  teacherOnSubjectId    String?             @db.ObjectId
+  teacherOnSubject      TeacherOnSubject?   @relation(fields: [teacherOnSubjectId], references: [id])
+  userId                String?             @db.ObjectId
+  user                  User?               @relation(fields: [userId], references: [id])
 }
 
 model ScoreOnSubject {

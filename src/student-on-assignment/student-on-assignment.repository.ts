@@ -10,6 +10,7 @@ import {
   RequestGetStudentOnAssignmentByAssignmentId,
   RequestGetStudentOnAssignmentById,
   RequestGetStudentOnAssignmentByStudentId,
+  RequestGetStudentOnAssignmentByStudentIdAndAssignmentId,
   RequestUpdateStudentOnAssignment,
 } from './interfaces';
 import { StudentOnAssignment } from '@prisma/client';
@@ -26,6 +27,9 @@ type StudentOnAssignmentRepositoryType = {
   getByAssignmentId(
     request: RequestGetStudentOnAssignmentByAssignmentId,
   ): Promise<StudentOnAssignment[]>;
+  getByStudentIdAndAssignmentId(
+    request: RequestGetStudentOnAssignmentByStudentIdAndAssignmentId,
+  ): Promise<StudentOnAssignment>;
   create(
     request: RequestCreateStudentOnAssignment,
   ): Promise<StudentOnAssignment>;
@@ -89,6 +93,27 @@ export class StudentOnAssignmentRepository
     try {
       return await this.prisma.studentOnAssignment.findMany({
         where: {
+          assignmentId: request.assignmentId,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async getByStudentIdAndAssignmentId(
+    request: RequestGetStudentOnAssignmentByStudentIdAndAssignmentId,
+  ): Promise<StudentOnAssignment> {
+    try {
+      return await this.prisma.studentOnAssignment.findFirst({
+        where: {
+          studentId: request.studentId,
           assignmentId: request.assignmentId,
         },
       });
