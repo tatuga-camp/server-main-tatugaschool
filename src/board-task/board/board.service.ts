@@ -35,7 +35,6 @@ export class BoardService {
         data: { teamId, ...boardData },
       });
 
-      this.logger.log('Board created:', board);
       return {
         message: 'Board created successfully',
         board,
@@ -77,7 +76,6 @@ export class BoardService {
         data: updateBoardDto.body,
       });
 
-      this.logger.log('Board updated:', updatedBoard);
       return {
         message: 'Board updated successfully',
         board: updatedBoard,
@@ -118,7 +116,6 @@ export class BoardService {
 
       await this.boardRepository.delete({ boardId });
 
-      this.logger.log('Board deleted:', boardId);
       return {
         message: 'Board deleted successfully',
         boardId,
@@ -154,7 +151,6 @@ export class BoardService {
         );
       }
 
-      this.logger.log('Board fetched:', board);
       return board;
     } catch (error) {
       this.logger.error('Error fetching board:', error);
@@ -190,7 +186,6 @@ export class BoardService {
         limit,
       });
 
-      this.logger.log('Boards fetched:', boards);
       return {
         message: 'Boards retrieved successfully',
         teamId,
