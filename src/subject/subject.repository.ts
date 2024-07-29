@@ -1,5 +1,9 @@
 import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { Subject } from '@prisma/client';
 import {
   RequestCreateSubject,
@@ -9,6 +13,7 @@ import {
   RequestUpdateSubject,
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type SubjectRepositoryType = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
@@ -36,6 +41,11 @@ export class SubjectRepository implements SubjectRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -49,6 +59,11 @@ export class SubjectRepository implements SubjectRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -65,6 +80,11 @@ export class SubjectRepository implements SubjectRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -85,6 +105,11 @@ export class SubjectRepository implements SubjectRepositoryType {
       return Promise.all(updatedSubjects);
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -213,6 +238,11 @@ export class SubjectRepository implements SubjectRepositoryType {
       return { message: 'Delete subject successfully' };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

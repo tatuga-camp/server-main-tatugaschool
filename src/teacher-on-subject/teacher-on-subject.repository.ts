@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import {
   RequestCreateTeacherOnSubject,
   RequestDeleteTeacherOnSubject,
@@ -44,7 +49,12 @@ export class TeacherOnSubjectRepository
       });
       return teacherOnSubject;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -61,7 +71,12 @@ export class TeacherOnSubjectRepository
       });
       return teacherOnSubject;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -75,7 +90,12 @@ export class TeacherOnSubjectRepository
       });
       return teacherOnSubjects;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -89,7 +109,12 @@ export class TeacherOnSubjectRepository
       });
       return teacherOnSubjects;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -130,7 +155,12 @@ export class TeacherOnSubjectRepository
       });
       return teacherOnSubject;
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -144,7 +174,12 @@ export class TeacherOnSubjectRepository
       });
       return { message: 'Teacher on subject deleted successfully' };
     } catch (error) {
-      this.logger.error(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

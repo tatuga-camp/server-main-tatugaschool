@@ -21,6 +21,7 @@ export type RequestUpdateSchool = {
     plan?: Plan;
     stripe_customer_id?: string;
     stripe_price_id?: string;
+    totalStorage?: number;
     stripe_subscription_id?: string;
     stripe_subscription_expireAt?: Date;
   };

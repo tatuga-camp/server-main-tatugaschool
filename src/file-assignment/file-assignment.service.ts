@@ -15,6 +15,7 @@ import {
 } from './dto';
 import { FileOnAssignment, User } from '@prisma/client';
 import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
+import { SchoolRepository } from '../school/school.repository';
 
 @Injectable()
 export class FileAssignmentService {
@@ -24,6 +25,7 @@ export class FileAssignmentService {
   assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
   );
+  schoolRepository: SchoolRepository = new SchoolRepository(this.prisma);
   teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
   constructor(
@@ -88,11 +90,30 @@ export class FileAssignmentService {
         );
       }
 
-      return await this.fileAssignmentRepository.create({
+      const create = await this.fileAssignmentRepository.create({
         ...dto,
         schoolId: assignment.schoolId,
         subjectId: assignment.subjectId,
       });
+
+      const school = await this.schoolRepository.getById({
+        schoolId: assignment.schoolId,
+      });
+
+      if (!school) {
+        throw new NotFoundException('School not found');
+      }
+
+      await this.schoolRepository.update({
+        query: {
+          schoolId: school.id,
+        },
+        body: {
+          totalStorage: school.totalStorage + create.size,
+        },
+      });
+
+      return create;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -128,6 +149,23 @@ export class FileAssignmentService {
 
       await this.fileAssignmentRepository.delete({
         fileOnAssignmentId: dto.fileOnAssignmentId,
+      });
+
+      const school = await this.schoolRepository.getById({
+        schoolId: assignment.schoolId,
+      });
+
+      if (!school) {
+        throw new NotFoundException('School not found');
+      }
+
+      await this.schoolRepository.update({
+        query: {
+          schoolId: school.id,
+        },
+        body: {
+          totalStorage: school.totalStorage - fileOnAssignment.size,
+        },
       });
     } catch (error) {
       this.logger.error(error);

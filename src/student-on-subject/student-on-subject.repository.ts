@@ -1,5 +1,10 @@
 import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { StudentOnSubject } from '@prisma/client';
 import {
   RequestCreateStudentOnSubject,
@@ -53,6 +58,11 @@ export class StudentOnSubjectRepository
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -68,6 +78,11 @@ export class StudentOnSubjectRepository
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -83,6 +98,11 @@ export class StudentOnSubjectRepository
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -117,6 +137,11 @@ export class StudentOnSubjectRepository
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -195,6 +220,11 @@ export class StudentOnSubjectRepository
       return { message: 'Delete StudentOnSubject successfully' };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

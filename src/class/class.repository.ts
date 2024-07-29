@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Class } from '@prisma/client';
 import {
@@ -10,6 +14,7 @@ import {
   RequestUpdateClass,
 } from './interfaces/class.interface';
 import { Pagination } from 'src/interfaces';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type ClassRepositoryType = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -44,6 +49,11 @@ export class ClassRepository {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -60,6 +70,11 @@ export class ClassRepository {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -71,6 +86,11 @@ export class ClassRepository {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -80,6 +100,11 @@ export class ClassRepository {
       return await this.prisma.class.findMany();
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -122,6 +147,11 @@ export class ClassRepository {
       };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -142,6 +172,11 @@ export class ClassRepository {
       return data;
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -178,6 +213,11 @@ export class ClassRepository {
       return deletedClass;
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type SchoolRepositoryType = {
+  getById(request: { schoolId: string }): Promise<School>;
   create(request: RequestCreateSchool): Promise<School>;
   update(request: RequestUpdateSchool): Promise<School>;
   delete(request: { schoolId: string }): Promise<{ message: string }>;
@@ -20,6 +21,24 @@ export class SchoolRepository implements SchoolRepositoryType {
   logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(SchoolRepository.name);
+  }
+
+  async getById(request: { schoolId: string }): Promise<School> {
+    try {
+      return await this.prisma.school.findUnique({
+        where: {
+          id: request.schoolId,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async create(request: RequestCreateSchool): Promise<School> {
