@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import {
   RequestCreateAttendanceRow,
   RequestDeleteAttendanceRow,
@@ -9,6 +13,7 @@ import {
 } from './interfaces';
 import { AttendanceRow, StudentOnSubject } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type AttendanceRowRepositoryType = {
   getAttendanceRows(
@@ -45,6 +50,11 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -71,6 +81,11 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
       };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -111,6 +126,11 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
       return row;
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -129,6 +149,11 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -152,6 +177,11 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
       return { message: 'Attendance row deleted successfully' };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

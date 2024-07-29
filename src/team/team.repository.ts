@@ -14,6 +14,7 @@ import {
 } from './team.interface';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Pagination } from 'src/interfaces';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class TeamRepository implements TeamRepositoryType {
@@ -27,7 +28,12 @@ export class TeamRepository implements TeamRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -39,7 +45,12 @@ export class TeamRepository implements TeamRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -50,7 +61,12 @@ export class TeamRepository implements TeamRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -61,7 +77,12 @@ export class TeamRepository implements TeamRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -104,7 +125,12 @@ export class TeamRepository implements TeamRepositoryType {
       };
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 }

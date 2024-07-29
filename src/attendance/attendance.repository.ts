@@ -1,10 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import {
   RequestGetAttendanceById,
   RequestUpdateAttendanceById,
 } from './interfaces';
 import { Attendance } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type AttendanceRepositoryType = {
   getAttendanceById(request: RequestGetAttendanceById): Promise<Attendance>;
@@ -30,6 +35,11 @@ export class AttendanceRepository implements AttendanceRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -48,6 +58,11 @@ export class AttendanceRepository implements AttendanceRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

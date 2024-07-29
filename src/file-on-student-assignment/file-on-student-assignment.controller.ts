@@ -1,4 +1,4 @@
-import { Student } from '@prisma/client';
+import { Student, User } from '@prisma/client';
 import {
   CreateFileOnStudentAssignmentDto,
   DeleteFileOnStudentAssignmentDto,
@@ -15,7 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
-import { GetStudnet } from '../auth/decorators';
+import { GetStudnet, GetUser } from '../auth/decorators';
 
 @Controller('v1/file-on-student-assignments')
 export class FileOnStudentAssignmentController {
@@ -23,32 +23,63 @@ export class FileOnStudentAssignmentController {
     private fileOnStudentAssignmentService: FileOnStudentAssignmentService,
   ) {}
 
-  @Get('student-on-assignment/:studentOnAssignmentId')
-  getByStudentOnAssignmentId(
+  @UseGuards(StudentGuard)
+  @Get('student-on-assignment/:studentOnAssignmentId/student')
+  getByStudentOnAssignmentIdFromStudnet(
     @Param() dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
+    @GetStudnet() student: Student,
   ) {
-    return this.fileOnStudentAssignmentService.getFileByStudentOnAssignmentId(
+    return this.fileOnStudentAssignmentService.getFileByStudentOnAssignmentIdFromStudent(
       dto,
+      student,
+    );
+  }
+
+  @UseGuards(UserGuard)
+  @Get('student-on-assignment/:studentOnAssignmentId/teacher')
+  getByStudentOnAssignmentIdFromTeacher(
+    @Param() dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
+    @GetUser() user: User,
+  ) {
+    return this.fileOnStudentAssignmentService.getFileByStudentOnAssignmentIdFromTeacher(
+      dto,
+      user,
     );
   }
 
   @UseGuards(StudentGuard)
   @Post()
-  createFileOnStudentAssignment(
+  createFileOnStudentAssignmentFromStudent(
     @Body() dto: CreateFileOnStudentAssignmentDto,
     @GetStudnet() student: Student,
   ) {
-    return this.fileOnStudentAssignmentService.createFileOnStudentAssignment(
+    return this.fileOnStudentAssignmentService.createFileOnStudentAssignmentFromStudent(
       dto,
+      student,
     );
   }
 
-  @Delete(':fileOnStudentAssignmentId')
-  deleteFileOnStudentAssignment(
+  @UseGuards(StudentGuard)
+  @Delete(':fileOnStudentAssignmentId/student')
+  deleteFileOnStudentAssignmentFromStudnet(
     @Param() dto: DeleteFileOnStudentAssignmentDto,
+    @GetStudnet() student: Student,
   ) {
-    return this.fileOnStudentAssignmentService.deleteFileOnStudentAssignment(
+    return this.fileOnStudentAssignmentService.deleteFileOnStudentAssignmentFromStudnet(
       dto,
+      student,
+    );
+  }
+
+  @UseGuards(UserGuard)
+  @Delete(':fileOnStudentAssignmentId/teacher')
+  deleteFileOnStudentAssignmentFromTeacher(
+    @Param() dto: DeleteFileOnStudentAssignmentDto,
+    @GetUser() user: User,
+  ) {
+    return this.fileOnStudentAssignmentService.deleteFileOnStudentAssignmentFromTeacher(
+      dto,
+      user,
     );
   }
 }

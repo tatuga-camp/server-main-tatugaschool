@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import {
   RequestCreateScoreOnStudent,
   RequestDeleteScoreOnStudent,
@@ -8,6 +12,7 @@ import {
 } from './interfaces';
 import { ScoreOnStudent } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 type ScoreOnStudentRepositoryType = {
   getAllScoreOnStudentBySubjectId(
@@ -43,6 +48,11 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -58,6 +68,11 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -73,6 +88,11 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -91,6 +111,11 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -107,6 +132,11 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
       return { message: 'Delete score on student successfully' };
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

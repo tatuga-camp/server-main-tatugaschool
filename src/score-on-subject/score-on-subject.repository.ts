@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ScoreOnSubject } from '@prisma/client';
 import {
   RequestCreateSocreOnSubject,
@@ -6,6 +10,7 @@ import {
   RequestUpdateScoreOnSubject,
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type ScoreOnSubjectRepositoryType = {
   getAllScoreOnSubjectBySubjectId(
@@ -35,6 +40,11 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -50,6 +60,11 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }
@@ -68,6 +83,11 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
       });
     } catch (error) {
       this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

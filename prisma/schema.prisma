@@ -51,6 +51,8 @@ model School {
   plan        Plan    @default(FREE)
   isDeleted   Boolean @default(false)
 
+  totalStorage Float @default(0)
+
   stripe_customer_id           String    @unique
   stripe_price_id              String?
   stripe_subscription_id       String?
