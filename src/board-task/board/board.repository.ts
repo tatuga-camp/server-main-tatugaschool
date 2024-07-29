@@ -12,22 +12,14 @@ import {
   RequestGetBoard,
   RequestGetBoardsByTeamId,
 } from './board.interface';
+import { Pagination } from 'src/interfaces';
 
 export interface BoardRepositoryType {
   create(request: RequestCreateBoard): Promise<Board>;
   update(request: RequestUpdateBoard): Promise<Board>;
   delete(request: RequestDeleteBoard): Promise<Board>;
   findById(request: RequestGetBoard): Promise<Board | null>;
-  findByTeamId(request: RequestGetBoardsByTeamId): Promise<{
-    data: Board[];
-    meta: {
-      total: number;
-      lastPage: number;
-      currentPage: number;
-      prev: number | null;
-      next: number | null;
-    };
-  }>;
+  findByTeamId(request: RequestGetBoardsByTeamId): Promise<Pagination<Board>>;
 }
 
 @Injectable()
@@ -80,16 +72,9 @@ export class BoardRepository implements BoardRepositoryType {
     }
   }
 
-  async findByTeamId(request: RequestGetBoardsByTeamId): Promise<{
-    data: Board[];
-    meta: {
-      total: number;
-      lastPage: number;
-      currentPage: number;
-      prev: number | null;
-      next: number | null;
-    };
-  }> {
+  async findByTeamId(
+    request: RequestGetBoardsByTeamId,
+  ): Promise<Pagination<Board>> {
     try {
       const { teamId, page, limit } = request;
       const count = await this.prisma.board.count({
