@@ -613,7 +613,7 @@ model Board {
 
   colums Colum[]
 
-  Task Task[]
+  Tasks Task[]
 }
 
 model Colum {
