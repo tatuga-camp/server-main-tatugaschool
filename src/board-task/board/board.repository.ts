@@ -13,6 +13,7 @@ import {
   RequestGetBoardsByTeamId,
 } from './board.interface';
 import { Pagination } from 'src/interfaces';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export interface BoardRepositoryType {
   create(request: RequestCreateBoard): Promise<Board>;
@@ -33,8 +34,13 @@ export class BoardRepository implements BoardRepositoryType {
         data: request.data,
       });
     } catch (error) {
-      this.logger.error(`Error creating board: ${error.message}`);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -45,8 +51,13 @@ export class BoardRepository implements BoardRepositoryType {
         data: request.data,
       });
     } catch (error) {
-      this.logger.error(`Error updating board: ${error.message}`);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -56,8 +67,13 @@ export class BoardRepository implements BoardRepositoryType {
         where: { id: request.boardId },
       });
     } catch (error) {
-      this.logger.error(`Error deleting board: ${error.message}`);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -67,8 +83,13 @@ export class BoardRepository implements BoardRepositoryType {
         where: { id: request.boardId },
       });
     } catch (error) {
-      this.logger.error(`Error finding board by ID: ${error.message}`);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -111,8 +132,13 @@ export class BoardRepository implements BoardRepositoryType {
         },
       };
     } catch (error) {
-      this.logger.error(`Error finding boards by team ID: ${error.message}`);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 }

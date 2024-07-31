@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   Patch,
+  UseGuards,
 } from '@nestjs/common';
 import { BoardService } from './board.service';
 import { CreateBoardDto } from './dto/create-board.dto';
@@ -15,7 +16,9 @@ import { UpdateBoardDto } from './dto/update-board.dto';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 import { GetBoardByPageDto } from './dto/get-board.dto';
+import { UserGuard } from '../../auth/guard';
 
+@UseGuards(UserGuard)
 @Controller('v1/boards')
 export class BoardController {
   constructor(private boardService: BoardService) {}

@@ -12,6 +12,7 @@ import {
   RequestGetTask,
   RequestGetTasksByColumId,
 } from './task.interface';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export interface TaskRepositoryType {
   create(request: RequestCreateTask): Promise<Task>;
@@ -34,8 +35,13 @@ export class TaskRepository implements TaskRepositoryType {
         data: request.data,
       });
     } catch (error) {
-      this.logger.error('Error creating task', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -47,8 +53,13 @@ export class TaskRepository implements TaskRepositoryType {
         data: request.data,
       });
     } catch (error) {
-      this.logger.error('Error updating task', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -59,8 +70,13 @@ export class TaskRepository implements TaskRepositoryType {
         where: { id: request.taskId },
       });
     } catch (error) {
-      this.logger.error('Error deleting task', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -71,8 +87,13 @@ export class TaskRepository implements TaskRepositoryType {
         where: { id: request.taskId },
       });
     } catch (error) {
-      this.logger.error('Error finding task by id', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -83,8 +104,13 @@ export class TaskRepository implements TaskRepositoryType {
         where: { columId: request.columId },
       });
     } catch (error) {
-      this.logger.error('Error finding tasks by colum id', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 }

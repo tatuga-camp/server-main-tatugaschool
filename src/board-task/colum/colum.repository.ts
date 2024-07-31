@@ -12,6 +12,7 @@ import {
   RequestGetColum,
   RequestGetColumsByBoardId,
 } from './colum.interface';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export interface ColumRepositoryType {
   create(request: RequestCreateColum): Promise<Colum>;
@@ -34,8 +35,13 @@ export class ColumRepository implements ColumRepositoryType {
         data: request.data,
       });
     } catch (error) {
-      this.logger.error('Error creating colum', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -47,8 +53,13 @@ export class ColumRepository implements ColumRepositoryType {
         data: request.data,
       });
     } catch (error) {
-      this.logger.error('Error updating colum', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -59,8 +70,13 @@ export class ColumRepository implements ColumRepositoryType {
         where: { id: request.columId },
       });
     } catch (error) {
-      this.logger.error('Error deleting colum', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -71,8 +87,13 @@ export class ColumRepository implements ColumRepositoryType {
         where: { id: request.columId },
       });
     } catch (error) {
-      this.logger.error('Error finding colum by id', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 
@@ -83,8 +104,13 @@ export class ColumRepository implements ColumRepositoryType {
         where: { boardId: request.boardId },
       });
     } catch (error) {
-      this.logger.error('Error finding colums by board id', error.stack);
-      throw new InternalServerErrorException(error.message);
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
     }
   }
 }

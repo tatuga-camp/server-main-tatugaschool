@@ -6,6 +6,7 @@ import {
   Delete,
   Get,
   Param,
+  UseGuards,
 } from '@nestjs/common';
 
 import { TaskService } from './task.service';
@@ -14,8 +15,10 @@ import { DeleteTaskDto } from './dto/delete-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
+import { UserGuard } from '../../auth/guard';
 
-@Controller('task')
+@UseGuards(UserGuard)
+@Controller('v1/tasks')
 export class TaskController {
   constructor(private readonly taskService: TaskService) {}
 
