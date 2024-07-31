@@ -36,8 +36,8 @@ model User {
   subjects             Subject[]
   memberOnTeams        MemberOnTeam[]
   teacherOnSubjects    TeacherOnSubject[]
-  school               School[]
-  Assignment           Assignment[]
+  schools              School[]
+  assignments          Assignment[]
   commentOnAssignments CommentOnAssignment[]
 }
 
@@ -61,27 +61,27 @@ model School {
   billingManagerId String? @db.ObjectId
   billingManager   User?   @relation(fields: [billingManagerId], references: [id])
 
-  memberOnSchools         MemberOnSchool[]
-  classes                 Class[]
-  teams                   Team[]
-  students                Student[]
-  subjects                Subject[]
-  memberOnTeams           MemberOnTeam[]
-  assignments             Assignment[]
-  studentOnAssignments    StudentOnAssignment[]
-  attendanceRows          AttendanceRow[]
-  attendances             Attendance[]
-  teacherOnSubjects       TeacherOnSubject[]
-  attendanceTables        AttendanceTable[]
-  scoreOnStudents         ScoreOnStudent[]
-  scoreOnSubjects         ScoreOnSubject[]
-  fileOnAssignments       FileOnAssignment[]
-  studentOnSubjects       StudentOnSubject[]
-  Board                   Board[]
-  Colum                   Colum[]
-  Task                    Task[]
-  FileOnStudentAssignment FileOnStudentAssignment[]
-  CommentOnAssignment     CommentOnAssignment[]
+  memberOnSchools          MemberOnSchool[]
+  classes                  Class[]
+  teams                    Team[]
+  students                 Student[]
+  subjects                 Subject[]
+  memberOnTeams            MemberOnTeam[]
+  assignments              Assignment[]
+  studentOnAssignments     StudentOnAssignment[]
+  attendanceRows           AttendanceRow[]
+  attendances              Attendance[]
+  teacherOnSubjects        TeacherOnSubject[]
+  attendanceTables         AttendanceTable[]
+  scoreOnStudents          ScoreOnStudent[]
+  scoreOnSubjects          ScoreOnSubject[]
+  fileOnAssignments        FileOnAssignment[]
+  studentOnSubjects        StudentOnSubject[]
+  boards                   Board[]
+  colums                   Colum[]
+  tasks                    Task[]
+  fileOnStudentAssignments FileOnStudentAssignment[]
+  CommentOnAssignment      CommentOnAssignment[]
 }
 
 model MemberOnSchool {
@@ -164,9 +164,9 @@ model Team {
   schoolId      String         @db.ObjectId
   school        School         @relation(fields: [schoolId], references: [id])
   memberOnTeams MemberOnTeam[]
-  Board         Board[]
-  Colum         Colum[]
-  Task          Task[]
+  boards        Board[]
+  colums        Colum[]
+  tasks         Task[]
 }
 
 model MemberOnTeam {
@@ -191,7 +191,7 @@ model MemberOnTeam {
   memberOnSchool MemberOnSchool @relation(fields: [memberOnSchoolId], references: [id])
   team           Team           @relation(fields: [teamId], references: [id])
   school         School         @relation(fields: [schoolId], references: [id])
-  Task           Task[]
+  tasks          Task[]
 }
 
 model Subject {
@@ -247,10 +247,10 @@ model TeacherOnSubject {
   subjectId String @db.ObjectId
   schoolId  String @db.ObjectId
 
-  user                User                  @relation(fields: [userId], references: [id])
-  subject             Subject               @relation(fields: [subjectId], references: [id])
-  school              School                @relation(fields: [schoolId], references: [id])
-  CommentOnAssignment CommentOnAssignment[]
+  user                 User                  @relation(fields: [userId], references: [id])
+  subject              Subject               @relation(fields: [subjectId], references: [id])
+  school               School                @relation(fields: [schoolId], references: [id])
+  commentOnAssignments CommentOnAssignment[]
 
   @@unique([userId, subjectId])
 }
@@ -611,8 +611,7 @@ model Board {
   school   School @relation(fields: [schoolId], references: [id])
 
   colums Colum[]
-
-  Tasks Task[]
+  tasks  Task[]
 }
 
 model Colum {

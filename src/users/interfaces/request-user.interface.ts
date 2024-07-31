@@ -23,9 +23,20 @@ export type RequestCreateUser = {
   role?: UserRole;
   provider: Provider;
   photo: string;
-
   verifyEmailToken: string;
   verifyEmailTokenExpiresAt: string;
+};
+export type RequestUpdateUser = {
+  query: {
+    userId: string;
+  };
+  body: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    photo?: string;
+    phone?: string;
+  };
 };
 
 export type RequestFindByVerifyToken = {
