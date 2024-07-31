@@ -29,10 +29,39 @@ export class StudentRepository implements StudentRepositoryType {
   constructor(private prisma: PrismaService) {}
   async update(request: RequestUpdateStudent): Promise<Student> {
     try {
-      return await this.prisma.student.update({
+      const student = await this.prisma.student.update({
         where: { id: request.query.studentId },
         data: request.data,
       });
+      delete request.data.password;
+      await Promise.allSettled([
+        this.prisma.studentOnAssignment.updateMany({
+          where: {
+            studentId: student.id,
+          },
+          data: request.data,
+        }),
+        this.prisma.studentOnSubject.updateMany({
+          where: {
+            studentId: student.id,
+          },
+          data: request.data,
+        }),
+        this.prisma.commentOnAssignment.updateMany({
+          where: {
+            studentId: student.id,
+          },
+          data: request.data,
+        }),
+        this.prisma.scoreOnStudent.updateMany({
+          where: {
+            studentId: student.id,
+          },
+          data: request.data,
+        }),
+      ]);
+
+      return student;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

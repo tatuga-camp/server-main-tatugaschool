@@ -14,6 +14,7 @@ import {
   RequestUpdateLastActiveAt,
   RequestUpdatePassword,
   RequestUpdateResetToken,
+  RequestUpdateUser,
   RequestUpdateVerified,
 } from './interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -21,6 +22,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export type UserRepositoryType = {
   findById(request: RequestFindById): Promise<User>;
   findByEmail(request: RequestFindByEmail): Promise<User>;
+  update(request: RequestUpdateUser): Promise<User>;
   updateResetToken(request: RequestUpdateResetToken): Promise<void>;
   createUser(request: RequestCreateUser): Promise<User>;
   findByVerifyToken(request: RequestFindByVerifyToken): Promise<User>;
@@ -60,6 +62,54 @@ export class UserRepository implements UserRepositoryType {
           ...request,
         },
       });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async update(request: RequestUpdateUser): Promise<User> {
+    try {
+      const user = await this.prisma.user.update({
+        where: {
+          id: request.query.userId,
+        },
+        data: request.body,
+      });
+
+      await Promise.allSettled([
+        this.prisma.memberOnSchool.updateMany({
+          where: {
+            userId: user.id,
+          },
+          data: request.body,
+        }),
+        this.prisma.memberOnTeam.updateMany({
+          where: {
+            userId: user.id,
+          },
+          data: request.body,
+        }),
+        this.prisma.teacherOnSubject.updateMany({
+          where: {
+            userId: user.id,
+          },
+          data: request.body,
+        }),
+        this.prisma.commentOnAssignment.updateMany({
+          where: {
+            userId: user.id,
+          },
+          data: request.body,
+        }),
+      ]);
+
+      return user;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
