@@ -27,6 +27,7 @@ import { StudentOnAssignmentModule } from './student-on-assignment/student-on-as
 import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
 import { BoardModule } from './board-task/board/board.module';
+import { SkillModule } from './skill/skill.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { BoardModule } from './board-task/board/board.module';
     StudentOnAssignmentModule,
     FileOnStudentAssignmentModule,
     CommentAssignmentModule,
+    SkillModule,
   ],
   controllers: [AppController],
   providers: [AppService],

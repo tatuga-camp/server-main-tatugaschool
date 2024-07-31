@@ -10,20 +10,25 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { DeleteTaskDto } from './dto/delete-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskRepository } from './task.repository';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class TaskService {
   private readonly logger = new Logger(TaskService.name);
+  taskRepository: TaskRepository = new TaskRepository(this.prisma);
 
   constructor(
-    private readonly taskRepository: TaskRepository,
     private readonly usersService: UsersService,
+    private prisma: PrismaService,
   ) {}
 
   async createTask(createTaskDto: CreateTaskDto, user: User) {
     this.logger.log('Creating a new task', { createTaskDto, user });
     try {
-      await this.usersService.isMemberOfTeam(user.id, createTaskDto.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: createTaskDto.teamId,
+      });
       return this.taskRepository.create({ data: createTaskDto });
     } catch (error) {
       this.logger.error('Error creating task', error.stack);
@@ -38,7 +43,10 @@ export class TaskService {
         taskId: updateTaskDto.query.taskId,
       });
       if (!task) throw new NotFoundException('Task not found');
-      await this.usersService.isMemberOfTeam(user.id, task.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: task.teamId,
+      });
       return this.taskRepository.update({
         taskId: updateTaskDto.query.taskId,
         data: updateTaskDto.body,
@@ -56,7 +64,10 @@ export class TaskService {
         taskId: deleteTaskDto.taskId,
       });
       if (!task) throw new NotFoundException('Task not found');
-      await this.usersService.isMemberOfTeam(user.id, task.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: task.teamId,
+      });
       return this.taskRepository.delete({ taskId: deleteTaskDto.taskId });
     } catch (error) {
       this.logger.error('Error deleting task', error.stack);
@@ -69,7 +80,10 @@ export class TaskService {
     try {
       const task = await this.taskRepository.findById({ taskId });
       if (!task) throw new NotFoundException('Task not found');
-      await this.usersService.isMemberOfTeam(user.id, task.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: task.teamId,
+      });
       return task;
     } catch (error) {
       this.logger.error('Error getting task by id', error.stack);

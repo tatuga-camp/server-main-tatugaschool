@@ -10,20 +10,25 @@ import { ColumRepository } from './colum.repository';
 import { CreateColumDto } from './dto/create-colum.dto';
 import { DeleteColumDto } from './dto/delete-colum.dto';
 import { UpdateColumDto } from './dto/update-colum.dto';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ColumService {
   private readonly logger = new Logger(ColumService.name);
+  columRepository: ColumRepository = new ColumRepository(this.prisma);
 
   constructor(
-    private readonly columRepository: ColumRepository,
     private readonly usersService: UsersService,
+    private prisma: PrismaService,
   ) {}
 
   async createColum(createColumDto: CreateColumDto, user: User) {
     this.logger.log('Creating a new colum', { createColumDto, user });
     try {
-      await this.usersService.isMemberOfTeam(user.id, createColumDto.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: createColumDto.teamId,
+      });
       return this.columRepository.create({ data: createColumDto });
     } catch (error) {
       this.logger.error('Error creating colum', error.stack);
@@ -38,7 +43,10 @@ export class ColumService {
         columId: updateColumDto.query.columId,
       });
       if (!colum) throw new NotFoundException('Colum not found');
-      await this.usersService.isMemberOfTeam(user.id, colum.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: colum.teamId,
+      });
       return this.columRepository.update({
         columId: updateColumDto.query.columId,
         data: updateColumDto.body,
@@ -56,7 +64,10 @@ export class ColumService {
         columId: deleteColumDto.columId,
       });
       if (!colum) throw new NotFoundException('Colum not found');
-      await this.usersService.isMemberOfTeam(user.id, colum.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: colum.teamId,
+      });
       return this.columRepository.delete({ columId: deleteColumDto.columId });
     } catch (error) {
       this.logger.error('Error deleting colum', error.stack);
@@ -69,7 +80,10 @@ export class ColumService {
     try {
       const colum = await this.columRepository.findById({ columId });
       if (!colum) throw new NotFoundException('Colum not found');
-      await this.usersService.isMemberOfTeam(user.id, colum.teamId);
+      await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: colum.teamId,
+      });
       return colum;
     } catch (error) {
       this.logger.error('Error getting colum by id', error.stack);
