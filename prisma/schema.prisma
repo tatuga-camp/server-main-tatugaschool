@@ -531,10 +531,11 @@ model Skill {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  title                     String
-  description               String
-  keywords                  String
-  vector                    Float[]
+  title       String
+  description String
+  keywords    String
+  vector      Float[]
+
   skillOnAssignments        SkillOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   skillOnCareers            SkillOnCareer[]

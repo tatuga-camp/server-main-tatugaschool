@@ -71,7 +71,13 @@ export class UsersService {
     }
   }
 
-  async isMemberOfTeam(userId: string, teamId: string): Promise<boolean> {
+  async isMemberOfTeam({
+    userId,
+    teamId,
+  }: {
+    userId: string;
+    teamId: string;
+  }): Promise<boolean> {
     try {
       const memberOnTeam = await this.prisma.memberOnTeam.findFirst({
         where: {

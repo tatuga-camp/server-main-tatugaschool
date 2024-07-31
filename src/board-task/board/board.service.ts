@@ -23,7 +23,10 @@ export class BoardService {
     const { teamId, ...boardData } = createBoardDto;
 
     try {
-      const isMember = await this.usersService.isMemberOfTeam(user.id, teamId);
+      const isMember = await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId,
+      });
 
       if (!isMember) {
         throw new ForbiddenException(
@@ -60,10 +63,10 @@ export class BoardService {
         throw new NotFoundException('Board not found');
       }
 
-      const hasAccess = await this.usersService.isMemberOfTeam(
-        user.id,
-        board.teamId,
-      );
+      const hasAccess = await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: board.teamId,
+      });
 
       if (!hasAccess) {
         throw new ForbiddenException(
@@ -103,10 +106,10 @@ export class BoardService {
         throw new NotFoundException('Board not found');
       }
 
-      const hasAccess = await this.usersService.isMemberOfTeam(
-        user.id,
-        board.teamId,
-      );
+      const hasAccess = await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: board.teamId,
+      });
 
       if (!hasAccess) {
         throw new ForbiddenException(
@@ -140,10 +143,10 @@ export class BoardService {
         throw new NotFoundException('Board not found');
       }
 
-      const hasAccess = await this.usersService.isMemberOfTeam(
-        user.id,
-        board.teamId,
-      );
+      const hasAccess = await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId: board.teamId,
+      });
 
       if (!hasAccess) {
         throw new ForbiddenException(
@@ -172,7 +175,10 @@ export class BoardService {
     user: User,
   ) {
     try {
-      const hasAccess = await this.usersService.isMemberOfTeam(user.id, teamId);
+      const hasAccess = await this.usersService.isMemberOfTeam({
+        userId: user.id,
+        teamId,
+      });
 
       if (!hasAccess) {
         throw new ForbiddenException(
