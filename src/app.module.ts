@@ -28,6 +28,7 @@ import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
 import { BoardModule } from './board-task/board/board.module';
 import { SkillModule } from './skill/skill.module';
+import { VectorModule } from './vector/vector.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { SkillModule } from './skill/skill.module';
     FileOnStudentAssignmentModule,
     CommentAssignmentModule,
     SkillModule,
+    VectorModule,
   ],
   controllers: [AppController],
   providers: [AppService],

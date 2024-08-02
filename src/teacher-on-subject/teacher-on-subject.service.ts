@@ -125,7 +125,6 @@ export class TeacherOnSubjectService {
             schoolId: subject.schoolId,
           },
         );
-
       if (!memberOnSchool && user.role !== 'ADMIN') {
         throw new ForbiddenException("You're not a member of this school");
       }
@@ -136,7 +135,7 @@ export class TeacherOnSubjectService {
           subjectId: dto.subjectId,
         });
 
-      if (!memberOnSubject || memberOnSubject.role !== 'ADMIN') {
+      if (!memberOnSubject && user.role !== 'ADMIN') {
         throw new ForbiddenException(
           "You're not a teacher on this subject or you're not an admin",
         );

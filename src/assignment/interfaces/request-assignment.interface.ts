@@ -11,6 +11,7 @@ export type RequestCreateAssignment = {
   maxScore: number;
   weight: number;
   beginDate: string;
+  vector: number[];
   dueDate?: string;
   subjectId: string;
   schoolId: string;
@@ -27,6 +28,7 @@ export type RequestUpdateAssignment = {
     description?: string;
     maxScore?: number;
     weight?: number;
+    vector?: number[];
     beginDate?: string;
     dueDate?: string;
   };

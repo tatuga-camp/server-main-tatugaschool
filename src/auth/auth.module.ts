@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
@@ -11,6 +11,7 @@ import {
 } from './strategy';
 import { GoogleStrategy } from './strategy/google-oauth.strategy';
 
+@Global()
 @Module({
   imports: [JwtModule.register({})],
   providers: [
@@ -23,5 +24,6 @@ import { GoogleStrategy } from './strategy/google-oauth.strategy';
     GoogleStrategy,
   ],
   controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

@@ -1,3 +1,4 @@
+import { VectorService } from './../vector/vector.service';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { AssignmentRepository } from './assignment.repository';
@@ -27,7 +28,10 @@ export class AssignmentService {
     new TeacherOnSubjectRepository(this.prisma);
   memberOnSchoolRepository: MemberOnSchoolRepository =
     new MemberOnSchoolRepository(this.prisma);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private vectorService: VectorService,
+  ) {}
 
   async getAssignmentById(
     dto: GetAssignmentByIdDto,
@@ -113,8 +117,13 @@ export class AssignmentService {
         );
       }
 
+      const text = `${dto.title} ${dto.description}`;
+
+      const vectors = await this.vectorService.embbedingText(text);
+
       return await this.assignmentRepository.createAssignment({
         ...dto,
+        vector: vectors.predictions[0].embeddings.values,
         schoolId: teacherOnSubject.schoolId,
       });
     } catch (error) {
@@ -148,9 +157,30 @@ export class AssignmentService {
         );
       }
 
+      let textArray: string[] = [];
+
+      if (dto.data.title) {
+        textArray.push(dto.data.title);
+      } else if (!dto.data.title) {
+        textArray.push(assignment.title);
+      }
+
+      if (dto.data.description) {
+        textArray.push(dto.data.description);
+      } else if (!dto.data.description) {
+        textArray.push(assignment.description);
+      }
+
+      const text = textArray.join(' ');
+
+      const vectors = await this.vectorService.embbedingText(text);
+
       return await this.assignmentRepository.updateAssignment({
         query: dto.query,
-        data: dto.data,
+        data: {
+          ...dto.data,
+          vector: vectors.predictions[0].embeddings.values,
+        },
       });
     } catch (error) {
       this.logger.error(error);

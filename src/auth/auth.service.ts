@@ -1,5 +1,6 @@
 import { StudentRepository } from './../student/student.repository';
 import {
+  BadGatewayException,
   BadRequestException,
   ConflictException,
   ForbiddenException,
@@ -26,12 +27,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Student, User } from '@prisma/client';
+import { Auth, google, GoogleApis } from 'googleapis';
 
 @Injectable()
 export class AuthService {
   logger: Logger;
   usersRepository: UserRepositoryType;
   studentRepository: StudentRepository;
+  oauth2Client: Auth.GoogleAuth;
   constructor(
     private emailService: EmailService,
     private jwtService: JwtService,
@@ -39,6 +42,7 @@ export class AuthService {
     private config: ConfigService,
     private prisma: PrismaService,
   ) {
+    this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
     this.usersRepository = new UserRepository(prisma);
     this.studentRepository = new StudentRepository(prisma);
@@ -394,5 +398,34 @@ export class AuthService {
       subject: 'Welcome to TATUGA SCHOOL',
       html: `Hello ${data.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
     });
+  }
+
+  async initializeGoogleAuth() {
+    try {
+      const encode = atob(this.config.get('GOOGLE_CLOUD_PRIVATE_KEY_ENCODE'));
+      this.oauth2Client = new google.auth.GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/cloud-platform'],
+        credentials: {
+          type: 'service_account',
+          private_key: encode,
+          client_email: this.config.get('GOOGLE_CLOUD_CLIENT_EMAIL'),
+          client_id: this.config.get('GOOGLE_CLOUD_CLIENT_ID'),
+        },
+      });
+    } catch (error) {
+      this.logger.error('Error initializing google auth:', error);
+      throw new BadGatewayException('Error initializing google auth');
+    }
+  }
+
+  async getGoogleAccessToken(): Promise<string> {
+    try {
+      const client = await this.oauth2Client.getClient();
+      const accessToken = await client.getAccessToken();
+      return accessToken.token;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 }
