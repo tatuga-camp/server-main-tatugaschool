@@ -6,6 +6,7 @@ export type RequestCreateSubject = {
   title: string;
   educationYear: Date;
   description: string;
+  backgroundImage?: string;
   order: number;
   classId: string;
   userId: string;

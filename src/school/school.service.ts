@@ -1,3 +1,4 @@
+import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import {
   ForbiddenException,
   Injectable,
@@ -129,6 +130,7 @@ export class SchoolService {
         status: Status.ACCEPT,
         schoolId: school.id,
       });
+
       return school;
     } catch (error) {
       this.logger.error(error);
