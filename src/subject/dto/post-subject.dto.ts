@@ -2,7 +2,9 @@ import {
   IsDateString,
   IsMongoId,
   IsNotEmpty,
+  IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
 } from 'class-validator';
 export class CreateSubjectDto {
@@ -23,6 +25,10 @@ export class CreateSubjectDto {
   @IsNotEmpty()
   @IsMongoId()
   classId: string;
+
+  @IsOptional()
+  @IsUrl()
+  backgroundImage: string;
 
   @IsNotEmpty()
   @IsMongoId()

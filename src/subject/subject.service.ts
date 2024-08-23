@@ -1,3 +1,5 @@
+import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
+import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { SubjectRepository, SubjectRepositoryType } from './subject.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
@@ -29,10 +31,15 @@ export class SubjectService {
     this.prisma,
     this.googleStorageService,
   );
+  attendanceTableRepository: AttendanceTableRepository;
+  scoreOnSubjectRepository: ScoreOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.attendanceTableRepository = new AttendanceTableRepository(prisma);
+    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
+  }
 
   async validateAccessOnSubject({
     userId,
@@ -197,20 +204,58 @@ export class SubjectService {
         userId: user.id,
         order: totalSubject + 1,
       });
-
-      const member = await this.prisma.teacherOnSubject.create({
-        data: {
-          userId: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          email: user.email,
-          role: 'ADMIN',
-          photo: user.photo,
+      const scoreOnSubjectTitlesDefault = [
+        {
+          title: 'Good Job',
+          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Good-Job.svg',
+        },
+        {
+          title: 'Well Done',
+          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Well-Done.svg',
+        },
+        {
+          title: 'Keep It Up',
+          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Keep-It-Up.svg',
+        },
+        {
+          title: 'Excellent',
+          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Excellent.svg',
+        },
+        {
+          title: 'Needs Improvement',
+          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Needs-Improvement.svg',
+        },
+      ];
+      await Promise.all([
+        this.prisma.teacherOnSubject.create({
+          data: {
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            phone: user.phone,
+            email: user.email,
+            role: 'ADMIN',
+            photo: user.photo,
+            subjectId: subject.id,
+            schoolId: dto.schoolId,
+          },
+        }),
+        this.attendanceTableRepository.createAttendanceTable({
+          title: 'Default',
+          description: 'Attendance table for ' + subject.title,
           subjectId: subject.id,
           schoolId: dto.schoolId,
-        },
-      });
+        }),
+        ...scoreOnSubjectTitlesDefault.map((score) =>
+          this.scoreOnSubjectRepository.createSocreOnSubject({
+            title: score.title,
+            icon: score.icon,
+            subjectId: subject.id,
+            score: 1,
+            schoolId: dto.schoolId,
+          }),
+        ),
+      ]);
 
       return subject;
     } catch (error) {
