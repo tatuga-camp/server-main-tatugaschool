@@ -8,6 +8,7 @@ import {
   Get,
   UseGuards,
   Req,
+  Res,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -22,6 +23,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators';
 import { User } from '@prisma/client';
+import { Request, Response } from 'express';
 
 @Controller('v1/auth')
 export class AuthController {
@@ -92,7 +94,7 @@ export class AuthController {
 
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req) {
-    return this.authService.googleLogin(req);
+  googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+    return this.authService.googleLogin(req, res);
   }
 }

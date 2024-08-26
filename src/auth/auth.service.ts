@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -28,6 +29,8 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { Student, User } from '@prisma/client';
 import { Auth, google, GoogleApis } from 'googleapis';
+import { Request, Response } from 'express';
+import { GoogleProfile } from './strategy/google-oauth.strategy';
 
 @Injectable()
 export class AuthService {
@@ -346,58 +349,111 @@ export class AuthService {
       throw error;
     }
   }
-  async googleLogin(req) {
-    if (!req.user) {
-      throw new NotFoundException('ไม่พบผู้ใช้งานนี้ใน google');
-    }
-    const data = req.user;
-
-    const user = await this.usersRepository.findByEmail({ email: data.email });
-    if (user) {
-      if (!user.isVerifyEmail) {
-        throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
+  async googleLogin(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        throw new NotFoundException('ไม่พบผู้ใช้งานนี้ใน google');
       }
+      const data = req.user as GoogleProfile;
 
-      await this.usersRepository.updateLastActiveAt({ email: user.email });
-      delete user.password;
-      delete user.verifyEmailToken;
-      delete user.verifyEmailTokenExpiresAt;
-      delete user.resetPasswordToken;
-      delete user.resetPasswordTokenExpiresAt;
-      delete user.photo;
-      return {
-        accessToken: await this.jwtService.signAsync(user, {
+      const user = await this.usersRepository.findByEmail({
+        email: data.email,
+      });
+
+      if (user) {
+        if (!user?.isVerifyEmail) {
+          throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
+        }
+
+        await this.usersRepository.updateLastActiveAt({ email: user.email });
+        delete user.password;
+        delete user.verifyEmailToken;
+        delete user.verifyEmailTokenExpiresAt;
+        delete user.resetPasswordToken;
+        delete user.resetPasswordTokenExpiresAt;
+        delete user.photo;
+
+        const accessToken = await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_ACCESS_SECRET'),
           expiresIn: '15m',
-        }),
-        refreshToken: await this.jwtService.signAsync(user, {
+        });
+        const refreshToken = await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
           expiresIn: '7d',
-        }),
-      };
+        });
+        res.cookie('access_token', accessToken, {
+          maxAge: 2592000000,
+          sameSite: true,
+          httpOnly: true,
+          secure: true,
+        });
+        res.cookie('refresh_token', refreshToken, {
+          maxAge: 2592000000,
+          sameSite: true,
+          httpOnly: true,
+          secure: true,
+        });
+
+        return res.redirect(`${process.env.CLIENT_URL}/auth/sign-in`);
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiration = new Date();
+      expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
+
+      await this.usersRepository.createUser({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        password: null, // google login no need password
+        role: 'USER',
+        provider: data.provider,
+        providerId: data.providerId,
+        photo: data.photo,
+        verifyEmailToken: token,
+        verifyEmailTokenExpiresAt: expiration.toISOString(),
+      });
+      const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
+
+      const emailHTML = `
+         <body style="background-color: #f8f9fa;">
+       <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/development-tatuga-school/public/logo.avif" />
+         <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+           <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
+          Verify your email to login on Tatuga School
+           </h1>
+           <p style="margin: 0 0 16px;">
+           Hello ${data.firstName},<br>
+           Thank you for signing up! Click button below to verify your e-mail
+           </p>
+            <p style="margin: 0 0 16px; color: #6c757d">
+            Do not reply to this email, this email is automatically generated.
+            If you have any questions, please contact this email permlap@tatugacamp.com or the address below
+           </p>
+           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${resetUrl}">Verify Email</a>
+         </div>
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
+         <div style="color: #6c757d; text-align: center; margin: 24px 0;">
+         Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
+         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
+         โทร 0610277960 Email: permlap@tatugacamp.com<br>
+         </div>
+       </div>
+     </body>
+     `;
+      this.emailService.sendMail({
+        to: data.email,
+        subject: 'Verify your email to login on Tatuga School',
+        html: emailHTML,
+      });
+
+      return res.redirect(`${process.env.CLIENT_URL}/auth/verify-email`);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
     }
-
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiration = new Date();
-    expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
-    const hashedPassword = null;
-
-    const photo = data.photo;
-
-    await this.usersRepository.createUser({
-      ...data,
-      photo,
-      token,
-      expiration,
-      hashedPassword,
-    });
-    const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
-
-    await this.emailService.sendMail({
-      to: data.email,
-      subject: 'Welcome to TATUGA SCHOOL',
-      html: `Hello ${data.firstName},\n\nThank you for signing up! Click here to verify your e-mail: ${resetUrl}`,
-    });
   }
 
   async initializeGoogleAuth() {
