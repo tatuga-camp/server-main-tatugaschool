@@ -22,6 +22,7 @@ export type RequestCreateUser = {
   password: string;
   role?: UserRole;
   provider: Provider;
+  providerId?: string;
   photo: string;
   verifyEmailToken: string;
   verifyEmailTokenExpiresAt: string;
