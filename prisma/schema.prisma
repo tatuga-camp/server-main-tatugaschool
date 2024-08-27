@@ -82,7 +82,7 @@ model School {
   colums                   Colum[]
   tasks                    Task[]
   fileOnStudentAssignments FileOnStudentAssignment[]
-  CommentOnAssignment      CommentOnAssignment[]
+  commentOnAssignments     CommentOnAssignment[]
 }
 
 model MemberOnSchool {
