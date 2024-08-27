@@ -29,6 +29,7 @@ import { CommentAssignmentModule } from './comment-assignment/comment-assignment
 import { BoardModule } from './board-task/board/board.module';
 import { SkillModule } from './skill/skill.module';
 import { VectorModule } from './vector/vector.module';
+import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { VectorModule } from './vector/vector.module';
     CommentAssignmentModule,
     SkillModule,
     VectorModule,
+    SkillOnAssignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
