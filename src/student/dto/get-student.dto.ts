@@ -13,8 +13,5 @@ export class GetAllStudentsDto {
   @IsMongoId()
   classId: string;
 
-  @IsNotEmpty()
-  @IsString()
-  @IsMongoId()
-  schoolId: string;
+
 }

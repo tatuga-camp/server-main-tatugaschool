@@ -15,7 +15,7 @@ export type RequestCreateAssignment = {
   dueDate?: string;
   subjectId: string;
   schoolId: string;
-  userId?: string;
+  userId: string;
 };
 
 export type RequestUpdateAssignment = {

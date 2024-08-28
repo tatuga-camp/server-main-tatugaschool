@@ -125,6 +125,7 @@ export class AssignmentService {
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
         schoolId: teacherOnSubject.schoolId,
+        userId: user.id
       });
     } catch (error) {
       this.logger.error(error);

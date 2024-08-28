@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -18,7 +19,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 type SkillOnAssignmentRepositoryType = {
   getById(request: RequestGetById): Promise<SkillOnAssignment | null>;
   create(request: RequestCreate): Promise<SkillOnAssignment>;
-  delete(request: RequestDelete): Promise<SkillOnAssignment>;
+  delete(request: RequestDelete): Promise<{ message: string }>;
   getByAssignmentId(
     request: RequestGetByAssignmentId,
   ): Promise<SkillOnAssignment[]>;
@@ -62,6 +63,9 @@ export class SkillOnAssignmentRepository
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
+        if(error.code === 'P2002'){
+            throw new BadRequestException("Skill on assignment already exists");
+        }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
         );
@@ -70,13 +74,13 @@ export class SkillOnAssignmentRepository
     }
   }
 
-  async delete(request: RequestDelete): Promise<SkillOnAssignment> {
+  async delete(request: RequestDelete): Promise<{ message: string }> {
     try {
-      const skillOnAssignment = await this.prisma.skillOnAssignment.delete({
+      await this.prisma.skillOnAssignment.delete({
         where: { id: request.id },
       });
 
-      return skillOnAssignment;
+      return { message: 'Skill on assignment deleted successfully' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

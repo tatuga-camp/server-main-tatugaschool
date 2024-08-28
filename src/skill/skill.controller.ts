@@ -8,7 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AdminGuard } from '../auth/guard';
+import { AdminGuard, UserGuard } from '../auth/guard';
 import { SkillService } from './skill.service';
 import {
   CreateSkillDto,
@@ -17,31 +17,38 @@ import {
   UpdateSkillDto,
 } from './dto';
 
-@UseGuards(AdminGuard)
 @Controller('v1/skills')
 export class SkillController {
   constructor(private readonly skillService: SkillService) {}
 
+  @UseGuards(AdminGuard)
   @Get()
   async findAll() {
     return this.skillService.findAll();
   }
 
+
+  @UseGuards(UserGuard)
   @Get('assignment/:assignmentId')
   async findByVectorSearch(@Param() dto: GetSkillDto) {
     return this.skillService.findByVectorSearch(dto);
   }
 
+  @UseGuards(AdminGuard)
   @Post()
   async create(@Body() dto: CreateSkillDto) {
     return this.skillService.create(dto);
   }
 
+
+  @UseGuards(AdminGuard)
   @Patch()
   async update(@Body() dto: UpdateSkillDto) {
     return this.skillService.update(dto);
   }
 
+
+  @UseGuards(AdminGuard)
   @Delete(':skillId')
   async delete(@Param() dto: DeleteSkillDto) {
     return this.skillService.delete(dto);

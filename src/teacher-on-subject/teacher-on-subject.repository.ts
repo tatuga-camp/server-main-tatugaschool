@@ -19,7 +19,6 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 type TeacherOnSubjectRepositoryType = {
   getById(request: RequestGetTeacherOnSubjectById): Promise<TeacherOnSubject>;
-
   getManyBySubjectId(
     request: RequestGetTeacherOnSubjectsBySubjectId,
   ): Promise<TeacherOnSubject[]>;

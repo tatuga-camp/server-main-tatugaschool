@@ -235,6 +235,7 @@ export class SubjectService {
             phone: user.phone,
             email: user.email,
             role: 'ADMIN',
+            status: "ACCEPT",
             photo: user.photo,
             subjectId: subject.id,
             schoolId: dto.schoolId,

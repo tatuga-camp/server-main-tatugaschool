@@ -1,4 +1,6 @@
+import { ClassRepository } from './../class/class.repository';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -23,6 +25,7 @@ import { RequestCreateManyStudents } from './interface/student.interface';
 export class StudentService {
   logger = new Logger(StudentService.name);
   studentRepository: StudentRepositoryType;
+  classRepository: ClassRepository = new ClassRepository(this.prisma);
   constructor(
     private prisma: PrismaService,
     private userService: UsersService,
@@ -56,14 +59,26 @@ export class StudentService {
     }
   }
 
-  async createStudent(createStudentDto: CreateStudentDto, user: User) {
+  async createStudent(dto: CreateStudentDto, user: User) {
     try {
       await this.memberOnSchoolService.validateAccess({
         user: user,
-        schoolId: createStudentDto.schoolId,
+        schoolId: dto.schoolId,
       });
 
-      const request = { data: createStudentDto };
+      const classroom = await this.classRepository.findById({
+        classId: dto.classId,
+      });
+
+      if (!classroom) {
+        throw new NotFoundException('class not found');
+      }
+
+      if(classroom.schoolId !== dto.schoolId){
+        throw new BadRequestException("Class not found in this school");
+      }
+
+      const request = { data: dto };
       return await this.studentRepository.create(request);
     } catch (error) {
       this.logger.error(error);
@@ -71,27 +86,7 @@ export class StudentService {
     }
   }
 
-  async createManyStudents(
-    createManyStudentsDto: CreateManyStudentsDto,
-    user: User,
-  ) {
-    try {
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: createManyStudentsDto.students[0].schoolId,
-      });
 
-      const request = { data: createManyStudentsDto };
-
-      await this.validateSchool(request);
-
-      await this.validateClass(request);
-      return await this.studentRepository.createMany(request);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
 
   async getStudentById(
     getStudentDto: GetStudentDto,
@@ -120,14 +115,22 @@ export class StudentService {
     }
   }
 
-  async getAllStudents(getAllStudentsDto: GetAllStudentsDto, user: User) {
+  async getAllStudents(dto: GetAllStudentsDto, user: User) {
     try {
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: getAllStudentsDto.schoolId,
+      const classroom = await this.classRepository.findById({
+        classId: dto.classId,
       });
 
-      const request = { classId: getAllStudentsDto.classId };
+      if (!classroom) {
+        throw new NotFoundException('class not found');
+      }
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: classroom.schoolId,
+      });
+
+      const request = { classId: dto.classId };
       return await this.studentRepository.findAll(request);
     } catch (error) {
       this.logger.error(error);

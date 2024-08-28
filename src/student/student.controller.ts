@@ -25,7 +25,7 @@ import { UserGuard } from '../auth/guard';
 export class StudentController {
   constructor(private studentService: StudentService) {}
 
-  @Get('schoolId/:schoolId/class/:classId')
+  @Get('class/:classId')
   async getAllStudentsInClass(
     @GetUser() user: User,
     @Param() dto: GetAllStudentsDto,
@@ -44,14 +44,6 @@ export class StudentController {
     @Body() createStudentDto: CreateStudentDto,
   ) {
     return this.studentService.createStudent(createStudentDto, user);
-  }
-
-  @Post('create-many')
-  async createManyStudents(
-    @GetUser() user: User,
-    @Body() createManyStudentsDto: CreateManyStudentsDto,
-  ) {
-    return this.studentService.createManyStudents(createManyStudentsDto, user);
   }
 
   @Patch(':studentId')
