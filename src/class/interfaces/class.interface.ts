@@ -39,6 +39,7 @@ export interface RequestUpdateClass {
 export interface RequestGetClassByPage {
   page: number;
   limit: number;
+  schoolId: string;
 }
 
 export interface RequestReorderClass {

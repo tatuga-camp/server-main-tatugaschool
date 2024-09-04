@@ -21,7 +21,6 @@ export class CreateClassDto {
 
   @IsNotEmpty()
   @IsDateString()
-  // @Type(() => Date)
   educationYear: Date;
 
   @IsNotEmpty()

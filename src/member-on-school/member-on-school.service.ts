@@ -60,10 +60,6 @@ export class MemberOnSchoolService {
         );
       }
 
-      if (memberOnSchool.role !== 'ADMIN') {
-        throw new ForbiddenException('Access denied: User is not an admin');
-      }
-
       return memberOnSchool;
     } catch (error) {
       this.logger.error(error);

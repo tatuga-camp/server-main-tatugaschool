@@ -39,12 +39,7 @@ class UpdateClassBody {
 
   @IsOptional()
   @IsDateString()
-  // @Type(() => Date)
   educationYear?: Date;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 }
 
 export class UpdateClassDto {

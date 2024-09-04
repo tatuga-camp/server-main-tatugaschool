@@ -48,7 +48,7 @@ export class FileOnStudentAssignmentController {
   }
 
   @UseGuards(StudentGuard)
-  @Post()
+  @Post('student')
   createFileOnStudentAssignmentFromStudent(
     @Body() dto: CreateFileOnStudentAssignmentDto,
     @GetStudnet() student: Student,

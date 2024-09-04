@@ -23,19 +23,19 @@ export class GetClassByClassIdDto {
 }
 
 export class GetClassByPageDto {
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  page?: number = 1;
+  page: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  limit?: number = 10;
+  limit: number;
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  schoolId?: string;
+  schoolId: string;
 }

@@ -103,6 +103,13 @@ export class FileOnStudentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
+      const assignment = await this.assignmentRepository.getAssignmentById({
+        assignmentId: studnetOnAssignment.assignmentId,
+      });
+
+      if (!assignment) {
+        throw new NotFoundException('Assignment not found');
+      }
       if (!studnetOnAssignment) {
         throw new NotFoundException('Student on assignment not found');
       }
@@ -155,7 +162,7 @@ export class FileOnStudentAssignmentService {
         throw new ForbiddenException("You don't have permission to access");
       }
       const assignment = await this.assignmentRepository.getAssignmentById({
-        assignmentId: fileOnStudentAssignment.studentOnAssignmentId,
+        assignmentId: fileOnStudentAssignment.assignmentId,
       });
 
       if (!assignment) {
@@ -163,7 +170,7 @@ export class FileOnStudentAssignmentService {
       }
 
       if (assignment.isAllowDeleteWork === false) {
-        throw new NotFoundException(
+        throw new ForbiddenException(
           'This assignment is not allow to delete work',
         );
       }

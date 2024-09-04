@@ -39,12 +39,16 @@ export class ClassService {
     }
   }
 
-  async updateClass(updateClassDto: UpdateClassDto, user: User) {
+  async updateClass(dto: UpdateClassDto, user: User) {
     try {
-      const { classId } = updateClassDto.query;
+      const { classId } = dto.query;
+      const classroom = await this.classRepository.findById({ classId });
+      if (!classroom) {
+        throw new NotFoundException(`Class with ID ${classId} not found`);
+      }
       await this.memberOnSchoolService.validateAccess({
         user: user,
-        schoolId: updateClassDto.body.schoolId,
+        schoolId: classroom.schoolId,
       });
 
       const existingClass = await this.classRepository.findById({
@@ -56,7 +60,7 @@ export class ClassService {
 
       const updateClasses = await this.classRepository.update({
         query: { classId },
-        data: { ...updateClassDto.body },
+        data: { ...dto.body },
       });
 
       return updateClasses;
@@ -108,7 +112,7 @@ export class ClassService {
     user: User,
   ) {
     try {
-      const request: RequestGetClassByPage = { page, limit };
+      const request: RequestGetClassByPage = { page, limit, schoolId };
 
       await this.memberOnSchoolService.validateAccess({
         user: user,

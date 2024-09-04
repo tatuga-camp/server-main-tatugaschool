@@ -58,7 +58,7 @@ export class AttendanceTableController {
     return this.attendanceTableService.updateAttendanceTable(dto, user);
   }
 
-  @Delete('attendanceTableId')
+  @Delete(':attendanceTableId')
   DeleteAttendanceTable(
     @Param() dto: DeleteAttendanceTableDto,
     @GetUser() user: User,

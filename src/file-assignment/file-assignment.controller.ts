@@ -22,8 +22,8 @@ import { UserGuard } from '../auth/guard';
 export class FileAssignmentController {
   constructor(private fileAssignmentService: FileAssignmentService) {}
 
-  @Get('assignment/:assignment')
-  getFilesByAssignmentId(
+  @Get('assignment/:assignmentId')
+  getByAssignmentId(
     @Param() dto: GetFileOnAssignmentByAssignmentIdDto,
     @GetUser() user: User,
   ) {
@@ -31,12 +31,12 @@ export class FileAssignmentController {
   }
 
   @Post()
-  createFiles(@Body() dto: CreateFileOnAssignmentDto, @GetUser() user: User) {
+  create(@Body() dto: CreateFileOnAssignmentDto, @GetUser() user: User) {
     return this.fileAssignmentService.createFileAssignment(dto, user);
   }
 
-  @Delete(':fileAssignmentId')
-  deleteFile(@Body() dto: DeleteFileAssignmentDto, @GetUser() user: User) {
+  @Delete(':fileOnAssignmentId')
+  delete(@Param() dto: DeleteFileAssignmentDto, @GetUser() user: User) {
     return this.fileAssignmentService.deleteFileAssignment(dto, user);
   }
 }

@@ -188,6 +188,10 @@ export class CommentAssignmentService {
         commentOnAssignmentId: dto.commentOnAssignmentId,
       });
 
+      if (!commentAssignment) {
+        throw new NotFoundException('Comment assignment is not found');
+      }
+
       if (commentAssignment.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
@@ -203,6 +207,10 @@ export class CommentAssignmentService {
       const commentAssignment = await this.commentAssignmentRepository.getById({
         commentOnAssignmentId: dto.commentOnAssignmentId,
       });
+
+      if (!commentAssignment) {
+        throw new NotFoundException('Comment assignment is not found');
+      }
 
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({

@@ -86,10 +86,12 @@ export class GoogleStorageService {
     fileName,
     fileType,
     userId,
+    studentId,
   }: {
     fileName: string;
     fileType: string;
-    userId: string;
+    userId?: string;
+    studentId?: string;
   }) {
     try {
       const bucket = this.getBucket();
@@ -101,7 +103,9 @@ export class GoogleStorageService {
       };
       const replacedString = fileName.replace(/ /g, '0');
       const id = crypto.randomBytes(12).toString('hex');
-      const gcsFileName = `userId:${userId}/ID:${id}/${replacedString}`;
+      const gcsFileName = userId
+        ? `userId:${userId}/ID:${id}/${replacedString}`
+        : `studentId:${studentId}/ID:${id}/${replacedString}`;
       const blob = bucket.file(gcsFileName);
       const urlPicture = `https://storage.googleapis.com/${this.config.get(
         'GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET',

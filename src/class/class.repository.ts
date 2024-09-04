@@ -119,8 +119,15 @@ export class ClassRepository {
         this.prisma.class.findMany({
           skip,
           take: limit,
+          where: {
+            schoolId: request.schoolId,
+          },
         }),
-        this.prisma.class.count(),
+        this.prisma.class.count({
+          where: {
+            schoolId: request.schoolId,
+          },
+        }),
       ]);
       const total = Math.ceil(count / limit);
       if (page > total) {

@@ -123,11 +123,15 @@ export class FileAssignmentService {
   async deleteFileAssignment(
     dto: DeleteFileAssignmentDto,
     user: User,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     try {
       const fileOnAssignment = await this.fileAssignmentRepository.getById({
         fileOnAssignmentId: dto.fileOnAssignmentId,
       });
+
+      if (!fileOnAssignment) {
+        throw new NotFoundException('File not found');
+      }
       const assignment = await this.assignmentRepository.getAssignmentById({
         assignmentId: fileOnAssignment.assignmentId,
       });
@@ -167,6 +171,8 @@ export class FileAssignmentService {
           totalStorage: school.totalStorage - fileOnAssignment.size,
         },
       });
+
+      return { message: 'File deleted successfully' };
     } catch (error) {
       this.logger.error(error);
       throw error;
