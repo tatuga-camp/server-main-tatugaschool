@@ -199,16 +199,19 @@ export class AuthService {
         email: dto.email,
       });
       if (!user) {
-        throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
+        throw new NotFoundException('No user found with this email');
       }
 
       if (!user.isVerifyEmail) {
-        throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
+        throw new UnauthorizedException("Email isn't verified yet");
+      }
+      if (user.provider !== 'LOCAL') {
+        throw new BadRequestException('Please sign in with google');
       }
 
       const isMatch = await bcrypt.compare(dto.password, user.password);
       if (!isMatch) {
-        throw new UnauthorizedException('รหัสผ่านไม่ถูกต้อง');
+        throw new UnauthorizedException("Credentials isn't correct");
       }
 
       await this.usersRepository.updateLastActiveAt({
@@ -361,7 +364,7 @@ export class AuthService {
       });
 
       if (user) {
-        if (!user?.isVerifyEmail) {
+        if (!user.isVerifyEmail) {
           throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
         }
 

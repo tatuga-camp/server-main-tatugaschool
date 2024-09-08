@@ -4,6 +4,7 @@ import {
   SchoolRepositoryType,
 } from './../school/school.repository';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -119,34 +120,6 @@ export class MemberOnSchoolService {
     }
   }
 
-  async getMemberOnSchoolById(
-    dto: GetMemberOnSchoolByIdDto,
-    user: User,
-  ): Promise<MemberOnSchool> {
-    try {
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolById({
-          memberOnSchoolId: dto.memberOnSchoolId,
-        });
-
-      if (!memberOnSchool) {
-        throw new NotFoundException(
-          `MemberOnSchool with ID ${dto.memberOnSchoolId} not found`,
-        );
-      }
-
-      await this.validateAccess({
-        user: user,
-        schoolId: memberOnSchool.schoolId,
-      });
-
-      return memberOnSchool;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
   async createMemberOnSchool(
     dto: CreateMemberOnSchoolDto,
     user: User,
@@ -168,16 +141,20 @@ export class MemberOnSchoolService {
       });
 
       if (member.role !== MemberRole.ADMIN) {
-        throw new ForbiddenException('คุณไม่มีสิทธิ์ใช้งานนี้');
+        throw new ForbiddenException('Access denied: User is not an admin');
       }
 
       const newMember = await this.userRepository.findByEmail({
         email: dto.email,
       });
 
+      if (!newMember) {
+        throw new NotFoundException('No user found with this email');
+      }
+
       const existingMemberOnSchool =
         await this.memberOnSchoolRepository.getMemberOnSchoolByEmailAndSchool({
-          email: member.email,
+          email: newMember.email,
           schoolId: dto.schoolId,
         });
 
@@ -197,11 +174,38 @@ export class MemberOnSchoolService {
         schoolId: school.id,
       });
 
+      const emailHTML = `
+         <body style="background-color: #f8f9fa;">
+       <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/development-tatuga-school/public/logo.avif" />
+         <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+           <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
+          You have been invited to join the school ${school.title} on Tatuga School
+           </h1>
+           <p style="margin: 0 0 16px;">
+           Hello ${newMember.firstName},<br>
+            You have been invited to join the school ${school.title} on Tatuga School. Please click the link below to accept the invitation.
+           </p>
+            <p style="margin: 0 0 16px; color: #6c757d">
+            Do not reply to this email, this email is automatically generated.
+            If you have any questions, please contact this email permlap@tatugacamp.com or the address below
+           </p>
+           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${process.env.CLIENT_URL}/invite/${create.id}">Click</a>
+         </div>
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
+         <div style="color: #6c757d; text-align: center; margin: 24px 0;">
+         Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
+         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
+         โทร 0610277960 Email: permlap@tatugacamp.com<br>
+         </div>
+       </div>
+     </body>
+     `;
+
       this.emailService.sendMail({
         to: newMember.email,
-        subject: 'Invite to join school',
-        html: `You have been invited to join ${school.title}. 
-        Please click the link to join. ${process.env.CLIENT_URL}/invite/${create.id}`,
+        subject: 'Invite to join school - Tatuga School',
+        html: emailHTML,
       });
 
       return create;
@@ -215,6 +219,7 @@ export class MemberOnSchoolService {
     user: User,
   ): Promise<MemberOnSchool> {
     try {
+      delete dto.body.status;
       const memberOnSchool =
         await this.memberOnSchoolRepository.getMemberOnSchoolById({
           memberOnSchoolId: dto.query.memberOnSchoolId,
@@ -222,6 +227,12 @@ export class MemberOnSchoolService {
 
       if (!memberOnSchool) {
         throw new NotFoundException(`ไม่พบ MemberOnSchool ที่ต้องการอัพเดท`);
+      }
+
+      if (memberOnSchool.status !== 'ACCEPT') {
+        throw new ForbiddenException(
+          "You can't update this member because the member has not accepted the invitation",
+        );
       }
 
       const member = await this.validateAccess({
@@ -243,8 +254,27 @@ export class MemberOnSchoolService {
     }
   }
 
-  async AcceptMemberOnSchool(dto: UpdateMemberOnSchoolDto): Promise<void> {
+  async AcceptMemberOnSchool(
+    dto: UpdateMemberOnSchoolDto,
+    user: User,
+  ): Promise<{
+    message: string;
+  }> {
     try {
+      const memberOnSchool =
+        await this.memberOnSchoolRepository.getMemberOnSchoolById({
+          memberOnSchoolId: dto.query.memberOnSchoolId,
+        });
+
+      if (!memberOnSchool) {
+        throw new NotFoundException('Not found member on school');
+      }
+
+      if (memberOnSchool.userId !== user.id) {
+        throw new ForbiddenException(
+          'You dont have permission to accept this invitation',
+        );
+      }
       if (dto.body.status === 'ACCEPT') {
         const acceptMember =
           await this.memberOnSchoolRepository.updateMemberOnSchool({
@@ -253,10 +283,14 @@ export class MemberOnSchoolService {
               status: 'ACCEPT',
             },
           });
+        return { message: 'Accept success' };
       } else if (dto.body.status === 'REJECT') {
         const rejectMember = await this.memberOnSchoolRepository.delete({
           memberOnSchoolId: dto.query.memberOnSchoolId,
         });
+        return { message: 'Reject success' };
+      } else {
+        throw new BadRequestException('Invalid status');
       }
     } catch (error) {
       this.logger.error(error);
@@ -267,7 +301,7 @@ export class MemberOnSchoolService {
   async deleteMemberOnSchool(
     dto: DeleteMemberOnSchoolDto,
     user: User,
-  ): Promise<void> {
+  ): Promise<{ message: string }> {
     try {
       const memberOnSchool =
         await this.memberOnSchoolRepository.getMemberOnSchoolById({
@@ -275,7 +309,7 @@ export class MemberOnSchoolService {
         });
 
       if (!memberOnSchool) {
-        throw new NotFoundException(`ไม่พบ MemberOnSchool ที่ต้องการอัพเดท`);
+        throw new NotFoundException('Not found member on school');
       }
 
       const member = await this.validateAccess({
@@ -284,10 +318,10 @@ export class MemberOnSchoolService {
       });
 
       if (member.role !== MemberRole.ADMIN) {
-        throw new ForbiddenException('คุณไม่มีสิทธิ์ใช้งานนี้');
+        throw new ForbiddenException("You don't have permission to delete");
       }
 
-      await this.memberOnSchoolRepository.delete({
+      return await this.memberOnSchoolRepository.delete({
         memberOnSchoolId: dto.memberOnSchoolId,
       });
     } catch (error) {

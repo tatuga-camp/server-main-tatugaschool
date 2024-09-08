@@ -52,7 +52,7 @@ export class StudentOnSubjectService {
         },
       });
 
-      if (!member && user.role !== 'ADMIN' && schoolMember.role !== 'ADMIN') {
+      if (!member || !schoolMember) {
         throw new ForbiddenException('You are not a member of this subject');
       }
 

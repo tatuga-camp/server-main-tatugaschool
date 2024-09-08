@@ -28,24 +28,16 @@ import { UserGuard } from '../auth/guard';
 export class MemberOnSchoolController {
   constructor(private memberOnSchoolService: MemberOnSchoolService) {}
 
-  @Get()
+  @Get('user')
   async getByUserId(@GetUser() user: User) {
     return this.memberOnSchoolService.getMemberOnSchoolByUserId(user);
   }
-  @Get('schoolId/:schoolId')
+  @Get('school/:schoolId')
   async getAllMemberOnSchools(
     @Param() dto: GetMemberOnSchoolsDto,
     @GetUser() user: User,
   ) {
     return this.memberOnSchoolService.getAllMemberOnSchools(dto, user);
-  }
-
-  @Get(':memberOnSchoolId')
-  async getMemberOnSchoolById(
-    @Param() dto: GetMemberOnSchoolByIdDto,
-    @GetUser() user: User,
-  ) {
-    return this.memberOnSchoolService.getMemberOnSchoolById(dto, user);
   }
 
   @Post()
@@ -60,11 +52,11 @@ export class MemberOnSchoolController {
   async deleteMemberOnSchool(
     @Param() dto: DeleteMemberOnSchoolDto,
     @GetUser() user: User,
-  ): Promise<void> {
-    await this.memberOnSchoolService.deleteMemberOnSchool(dto, user);
+  ): Promise<{ message: string }> {
+    return await this.memberOnSchoolService.deleteMemberOnSchool(dto, user);
   }
 
-  @Patch(':memberOnSchoolId')
+  @Patch()
   async updateMemberOnSchool(
     @Body() dto: UpdateMemberOnSchoolDto,
     @GetUser() user: User,
@@ -74,7 +66,10 @@ export class MemberOnSchoolController {
 
   @HttpCode(200)
   @Patch('invitation')
-  async updateInvitation(@Body() dto: UpdateMemberOnSchoolDto): Promise<void> {
-    return await this.memberOnSchoolService.AcceptMemberOnSchool(dto);
+  async updateInvitation(
+    @Body() dto: UpdateMemberOnSchoolDto,
+    @GetUser() user: User,
+  ): Promise<{ message: string }> {
+    return await this.memberOnSchoolService.AcceptMemberOnSchool(dto, user);
   }
 }

@@ -9,24 +9,21 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CreateSchoolDto, DeleteSchoolDto, UpdateSchoolDto } from './dto';
+import {
+  CreateSchoolDto,
+  DeleteSchoolDto,
+  GetSchoolByIdDto,
+  UpdateSchoolDto,
+} from './dto';
 import { SchoolService } from './school.service';
 import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
-import { GetSchoolByIdDto, GetSchoolsDto } from './dto/get-schools.dto';
 import { AdminGuard, UserGuard } from '../auth/guard';
 
 @UseGuards(UserGuard)
 @Controller('v1/schools')
 export class SchoolController {
   constructor(private schoolService: SchoolService) {}
-
-  @UseGuards(AdminGuard)
-  @Get()
-  async getSchools(@Query() query: GetSchoolsDto) {
-    const { page, limit } = query;
-    return this.schoolService.getSchools(page, limit);
-  }
 
   @Post()
   async create(@GetUser() user: User, @Body() dto: CreateSchoolDto) {

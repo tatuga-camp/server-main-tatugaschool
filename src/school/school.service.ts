@@ -1,5 +1,6 @@
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -41,29 +42,6 @@ export class SchoolService {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
   }
 
-  async getSchools(page: number, limit: number) {
-    try {
-      const skip = (page - 1) * limit;
-      const [schools, total] = await Promise.all([
-        this.prisma.school.findMany({
-          skip,
-          take: limit,
-        }),
-        this.prisma.school.count(),
-      ]);
-
-      return {
-        data: schools,
-        total,
-        page,
-        limit,
-      };
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
   async validateAccess({
     user,
     schoolId,
@@ -79,7 +57,11 @@ export class SchoolService {
         },
       });
 
-      if (!memberOnSchool && user.role !== 'ADMIN') {
+      if (!memberOnSchool) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      if (memberOnSchool.status !== 'ACCEPT') {
         throw new ForbiddenException('Access denied');
       }
 
@@ -110,6 +92,7 @@ export class SchoolService {
       const customer = await this.stripe.CreateCustomer({
         email: user.email,
         name: user.firstName + ' ' + user.lastName,
+        schoolTitle: dto.title,
       });
 
       const school = await this.schoolRepository.create({
@@ -149,7 +132,9 @@ export class SchoolService {
       });
 
       if (member.role !== MemberRole.ADMIN) {
-        throw new ForbiddenException('Access denied');
+        throw new ForbiddenException(
+          "Access denied because you're not an admin",
+        );
       }
 
       //if there is a new billing manager update stripe customer
@@ -162,6 +147,10 @@ export class SchoolService {
 
         if (!newBillingManager) {
           throw new NotFoundException('User not found');
+        }
+
+        if (newBillingManager.id === school.billingManagerId) {
+          throw new BadRequestException('User is already a billing manager');
         }
 
         const updateStripeCustomer = await this.stripe.UpdateCustomer({

@@ -24,7 +24,9 @@ export class StripeService implements StripeServiceType {
   ): Promise<Stripe.Customer> {
     try {
       return await this.stripe.customers.create({
-        ...request,
+        email: request.email,
+        name: request.name,
+        description: `School Name: ${request.schoolTitle}`,
       });
     } catch (error) {
       this.logger.error(error);

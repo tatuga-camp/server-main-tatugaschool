@@ -41,7 +41,7 @@ export class UpdateSchoolDto {
 
   @IsNotEmpty()
   @IsObject()
-  @Type(() => UpdateSchoolQuery)
+  @Type(() => UpdateSchoolBody)
   @ValidateNested()
   body: UpdateSchoolBody;
 }

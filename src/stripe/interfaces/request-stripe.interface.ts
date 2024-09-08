@@ -1,6 +1,7 @@
 export type RequestCreateCustomer = {
   email: string;
   name: string;
+  schoolTitle: string;
 };
 
 export type RequestUpdateCustomer = {
