@@ -1,16 +1,30 @@
 import {
   CreateManyStudentsDto,
   CreateStudentDto,
-} from '../dto/create-student.dto';
+} from '../dto/post-student.dto';
 
-import { UpdateStudentDto } from '../dto/update-student.dto';
+import { UpdateStudentDto } from '../dto/patch-student.dto';
 
 export interface RequestCreateStudent {
-  data: CreateStudentDto;
+  title: string;
+  firstName: string;
+  lastName: string;
+  picture: string;
+  number: string;
+  classId: string;
+  schoolId: string;
 }
 
 export interface RequestCreateManyStudents {
-  data: CreateManyStudentsDto;
+  data: {
+    title: string;
+    firstName: string;
+    lastName: string;
+    picture: string;
+    number: string;
+    classId: string;
+    schoolId: string;
+  }[];
 }
 
 export interface RequestGetStudent {
@@ -29,7 +43,7 @@ export interface RequestUpdateStudent {
   query: {
     studentId: string;
   };
-  data: {
+  body: {
     title?: string;
     firstName?: string;
     lastName?: string;

@@ -14,11 +14,7 @@ import {
   CreateStudentOnSubjectDto,
   DeleteStudentOnSubjectDto,
   GetStudentOnSubjectByIdDto,
-  GetStudentOnSubjectByIdParamDto,
-  GetStudentOnSubjectByIdQueryDto,
   GetStudentOnSubjectsByStudentIdDto,
-  GetStudentOnSubjectsByStudentIdParamsDto,
-  GetStudentOnSubjectsByStudentIdQueryDto,
   GetStudentOnSubjectsBySubjectIdDto,
 } from './dto';
 import { User } from '@prisma/client';
@@ -42,14 +38,9 @@ export class StudentOnSubjectController {
 
   @Get('student/:studentId')
   getStudentOnSubjectByStudentId(
-    @Param() params: GetStudentOnSubjectsByStudentIdParamsDto,
-    @Query() query: GetStudentOnSubjectsByStudentIdQueryDto,
+    @Param() dto: GetStudentOnSubjectsByStudentIdDto,
     @GetUser() user: User,
   ) {
-    const dto = {
-      params,
-      query,
-    };
     return this.studentOnSubjectService.getStudentOnSubjectsByStudentId(
       dto,
       user,
@@ -58,14 +49,9 @@ export class StudentOnSubjectController {
 
   @Get(':studentOnSubjectId')
   getStudentOnSubjectById(
-    @Param() params: GetStudentOnSubjectByIdParamDto,
-    @Query() query: GetStudentOnSubjectByIdQueryDto,
+    @Param() dto: GetStudentOnSubjectByIdDto,
     @GetUser() user: User,
   ) {
-    const dto = {
-      params,
-      query,
-    };
     return this.studentOnSubjectService.getStudentOnSubjectById(dto, user);
   }
 

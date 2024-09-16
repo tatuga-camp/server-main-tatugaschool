@@ -1,3 +1,4 @@
+import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { SubjectRepository, SubjectRepositoryType } from './subject.repository';
@@ -33,6 +34,8 @@ export class SubjectService {
   );
   attendanceTableRepository: AttendanceTableRepository;
   scoreOnSubjectRepository: ScoreOnSubjectRepository;
+  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+    new TeacherOnSubjectRepository(this.prisma);
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -101,27 +104,40 @@ export class SubjectService {
         },
       });
 
-      if (!memberOnSchool && user.role !== 'ADMIN') {
+      if (!memberOnSchool) {
         throw new ForbiddenException('Access denied');
       }
 
-      const counts = await this.prisma.subject.count({
+      const teacherOnSubjects = await this.prisma.teacherOnSubject.findMany({
         where: {
           userId: user.id,
+          status: 'ACCEPT',
+        },
+      });
+
+      const queryTitles = teacherOnSubjects.map((teacherOnSubject) => {
+        return {
+          id: teacherOnSubject.subjectId,
+          title: {
+            contains: dto.search,
+          },
+        };
+      });
+
+      const queryDescriptions = teacherOnSubjects.map((teacherOnSubject) => {
+        return {
+          id: teacherOnSubject.subjectId,
+          title: {
+            contains: dto.search,
+          },
+        };
+      });
+
+      const counts = await this.prisma.subject.count({
+        where: {
           schoolId: dto.schoolId,
           educationYear: dto.educationYear,
-          OR: [
-            {
-              title: {
-                contains: dto.search,
-              },
-            },
-            {
-              description: {
-                contains: dto.search,
-              },
-            },
-          ],
+          OR: [...queryTitles, ...queryDescriptions],
         },
       });
 
@@ -143,21 +159,9 @@ export class SubjectService {
 
       const subjects = await this.prisma.subject.findMany({
         where: {
-          userId: user.id,
           schoolId: dto.schoolId,
           educationYear: dto.educationYear,
-          OR: [
-            {
-              title: {
-                contains: dto.search,
-              },
-            },
-            {
-              description: {
-                contains: dto.search,
-              },
-            },
-          ],
+          OR: [...queryTitles, ...queryDescriptions],
         },
         skip,
         take: dto.limit,
@@ -235,7 +239,7 @@ export class SubjectService {
             phone: user.phone,
             email: user.email,
             role: 'ADMIN',
-            status: "ACCEPT",
+            status: 'ACCEPT',
             photo: user.photo,
             subjectId: subject.id,
             schoolId: dto.schoolId,

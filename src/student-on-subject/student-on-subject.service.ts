@@ -1,3 +1,4 @@
+import { StudentAccessTokenStrategy } from './../auth/strategy/accessToken.strategy';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   ForbiddenException,
@@ -72,29 +73,27 @@ export class StudentOnSubjectService {
     user: User,
   ): Promise<StudentOnSubject[]> {
     try {
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: dto.query.subjectId,
-          userId: user.id,
-        },
-      });
+      const studentOnSubject =
+        await this.studentOnSubjectRepository.getStudentOnSubjectsByStudentId({
+          studentId: dto.studentId,
+        });
+
+      if (studentOnSubject.length === 0) {
+        return [];
+      }
 
       const schoolMember = await this.prisma.memberOnSchool.findFirst({
         where: {
-          schoolId: member.schoolId,
+          schoolId: studentOnSubject[0].schoolId,
           userId: user.id,
         },
       });
 
-      if (!member && user.role !== 'ADMIN' && schoolMember.role !== 'ADMIN') {
+      if (!schoolMember) {
         throw new ForbiddenException('You are not a member of this subject');
       }
 
-      return await this.studentOnSubjectRepository.getStudentOnSubjectsByStudentId(
-        {
-          studentId: dto.params.studentId,
-        },
-      );
+      return studentOnSubject;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -106,9 +105,17 @@ export class StudentOnSubjectService {
     user: User,
   ): Promise<StudentOnSubject> {
     try {
+      const studentOnSubject =
+        await this.studentOnSubjectRepository.getStudentOnSubjectById({
+          studentOnSubjectId: dto.studentOnSubjectId,
+        });
+
+      if (!studentOnSubject) {
+        throw new NotFoundException('StudentOnSubject not found');
+      }
       const member = await this.prisma.teacherOnSubject.findFirst({
         where: {
-          subjectId: dto.query.subjectId,
+          subjectId: studentOnSubject.subjectId,
           userId: user.id,
         },
       });
@@ -120,13 +127,10 @@ export class StudentOnSubjectService {
         },
       });
 
-      if (!member && user.role !== 'ADMIN' && schoolMember.role !== 'ADMIN') {
+      if (!member || !schoolMember) {
         throw new ForbiddenException('You are not a member of this subject');
       }
-
-      return await this.studentOnSubjectRepository.getStudentOnSubjectById({
-        studentOnSubjectId: dto.params.studentOnSubjectId,
-      });
+      return studentOnSubject;
     } catch (error) {
       this.logger.error(error);
       throw error;

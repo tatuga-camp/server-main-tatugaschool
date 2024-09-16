@@ -16,22 +16,17 @@ import {
   GetSkillDto,
   UpdateSkillDto,
 } from './dto';
+import { GetUser } from '../auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('v1/skills')
 export class SkillController {
   constructor(private readonly skillService: SkillService) {}
 
-  @UseGuards(AdminGuard)
-  @Get()
-  async findAll() {
-    return this.skillService.findAll();
-  }
-
-
   @UseGuards(UserGuard)
   @Get('assignment/:assignmentId')
-  async findByVectorSearch(@Param() dto: GetSkillDto) {
-    return this.skillService.findByVectorSearch(dto);
+  async findByAssignment(@Param() dto: GetSkillDto, @GetUser() user: User) {
+    return this.skillService.findByVectorSearch(dto, user);
   }
 
   @UseGuards(AdminGuard)
@@ -40,13 +35,11 @@ export class SkillController {
     return this.skillService.create(dto);
   }
 
-
   @UseGuards(AdminGuard)
   @Patch()
   async update(@Body() dto: UpdateSkillDto) {
     return this.skillService.update(dto);
   }
-
 
   @UseGuards(AdminGuard)
   @Delete(':skillId')

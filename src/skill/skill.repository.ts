@@ -142,6 +142,17 @@ export class SkillRepository implements SkillRepositoryType {
 
   async delete(request: RequestDeleteSkill): Promise<{ message: string }> {
     try {
+      await this.prisma.skillOnAssignment.deleteMany({
+        where: { skillId: request.skillId },
+      });
+      await this.prisma.skillOnCareer.deleteMany({
+        where: { skillId: request.skillId },
+      });
+      await this.prisma.skillOnStudentAssignment.deleteMany({
+        where: {
+          skillId: request.skillId,
+        },
+      });
       await this.prisma.skill.delete({
         where: { id: request.skillId },
       });

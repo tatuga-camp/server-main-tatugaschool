@@ -25,10 +25,6 @@ export class CreateStudentDto {
   @IsNotEmpty()
   @IsMongoId()
   classId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 }
 
 export class CreateManyStudentsDto {

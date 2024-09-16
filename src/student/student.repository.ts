@@ -9,18 +9,17 @@ import {
   RequestGetAllStudents,
   RequestGetStudent,
   RequestUpdateStudent,
-} from './interface/student.interface';
+} from './interface/request-student.interface';
 
 import { Logger } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type StudentRepositoryType = {
   create(request: RequestCreateStudent): Promise<Student>;
-  createMany(request: RequestCreateManyStudents): Promise<Student[]>;
   update(request: RequestUpdateStudent): Promise<Student>;
   findById(request: RequestGetStudent): Promise<Student | null>;
-  findAll(request: RequestGetAllStudents): Promise<Student[]>;
-  delete(request: RequestDeleteStudent): Promise<Student>;
+  findByClassId(request: RequestGetAllStudents): Promise<Student[]>;
+  delete(request: RequestDeleteStudent): Promise<{ message: string }>;
 };
 
 @Injectable()
@@ -31,33 +30,33 @@ export class StudentRepository implements StudentRepositoryType {
     try {
       const student = await this.prisma.student.update({
         where: { id: request.query.studentId },
-        data: request.data,
+        data: request.body,
       });
-      delete request.data.password;
+      delete request.body.password;
       await Promise.allSettled([
         this.prisma.studentOnAssignment.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.data,
+          data: request.body,
         }),
         this.prisma.studentOnSubject.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.data,
+          data: request.body,
         }),
         this.prisma.commentOnAssignment.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.data,
+          data: request.body,
         }),
         this.prisma.scoreOnStudent.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.data,
+          data: request.body,
         }),
       ]);
 
@@ -77,24 +76,9 @@ export class StudentRepository implements StudentRepositoryType {
     try {
       return await this.prisma.student.create({
         data: {
-          ...request.data,
+          ...request,
         },
       });
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
-  }
-
-  async createMany(
-    request: RequestCreateManyStudents,
-  ): Promise<Student[] | any> {
-    try {
-      const createdStudents = await this.prisma.student.createMany({
-        data: request.data.students,
-      });
-      console.log('Students created successfully:', createdStudents);
-      return createdStudents;
     } catch (err) {
       this.logger.error(err);
       throw err;
@@ -117,7 +101,7 @@ export class StudentRepository implements StudentRepositoryType {
     }
   }
 
-  async findAll(request: RequestGetAllStudents): Promise<Student[]> {
+  async findByClassId(request: RequestGetAllStudents): Promise<Student[]> {
     try {
       return await this.prisma.student.findMany({
         where: { classId: request.classId },
@@ -133,11 +117,12 @@ export class StudentRepository implements StudentRepositoryType {
     }
   }
 
-  async delete(request: RequestDeleteStudent): Promise<Student> {
+  async delete(request: RequestDeleteStudent): Promise<{ message: string }> {
     try {
-      return await this.prisma.student.delete({
+      await this.prisma.student.delete({
         where: { id: request.studentId },
       });
+      return { message: 'Student deleted' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

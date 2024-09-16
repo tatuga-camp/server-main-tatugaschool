@@ -1,6 +1,12 @@
+import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { SkillRepository } from './skill.repository';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateSkillDto,
@@ -8,7 +14,7 @@ import {
   GetSkillDto,
   UpdateSkillDto,
 } from './dto';
-import { Skill } from '@prisma/client';
+import { Skill, User } from '@prisma/client';
 import { VectorService } from '../vector/vector.service';
 
 @Injectable()
@@ -17,28 +23,32 @@ export class SkillService {
   assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
   );
+  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+    new TeacherOnSubjectRepository(this.prisma);
   skillRepository: SkillRepository = new SkillRepository(this.prisma);
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
   ) {}
 
-  async findAll() {
-    try {
-      return this.skillRepository.findAll();
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async findByVectorSearch(dto: GetSkillDto): Promise<Skill[]> {
+  async findByVectorSearch(dto: GetSkillDto, user: User): Promise<Skill[]> {
     try {
       const assignment = await this.assignmentRepository.getAssignmentById({
         assignmentId: dto.assignmentId,
       });
+
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
+      }
+
+      const teacherOnSubject =
+        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+          teacherId: user.id,
+          subjectId: assignment.subjectId,
+        });
+
+      if (!teacherOnSubject) {
+        throw new ForbiddenException('You are not allowed to access this data');
       }
 
       return this.skillRepository.findByVectorSearch(assignment.vector);
@@ -72,20 +82,24 @@ export class SkillService {
       if (!skill) {
         throw new NotFoundException('Skill not found');
       }
+
+      if (!dto.body.title && !dto.body.description && !dto.body.keywords) {
+        return skill;
+      }
       let arrayText: string[] = [];
-      if (dto.data.title) {
-        arrayText.push(dto.data.title);
-      } else if (!dto.data.title) {
+      if (dto.body.title) {
+        arrayText.push(dto.body.title);
+      } else if (!dto.body.title) {
         arrayText.push(skill.title);
       }
-      if (dto.data.description) {
-        arrayText.push(dto.data.description);
-      } else if (!dto.data.description) {
+      if (dto.body.description) {
+        arrayText.push(dto.body.description);
+      } else if (!dto.body.description) {
         arrayText.push(skill.description);
       }
-      if (dto.data.keywords) {
-        arrayText.push(dto.data.keywords);
-      } else if (!dto.data.keywords) {
+      if (dto.body.keywords) {
+        arrayText.push(dto.body.keywords);
+      } else if (!dto.body.keywords) {
         arrayText.push(skill.keywords);
       }
 
@@ -94,7 +108,7 @@ export class SkillService {
       const vectors = await this.vectorService.embbedingText(text);
       const update = await this.skillRepository.update({
         query: dto.query,
-        data: { ...dto.data, vector: vectors.predictions[0].embeddings.values },
+        data: { ...dto.body, vector: vectors.predictions[0].embeddings.values },
       });
 
       return update;

@@ -13,11 +13,11 @@ import { GetUser } from 'src/auth/decorators';
 import { User } from '@prisma/client';
 import {
   CreateStudentDto,
-  CreateManyStudentsDto,
-} from './dto/create-student.dto';
-import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
-import { UpdateStudentDto } from './dto/update-student.dto';
-import { DeleteStudentDto } from './dto/delete-student.dto';
+  DeleteStudentDto,
+  GetAllStudentsDto,
+  GetStudentDto,
+  UpdateStudentDto,
+} from './dto';
 import { UserGuard } from '../auth/guard';
 
 @UseGuards(UserGuard)
@@ -39,14 +39,11 @@ export class StudentController {
   }
 
   @Post()
-  async createStudent(
-    @GetUser() user: User,
-    @Body() createStudentDto: CreateStudentDto,
-  ) {
-    return this.studentService.createStudent(createStudentDto, user);
+  async createStudent(@GetUser() user: User, @Body() dto: CreateStudentDto) {
+    return this.studentService.createStudent(dto, user);
   }
 
-  @Patch(':studentId')
+  @Patch()
   async updateStudent(
     @GetUser() user: User,
     @Body() updateStudentDto: UpdateStudentDto,

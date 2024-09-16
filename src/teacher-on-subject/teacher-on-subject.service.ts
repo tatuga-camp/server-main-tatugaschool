@@ -39,7 +39,20 @@ export class TeacherOnSubjectService {
         teacherOnSubjectId: dto.teacherOnSubjectId,
       });
 
-      if (teacherOnSubject.userId !== user.id) {
+      const adminOnSubject =
+        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+          teacherId: user.id,
+          subjectId: teacherOnSubject.subjectId,
+        });
+
+      if (!adminOnSubject) {
+        throw new ForbiddenException('Unauthorized');
+      }
+
+      if (
+        teacherOnSubject.userId !== user.id &&
+        adminOnSubject.role !== 'ADMIN'
+      ) {
         throw new ForbiddenException('Unauthorized');
       }
 
