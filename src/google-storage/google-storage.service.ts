@@ -40,11 +40,11 @@ export class GoogleStorageService {
       this.bucket = storage.bucket(
         this.configService.get('GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET'),
       );
-      const isDevelopment = process.env.DEV_ORIGIN === 'development';
+      const isDevelopment = process.env.NODE_ENV !== 'production';
       // Determine the allowed origins
       const allowedOrigins = isDevelopment
         ? ['*']
-        : ['https://tatuga-school.com', 'https://www.tatuga-school.com'];
+        : ['https://tatugaschool.com', 'https://www.tatugaschool.com'];
       const corsConfiguration = [
         {
           maxAgeSeconds: 3600,
