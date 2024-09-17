@@ -1,3 +1,4 @@
+import { Express } from 'express';
 import {
   Injectable,
   Inject,
@@ -7,7 +8,7 @@ import {
 import { Storage, Bucket, GetSignedUrlConfig } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-
+// This is a hack to make Multer available in the Express namespace
 import { InputDeleteFileOnStorage } from './interfaces';
 
 @Injectable()
