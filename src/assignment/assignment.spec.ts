@@ -1,5 +1,3 @@
-import { FileAssignmentService } from './../file-assignment/file-assignment.service';
-import { FileOnStudentAssignmentService } from './../file-on-student-assignment/file-on-student-assignment.service';
 import { AssignmentService } from './assignment.service';
 import { Test } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
@@ -10,27 +8,18 @@ import {
   GetAssignmentBySubjectIdDto,
   UpdateAssignmentDto,
 } from './dto';
-import { Assignment, User, StudentOnAssignment } from '@prisma/client';
+import { Assignment, User } from '@prisma/client';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { AuthModule } from '../auth/auth.module';
 import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../prisma/prisma.module';
-import { FileOnStudentAssignmentModule } from '../file-on-student-assignment/file-on-student-assignment.module';
-import { GoogleStorageModule } from '../google-storage/google-storage.module';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
 import { VectorModule } from '../vector/vector.module';
-import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
-import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assignment.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { GoogleStorageModule } from '../google-storage/google-storage.module';
 
 describe('AssignmentService', () => {
   let assignmentService: AssignmentService;
   let assignment: Assignment;
-  let fileOnStudentAssignmentService: FileOnStudentAssignmentService;
-  let fileAssignmentService: FileAssignmentService;
-  let skillOnAssignmentService: SkillOnAssignmentService;
-  let studentOnAssignmentService: StudentOnAssignmentService;
   const userId = '66d5edd6ab46227db7d5e2db';
   const anotherUserId = '66ace7578c5561b748d8b3b3';
   const subjectId = '66e7bded002943028083dda4';
@@ -38,13 +27,7 @@ describe('AssignmentService', () => {
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
-      providers: [
-        AssignmentService,
-        FileOnStudentAssignmentService,
-        FileAssignmentService,
-        StudentOnAssignmentService,
-        SkillOnAssignmentService,
-      ],
+      providers: [AssignmentService],
       imports: [
         GoogleStorageModule,
         VectorModule,
@@ -59,26 +42,10 @@ describe('AssignmentService', () => {
     }).compile();
 
     assignmentService = module.get<AssignmentService>(AssignmentService);
-    fileOnStudentAssignmentService = module.get<FileOnStudentAssignmentService>(
-      FileOnStudentAssignmentService,
-    );
-    fileAssignmentService = module.get<FileAssignmentService>(
-      FileAssignmentService,
-    );
-    skillOnAssignmentService = module.get<SkillOnAssignmentService>(
-      SkillOnAssignmentService,
-    );
-    studentOnAssignmentService = module.get<StudentOnAssignmentService>(
-      StudentOnAssignmentService,
-    );
   });
 
   it('should be defined', () => {
     expect(assignmentService).toBeDefined();
-    expect(fileOnStudentAssignmentService).toBeDefined();
-    expect(fileAssignmentService).toBeDefined();
-    expect(skillOnAssignmentService).toBeDefined();
-    expect(studentOnAssignmentService).toBeDefined();
   });
 
   describe('Create Assignment', () => {
@@ -314,61 +281,7 @@ describe('AssignmentService', () => {
       const dto: DeleteAssignmentDto = {
         assignmentId: assignment.id,
       };
-      const createChilderns = await Promise.all([
-        ...Array.from({ length: 5 }).map(async () => {
-          await fileOnStudentAssignmentService.fileOnStudentAssignmentRepository.create(
-            {
-              type: 'image/png',
-              url: 'https://storage.googleapis.com/development-tatuga-school/assignment/test.png',
-              size: Math.floor(Math.random() * 1000),
-              subjectId: assignment.subjectId,
-              schoolId: assignment.schoolId,
-              studentOnAssignmentId: assignment.id,
-              assignmentId: assignment.id,
-              studentId: assignment.id,
-            },
-          );
-        }),
-        ...Array.from({ length: 3 }).map(async () => {
-          await fileAssignmentService.fileAssignmentRepository.create({
-            type: 'image/png',
-            url: 'https://storage.googleapis.com/development-tatuga-school/assignment/test.png',
-            size: Math.floor(Math.random() * 1000),
-            subjectId: assignment.subjectId,
-            schoolId: assignment.schoolId,
-            assignmentId: assignment.id,
-          });
-        }),
 
-        ...Array.from({ length: 1 }).map(async () => {
-          await studentOnAssignmentService.studentOnAssignmentRepository.create(
-            {
-              title: 'TEST',
-              firstName: 'TEST',
-              lastName: 'TEST',
-              picture: 'TEST',
-              number: 'TEST',
-              score: 10,
-              body: assignment.id,
-              isCompleted: true,
-              isReviewed: false,
-              studentId: assignment.id,
-              assignmentId: assignment.id,
-              studentOnSubjectId: assignment.id,
-              schoolId: assignment.schoolId,
-              subjectId: assignment.subjectId,
-            },
-          );
-        }),
-        ...Array.from({ length: 1 }).map(async () => {
-          await skillOnAssignmentService.skillOnAssignmentRepository.create({
-            skillId: assignment.id,
-            assignmentId: assignment.id,
-            subjectId: assignment.schoolId,
-          });
-        }),
-      ]);
-      console.log('child should have length of 10 :', createChilderns.length);
       const deleteAssignment = await assignmentService.deleteAssignment(
         dto,
         user,
