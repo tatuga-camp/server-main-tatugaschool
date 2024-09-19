@@ -142,7 +142,10 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      return await this.attendanceTableRepository.createAttendanceTable(dto);
+      return await this.attendanceTableRepository.createAttendanceTable({
+        ...dto,
+        schoolId: subject.schoolId,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

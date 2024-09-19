@@ -119,9 +119,11 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
         };
       });
 
-      await this.prisma.attendance.createMany({
-        data: students,
-      });
+      if (students.length > 0) {
+        await this.prisma.attendance.createMany({
+          data: students,
+        });
+      }
 
       return row;
     } catch (error) {
@@ -162,15 +164,15 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
     request: RequestDeleteAttendanceRow,
   ): Promise<{ message: string }> {
     try {
-      await this.prisma.attendanceRow.delete({
-        where: {
-          id: request.attendanceRowId,
-        },
-      });
-
       await this.prisma.attendance.deleteMany({
         where: {
           attendanceRowId: request.attendanceRowId,
+        },
+      });
+
+      await this.prisma.attendanceRow.delete({
+        where: {
+          id: request.attendanceRowId,
         },
       });
 

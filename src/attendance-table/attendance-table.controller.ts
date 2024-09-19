@@ -21,11 +21,11 @@ import {
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 
-@UseGuards(UserGuard)
 @Controller('v1/attendance-tables')
 export class AttendanceTableController {
   constructor(private attendanceTableService: AttendanceTableService) {}
 
+  @UseGuards(UserGuard)
   @Get()
   GetAttendanceTables(
     @Query() dto: GetAttendanceTablesDto,
@@ -34,6 +34,7 @@ export class AttendanceTableController {
     return this.attendanceTableService.getAttendanceTables(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Get(':attendanceTableId')
   GetAttendanceTableById(
     @Param() dto: GetAttendanceTableById,
@@ -42,6 +43,7 @@ export class AttendanceTableController {
     return this.attendanceTableService.getAttendanceTableById(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Post()
   CreateAttendanceTable(
     @Body() dto: CreateAttendanceTableDto,
@@ -50,6 +52,7 @@ export class AttendanceTableController {
     return this.attendanceTableService.createAttendanceTable(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Patch()
   UpdateAttendanceTable(
     @Body() dto: UpdateAttendanceTableDto,
@@ -58,6 +61,7 @@ export class AttendanceTableController {
     return this.attendanceTableService.updateAttendanceTable(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Delete(':attendanceTableId')
   DeleteAttendanceTable(
     @Param() dto: DeleteAttendanceTableDto,

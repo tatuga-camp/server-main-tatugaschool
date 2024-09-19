@@ -1,3 +1,4 @@
+import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import {
   AttendanceRowRepository,
   AttendanceRowRepositoryType,
@@ -27,6 +28,8 @@ import {
 export class AttendanceRowService {
   logger: Logger;
   attendanceRowRepository: AttendanceRowRepositoryType;
+  private attendanceTableRepository: AttendanceTableRepository =
+    new AttendanceTableRepository(this.prisma);
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
@@ -123,11 +126,11 @@ export class AttendanceRowService {
     user: User,
   ): Promise<AttendanceRow> {
     try {
-      const table = await this.prisma.attendanceTable.findUnique({
-        where: {
-          id: dto.attendanceTableId,
+      const table = await this.attendanceTableRepository.getAttendanceTableById(
+        {
+          attendanceTableId: dto.attendanceTableId,
         },
-      });
+      );
 
       if (!table) throw new NotFoundException('Attendance table not found');
 
@@ -137,7 +140,11 @@ export class AttendanceRowService {
         subjectId: table.subjectId,
       });
 
-      const row = await this.attendanceRowRepository.createAttendanceRow(dto);
+      const row = await this.attendanceRowRepository.createAttendanceRow({
+        ...dto,
+        schoolId: table.schoolId,
+        subjectId: table.subjectId,
+      });
 
       return row;
     } catch (error) {
@@ -174,7 +181,10 @@ export class AttendanceRowService {
     }
   }
 
-  async DeleteAttendanceRow(dto: DeleteAttendanceRowDto, user: User) {
+  async DeleteAttendanceRow(
+    dto: DeleteAttendanceRowDto,
+    user: User,
+  ): Promise<{ message: string }> {
     try {
       const row = await this.prisma.attendanceRow.findUnique({
         where: {
@@ -195,6 +205,8 @@ export class AttendanceRowService {
       await this.attendanceRowRepository.deleteAttendanceRow({
         attendanceRowId: dto.attendanceRowId,
       });
+
+      return { message: 'Attendance row deleted successfully' };
     } catch (error) {
       this.logger.error(error);
       throw error;

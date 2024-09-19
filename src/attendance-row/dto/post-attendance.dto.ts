@@ -22,16 +22,4 @@ export class CreateAttendanceRowDto {
   @IsNotEmpty()
   @IsMongoId()
   attendanceTableId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  subjectId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  teamId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 }
