@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
-import { ImageService } from 'src/image/image.service';
+import { ImageService } from '../image/image.service';
 import {
   StudentAccessTokenStrategy,
   StudentRefreshTokenStrategy,

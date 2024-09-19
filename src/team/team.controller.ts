@@ -14,7 +14,7 @@ import { UpdateTeamDto } from './dto/update-team.dto';
 import { DeleteTeamDto } from './dto/delete-team.dto';
 import { TeamService } from './team.service';
 import { User } from '@prisma/client';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../auth/decorators';
 import { GetTeamParamDto, GetTeamQueryDto } from './dto/get-team.dto';
 import { UserGuard } from '../auth/guard';
 

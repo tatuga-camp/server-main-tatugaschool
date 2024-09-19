@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../../users/users.service';
 import { ColumRepository } from './colum.repository';
 import { CreateColumDto } from './dto/create-colum.dto';
 import { DeleteColumDto } from './dto/delete-colum.dto';

@@ -39,6 +39,9 @@ type StudentOnAssignmentRepositoryType = {
   delete(
     request: RequestDeleteStudentOnAssignment,
   ): Promise<{ message: string }>;
+  deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }>;
 };
 @Injectable()
 export class StudentOnAssignmentRepository
@@ -177,6 +180,27 @@ export class StudentOnAssignmentRepository
       await this.prisma.studentOnAssignment.delete({
         where: {
           id: request.studentOnAssignmentId,
+        },
+      });
+      return { message: 'Student on assignment deleted successfully' };
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }> {
+    try {
+      await this.prisma.studentOnAssignment.deleteMany({
+        where: {
+          assignmentId: request.assignmentId,
         },
       });
       return { message: 'Student on assignment deleted successfully' };

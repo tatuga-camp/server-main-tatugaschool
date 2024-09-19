@@ -11,11 +11,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { EmailService } from 'src/email/email.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { UserRepository, UserRepositoryType } from 'src/users/users.repository';
-import { ImageService } from 'src/image/image.service';
+
 import {
   ForgotPasswordDto,
   RefreshTokenDto,
@@ -31,6 +29,9 @@ import { Student, User } from '@prisma/client';
 import { Auth, google, GoogleApis } from 'googleapis';
 import { Request, Response } from 'express';
 import { GoogleProfile } from './strategy/google-oauth.strategy';
+import { UserRepository, UserRepositoryType } from '../users/users.repository';
+import { EmailService } from '../email/email.service';
+import { ImageService } from '../image/image.service';
 
 @Injectable()
 export class AuthService {

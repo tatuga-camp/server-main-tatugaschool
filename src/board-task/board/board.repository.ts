@@ -12,7 +12,7 @@ import {
   RequestGetBoard,
   RequestGetBoardsByTeamId,
 } from './board.interface';
-import { Pagination } from 'src/interfaces';
+import { Pagination } from '../../interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export interface BoardRepositoryType {

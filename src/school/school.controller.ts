@@ -16,7 +16,7 @@ import {
   UpdateSchoolDto,
 } from './dto';
 import { SchoolService } from './school.service';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { AdminGuard, UserGuard } from '../auth/guard';
 

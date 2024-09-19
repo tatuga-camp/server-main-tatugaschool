@@ -28,6 +28,9 @@ type FileOnStudentAssignmentRepositoryType = {
   delete(
     request: RequestDeleteFileOnStudentAssignment,
   ): Promise<{ message: string }>;
+  deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }>;
 };
 @Injectable()
 export class FileOnStudentAssignmentRepository
@@ -117,6 +120,43 @@ export class FileOnStudentAssignmentRepository
           id: request.fileOnStudentAssignmentId,
         },
       });
+      return { message: 'FileOnStudentAssignment deleted successfully' };
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }> {
+    try {
+      const fileOnStudentAssignments =
+        await this.prisma.fileOnStudentAssignment.findMany({
+          where: {
+            assignmentId: request.assignmentId,
+          },
+        });
+
+      await this.prisma.fileOnStudentAssignment.deleteMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
+      });
+
+      await Promise.all(
+        fileOnStudentAssignments.map(async (fileOnStudentAssignment) => {
+          await this.googleStorageService.DeleteFileOnStorage({
+            fileName: fileOnStudentAssignment.url,
+          });
+        }),
+      );
+
       return { message: 'FileOnStudentAssignment deleted successfully' };
     } catch (error) {
       this.logger.error(error);

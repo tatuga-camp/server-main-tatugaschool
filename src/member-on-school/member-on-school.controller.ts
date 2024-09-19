@@ -20,7 +20,7 @@ import {
   UpdateMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchool, User } from '@prisma/client';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
 
 @UseGuards(UserGuard)

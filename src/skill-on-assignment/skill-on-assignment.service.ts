@@ -1,3 +1,4 @@
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { SkillOnAssignmentRepository } from './skill-on-assignment.repository';
@@ -17,12 +18,16 @@ export class SkillOnAssignmentService {
   logger: Logger = new Logger(SkillOnAssignmentService.name);
   skillOnAssignmentRepository: SkillOnAssignmentRepository =
     new SkillOnAssignmentRepository(this.prisma);
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
-  assignmentRepository: AssignmentRepository = new AssignmentRepository(
+  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
+    this.googleStorageService,
   );
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
+  ) {}
 
   async getByAssignmentId(
     dto: GetAssignmentByIdDto,

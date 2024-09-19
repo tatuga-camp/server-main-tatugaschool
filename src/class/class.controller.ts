@@ -14,7 +14,7 @@ import { CreateClassDto } from './dto/create-class.dto';
 import { ReorderClassDto, UpdateClassDto } from './dto/update-class.dto';
 import { GetClassByPageDto, GetClassDto } from './dto/get-class.dto';
 import { DeleteClassDto } from './dto/delete-class.dto';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { UserGuard } from '../auth/guard';
 

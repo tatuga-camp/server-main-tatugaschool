@@ -1,5 +1,5 @@
 import {
-    BadRequestException,
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -25,6 +25,9 @@ type SkillOnAssignmentRepositoryType = {
   ): Promise<SkillOnAssignment[]>;
   getBySkillId(request: RequestGetBySkillId): Promise<SkillOnAssignment[]>;
   getBySubjectId(request: RequestGetBySubjectId): Promise<SkillOnAssignment[]>;
+  deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }>;
 };
 @Injectable()
 export class SkillOnAssignmentRepository
@@ -63,8 +66,8 @@ export class SkillOnAssignmentRepository
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
-        if(error.code === 'P2002'){
-            throw new BadRequestException("Skill on assignment already exists");
+        if (error.code === 'P2002') {
+          throw new BadRequestException('Skill on assignment already exists');
         }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
@@ -141,6 +144,26 @@ export class SkillOnAssignmentRepository
       });
 
       return skillOnAssignment;
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }> {
+    try {
+      await this.prisma.skillOnAssignment.deleteMany({
+        where: { assignmentId: request.assignmentId },
+      });
+
+      return { message: 'Skill on assignment deleted successfully' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

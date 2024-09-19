@@ -12,8 +12,8 @@ import {
   RequestGetTeamsBySchoolId,
   TeamRepositoryType,
 } from './team.interface';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Pagination } from 'src/interfaces';
+import { PrismaService } from '../prisma/prisma.service';
+import { Pagination } from '../interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()

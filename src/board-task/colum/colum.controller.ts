@@ -13,7 +13,7 @@ import { ColumService } from './colum.service';
 import { CreateColumDto } from './dto/create-colum.dto';
 import { DeleteColumDto } from './dto/delete-colum.dto';
 import { UpdateColumDto } from './dto/update-colum.dto';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../../auth/decorators';
 import { UserGuard } from '../../auth/guard';
 
 @UseGuards(UserGuard)

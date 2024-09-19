@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../../users/users.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { DeleteTaskDto } from './dto/delete-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';

@@ -22,6 +22,9 @@ type FileAssignmentRepositoryType = {
   ): Promise<FileOnAssignment[]>;
   create(request: RequestCreateFileAssignment): Promise<FileOnAssignment>;
   delete(request: RequestDeleteFileAssignment): Promise<{ message: string }>;
+  deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }>;
 };
 @Injectable()
 export class FileAssignmentRepository implements FileAssignmentRepositoryType {
@@ -112,6 +115,42 @@ export class FileAssignmentRepository implements FileAssignmentRepositoryType {
       });
 
       return { message: 'File deleted' };
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteByAssignmentId(request: {
+    assignmentId: string;
+  }): Promise<{ message: string }> {
+    try {
+      const filesOnAssignment = await this.prisma.fileOnAssignment.findMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
+      });
+
+      await this.prisma.fileOnAssignment.deleteMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
+      });
+
+      await Promise.all(
+        filesOnAssignment.map(async (file) => {
+          await this.googleStorageService.DeleteFileOnStorage({
+            fileName: file.url,
+          });
+        }),
+      );
+
+      return { message: 'Files deleted' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

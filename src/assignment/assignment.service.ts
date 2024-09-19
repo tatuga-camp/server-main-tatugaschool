@@ -1,3 +1,4 @@
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { VectorService } from './../vector/vector.service';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
@@ -23,6 +24,7 @@ export class AssignmentService {
   logger: Logger = new Logger(AssignmentService.name);
   assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
+    this.googleStorageService,
   );
   teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
@@ -31,6 +33,7 @@ export class AssignmentService {
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
+    private googleStorageService: GoogleStorageService,
   ) {}
 
   async getAssignmentById(
@@ -41,6 +44,10 @@ export class AssignmentService {
       const assignment = await this.assignmentRepository.getAssignmentById({
         assignmentId: dto.assignmentId,
       });
+
+      if (!assignment) {
+        throw new NotFoundException('Assignment not found');
+      }
 
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
@@ -54,7 +61,17 @@ export class AssignmentService {
             schoolId: assignment.schoolId,
           },
         );
-      if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
+
+      if (!memberOnSchool) {
+        throw new ForbiddenException(
+          'You are not allowed to access this assignment because you are not a member of the school',
+        );
+      }
+
+      if (
+        (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') &&
+        memberOnSchool.role !== 'ADMIN'
+      ) {
         throw new ForbiddenException(
           'You are not allowed to access this assignment',
         );
@@ -78,6 +95,12 @@ export class AssignmentService {
           subjectId: dto.subjectId,
         });
 
+      if (!teacherOnSubject) {
+        throw new ForbiddenException(
+          'You are not allowed to access this assignment',
+        );
+      }
+
       const memberOnSchool =
         await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
           {
@@ -85,7 +108,14 @@ export class AssignmentService {
             schoolId: teacherOnSubject.schoolId,
           },
         );
-      if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
+
+      if (!memberOnSchool) {
+        throw new ForbiddenException("You're not a member of this school");
+      }
+      if (
+        (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') &&
+        memberOnSchool.role !== 'ADMIN'
+      ) {
         throw new ForbiddenException(
           'You are not allowed to access this assignment',
         );
@@ -111,7 +141,7 @@ export class AssignmentService {
           subjectId: dto.subjectId,
         });
 
-      if (!teacherOnSubject) {
+      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
         throw new ForbiddenException(
           'You are not allowed to access this assignment',
         );
@@ -125,7 +155,7 @@ export class AssignmentService {
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
         schoolId: teacherOnSubject.schoolId,
-        userId: user.id
+        userId: user.id,
       });
     } catch (error) {
       this.logger.error(error);
@@ -152,7 +182,7 @@ export class AssignmentService {
           subjectId: assignment.subjectId,
         });
 
-      if (!teacherOnSubject) {
+      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
         throw new ForbiddenException(
           'You are not allowed to access this assignment',
         );
@@ -207,7 +237,7 @@ export class AssignmentService {
           subjectId: assignment.subjectId,
         });
 
-      if (!teacherOnSubject) {
+      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
         throw new ForbiddenException(
           'You are not allowed to access this assignment',
         );

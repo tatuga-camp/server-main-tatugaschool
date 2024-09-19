@@ -1,4 +1,4 @@
-import { EmailService } from 'src/email/email.service';
+import { EmailService } from '../email/email.service';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { TeacherOnSubjectRepository } from './teacher-on-subject.repository';
 import {

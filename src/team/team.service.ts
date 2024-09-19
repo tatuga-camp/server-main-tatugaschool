@@ -10,7 +10,7 @@ import { CreateTeamDto } from './dto/create-team.dto';
 import { UpdateTeamDto } from './dto/update-team.dto';
 import { DeleteTeamDto } from './dto/delete-team.dto';
 import { Team, User } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import { UsersService } from '../users/users.service';
 import { GetTeamParamDto, GetTeamQueryDto } from './dto/get-team.dto';
 
 @Injectable()

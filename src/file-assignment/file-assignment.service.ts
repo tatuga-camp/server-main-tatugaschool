@@ -19,14 +19,17 @@ import { SchoolRepository } from '../school/school.repository';
 
 @Injectable()
 export class FileAssignmentService {
-  logger: Logger = new Logger(FileAssignmentService.name);
+  private logger: Logger = new Logger(FileAssignmentService.name);
   fileAssignmentRepository: FileAssignmentRepository =
     new FileAssignmentRepository(this.prisma, this.googleStorageService);
-  assignmentRepository: AssignmentRepository = new AssignmentRepository(
+  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
+    this.prisma,
+    this.googleStorageService,
+  );
+  private schoolRepository: SchoolRepository = new SchoolRepository(
     this.prisma,
   );
-  schoolRepository: SchoolRepository = new SchoolRepository(this.prisma);
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
   constructor(
     private prisma: PrismaService,

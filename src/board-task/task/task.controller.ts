@@ -13,7 +13,7 @@ import { TaskService } from './task.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { DeleteTaskDto } from './dto/delete-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../../auth/decorators';
 import { User } from '@prisma/client';
 import { UserGuard } from '../../auth/guard';
 

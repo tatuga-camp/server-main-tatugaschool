@@ -16,12 +16,14 @@ import {
 } from './dto';
 import { Skill, User } from '@prisma/client';
 import { VectorService } from '../vector/vector.service';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 @Injectable()
 export class SkillService {
   logger: Logger = new Logger(SkillService.name);
   assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
+    this.googleStorageService,
   );
   teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
@@ -29,6 +31,7 @@ export class SkillService {
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
+    private googleStorageService: GoogleStorageService,
   ) {}
 
   async findByVectorSearch(dto: GetSkillDto, user: User): Promise<Skill[]> {

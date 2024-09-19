@@ -13,12 +13,12 @@ import {
 } from './dto/post-student.dto';
 import * as bcrypt from 'bcrypt';
 import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
-import { UsersService } from 'src/users/users.service';
-import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
+import { UsersService } from '../users/users.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { MemberOnSchool, Student, User } from '@prisma/client';
 import { UpdateStudentDto } from './dto/patch-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { RequestCreateManyStudents } from './interface/request-student.interface';
 
 @Injectable()

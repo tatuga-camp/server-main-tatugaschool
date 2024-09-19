@@ -1,15 +1,26 @@
 import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
   logger: Logger = new Logger(UsersService.name);
+  userRepository: UserRepository = new UserRepository(this.prisma);
   constructor(private prisma: PrismaService) {}
 
   async GetUser(user: User): Promise<User> {
     try {
       return user;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getUserByEmail(dto: { email: string }): Promise<User | null> {
+    try {
+      return await this.userRepository.findByEmail({ email: dto.email });
     } catch (error) {
       this.logger.error(error);
       throw error;

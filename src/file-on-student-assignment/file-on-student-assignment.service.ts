@@ -20,19 +20,22 @@ import { Student, User } from '@prisma/client';
 
 @Injectable()
 export class FileOnStudentAssignmentService {
-  logger: Logger = new Logger(FileOnStudentAssignmentService.name);
-  assignmentRepository: AssignmentRepository = new AssignmentRepository(
+  private logger: Logger = new Logger(FileOnStudentAssignmentService.name);
+  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
+    this.prisma,
+    this.googleStorageService,
+  );
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
+    new TeacherOnSubjectRepository(this.prisma);
+  private schoolRepository: SchoolRepository = new SchoolRepository(
     this.prisma,
   );
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  schoolRepository: SchoolRepository = new SchoolRepository(this.prisma);
   fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
     new FileOnStudentAssignmentRepository(
       this.prisma,
       this.googleStorageService,
     );
-  studentOnAssignmentRepository: StudentOnAssignmentRepository =
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository =
     new StudentOnAssignmentRepository(this.prisma);
   constructor(
     private prisma: PrismaService,

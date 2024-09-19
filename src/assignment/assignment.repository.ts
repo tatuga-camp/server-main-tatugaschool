@@ -1,3 +1,6 @@
+import { SkillOnAssignmentRepository } from './../skill-on-assignment/skill-on-assignment.repository';
+import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
+import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
 import {
   Injectable,
   InternalServerErrorException,
@@ -13,6 +16,8 @@ import {
 import { Assignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 
 type AssignmentRepositoryType = {
   getAssignmentById(request: RequestGetAssignmentById): Promise<Assignment>;
@@ -28,7 +33,21 @@ type AssignmentRepositoryType = {
 @Injectable()
 export class AssignmentRepository implements AssignmentRepositoryType {
   logger: Logger = new Logger(AssignmentRepository.name);
-  constructor(private prisma: PrismaService) {}
+  fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
+    new FileOnStudentAssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+  fileAssignmentRepository: FileAssignmentRepository =
+    new FileAssignmentRepository(this.prisma, this.googleStorageService);
+  studentOnAssignmentRepository: StudentOnAssignmentRepository =
+    new StudentOnAssignmentRepository(this.prisma);
+  skillOnAssignmentRepository: SkillOnAssignmentRepository =
+    new SkillOnAssignmentRepository(this.prisma);
+  constructor(
+    private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
+  ) {}
 
   async getAssignmentById(
     request: RequestGetAssignmentById,
@@ -113,6 +132,22 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestDeleteAssignment,
   ): Promise<{ message: string }> {
     try {
+      await this.fileAssignmentRepository.deleteByAssignmentId({
+        assignmentId: request.assignmentId,
+      });
+
+      await this.studentOnAssignmentRepository.deleteByAssignmentId({
+        assignmentId: request.assignmentId,
+      });
+
+      await this.fileOnStudentAssignmentRepository.deleteByAssignmentId({
+        assignmentId: request.assignmentId,
+      });
+
+      await this.skillOnAssignmentRepository.deleteByAssignmentId({
+        assignmentId: request.assignmentId,
+      });
+
       await this.prisma.assignment.delete({
         where: {
           id: request.assignmentId,

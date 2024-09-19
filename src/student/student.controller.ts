@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import {
   CreateStudentDto,

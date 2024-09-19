@@ -9,7 +9,7 @@ import {
   RequestUpdateMemberOnSchool,
 } from './interfaces';
 import { $Enums, MemberOnSchool } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type MemberOnSchoolRepositoryType = {

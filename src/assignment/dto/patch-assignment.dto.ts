@@ -17,28 +17,28 @@ class UpdateAssignmentBody {
   @IsOptional()
   @IsString()
   @MaxLength(999)
-  title: string;
+  title?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(3999)
-  description: string;
+  description?: string;
 
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @Min(0)
-  maxScore: number;
+  maxScore?: number;
 
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @Min(0)
-  weight: number;
+  weight?: number;
 
   @IsOptional()
   @IsDateString()
-  beginDate: string;
+  beginDate?: string;
 
   @IsOptional()
   @IsBoolean()

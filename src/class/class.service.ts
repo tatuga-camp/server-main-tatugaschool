@@ -13,9 +13,9 @@ import {
   RequestGetClassByPage,
   RequestReorderClass,
 } from './interfaces/class.interface';
-import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ClassService {

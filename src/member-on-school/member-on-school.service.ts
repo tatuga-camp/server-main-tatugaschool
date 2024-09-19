@@ -22,7 +22,7 @@ import {
   MemberOnSchoolRepository,
   MemberOnSchoolRepositoryType,
 } from './member-on-school.repository';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository, UserRepositoryType } from '../users/users.repository';
 
 @Injectable()

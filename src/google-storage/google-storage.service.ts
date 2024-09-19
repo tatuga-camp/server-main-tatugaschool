@@ -15,15 +15,12 @@ import { InputDeleteFileOnStorage } from './interfaces';
 export class GoogleStorageService {
   private bucket: Bucket;
   logger: Logger;
-  constructor(
-    private configService: ConfigService,
-    private config: ConfigService,
-  ) {
+  constructor(private configService: ConfigService) {
     this.initializeCloudStorage();
-    this.logger = new Logger();
+    this.logger = new Logger(GoogleStorageService.name);
   }
 
-  private async initializeCloudStorage() {
+  async initializeCloudStorage() {
     try {
       const encode = atob(
         this.configService.get('GOOGLE_CLOUD_PRIVATE_KEY_ENCODE'),
@@ -55,8 +52,9 @@ export class GoogleStorageService {
       ];
 
       await this.setCorsConfiguration(corsConfiguration);
+      this.logger.log('Cloud storage initialized: ' + this.bucket.name);
     } catch (err) {
-      console.error('Error initializing cloud storage:', err.message);
+      console.error('Error initializing cloud storage:', err);
       throw new BadGatewayException(
         'Error initializing cloud storage:',
         err.message,
@@ -108,7 +106,7 @@ export class GoogleStorageService {
         ? `userId:${userId}/ID:${id}/${replacedString}`
         : `studentId:${studentId}/ID:${id}/${replacedString}`;
       const blob = bucket.file(gcsFileName);
-      const urlPicture = `https://storage.googleapis.com/${this.config.get(
+      const urlPicture = `https://storage.googleapis.com/${this.configService.get(
         'GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET',
       )}/${gcsFileName}`;
       const [url] = await blob.getSignedUrl(options);
@@ -137,7 +135,7 @@ export class GoogleStorageService {
       const blobStream = blob.createWriteStream();
       blobStream.on('finish', async () => {});
       blobStream.end(input.file.buffer);
-      return `https://storage.googleapis.com/${this.config.get(
+      return `https://storage.googleapis.com/${this.configService.get(
         'STORAGE_MEDIA_BUCKET',
       )}/${gcsFileName}`;
     } catch (error) {

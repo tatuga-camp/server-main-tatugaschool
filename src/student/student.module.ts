@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { StudentController } from './student.controller';
 import { StudentRepository } from './student.repository';
-import { MemberOnSchoolService } from 'src/member-on-school/member-on-school.service';
-import { UsersService } from 'src/users/users.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   providers: [

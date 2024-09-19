@@ -13,7 +13,7 @@ import {
   RequestReorderClass,
   RequestUpdateClass,
 } from './interfaces/class.interface';
-import { Pagination } from 'src/interfaces';
+import { Pagination } from '../interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type ClassRepositoryType = {

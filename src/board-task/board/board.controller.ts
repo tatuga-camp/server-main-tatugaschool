@@ -13,7 +13,7 @@ import { BoardService } from './board.service';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { DeleteBoardDto } from './dto/delete-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../../auth/decorators';
 import { User } from '@prisma/client';
 import { GetBoardByPageDto } from './dto/get-board.dto';
 import { UserGuard } from '../../auth/guard';
