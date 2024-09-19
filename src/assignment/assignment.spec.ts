@@ -10,7 +10,6 @@ import {
   GetAssignmentBySubjectIdDto,
   UpdateAssignmentDto,
 } from './dto';
-import { VectorService } from '../vector/vector.service';
 import { Assignment, User, StudentOnAssignment } from '@prisma/client';
 import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
@@ -32,7 +31,6 @@ describe('AssignmentService', () => {
   let fileAssignmentService: FileAssignmentService;
   let skillOnAssignmentService: SkillOnAssignmentService;
   let studentOnAssignmentService: StudentOnAssignmentService;
-  let prismaService: PrismaService;
   const userId = '66d5edd6ab46227db7d5e2db';
   const anotherUserId = '66ace7578c5561b748d8b3b3';
   const subjectId = '66e7bded002943028083dda4';
@@ -73,7 +71,6 @@ describe('AssignmentService', () => {
     studentOnAssignmentService = module.get<StudentOnAssignmentService>(
       StudentOnAssignmentService,
     );
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
