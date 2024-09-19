@@ -23,10 +23,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-          - name: Check ENV
-          run: echo "MY STORAGE NAME IS $GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET"
-          - uses: actions/checkout@v3
-          - name: Install modules
-            run: npm ci
-          - name: Run tests
-            run: npm run test
+      - name: Check ENV
+        run: echo "MY STORAGE NAME IS $GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET"
+      - uses: actions/checkout@v3
+      - name: Install modules
+        run: npm ci
+      - name: Run tests
+        run: npm run test
