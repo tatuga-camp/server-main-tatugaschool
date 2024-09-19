@@ -1,0 +1,30 @@
+name: Run Unit Tests
+on: pull_request
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  CLIENT_URL: ${{ secrets.CLIENT_URL }}
+  EMAIL_NAME_SERVICE: ${{ secrets.EMAIL_NAME_SERVICE }}
+  EMAIL_PASSWORD_SERVICE: ${{ secrets.EMAIL_PASSWORD_SERVICE }}
+  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+  GOOGLE_CALL_BACK: ${{ secrets.GOOGLE_CALL_BACK }}
+  GOOGLE_CLOUD_PROJECT_ID: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+  GOOGLE_CLOUD_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_CLOUD_PRIVATE_KEY_ID }}
+  GOOGLE_CLOUD_PRIVATE_KEY_ENCODE: ${{ secrets.GOOGLE_CLOUD_PRIVATE_KEY_ENCODE }}
+  GOOGLE_CLOUD_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLOUD_CLIENT_EMAIL }}
+  GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET: ${{ secrets.GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET }}
+  GOOGLE_CLOUD_CLIENT_ID: ${{ secrets.GOOGLE_CLOUD_CLIENT_ID }}
+  JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+  JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+  STUDENT_JWT_ACCESS_SECRET: ${{ secrets.STUDENT_JWT_ACCESS_SECRET }}
+  STUDENT_JWT_REFRESH_SECRET: ${{ secrets.STUDENT_JWT_REFRESH_SECRET }}
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install modules
+        run: npm ci
+      - name: Run tests
+        run: npm run test
