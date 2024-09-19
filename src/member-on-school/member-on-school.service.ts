@@ -131,7 +131,7 @@ export class MemberOnSchoolService {
 
       if (!school) {
         throw new NotFoundException(
-          `ไม่พบ School ที่ต้องการสร้าง MemberOnSchool`,
+          'No School Found with this schoolId, Please check the schoolId again',
         );
       }
 
