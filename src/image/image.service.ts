@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createCanvas } from 'canvas';
+import { Canvas, CanvasRenderingContext2D, createCanvas } from 'canvas';
 
 @Injectable()
 export class ImageService {
   logger: Logger = new Logger(ImageService.name);
-  private canvas: any;
-  private context: any;
+  private canvas:Canvas;
+  private context: CanvasRenderingContext2D;
 
   constructor() {
     this.canvas = createCanvas(200, 200); // Set the dimensions as needed
@@ -21,7 +21,6 @@ export class ImageService {
       // Set background color
       this.context.fillStyle = '#FFFFFF'; // White background
       this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
       // Set text style
       this.context.fillStyle = '#000000'; // Black text
       this.context.font = 'bold 150px Arial';
@@ -36,7 +35,7 @@ export class ImageService {
       );
 
       // Get Base64 string
-      return this.canvas.toDataURL();
+      return this.canvas.toDataURL()
     } catch (error) {
       this.logger.error(error);
       throw error;
