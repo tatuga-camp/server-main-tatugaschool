@@ -20,12 +20,4 @@ export class CreateAttendanceTableDto {
   @IsNotEmpty()
   @IsMongoId()
   subjectId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  teamId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 }

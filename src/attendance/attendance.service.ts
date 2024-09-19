@@ -1,3 +1,5 @@
+import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { SubjectRepository } from './../subject/subject.repository';
 import {
   AttendanceRepository,
   AttendanceRepositoryType,
@@ -14,27 +16,40 @@ import { GetAttendanceByIdDto, UpdateAttendanceDto } from './dto';
 
 @Injectable()
 export class AttendanceService {
-  logger: Logger;
+  private logger: Logger;
+  private subjectRepository: SubjectRepository = new SubjectRepository(
+    this.prisma,
+    this.googleStorageService,
+  );
   attendanceRepository: AttendanceRepositoryType;
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
+  ) {
     this.logger = new Logger(AttendanceService.name);
     this.attendanceRepository = new AttendanceRepository(prisma);
   }
 
   async validateAccess({
     userId,
-    schoolId,
     subjectId,
   }: {
     userId: string;
-    schoolId: string;
     subjectId: string;
   }) {
+    const subject = await this.subjectRepository.getSubjectById({
+      subjectId: subjectId,
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject not found');
+    }
+
     const [memberOnSchool, teacherOnSubject] = await Promise.all([
       this.prisma.memberOnSchool.findFirst({
         where: {
           userId: userId,
-          schoolId: schoolId,
+          schoolId: subject.schoolId,
         },
       }),
 
@@ -46,11 +61,14 @@ export class AttendanceService {
       }),
     ]);
 
-    if (!memberOnSchool) {
+    if (!memberOnSchool || memberOnSchool.status !== 'ACCEPT') {
       throw new ForbiddenException('Access denied');
     }
 
-    if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
+    if (
+      (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') &&
+      memberOnSchool.role !== 'ADMIN'
+    ) {
       throw new ForbiddenException('Access denied');
     }
   }
@@ -70,9 +88,9 @@ export class AttendanceService {
 
       await this.validateAccess({
         userId: user.id,
-        schoolId: attendance.schoolId,
         subjectId: attendance.subjectId,
       });
+
       return attendance;
     } catch (error) {
       this.logger.error(error);
@@ -94,7 +112,6 @@ export class AttendanceService {
 
       await this.validateAccess({
         userId: user.id,
-        schoolId: attendance.schoolId,
         subjectId: attendance.subjectId,
       });
       return await this.attendanceRepository.updateAttendanceById(dto);

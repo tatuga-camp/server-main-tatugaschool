@@ -20,7 +20,7 @@ export class GoogleStorageService {
     this.logger = new Logger(GoogleStorageService.name);
   }
 
-  async initializeCloudStorage() {
+  private async initializeCloudStorage() {
     try {
       const encode = atob(
         this.configService.get('GOOGLE_CLOUD_PRIVATE_KEY_ENCODE'),

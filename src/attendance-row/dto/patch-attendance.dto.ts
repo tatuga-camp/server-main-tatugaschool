@@ -38,7 +38,7 @@ export class UpdateAttendanceRowDto {
 
   @IsNotEmpty()
   @IsObject()
-  @Type(() => UpdateAttendanceRowQuery)
+  @Type(() => UpdateAttendanceRowBody)
   @ValidateNested()
   body: UpdateAttendanceRowBody;
 }
