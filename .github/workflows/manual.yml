@@ -19,6 +19,7 @@ env:
   STUDENT_JWT_ACCESS_SECRET: ${{ secrets.STUDENT_JWT_ACCESS_SECRET }}
   STUDENT_JWT_REFRESH_SECRET: ${{ secrets.STUDENT_JWT_REFRESH_SECRET }}
   STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+  NODE_ENV: test
 jobs:
   build:
     runs-on: ubuntu-latest

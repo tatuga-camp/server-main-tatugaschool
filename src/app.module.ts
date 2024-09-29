@@ -30,6 +30,7 @@ import { BoardModule } from './board-task/board/board.module';
 import { SkillModule } from './skill/skill.module';
 import { VectorModule } from './vector/vector.module';
 import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
+import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/skill-on-student-assignment.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignme
     SkillModule,
     VectorModule,
     SkillOnAssignmentModule,
+    SkillOnStudentAssignmentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

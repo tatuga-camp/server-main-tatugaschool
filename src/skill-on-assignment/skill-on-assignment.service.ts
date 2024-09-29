@@ -34,7 +34,7 @@ export class SkillOnAssignmentService {
     user: User,
   ): Promise<SkillOnAssignment[]> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
@@ -69,7 +69,7 @@ export class SkillOnAssignmentService {
     user: User,
   ): Promise<SkillOnAssignment> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 

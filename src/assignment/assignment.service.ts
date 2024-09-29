@@ -41,7 +41,7 @@ export class AssignmentService {
     user: User,
   ): Promise<Assignment> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
@@ -121,7 +121,7 @@ export class AssignmentService {
         );
       }
 
-      return await this.assignmentRepository.getAssignmentBySubjectId({
+      return await this.assignmentRepository.getBySubjectId({
         subjectId: dto.subjectId,
       });
     } catch (error) {
@@ -151,7 +151,7 @@ export class AssignmentService {
 
       const vectors = await this.vectorService.embbedingText(text);
 
-      return await this.assignmentRepository.createAssignment({
+      return await this.assignmentRepository.create({
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
         schoolId: teacherOnSubject.schoolId,
@@ -168,7 +168,7 @@ export class AssignmentService {
     user: User,
   ): Promise<Assignment> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.query.assignmentId,
       });
 
@@ -206,7 +206,7 @@ export class AssignmentService {
 
       const vectors = await this.vectorService.embbedingText(text);
 
-      return await this.assignmentRepository.updateAssignment({
+      return await this.assignmentRepository.update({
         query: dto.query,
         data: {
           ...dto.data,
@@ -224,7 +224,7 @@ export class AssignmentService {
     user: User,
   ): Promise<{ message: string }> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
@@ -243,7 +243,7 @@ export class AssignmentService {
         );
       }
 
-      return await this.assignmentRepository.deleteAssignment(dto);
+      return await this.assignmentRepository.delete(dto);
     } catch (error) {
       this.logger.error(error);
       throw error;

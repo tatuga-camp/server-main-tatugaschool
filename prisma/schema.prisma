@@ -141,16 +141,17 @@ model Student {
   number    String
   password  String?
 
-  schoolId                 String                    @db.ObjectId
-  classId                  String                    @db.ObjectId
-  school                   School                    @relation(fields: [schoolId], references: [id])
-  class                    Class                     @relation(fields: [classId], references: [id])
-  studentOnSubjects        StudentOnSubject[]
-  studentOnAssignments     StudentOnAssignment[]
-  commentOnAssignments     CommentOnAssignment[]
-  scoreOnStudents          ScoreOnStudent[]
-  attendances              Attendance[]
-  fileOnStudentAssignments FileOnStudentAssignment[]
+  schoolId                  String                     @db.ObjectId
+  classId                   String                     @db.ObjectId
+  school                    School                     @relation(fields: [schoolId], references: [id])
+  class                     Class                      @relation(fields: [classId], references: [id])
+  studentOnSubjects         StudentOnSubject[]
+  studentOnAssignments      StudentOnAssignment[]
+  commentOnAssignments      CommentOnAssignment[]
+  scoreOnStudents           ScoreOnStudent[]
+  attendances               Attendance[]
+  fileOnStudentAssignments  FileOnStudentAssignment[]
+  skillOnStudentAssignments SkillOnStudentAssignment[]
 }
 
 model Team {
@@ -571,8 +572,12 @@ model SkillOnStudentAssignment {
   subject               Subject             @relation(fields: [subjectId], references: [id])
   skillId               String              @db.ObjectId
   skill                 Skill               @relation(fields: [skillId], references: [id])
+  studentId             String              @db.ObjectId
+  student               Student             @relation(fields: [studentId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+
+  @@unique([skillId, studentOnAssignmentId])
 }
 
 model Career {
