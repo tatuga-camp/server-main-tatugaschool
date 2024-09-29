@@ -41,7 +41,7 @@ export class FileAssignmentService {
     user: User,
   ): Promise<FileOnAssignment[]> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
@@ -74,7 +74,7 @@ export class FileAssignmentService {
     user: User,
   ): Promise<FileOnAssignment> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
@@ -135,7 +135,7 @@ export class FileAssignmentService {
       if (!fileOnAssignment) {
         throw new NotFoundException('File not found');
       }
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: fileOnAssignment.assignmentId,
       });
 

@@ -36,7 +36,7 @@ export class SkillService {
 
   async findByVectorSearch(dto: GetSkillDto, user: User): Promise<Skill[]> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 

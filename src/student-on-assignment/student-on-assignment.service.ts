@@ -49,7 +49,7 @@ export class StudentOnAssignmentService {
     user: User,
   ): Promise<StudentOnAssignment[]> {
     try {
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
@@ -124,7 +124,7 @@ export class StudentOnAssignmentService {
   ): Promise<StudentOnAssignment> {
     try {
       const [assignment, studentOnSubject] = await Promise.all([
-        this.assignmentRepository.getAssignmentById({
+        this.assignmentRepository.getById({
           assignmentId: dto.assignmentId,
         }),
         this.studentOnSubjectRepository.getStudentOnSubjectById({

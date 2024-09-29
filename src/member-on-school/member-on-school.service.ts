@@ -55,7 +55,7 @@ export class MemberOnSchoolService {
         },
       });
 
-      if (!memberOnSchool) {
+      if (!memberOnSchool || memberOnSchool.status !== 'ACCEPT') {
         throw new ForbiddenException(
           'Access denied: User is not a member of the school',
         );
