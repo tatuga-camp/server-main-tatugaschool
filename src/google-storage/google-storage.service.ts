@@ -16,7 +16,10 @@ export class GoogleStorageService {
   private bucket: Bucket;
   logger: Logger;
   constructor(private configService: ConfigService) {
-    this.initializeCloudStorage();
+    const isTest = process.env.NODE_ENV === 'test';
+    if (isTest == false) {
+      this.initializeCloudStorage();
+    }
     this.logger = new Logger(GoogleStorageService.name);
   }
 
