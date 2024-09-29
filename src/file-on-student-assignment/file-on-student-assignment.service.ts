@@ -106,7 +106,7 @@ export class FileOnStudentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: studnetOnAssignment.assignmentId,
       });
 
@@ -164,7 +164,7 @@ export class FileOnStudentAssignmentService {
       if (fileOnStudentAssignment.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
-      const assignment = await this.assignmentRepository.getAssignmentById({
+      const assignment = await this.assignmentRepository.getById({
         assignmentId: fileOnStudentAssignment.assignmentId,
       });
 

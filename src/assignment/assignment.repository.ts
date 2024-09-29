@@ -20,15 +20,13 @@ import { GoogleStorageService } from '../google-storage/google-storage.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 
 type AssignmentRepositoryType = {
-  getAssignmentById(request: RequestGetAssignmentById): Promise<Assignment>;
-  getAssignmentBySubjectId(
+  getById(request: RequestGetAssignmentById): Promise<Assignment>;
+  getBySubjectId(
     request: RequestGetAssignmentBySubjectId,
   ): Promise<Assignment[]>;
-  createAssignment(request: RequestCreateAssignment): Promise<Assignment>;
-  updateAssignment(request: RequestUpdateAssignment): Promise<Assignment>;
-  deleteAssignment(
-    request: RequestDeleteAssignment,
-  ): Promise<{ message: string }>;
+  create(request: RequestCreateAssignment): Promise<Assignment>;
+  update(request: RequestUpdateAssignment): Promise<Assignment>;
+  delete(request: RequestDeleteAssignment): Promise<{ message: string }>;
 };
 @Injectable()
 export class AssignmentRepository implements AssignmentRepositoryType {
@@ -49,9 +47,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     private googleStorageService: GoogleStorageService,
   ) {}
 
-  async getAssignmentById(
-    request: RequestGetAssignmentById,
-  ): Promise<Assignment> {
+  async getById(request: RequestGetAssignmentById): Promise<Assignment> {
     try {
       return await this.prisma.assignment.findUnique({
         where: {
@@ -69,7 +65,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async getAssignmentBySubjectId(
+  async getBySubjectId(
     request: RequestGetAssignmentBySubjectId,
   ): Promise<Assignment[]> {
     try {
@@ -89,9 +85,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async createAssignment(
-    request: RequestCreateAssignment,
-  ): Promise<Assignment> {
+  async create(request: RequestCreateAssignment): Promise<Assignment> {
     try {
       return await this.prisma.assignment.create({
         data: request,
@@ -107,9 +101,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async updateAssignment(
-    request: RequestUpdateAssignment,
-  ): Promise<Assignment> {
+  async update(request: RequestUpdateAssignment): Promise<Assignment> {
     try {
       return await this.prisma.assignment.update({
         where: {
@@ -128,9 +120,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async deleteAssignment(
-    request: RequestDeleteAssignment,
-  ): Promise<{ message: string }> {
+  async delete(request: RequestDeleteAssignment): Promise<{ message: string }> {
     try {
       await this.fileAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
