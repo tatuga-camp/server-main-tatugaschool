@@ -5,6 +5,7 @@ import {
   IsMongoId,
   IsNotEmpty,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   MaxLength,
   MinLength,
@@ -31,6 +32,7 @@ export class SignUpDto {
   lastName: string;
 
   @IsNotEmpty()
+  @IsPhoneNumber()
   phone: string;
 
   @IsNotEmpty()

@@ -181,7 +181,7 @@ export class AuthService {
         verifyEmailToken: dto.token,
       });
       if (!user) {
-        throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
+        throw new NotFoundException("Can't find user with this token");
       }
 
       if (user.verifyEmailTokenExpiresAt < new Date()) {
@@ -231,7 +231,9 @@ export class AuthService {
       }
 
       if (!user.isVerifyEmail) {
-        throw new UnauthorizedException("Email isn't verified yet");
+        throw new UnauthorizedException(
+          "Email isn't verified yet, Please check your email",
+        );
       }
       if (user.provider !== 'LOCAL') {
         throw new BadRequestException('Please sign in with google');
