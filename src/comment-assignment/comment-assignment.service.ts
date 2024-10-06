@@ -96,7 +96,7 @@ export class CommentAssignmentService {
         title: student.title,
         firstName: student.firstName,
         lastName: student.lastName,
-        picture: student.picture,
+        photo: student.photo,
         subjectId: studentOnAssignment.subjectId,
         schoolId: student.schoolId,
       });
@@ -132,7 +132,7 @@ export class CommentAssignmentService {
         title: 'Teacher',
         firstName: user.firstName,
         lastName: user.lastName,
-        picture: user.photo,
+        photo: user.photo,
         userId: user.id,
         teacherOnSubjectId: teacherOnSubject.id,
         role: teacherOnSubject.role,

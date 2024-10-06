@@ -174,7 +174,7 @@ export class StudentOnSubjectService {
         title: student.title,
         firstName: student.firstName,
         lastName: student.lastName,
-        picture: student.picture,
+        photo: student.photo,
         number: student.number,
         studentId: student.id,
         classId: student.classId,

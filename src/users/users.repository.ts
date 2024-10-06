@@ -82,7 +82,7 @@ export class UserRepository implements UserRepositoryType {
         data: request.body,
       });
 
-      await Promise.allSettled([
+      const result = await Promise.allSettled([
         this.prisma.memberOnSchool.updateMany({
           where: {
             userId: user.id,

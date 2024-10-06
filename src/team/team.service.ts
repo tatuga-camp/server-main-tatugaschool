@@ -12,13 +12,15 @@ import { DeleteTeamDto } from './dto/delete-team.dto';
 import { Team, User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { GetTeamParamDto, GetTeamQueryDto } from './dto/get-team.dto';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TeamService {
-  logger: Logger = new Logger('TeamService');
+  private logger: Logger = new Logger(TeamService.name);
   constructor(
     private teamRepository: TeamRepository,
     private userService: UsersService,
+    private prisma: PrismaService,
   ) {}
 
   async createTeam(createTeamDto: CreateTeamDto, user: User) {
@@ -36,10 +38,10 @@ export class TeamService {
 
       const request = { data: createTeamDto };
       this.logger.log('Creating team', request);
-      return await this.teamRepository.create(request);
+      const createTeam = await this.teamRepository.create(request);
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      throw error;
     }
   }
 
@@ -67,7 +69,7 @@ export class TeamService {
       return await this.teamRepository.update(request);
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      throw error;
     }
   }
 
@@ -96,7 +98,7 @@ export class TeamService {
       return await this.teamRepository.delete({ teamId: deleteTeamDto.teamId });
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      throw error;
     }
   }
 
@@ -121,7 +123,7 @@ export class TeamService {
       return team;
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      throw error;
     }
   }
 
@@ -148,7 +150,7 @@ export class TeamService {
       return await this.teamRepository.findBySchoolId(request);
     } catch (error) {
       this.logger.error(error);
-      throw new InternalServerErrorException(error.message);
+      throw error;
     }
   }
 }
