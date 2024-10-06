@@ -14,9 +14,9 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
 describe('SkillOnStudentAssignmentService', () => {
   let service: SkillOnStudentAssignmentService;
   let skillOnStudentAssignment: SkillOnStudentAssignment;
-  const skillId: string = '66f994ccf9e95cf221a7dd56';
-  const studentOnAssignmentId = '66f97e250adeba3e5c9aec01';
-  const studentId: string = '66f97dd80adeba3e5c9aebf6';
+  const skillId: string = '670294e24fd0002cc111f716';
+  const studentOnAssignmentId = '67028f65947a6b9240f57ead';
+  const studentId: string = '67028f48947a6b9240f57ea2';
   const userId = '66d5edd6ab46227db7d5e2db';
 
   beforeAll(async () => {
