@@ -31,6 +31,7 @@ import { SkillModule } from './skill/skill.module';
 import { VectorModule } from './vector/vector.module';
 import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
 import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/skill-on-student-assignment.module';
+import { CareerModule } from './career/career.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/sk
     VectorModule,
     SkillOnAssignmentModule,
     SkillOnStudentAssignmentModule,
+    CareerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

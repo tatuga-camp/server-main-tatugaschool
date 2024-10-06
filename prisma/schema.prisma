@@ -585,9 +585,10 @@ model Career {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  title          String
-  describe       String
-  keywords       String
+  title       String
+  description String
+  keywords    String
+
   vector         Float[]
   skillOnCareers SkillOnCareer[]
 }
