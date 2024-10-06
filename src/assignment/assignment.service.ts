@@ -21,14 +21,14 @@ import { Assignment, User } from '@prisma/client';
 
 @Injectable()
 export class AssignmentService {
-  logger: Logger = new Logger(AssignmentService.name);
+  private logger: Logger = new Logger(AssignmentService.name);
   assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
     this.googleStorageService,
   );
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
-  memberOnSchoolRepository: MemberOnSchoolRepository =
+  private memberOnSchoolRepository: MemberOnSchoolRepository =
     new MemberOnSchoolRepository(this.prisma);
   constructor(
     private prisma: PrismaService,
