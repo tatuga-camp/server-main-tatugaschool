@@ -26,12 +26,14 @@ export type StudentRepositoryType = {
 export class StudentRepository implements StudentRepositoryType {
   logger = new Logger(StudentRepository.name);
   constructor(private prisma: PrismaService) {}
+
   async update(request: RequestUpdateStudent): Promise<Student> {
     try {
       const student = await this.prisma.student.update({
         where: { id: request.query.studentId },
         data: request.body,
       });
+
       delete request.body.password;
       await Promise.allSettled([
         this.prisma.studentOnAssignment.updateMany({

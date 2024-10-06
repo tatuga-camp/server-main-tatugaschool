@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './users.repository';
+import { UpdateUserDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -12,6 +13,20 @@ export class UsersService {
   async GetUser(user: User): Promise<User> {
     try {
       return user;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async updateUser(dto: UpdateUserDto, user: User): Promise<User> {
+    try {
+      return await this.userRepository.update({
+        query: {
+          userId: user.id,
+        },
+        body: dto,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

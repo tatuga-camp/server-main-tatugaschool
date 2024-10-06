@@ -16,7 +16,7 @@ export class CreateStudentDto {
 
   @IsNotEmpty()
   @IsString()
-  picture: string;
+  photo: string;
 
   @IsNotEmpty()
   @IsString()

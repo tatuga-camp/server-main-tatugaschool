@@ -31,7 +31,7 @@ class UpdateStudenBody {
 
   @IsOptional()
   @IsString()
-  picture?: string;
+  photo?: string;
 
   @IsOptional()
   @IsString()
