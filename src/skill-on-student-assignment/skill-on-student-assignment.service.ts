@@ -105,7 +105,6 @@ export class SkillOnStudentAssignmentService {
         await this.skillOnAssignmentRepository.getByAssignmentId({
           assignmentId: studentOnAssignment.assignmentId,
         });
-
       // Calculate weigth based on student score and max score of assignment
       const weigth = studentOnAssignment.score / assignment.maxScore;
 
@@ -133,6 +132,7 @@ export class SkillOnStudentAssignmentService {
           }),
         ),
       );
+
       return create;
     } catch (error) {
       this.logger.error(error);

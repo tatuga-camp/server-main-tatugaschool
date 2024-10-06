@@ -17,7 +17,7 @@ export type RequestCreateStudentOnAssignment = {
   title: string;
   firstName: string;
   lastName: string;
-  picture: string;
+  photo: string;
   number: string;
   score?: number;
   body?: string;
@@ -38,7 +38,7 @@ export type RequestUpdateStudentOnAssignment = {
     title?: string;
     firstName?: string;
     lastName?: string;
-    picture?: string;
+    photo?: string;
     number?: string;
     score?: number;
     body?: string;

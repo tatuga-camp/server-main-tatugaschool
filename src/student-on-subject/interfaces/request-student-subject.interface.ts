@@ -14,7 +14,7 @@ export type RequestCreateStudentOnSubject = {
   title: string;
   firstName: string;
   lastName: string;
-  picture: string;
+  photo: string;
   number: string;
   studentId: string;
   classId: string;
@@ -30,7 +30,7 @@ export type RequestUpdateStudentOnSubject = {
     title?: string;
     firstName?: string;
     lastName?: string;
-    picture?: string;
+    photo?: string;
     number?: string;
     totalSpeicalScore?: number;
   };

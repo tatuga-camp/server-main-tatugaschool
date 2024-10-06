@@ -159,7 +159,7 @@ export class StudentOnAssignmentService {
         title: studentOnSubject.title,
         firstName: studentOnSubject.firstName,
         lastName: studentOnSubject.lastName,
-        picture: studentOnSubject.picture,
+        photo: studentOnSubject.photo,
         number: studentOnSubject.number,
         studentId: studentOnSubject.studentId,
         assignmentId: assignment.id,
