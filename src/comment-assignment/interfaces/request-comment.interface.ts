@@ -13,7 +13,7 @@ export type RequestCreateCommentAssignment = {
   title: string;
   firstName: string;
   lastName: string;
-  picture?: string;
+  photo?: string;
   number?: string;
   status?: Status;
   role?: MemberRole;
@@ -36,7 +36,7 @@ export type RequestUpdateCommentAssignment = {
     title?: string;
     firstName?: string;
     lastName?: string;
-    picture?: string;
+    photo?: string;
     number?: string;
     status?: Status;
     role?: MemberRole;

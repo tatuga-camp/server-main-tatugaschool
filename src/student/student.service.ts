@@ -133,7 +133,7 @@ export class StudentService {
     }
   }
 
-  async updateStudent(dto: UpdateStudentDto, user: User) {
+  async updateStudent(dto: UpdateStudentDto, user: User): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({
         studentId: dto.query.studentId,
