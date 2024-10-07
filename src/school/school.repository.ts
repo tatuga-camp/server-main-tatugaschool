@@ -3,12 +3,13 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { School } from '@prisma/client';
+import { Prisma, School } from '@prisma/client';
 import { RequestCreateSchool, RequestUpdateSchool } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type SchoolRepositoryType = {
+  findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]>;
   getById(request: { schoolId: string }): Promise<School>;
   create(request: RequestCreateSchool): Promise<School>;
   update(request: RequestUpdateSchool): Promise<School>;
@@ -21,6 +22,20 @@ export class SchoolRepository implements SchoolRepositoryType {
   logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(SchoolRepository.name);
+  }
+
+  async findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]> {
+    try {
+      return await this.prisma.school.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async getById(request: { schoolId: string }): Promise<School> {

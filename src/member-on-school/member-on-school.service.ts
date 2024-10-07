@@ -27,10 +27,10 @@ import { UserRepository, UserRepositoryType } from '../users/users.repository';
 
 @Injectable()
 export class MemberOnSchoolService {
-  logger: Logger = new Logger(MemberOnSchoolService.name);
+  private logger: Logger = new Logger(MemberOnSchoolService.name);
   memberOnSchoolRepository: MemberOnSchoolRepositoryType;
-  userRepository: UserRepositoryType;
-  schoolRepository: SchoolRepositoryType;
+  private userRepository: UserRepositoryType;
+  private schoolRepository: SchoolRepositoryType;
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,

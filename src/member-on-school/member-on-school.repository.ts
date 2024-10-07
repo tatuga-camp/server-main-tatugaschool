@@ -8,12 +8,18 @@ import {
   RequestGetMemberOnSchoolByEmail,
   RequestUpdateMemberOnSchool,
 } from './interfaces';
-import { $Enums, MemberOnSchool } from '@prisma/client';
+import { $Enums, MemberOnSchool, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type MemberOnSchoolRepositoryType = {
   create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool>;
+  findFirst(
+    request: Prisma.MemberOnSchoolFindFirstArgs,
+  ): Promise<MemberOnSchool>;
+  findMany(
+    request: Prisma.MemberOnSchoolFindManyArgs,
+  ): Promise<MemberOnSchool[]>;
   updateMemberOnSchool(
     request: RequestUpdateMemberOnSchool,
   ): Promise<MemberOnSchool>;
@@ -37,9 +43,41 @@ export type MemberOnSchoolRepositoryType = {
 
 @Injectable()
 export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
-  logger: Logger;
+  private logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(MemberOnSchoolRepository.name);
+  }
+
+  async findFirst(
+    request: Prisma.MemberOnSchoolFindFirstArgs,
+  ): Promise<MemberOnSchool> {
+    try {
+      return await this.prisma.memberOnSchool.findFirst(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findMany(
+    request: Prisma.MemberOnSchoolFindManyArgs,
+  ): Promise<MemberOnSchool[]> {
+    try {
+      return await this.prisma.memberOnSchool.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async getByUserId(request: { userId: string }): Promise<MemberOnSchool[]> {
