@@ -25,6 +25,11 @@ import { AdminGuard, UserGuard } from '../auth/guard';
 export class SchoolController {
   constructor(private schoolService: SchoolService) {}
 
+  @Get()
+  async findAll(@GetUser() user: User) {
+    return this.schoolService.getSchools(user);
+  }
+
   @Post()
   async create(@GetUser() user: User, @Body() dto: CreateSchoolDto) {
     return await this.schoolService.createSchool(dto, user);

@@ -50,7 +50,7 @@ export class SchoolService {
     schoolId: string;
   }): Promise<MemberOnSchool> {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+      const memberOnSchool = await this.memberOnSchoolRepository.findFirst({
         where: {
           userId: user.id,
           schoolId: schoolId,
@@ -66,6 +66,30 @@ export class SchoolService {
       }
 
       return memberOnSchool;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getSchools(user: User): Promise<School[]> {
+    try {
+      const memberOnSchools = await this.memberOnSchoolRepository.findMany({
+        where: {
+          userId: user.id,
+          status: 'ACCEPT',
+        },
+      });
+
+      const schoolIds = memberOnSchools.map((member) => member.schoolId);
+
+      return await this.schoolRepository.findMany({
+        where: {
+          id: {
+            in: schoolIds,
+          },
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
