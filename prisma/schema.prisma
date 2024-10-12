@@ -194,6 +194,8 @@ model MemberOnTeam {
   team           Team           @relation(fields: [teamId], references: [id])
   school         School         @relation(fields: [schoolId], references: [id])
   tasks          Task[]
+
+  @@unique([userId, teamId])
 }
 
 model Subject {

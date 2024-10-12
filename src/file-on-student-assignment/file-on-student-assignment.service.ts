@@ -29,6 +29,7 @@ export class FileOnStudentAssignmentService {
     new TeacherOnSubjectRepository(this.prisma);
   private schoolRepository: SchoolRepository = new SchoolRepository(
     this.prisma,
+    this.googleStorageService,
   );
   fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
     new FileOnStudentAssignmentRepository(

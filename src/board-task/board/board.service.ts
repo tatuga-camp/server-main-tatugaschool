@@ -1,3 +1,4 @@
+import { TeamRepository } from './../../team/team.repository';
 import {
   Injectable,
   NotFoundException,
@@ -14,15 +15,26 @@ import { User } from '@prisma/client';
 
 @Injectable()
 export class BoardService {
-  logger: Logger = new Logger('BoardService');
+  private logger: Logger = new Logger('BoardService');
+
   constructor(
     private boardRepository: BoardRepository,
     private usersService: UsersService,
+    private teamRepository: TeamRepository,
   ) {}
   async createBoard(createBoardDto: CreateBoardDto, user: User) {
     const { teamId, ...boardData } = createBoardDto;
 
     try {
+      const team = await this.teamRepository.findUnique({
+        where: {
+          id: teamId,
+        },
+      });
+
+      if (!team) {
+        throw new NotFoundException('Team not found');
+      }
       const isMember = await this.usersService.isMemberOfTeam({
         userId: user.id,
         teamId,
@@ -35,21 +47,13 @@ export class BoardService {
       }
 
       const board = await this.boardRepository.create({
-        data: { teamId, ...boardData },
+        data: { teamId, ...boardData, schoolId: team.schoolId },
       });
 
-      return {
-        message: 'Board created successfully',
-        board,
-      };
+      return board;
     } catch (error) {
-      this.logger.error('Error creating board:', error);
-
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to create board');
+      this.logger.error(error);
+      throw error;
     }
   }
   async updateBoard(updateBoardDto: UpdateBoardDto, user: User) {
@@ -79,21 +83,10 @@ export class BoardService {
         data: updateBoardDto.body,
       });
 
-      return {
-        message: 'Board updated successfully',
-        board: updatedBoard,
-      };
+      return updatedBoard;
     } catch (error) {
-      this.logger.error('Error updating board:', error);
-
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to update board');
+      this.logger.error(error);
+      throw error;
     }
   }
   async deleteBoard(deleteBoardDto: DeleteBoardDto, user: User) {
@@ -121,18 +114,10 @@ export class BoardService {
 
       return {
         message: 'Board deleted successfully',
-        boardId,
       };
     } catch (error) {
-      this.logger.error('Error deleting board:', error);
-
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Failed to delete board');
+      this.logger.error(error);
+      throw error;
     }
   }
   async getBoardById(boardId: string, user: User) {
@@ -156,16 +141,8 @@ export class BoardService {
 
       return board;
     } catch (error) {
-      this.logger.error('Error fetching board:', error);
-
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to fetch board');
+      this.logger.error(error);
+      throw error;
     }
   }
   async getBoardsByTeamId(
@@ -200,12 +177,8 @@ export class BoardService {
         boards,
       };
     } catch (error) {
-      this.logger.error('Error retrieving boards:', error);
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException('Failed to retrieve boards');
+      this.logger.error(error);
+      throw error;
     }
   }
 }

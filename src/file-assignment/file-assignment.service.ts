@@ -28,6 +28,7 @@ export class FileAssignmentService {
   );
   private schoolRepository: SchoolRepository = new SchoolRepository(
     this.prisma,
+    this.googleStorageService,
   );
   private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);

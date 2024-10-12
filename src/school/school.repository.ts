@@ -7,6 +7,7 @@ import { Prisma, School } from '@prisma/client';
 import { RequestCreateSchool, RequestUpdateSchool } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 export type SchoolRepositoryType = {
   findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]>;
@@ -20,7 +21,10 @@ export type SchoolRepositoryType = {
 @Injectable()
 export class SchoolRepository implements SchoolRepositoryType {
   logger: Logger;
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
+  ) {
     this.logger = new Logger(SchoolRepository.name);
   }
 
@@ -99,120 +103,144 @@ export class SchoolRepository implements SchoolRepositoryType {
     try {
       const { schoolId } = request;
       // Delete related records in reverse order of their dependencies
-      await this.prisma.attendance.deleteMany({
+      const fileOnAssignments = await this.prisma.fileOnAssignment.findMany({
         where: {
           schoolId: schoolId,
         },
       });
 
-      await this.prisma.attendanceRow.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      const fileOnStudentAssignments =
+        await this.prisma.fileOnStudentAssignment.findMany({
+          where: {
+            schoolId: schoolId,
+          },
+        });
 
-      await this.prisma.attendanceTable.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      const files = [...fileOnAssignments, ...fileOnStudentAssignments];
 
-      await this.prisma.scoreOnStudent.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      Promise.allSettled([
+        ...files.map((file) => {
+          this.googleStorageService.DeleteFileOnStorage({ fileName: file.url });
+        }),
+      ]);
 
-      await this.prisma.scoreOnSubject.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      await Promise.all([
+        this.prisma.attendance.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.scoreOnStudent.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.commentOnAssignment.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.fileOnStudentAssignment.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.fileOnAssignment.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.memberOnTeam.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.task.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+      ]);
 
-      await this.prisma.commentOnAssignment.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      await Promise.all([
+        this.prisma.attendanceRow.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.scoreOnSubject.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.studentOnAssignment.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.teacherOnSubject.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.colum.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+      ]);
 
-      await this.prisma.commentOnAssignment.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      await Promise.all([
+        this.prisma.attendanceTable.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.assignment.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.studentOnSubject.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.board.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+      ]);
 
-      await this.prisma.fileOnStudentAssignment.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.studentOnAssignment.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.fileOnAssignment.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.assignment.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.teacherOnSubject.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.studentOnSubject.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.subject.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.student.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.memberOnTeam.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.memberOnSchool.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.team.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
+      await Promise.all([
+        this.prisma.subject.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.student.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.team.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.prisma.memberOnSchool.deleteMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+      ]);
 
       await this.prisma.class.deleteMany({
         where: {
           schoolId: schoolId,
         },
       });
-
       // Finally, delete the school record itself
       await this.prisma.school.delete({
         where: {

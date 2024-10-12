@@ -1,3 +1,4 @@
+import { google } from 'googleapis';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import {
   BadRequestException,
@@ -27,6 +28,7 @@ import {
   MemberOnSchoolRepositoryType,
 } from '../member-on-school/member-on-school.repository';
 import { PrismaService } from '../prisma/prisma.service';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 @Injectable()
 export class SchoolService {
@@ -36,9 +38,10 @@ export class SchoolService {
   constructor(
     private prisma: PrismaService,
     private stripe: StripeService,
+    private googleStorageService: GoogleStorageService,
   ) {
     this.logger = new Logger(SchoolService.name);
-    this.schoolRepository = new SchoolRepository(prisma);
+    this.schoolRepository = new SchoolRepository(prisma, googleStorageService);
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
   }
 
@@ -56,7 +59,6 @@ export class SchoolService {
           schoolId: schoolId,
         },
       });
-
       if (!memberOnSchool) {
         throw new ForbiddenException('Access denied');
       }
@@ -203,13 +205,14 @@ export class SchoolService {
       const school = await this.schoolRepository.getSchoolById({
         schoolId: dto.schoolId,
       });
+
       const member = await this.validateAccess({
         user: user,
         schoolId: school.id,
       });
 
-      if (member.role !== MemberRole.ADMIN) {
-        throw new ForbiddenException('Access denied');
+      if (member.role !== 'ADMIN') {
+        throw new ForbiddenException("You're not an admin");
       }
 
       return await this.schoolRepository.delete(dto);

@@ -3,29 +3,26 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Team } from '@prisma/client';
-import {
-  RequestCreateTeam,
-  RequestUpdateTeam,
-  RequestDeleteTeam,
-  RequestGetTeam,
-  RequestGetTeamsBySchoolId,
-  TeamRepositoryType,
-} from './team.interface';
+import { Prisma, Team } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { Pagination } from '../interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
+type Repository = {
+  findUnique(request: Prisma.TeamFindUniqueArgs): Promise<Team | null>;
+  create(request: Prisma.TeamCreateArgs): Promise<Team>;
+  update(request: Prisma.TeamUpdateArgs): Promise<Team>;
+  delete(request: Prisma.TeamDeleteArgs): Promise<Team>;
+  findMany(request: Prisma.TeamFindManyArgs): Promise<Team[]>;
+  counts(request: Prisma.TeamCountArgs): Promise<number>;
+};
 @Injectable()
-export class TeamRepository implements TeamRepositoryType {
+export class TeamRepository implements Repository {
   logger: Logger = new Logger('TeamRepository');
   constructor(private prisma: PrismaService) {}
 
-  async create(request: RequestCreateTeam): Promise<Team> {
+  async findUnique(request: Prisma.TeamFindUniqueArgs): Promise<Team | null> {
     try {
-      return await this.prisma.team.create({
-        data: request.data,
-      });
+      return await this.prisma.team.findUnique(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -37,12 +34,9 @@ export class TeamRepository implements TeamRepositoryType {
     }
   }
 
-  async update(request: RequestUpdateTeam): Promise<Team> {
+  async create(request: Prisma.TeamCreateArgs): Promise<Team> {
     try {
-      return await this.prisma.team.update({
-        where: { id: request.teamId },
-        data: request.data,
-      });
+      return await this.prisma.team.create(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -54,11 +48,9 @@ export class TeamRepository implements TeamRepositoryType {
     }
   }
 
-  async delete(request: RequestDeleteTeam): Promise<Team> {
+  async update(request: Prisma.TeamUpdateArgs): Promise<Team> {
     try {
-      return await this.prisma.team.delete({
-        where: { id: request.teamId },
-      });
+      return await this.prisma.team.update(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -70,11 +62,9 @@ export class TeamRepository implements TeamRepositoryType {
     }
   }
 
-  async findById(request: RequestGetTeam): Promise<Team | null> {
+  async delete(request: Prisma.TeamDeleteArgs): Promise<Team> {
     try {
-      return await this.prisma.team.findUnique({
-        where: { id: request.teamId },
-      });
+      return await this.prisma.team.delete(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -86,43 +76,23 @@ export class TeamRepository implements TeamRepositoryType {
     }
   }
 
-  async findBySchoolId(
-    request: RequestGetTeamsBySchoolId,
-  ): Promise<Pagination<Team>> {
+  async findMany(request: Prisma.TeamFindManyArgs): Promise<Team[]> {
     try {
-      const { schoolId, page, limit } = request;
-      const count = await this.prisma.team.count({
-        where: { schoolId },
-      });
-      const data = await this.prisma.team.findMany({
-        where: { schoolId },
-        skip: (page - 1) * limit,
-        take: limit,
-      });
-      const total = Math.ceil(count / limit);
-      if (page > total) {
-        return {
-          data: [],
-          meta: {
-            total: 1,
-            lastPage: 1,
-            currentPage: 1,
-            prev: 1,
-            next: 1,
-          },
-        };
+      return await this.prisma.team.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
       }
+      throw error;
+    }
+  }
 
-      return {
-        data,
-        meta: {
-          total: total,
-          lastPage: total,
-          currentPage: page,
-          prev: page - 1 < 0 ? page : page - 1,
-          next: page + 1 > total ? page : page + 1,
-        },
-      };
+  async counts(request: Prisma.TeamCountArgs): Promise<number> {
+    try {
+      return await this.prisma.team.count(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

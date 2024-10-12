@@ -30,7 +30,6 @@ export class TaskRepository implements TaskRepositoryType {
 
   async create(request: RequestCreateTask): Promise<Task> {
     try {
-      this.logger.log('Creating a new task', request);
       return await this.prisma.task.create({
         data: request.data,
       });
@@ -47,7 +46,6 @@ export class TaskRepository implements TaskRepositoryType {
 
   async update(request: RequestUpdateTask): Promise<Task> {
     try {
-      this.logger.log('Updating task', request);
       return await this.prisma.task.update({
         where: { id: request.taskId },
         data: request.data,
@@ -65,7 +63,6 @@ export class TaskRepository implements TaskRepositoryType {
 
   async delete(request: RequestDeleteTask): Promise<Task> {
     try {
-      this.logger.log('Deleting task', request);
       return await this.prisma.task.delete({
         where: { id: request.taskId },
       });
@@ -82,7 +79,6 @@ export class TaskRepository implements TaskRepositoryType {
 
   async findById(request: RequestGetTask): Promise<Task | null> {
     try {
-      this.logger.log('Finding task by id', request);
       return await this.prisma.task.findUnique({
         where: { id: request.taskId },
       });
@@ -99,7 +95,6 @@ export class TaskRepository implements TaskRepositoryType {
 
   async findByColumId(request: RequestGetTasksByColumId): Promise<Task[]> {
     try {
-      this.logger.log('Finding tasks by colum id', request);
       return await this.prisma.task.findMany({
         where: { columId: request.columId },
       });
