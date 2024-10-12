@@ -1,3 +1,5 @@
+import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
+import { MemberOnTeamRepository } from './../member-on-team/member-on-team.repository';
 import {
   Injectable,
   NotFoundException,
@@ -13,21 +15,26 @@ import { Team, User } from '@prisma/client';
 import { UsersService } from '../users/users.service';
 import { GetTeamParamDto, GetTeamQueryDto } from './dto/get-team.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { Pagination } from '../interfaces';
 
 @Injectable()
 export class TeamService {
   private logger: Logger = new Logger(TeamService.name);
+  private memberOnTeamRepository: MemberOnTeamRepository =
+    new MemberOnTeamRepository(this.prisma);
+  private memberOnSchoolRepository: MemberOnSchoolRepository =
+    new MemberOnSchoolRepository(this.prisma);
   constructor(
     private teamRepository: TeamRepository,
     private userService: UsersService,
     private prisma: PrismaService,
   ) {}
 
-  async createTeam(createTeamDto: CreateTeamDto, user: User) {
+  async createTeam(dto: CreateTeamDto, user: User): Promise<Team> {
     try {
       const hasAccess = await this.userService.isAdminOfSchool(
         user.id,
-        createTeamDto.schoolId,
+        dto.schoolId,
       );
 
       if (!hasAccess) {
@@ -36,9 +43,27 @@ export class TeamService {
         );
       }
 
-      const request = { data: createTeamDto };
-      this.logger.log('Creating team', request);
+      const request = { data: dto };
+
       const createTeam = await this.teamRepository.create(request);
+
+      const member = await this.memberOnTeamRepository.create({
+        data: {
+          teamId: createTeam.id,
+          schoolId: createTeam.schoolId,
+          userId: user.id,
+          role: 'ADMIN',
+          status: 'ACCEPT',
+          memberOnSchoolId: hasAccess.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          photo: user.photo,
+          phone: user.phone,
+        },
+      });
+
+      return createTeam;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -49,7 +74,9 @@ export class TeamService {
     try {
       const { query } = updateTeamDto;
       const { teamId } = query;
-      const team = await this.teamRepository.findById({ teamId });
+      const team = await this.teamRepository.findUnique({
+        where: { id: teamId },
+      });
       if (!team) {
         throw new NotFoundException('Team not found');
       }
@@ -66,7 +93,10 @@ export class TeamService {
 
       const request = { teamId, data: updateTeamDto.body };
       this.logger.log('Updating team', request);
-      return await this.teamRepository.update(request);
+      return await this.teamRepository.update({
+        where: { id: request.teamId },
+        data: request.data,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -76,8 +106,8 @@ export class TeamService {
   async deleteTeam(deleteTeamDto: DeleteTeamDto, user: User) {
     try {
       const { teamId } = deleteTeamDto;
-      const team = await this.teamRepository.findById({
-        teamId: teamId,
+      const team = await this.teamRepository.findUnique({
+        where: { id: teamId },
       });
 
       if (!team) {
@@ -95,7 +125,7 @@ export class TeamService {
       }
 
       this.logger.log('Deleting team', deleteTeamDto);
-      return await this.teamRepository.delete({ teamId: deleteTeamDto.teamId });
+      return await this.teamRepository.delete({ where: { id: teamId } });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -104,7 +134,9 @@ export class TeamService {
 
   async getTeamById(teamId: string, user: User) {
     try {
-      const team = await this.teamRepository.findById({ teamId });
+      const team = await this.teamRepository.findUnique({
+        where: { id: teamId },
+      });
       if (!team) {
         throw new NotFoundException('Team not found');
       }
@@ -131,7 +163,7 @@ export class TeamService {
     param: GetTeamParamDto,
     query: GetTeamQueryDto,
     user: User,
-  ) {
+  ): Promise<Pagination<Team>> {
     try {
       const { schoolId } = param;
       const { page, limit } = query;
@@ -145,9 +177,42 @@ export class TeamService {
         );
       }
 
-      const request = { schoolId, page, limit };
-      this.logger.log('Getting teams by school id', request);
-      return await this.teamRepository.findBySchoolId(request);
+      const numbers = await this.teamRepository.counts({
+        where: { schoolId: schoolId },
+      });
+
+      const totalPages = Math.ceil(numbers / limit);
+
+      if (page > totalPages) {
+        return {
+          data: [],
+          meta: {
+            total: 1,
+            lastPage: 1,
+            currentPage: 1,
+            prev: 1,
+            next: 1,
+          },
+        };
+      }
+
+      const skip = (page - 1) * limit;
+
+      const careers = await this.teamRepository.findMany({
+        skip,
+        take: limit,
+      });
+
+      return {
+        data: careers,
+        meta: {
+          total: totalPages,
+          lastPage: totalPages,
+          currentPage: page,
+          prev: page - 1 < 0 ? page : page - 1,
+          next: page + 1 > totalPages ? page : page + 1,
+        },
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;

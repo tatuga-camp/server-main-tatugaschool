@@ -1,3 +1,5 @@
+import { UserRepository } from './../../users/users.repository';
+import { ColumRepository } from './../colum/colum.repository';
 import {
   Injectable,
   InternalServerErrorException,
@@ -16,20 +18,37 @@ import { PrismaService } from '../../prisma/prisma.service';
 export class TaskService {
   private readonly logger = new Logger(TaskService.name);
   taskRepository: TaskRepository = new TaskRepository(this.prisma);
+  private columRepository: ColumRepository = new ColumRepository(this.prisma);
+  userRepository: UserRepository = new UserRepository(this.prisma);
 
   constructor(
     private readonly usersService: UsersService,
     private prisma: PrismaService,
   ) {}
 
-  async createTask(createTaskDto: CreateTaskDto, user: User) {
-    this.logger.log('Creating a new task', { createTaskDto, user });
+  async createTask(dto: CreateTaskDto, user: User) {
     try {
+      const [colum, assignee] = await Promise.all([
+        this.columRepository.findById({ columId: dto.columId }),
+        this.userRepository.findById({ id: dto.assigneeId }),
+      ]);
+
+      if (!colum) throw new NotFoundException('Colum not found');
+      if (!assignee) throw new NotFoundException('User not found');
+
       await this.usersService.isMemberOfTeam({
         userId: user.id,
-        teamId: createTaskDto.teamId,
+        teamId: colum.teamId,
       });
-      return this.taskRepository.create({ data: createTaskDto });
+
+      return await this.taskRepository.create({
+        data: {
+          ...dto,
+          teamId: colum.teamId,
+          schoolId: colum.schoolId,
+          boardId: colum.boardId,
+        },
+      });
     } catch (error) {
       this.logger.error('Error creating task', error.stack);
       throw new InternalServerErrorException(error.message);
@@ -37,7 +56,6 @@ export class TaskService {
   }
 
   async updateTask(updateTaskDto: UpdateTaskDto, user: User) {
-    this.logger.log('Updating task', { updateTaskDto, user });
     try {
       const task = await this.taskRepository.findById({
         taskId: updateTaskDto.query.taskId,
@@ -47,7 +65,7 @@ export class TaskService {
         userId: user.id,
         teamId: task.teamId,
       });
-      return this.taskRepository.update({
+      return await this.taskRepository.update({
         taskId: updateTaskDto.query.taskId,
         data: updateTaskDto.body,
       });
@@ -58,7 +76,6 @@ export class TaskService {
   }
 
   async deleteTask(deleteTaskDto: DeleteTaskDto, user: User) {
-    this.logger.log('Deleting task', { deleteTaskDto, user });
     try {
       const task = await this.taskRepository.findById({
         taskId: deleteTaskDto.taskId,
@@ -68,7 +85,7 @@ export class TaskService {
         userId: user.id,
         teamId: task.teamId,
       });
-      return this.taskRepository.delete({ taskId: deleteTaskDto.taskId });
+      return await this.taskRepository.delete({ taskId: deleteTaskDto.taskId });
     } catch (error) {
       this.logger.error('Error deleting task', error.stack);
       throw new InternalServerErrorException(error.message);
@@ -76,7 +93,6 @@ export class TaskService {
   }
 
   async getTaskById(taskId: string, user: User) {
-    this.logger.log('Getting task by id', { taskId, user });
     try {
       const task = await this.taskRepository.findById({ taskId });
       if (!task) throw new NotFoundException('Task not found');
@@ -92,9 +108,8 @@ export class TaskService {
   }
 
   async getTasksByColumId(columId: string, user: User) {
-    this.logger.log('Getting tasks by colum id', { columId, user });
     try {
-      return this.taskRepository.findByColumId({ columId });
+      return await this.taskRepository.findByColumId({ columId });
     } catch (error) {
       this.logger.error('Error getting tasks by colum id', error.stack);
       throw new InternalServerErrorException(error.message);

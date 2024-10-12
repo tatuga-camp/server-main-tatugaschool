@@ -12,8 +12,4 @@ export class CreateBoardDto {
   @IsNotEmpty()
   @IsMongoId()
   teamId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 }

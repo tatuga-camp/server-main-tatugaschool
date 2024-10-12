@@ -30,7 +30,6 @@ export class ColumRepository implements ColumRepositoryType {
 
   async create(request: RequestCreateColum): Promise<Colum> {
     try {
-      this.logger.log('Creating a new colum', request);
       return await this.prisma.colum.create({
         data: request.data,
       });
@@ -47,7 +46,6 @@ export class ColumRepository implements ColumRepositoryType {
 
   async update(request: RequestUpdateColum): Promise<Colum> {
     try {
-      this.logger.log('Updating colum', request);
       return await this.prisma.colum.update({
         where: { id: request.columId },
         data: request.data,
@@ -65,7 +63,6 @@ export class ColumRepository implements ColumRepositoryType {
 
   async delete(request: RequestDeleteColum): Promise<Colum> {
     try {
-      this.logger.log('Deleting colum', request);
       return await this.prisma.colum.delete({
         where: { id: request.columId },
       });
@@ -82,7 +79,6 @@ export class ColumRepository implements ColumRepositoryType {
 
   async findById(request: RequestGetColum): Promise<Colum | null> {
     try {
-      this.logger.log('Finding colum by id', request);
       return await this.prisma.colum.findUnique({
         where: { id: request.columId },
       });
@@ -99,7 +95,6 @@ export class ColumRepository implements ColumRepositoryType {
 
   async findByBoardId(request: RequestGetColumsByBoardId): Promise<Colum[]> {
     try {
-      this.logger.log('Finding colums by board id', request);
       return await this.prisma.colum.findMany({
         where: { boardId: request.boardId },
       });

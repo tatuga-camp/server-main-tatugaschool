@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsMongoId,
   IsDate,
+  IsDateString,
 } from 'class-validator';
 
 export class CreateTaskDto {
@@ -16,24 +17,12 @@ export class CreateTaskDto {
   description?: string;
 
   @IsOptional()
-  @IsDate()
+  @IsDateString()
   deadline?: Date;
 
   @IsNotEmpty()
   @IsMongoId()
   assigneeId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  teamId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  boardId: string;
 
   @IsNotEmpty()
   @IsMongoId()

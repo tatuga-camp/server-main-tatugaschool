@@ -24,6 +24,7 @@ import {
 } from './member-on-school.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository, UserRepositoryType } from '../users/users.repository';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 @Injectable()
 export class MemberOnSchoolService {
@@ -34,10 +35,11 @@ export class MemberOnSchoolService {
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
+    private googleStorageService: GoogleStorageService,
   ) {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
     this.userRepository = new UserRepository(prisma);
-    this.schoolRepository = new SchoolRepository(prisma);
+    this.schoolRepository = new SchoolRepository(prisma, googleStorageService);
   }
 
   async validateAccess({

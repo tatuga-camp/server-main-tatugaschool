@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsOptional, IsMongoId } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsMongoId,
+  IsHexColor,
+} from 'class-validator';
 
 export class CreateColumDto {
   @IsNotEmpty()
@@ -10,16 +16,8 @@ export class CreateColumDto {
   description?: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsHexColor()
   color: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  teamId: string;
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
 
   @IsNotEmpty()
   @IsMongoId()

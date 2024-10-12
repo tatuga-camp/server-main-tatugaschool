@@ -32,6 +32,7 @@ import { VectorModule } from './vector/vector.module';
 import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
 import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/skill-on-student-assignment.module';
 import { CareerModule } from './career/career.module';
+import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { CareerModule } from './career/career.module';
     SkillOnAssignmentModule,
     SkillOnStudentAssignmentModule,
     CareerModule,
+    MemberOnTeamModule,
   ],
   controllers: [AppController],
   providers: [AppService],

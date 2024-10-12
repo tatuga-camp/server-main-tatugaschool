@@ -1,3 +1,4 @@
+import { TeamRepository } from './../../team/team.repository';
 import {
   Injectable,
   InternalServerErrorException,
@@ -11,11 +12,14 @@ import { CreateColumDto } from './dto/create-colum.dto';
 import { DeleteColumDto } from './dto/delete-colum.dto';
 import { UpdateColumDto } from './dto/update-colum.dto';
 import { PrismaService } from '../../prisma/prisma.service';
+import { BoardRepository } from '../board/board.repository';
 
 @Injectable()
 export class ColumService {
   private readonly logger = new Logger(ColumService.name);
   columRepository: ColumRepository = new ColumRepository(this.prisma);
+  private teamRepository: TeamRepository = new TeamRepository(this.prisma);
+  private boardRepository: BoardRepository = new BoardRepository(this.prisma);
 
   constructor(
     private readonly usersService: UsersService,
@@ -23,13 +27,23 @@ export class ColumService {
   ) {}
 
   async createColum(createColumDto: CreateColumDto, user: User) {
-    this.logger.log('Creating a new colum', { createColumDto, user });
     try {
+      const board = await this.boardRepository.findById({
+        boardId: createColumDto.boardId,
+      });
+
+      if (!board) throw new NotFoundException('Board not found');
       await this.usersService.isMemberOfTeam({
         userId: user.id,
-        teamId: createColumDto.teamId,
+        teamId: board.teamId,
       });
-      return this.columRepository.create({ data: createColumDto });
+      return await this.columRepository.create({
+        data: {
+          ...createColumDto,
+          teamId: board.teamId,
+          schoolId: board.schoolId,
+        },
+      });
     } catch (error) {
       this.logger.error('Error creating colum', error.stack);
       throw new InternalServerErrorException(error.message);
@@ -37,7 +51,6 @@ export class ColumService {
   }
 
   async updateColum(updateColumDto: UpdateColumDto, user: User) {
-    this.logger.log('Updating colum', { updateColumDto, user });
     try {
       const colum = await this.columRepository.findById({
         columId: updateColumDto.query.columId,
@@ -47,7 +60,7 @@ export class ColumService {
         userId: user.id,
         teamId: colum.teamId,
       });
-      return this.columRepository.update({
+      return await this.columRepository.update({
         columId: updateColumDto.query.columId,
         data: updateColumDto.body,
       });
@@ -58,7 +71,6 @@ export class ColumService {
   }
 
   async deleteColum(deleteColumDto: DeleteColumDto, user: User) {
-    this.logger.log('Deleting colum', { deleteColumDto, user });
     try {
       const colum = await this.columRepository.findById({
         columId: deleteColumDto.columId,
@@ -68,7 +80,9 @@ export class ColumService {
         userId: user.id,
         teamId: colum.teamId,
       });
-      return this.columRepository.delete({ columId: deleteColumDto.columId });
+      return await this.columRepository.delete({
+        columId: deleteColumDto.columId,
+      });
     } catch (error) {
       this.logger.error('Error deleting colum', error.stack);
       throw new InternalServerErrorException(error.message);
@@ -76,7 +90,6 @@ export class ColumService {
   }
 
   async getColumById(columId: string, user: User) {
-    this.logger.log('Getting colum by id', { columId, user });
     try {
       const colum = await this.columRepository.findById({ columId });
       if (!colum) throw new NotFoundException('Colum not found');
@@ -92,7 +105,6 @@ export class ColumService {
   }
 
   async getColumsByBoardId(boardId: string, user: User) {
-    this.logger.log('Getting colums by board id', { boardId, user });
     try {
       // Here you might also want to check if the user is part of the board's team
       return this.columRepository.findByBoardId({ boardId });
