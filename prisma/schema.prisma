@@ -607,6 +607,8 @@ model SkillOnCareer {
 
   skill  Skill  @relation(fields: [skillId], references: [id])
   career Career @relation(fields: [careerId], references: [id])
+
+  @@unique([skillId, careerId])
 }
 
 model Board {

@@ -33,6 +33,7 @@ import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignme
 import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/skill-on-student-assignment.module';
 import { CareerModule } from './career/career.module';
 import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
+import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
     SkillOnStudentAssignmentModule,
     CareerModule,
     MemberOnTeamModule,
+    SkillOnCareerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
