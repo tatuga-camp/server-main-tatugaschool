@@ -20,7 +20,7 @@ import {
   GetSchoolByIdDto,
   UpdateSchoolDto,
 } from './dto';
-import { SchoolRepository, SchoolRepositoryType } from './school.repository';
+import { SchoolRepository } from './school.repository';
 
 import { StripeService } from '../stripe/stripe.service';
 import {
@@ -33,7 +33,7 @@ import { GoogleStorageService } from '../google-storage/google-storage.service';
 @Injectable()
 export class SchoolService {
   logger: Logger;
-  schoolRepository: SchoolRepositoryType;
+  schoolRepository: SchoolRepository;
   memberOnSchoolRepository: MemberOnSchoolRepositoryType;
   constructor(
     private prisma: PrismaService,
@@ -122,10 +122,12 @@ export class SchoolService {
       });
 
       const school = await this.schoolRepository.create({
-        ...dto,
-        stripe_customer_id: customer.id,
-        plan: 'FREE',
-        billingManagerId: user.id,
+        data: {
+          ...dto,
+          stripe_customer_id: customer.id,
+          plan: 'FREE',
+          billingManagerId: user.id,
+        },
       });
 
       await this.memberOnSchoolRepository.create({

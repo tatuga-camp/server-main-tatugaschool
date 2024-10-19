@@ -256,11 +256,11 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
+          expiresIn: '40s',
         }),
         refreshToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '3d',
         }),
       };
     } catch (error) {
@@ -294,11 +294,11 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(student, {
           secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
+          expiresIn: '40s',
         }),
         refreshToken: await this.jwtService.signAsync(student, {
           secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '3d',
         }),
       };
     } catch (error) {
@@ -334,11 +334,11 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
+          expiresIn: '40s',
         }),
         refreshToken: await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '3d',
         }),
       };
     } catch (error) {
@@ -370,11 +370,11 @@ export class AuthService {
       return {
         accessToken: await this.jwtService.signAsync(student, {
           secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
+          expiresIn: '40s',
         }),
         refreshToken: await this.jwtService.signAsync(student, {
           secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '3d',
         }),
       };
     } catch (error) {
@@ -408,11 +408,11 @@ export class AuthService {
 
         const accessToken = await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_ACCESS_SECRET'),
-          expiresIn: '15m',
+          expiresIn: '40s',
         });
         const refreshToken = await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '3d',
         });
         res.cookie('access_token', accessToken, {
           maxAge: 2592000000,

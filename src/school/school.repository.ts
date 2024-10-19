@@ -12,7 +12,7 @@ import { GoogleStorageService } from '../google-storage/google-storage.service';
 export type SchoolRepositoryType = {
   findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]>;
   getById(request: { schoolId: string }): Promise<School>;
-  create(request: RequestCreateSchool): Promise<School>;
+  create(request: Prisma.SchoolCreateArgs): Promise<School>;
   update(request: RequestUpdateSchool): Promise<School>;
   delete(request: { schoolId: string }): Promise<{ message: string }>;
   getSchoolById(request: { schoolId: string }): Promise<School>;
@@ -60,13 +60,9 @@ export class SchoolRepository implements SchoolRepositoryType {
     }
   }
 
-  async create(request: RequestCreateSchool): Promise<School> {
+  async create(request: Prisma.SchoolCreateArgs): Promise<School> {
     try {
-      return await this.prisma.school.create({
-        data: {
-          ...request,
-        },
-      });
+      return await this.prisma.school.create(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
