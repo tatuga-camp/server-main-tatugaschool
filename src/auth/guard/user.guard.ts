@@ -2,6 +2,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
@@ -14,7 +15,7 @@ export class UserGuard extends AuthGuard('user-jwt') {
 
   handleRequest(err, user, info) {
     if (err || !user) {
-      throw new ForbiddenException('Access denied');
+      throw new UnauthorizedException('Access denied');
     } else {
       return user;
     }

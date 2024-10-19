@@ -52,6 +52,14 @@ model School {
   plan        Plan    @default(FREE)
   isDeleted   Boolean @default(false)
 
+  country String
+  city    String
+  address String
+  zipCode String
+
+  logo        String
+  phoneNumber String
+
   totalStorage Float @default(0)
 
   stripe_customer_id           String    @unique
