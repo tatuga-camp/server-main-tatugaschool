@@ -76,7 +76,7 @@ export class AuthController {
   @Post('refresh-token')
   async refreshToken(
     @Body() dto: RefreshTokenDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string }> {
     return await this.authService.UserRefreshToken(dto);
   }
 
@@ -84,7 +84,7 @@ export class AuthController {
   @Post('student-refresh-token')
   async studentRefreshToken(
     @Body() dto: RefreshTokenDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string }> {
     return await this.authService.StudnetRefreshToken(dto);
   }
 
