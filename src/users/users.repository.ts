@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import {
   RequestCreateUser,
   RequestFindByEmail,
@@ -20,9 +20,10 @@ import {
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type UserRepositoryType = {
+  findMany(request: Prisma.UserFindManyArgs): Promise<User[]>;
   findById(request: RequestFindById): Promise<User>;
   findByEmail(request: RequestFindByEmail): Promise<User>;
-  update(request: RequestUpdateUser): Promise<User>;
+  update(request: Prisma.UserUpdateArgs): Promise<User>;
   updateResetToken(request: RequestUpdateResetToken): Promise<void>;
   createUser(request: RequestCreateUser): Promise<User>;
   findByVerifyToken(request: RequestFindByVerifyToken): Promise<User>;
@@ -36,6 +37,20 @@ export type UserRepositoryType = {
 export class UserRepository implements UserRepositoryType {
   logger: Logger = new Logger(UserRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findMany(request: Prisma.UserFindManyArgs): Promise<User[]> {
+    try {
+      return await this.prisma.user.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async findById(request: RequestFindById): Promise<User> {
     try {
@@ -73,39 +88,46 @@ export class UserRepository implements UserRepositoryType {
     }
   }
 
-  async update(request: RequestUpdateUser): Promise<User> {
+  async update(request: Prisma.UserUpdateArgs): Promise<User> {
     try {
-      const user = await this.prisma.user.update({
-        where: {
-          id: request.query.userId,
-        },
-        data: request.body,
-      });
-
-      const result = await Promise.allSettled([
+      const user = await this.prisma.user.update(request);
+      const data: {
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+        phone?: string;
+        photo?: string;
+      } = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone,
+        photo: user.photo,
+      };
+      await Promise.allSettled([
         this.prisma.memberOnSchool.updateMany({
           where: {
             userId: user.id,
           },
-          data: request.body,
+          data: data,
         }),
         this.prisma.memberOnTeam.updateMany({
           where: {
             userId: user.id,
           },
-          data: request.body,
+          data: data,
         }),
         this.prisma.teacherOnSubject.updateMany({
           where: {
             userId: user.id,
           },
-          data: request.body,
+          data: data,
         }),
         this.prisma.commentOnAssignment.updateMany({
           where: {
             userId: user.id,
           },
-          data: request.body,
+          data: data,
         }),
       ]);
 

@@ -1,10 +1,12 @@
 import {
   IsEmail,
+  IsNotEmpty,
   IsOptional,
   IsPhoneNumber,
   IsString,
   IsUrl,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 
 export class UpdateUserDto {
@@ -25,4 +27,16 @@ export class UpdateUserDto {
   @IsOptional()
   @IsPhoneNumber()
   phone?: string;
+}
+
+export class UpdatePasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  currentPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  newPassword: string;
 }

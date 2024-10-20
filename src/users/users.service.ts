@@ -2,8 +2,8 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './users.repository';
-import { UpdateUserDto } from './dto';
-
+import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
+import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService {
   logger: Logger = new Logger(UsersService.name);
@@ -19,13 +19,39 @@ export class UsersService {
     }
   }
 
+  async GetUserByEmail(dto: GetUserByEmailDto): Promise<User[] | []> {
+    try {
+      return await this.userRepository
+        .findMany({
+          take: 5,
+          where: {
+            email: {
+              contains: dto.email,
+            },
+            isVerifyEmail: true,
+          },
+        })
+        .then((users) => {
+          return users.map((user) => {
+            delete user.password;
+            delete user.resetPasswordToken;
+            delete user.verifyEmailToken;
+            return user;
+          });
+        });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async updateUser(dto: UpdateUserDto, user: User): Promise<User> {
     try {
       return await this.userRepository.update({
-        query: {
-          userId: user.id,
+        where: {
+          id: user.id,
         },
-        body: dto,
+        data: dto,
       });
     } catch (error) {
       this.logger.error(error);
@@ -33,14 +59,41 @@ export class UsersService {
     }
   }
 
-  async getUserByEmail(dto: { email: string }): Promise<User | null> {
+  async updatePassword(dto: UpdatePasswordDto, user: User): Promise<User> {
     try {
-      return await this.userRepository.findByEmail({ email: dto.email });
+      const getUser = await this.prisma.user.findUnique({
+        where: {
+          id: user.id,
+        },
+      });
+      if (!getUser) {
+        throw new ForbiddenException('User not found');
+      }
+      const isMatch = await bcrypt.compare(
+        dto.currentPassword,
+        getUser.password,
+      );
+
+      if (!isMatch) {
+        throw new ForbiddenException('Current Password is incorrect');
+      }
+
+      const newPassword = await bcrypt.hash(dto.newPassword, 10);
+
+      return await this.userRepository.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          password: newPassword,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
+
   async getUserById(id: string): Promise<User> {
     try {
       return await this.prisma.user.findUnique({ where: { id } });

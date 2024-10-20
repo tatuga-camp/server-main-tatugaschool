@@ -13,7 +13,6 @@ import {
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-
 import {
   ForgotPasswordDto,
   RefreshTokenDto,
@@ -29,14 +28,14 @@ import { Student, User } from '@prisma/client';
 import { Auth, google, GoogleApis } from 'googleapis';
 import { Request, Response } from 'express';
 import { GoogleProfile } from './strategy/google-oauth.strategy';
-import { UserRepository, UserRepositoryType } from '../users/users.repository';
+import { UserRepository } from '../users/users.repository';
 import { EmailService } from '../email/email.service';
 import { ImageService } from '../image/image.service';
 
 @Injectable()
 export class AuthService {
   logger: Logger;
-  usersRepository: UserRepositoryType;
+  usersRepository: UserRepository;
   studentRepository: StudentRepository;
   oauth2Client: Auth.GoogleAuth;
   constructor(
@@ -241,7 +240,7 @@ export class AuthService {
 
       const isMatch = await bcrypt.compare(dto.password, user.password);
       if (!isMatch) {
-        throw new UnauthorizedException("Credentials isn't correct");
+        throw new BadRequestException('Password is NOT Correct');
       }
 
       await this.usersRepository.updateLastActiveAt({
@@ -309,7 +308,7 @@ export class AuthService {
 
   async UserRefreshToken(
     dto: RefreshTokenDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string }> {
     try {
       const verify = await this.jwtService
         .verifyAsync<User>(dto.refreshToken, {
@@ -336,10 +335,6 @@ export class AuthService {
           secret: this.config.get('JWT_ACCESS_SECRET'),
           expiresIn: '40s',
         }),
-        refreshToken: await this.jwtService.signAsync(user, {
-          secret: this.config.get('JWT_REFRESH_SECRET'),
-          expiresIn: '3d',
-        }),
       };
     } catch (error) {
       this.logger.error(error);
@@ -349,7 +344,7 @@ export class AuthService {
 
   async StudnetRefreshToken(
     dto: RefreshTokenDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string }> {
     try {
       const verify = await this.jwtService
         .verifyAsync<Student>(dto.refreshToken, {
@@ -371,10 +366,6 @@ export class AuthService {
         accessToken: await this.jwtService.signAsync(student, {
           secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
           expiresIn: '40s',
-        }),
-        refreshToken: await this.jwtService.signAsync(student, {
-          secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
-          expiresIn: '3d',
         }),
       };
     } catch (error) {
