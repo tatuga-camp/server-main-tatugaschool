@@ -138,8 +138,13 @@ export class TeacherOnSubjectService {
             schoolId: subject.schoolId,
           },
         );
-      if (!memberOnSchool && user.role !== 'ADMIN') {
+      if (!memberOnSchool) {
         throw new ForbiddenException("You're not a member of this school");
+      }
+      if (memberOnSchool.status !== 'ACCEPT') {
+        throw new ForbiddenException(
+          "You're not a member of this school or your status is not accepted",
+        );
       }
 
       const memberOnSubject =
@@ -168,7 +173,7 @@ export class TeacherOnSubjectService {
         role: dto.role,
         userId: dto.userId,
         subjectId: subject.id,
-        status: 'PENDDING',
+        status: 'ACCEPT',
         firstName: teacher.firstName,
         lastName: teacher.lastName,
         email: teacher.email,
@@ -187,13 +192,13 @@ export class TeacherOnSubjectService {
           </h1>
           <p style="margin: 0 0 16px;">
             You have been invited to teach <span style="font-weight: 500">${subject.title}</span> by ${user.firstName} ${user.lastName}
-            Please click the button below to check the invitation
+            Please check the invitation by clicking the button below
           </p>
            <p style="margin: 0 0 16px; color: #6c757d">
            Do not reply to this email, this email is automatically generated.
            If you have any questions, please contact this email permlap@tatugacamp.com or the address below
           </p>
-          <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${this.config.get('CLIENT_URL')}/account/invitation">Check</a>
+            <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${this.config.get('CLIENT_URL')}/account/invitation">Check</a>
         </div>
         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
         <div style="color: #6c757d; text-align: center; margin: 24px 0;">
