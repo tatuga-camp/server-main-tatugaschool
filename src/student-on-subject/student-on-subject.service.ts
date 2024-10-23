@@ -1,3 +1,4 @@
+import { ScoreOnStudentRepository } from './../score-on-student/score-on-student.repository';
 import { StudentAccessTokenStrategy } from './../auth/strategy/accessToken.strategy';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
@@ -7,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { StudentOnSubject, User } from '@prisma/client';
+import { ScoreOnStudent, StudentOnSubject, User } from '@prisma/client';
 import {
   CreateStudentOnSubjectDto,
   DeleteStudentOnSubjectDto,
@@ -22,8 +23,9 @@ import {
 
 @Injectable()
 export class StudentOnSubjectService {
-  logger: Logger = new Logger(StudentOnSubjectService.name);
+  private logger: Logger = new Logger(StudentOnSubjectService.name);
   studentOnSubjectRepository: StudentOnSubjectRepositoryType;
+  private scoreOnStudentRepository: ScoreOnStudentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -32,12 +34,15 @@ export class StudentOnSubjectService {
       prisma,
       googleStorageService,
     );
+    this.scoreOnStudentRepository = new ScoreOnStudentRepository(prisma);
   }
 
   async getStudentOnSubjectsBySubjectId(
     dto: GetStudentOnSubjectsBySubjectIdDto,
     user: User,
-  ): Promise<StudentOnSubject[]> {
+  ): Promise<
+    (StudentOnSubject & { scores: ScoreOnStudent[]; totalScore: number })[]
+  > {
     try {
       const member = await this.prisma.teacherOnSubject.findFirst({
         where: {
@@ -57,11 +62,26 @@ export class StudentOnSubjectService {
         throw new ForbiddenException('You are not a member of this subject');
       }
 
-      return await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId(
-        {
+      const scoreOnStudents =
+        await this.scoreOnStudentRepository.getAllScoreOnStudentBySubjectId({
           subjectId: dto.subjectId,
-        },
-      );
+        });
+
+      const studentOnSubjects =
+        await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId({
+          subjectId: dto.subjectId,
+        });
+
+      return studentOnSubjects.map((studentOnSubject) => {
+        const scores = scoreOnStudents.filter(
+          (score) => score.studentOnSubjectId === studentOnSubject.id,
+        );
+        return {
+          ...studentOnSubject,
+          scores,
+          totalScore: scores.reduce((acc, score) => acc + score.score, 0),
+        };
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
