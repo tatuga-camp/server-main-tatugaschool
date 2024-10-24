@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { ScoreOnSubject } from '@prisma/client';
+import { Prisma, ScoreOnSubject } from '@prisma/client';
 import {
   RequestCreateSocreOnSubject,
   RequestGetAllScoreOnSubjectBySubjectId,
@@ -16,6 +16,9 @@ export type ScoreOnSubjectRepositoryType = {
   getAllScoreOnSubjectBySubjectId(
     request: RequestGetAllScoreOnSubjectBySubjectId,
   ): Promise<ScoreOnSubject[]>;
+  findMany(
+    request: Prisma.ScoreOnSubjectFindManyArgs,
+  ): Promise<ScoreOnSubject[]>;
   createSocreOnSubject(
     request: RequestCreateSocreOnSubject,
   ): Promise<ScoreOnSubject>;
@@ -27,6 +30,22 @@ export type ScoreOnSubjectRepositoryType = {
 export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
   logger: Logger = new Logger(ScoreOnSubjectRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findMany(
+    request: Prisma.ScoreOnSubjectFindManyArgs,
+  ): Promise<ScoreOnSubject[]> {
+    try {
+      return await this.prisma.scoreOnSubject.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getAllScoreOnSubjectBySubjectId(
     request: RequestGetAllScoreOnSubjectBySubjectId,

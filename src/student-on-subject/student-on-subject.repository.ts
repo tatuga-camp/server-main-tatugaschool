@@ -5,7 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { StudentOnSubject } from '@prisma/client';
+import { Prisma, StudentOnSubject } from '@prisma/client';
 import {
   RequestCreateStudentOnSubject,
   RequestDeleteStudentOnSubject,
@@ -36,6 +36,10 @@ export type StudentOnSubjectRepositoryType = {
   deleteStudentOnSubject(
     request: RequestDeleteStudentOnSubject,
   ): Promise<{ message: string }>;
+  update(request: Prisma.StudentOnSubjectUpdateArgs): Promise<StudentOnSubject>;
+  findMany(
+    request: Prisma.StudentOnSubjectFindManyArgs,
+  ): Promise<StudentOnSubject[]>;
 };
 @Injectable()
 export class StudentOnSubjectRepository
@@ -76,6 +80,22 @@ export class StudentOnSubjectRepository
           studentId: request.studentId,
         },
       });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findMany(
+    request: Prisma.StudentOnSubjectFindManyArgs,
+  ): Promise<StudentOnSubject[]> {
+    try {
+      return await this.prisma.studentOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -135,6 +155,22 @@ export class StudentOnSubjectRepository
         },
         data: request.data,
       });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async update(
+    request: Prisma.StudentOnSubjectUpdateArgs,
+  ): Promise<StudentOnSubject> {
+    try {
+      return await this.prisma.studentOnSubject.update(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

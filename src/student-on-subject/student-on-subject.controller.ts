@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -19,6 +20,7 @@ import {
 } from './dto';
 import { User } from '@prisma/client';
 import { UserGuard } from '../auth/guard';
+import { SortDto } from './dto/patch-student-on-subject.dto';
 
 @UseGuards(UserGuard)
 @Controller('v1/student-on-subjects')
@@ -61,6 +63,11 @@ export class StudentOnSubjectController {
     @GetUser() user: User,
   ) {
     return this.studentOnSubjectService.createStudentOnSubject(dto, user);
+  }
+
+  @Patch('sort')
+  sortStudentOnSubject(@Body() dto: SortDto, @GetUser() user: User) {
+    return this.studentOnSubjectService.sortStudentOnSubjects(dto, user);
   }
 
   @Delete(':studentOnSubjectId')

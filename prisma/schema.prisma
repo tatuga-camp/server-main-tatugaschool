@@ -284,6 +284,7 @@ model StudentOnSubject {
   classId   String @db.ObjectId
   subjectId String @db.ObjectId
   schoolId  String @db.ObjectId
+  order     Int?
 
   school               School                @relation(fields: [schoolId], references: [id])
   class                Class                 @relation(fields: [classId], references: [id])
