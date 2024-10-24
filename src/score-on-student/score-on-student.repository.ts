@@ -10,11 +10,14 @@ import {
   RequestGetAllScoreOnStudentBySubjectId,
   RequestUpdateScoreOnStudent,
 } from './interfaces';
-import { ScoreOnStudent } from '@prisma/client';
+import { Prisma, ScoreOnStudent } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 type ScoreOnStudentRepositoryType = {
+  findMany(
+    request: Prisma.ScoreOnStudentFindManyArgs,
+  ): Promise<ScoreOnStudent[]>;
   getAllScoreOnStudentBySubjectId(
     request: RequestGetAllScoreOnStudentBySubjectId,
   ): Promise<ScoreOnStudent[]>;
@@ -36,6 +39,22 @@ type ScoreOnStudentRepositoryType = {
 export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
   logger: Logger = new Logger(ScoreOnStudentRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findMany(
+    request: Prisma.ScoreOnStudentFindManyArgs,
+  ): Promise<ScoreOnStudent[]> {
+    try {
+      return await this.prisma.scoreOnStudent.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getAllScoreOnStudentBySubjectId(
     request: RequestGetAllScoreOnStudentBySubjectId,

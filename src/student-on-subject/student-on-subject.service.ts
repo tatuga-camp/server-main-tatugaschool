@@ -20,6 +20,7 @@ import {
   StudentOnSubjectRepository,
   StudentOnSubjectRepositoryType,
 } from './student-on-subject.repository';
+import { SortDto } from './dto/patch-student-on-subject.dto';
 
 @Injectable()
 export class StudentOnSubjectService {
@@ -40,9 +41,7 @@ export class StudentOnSubjectService {
   async getStudentOnSubjectsBySubjectId(
     dto: GetStudentOnSubjectsBySubjectIdDto,
     user: User,
-  ): Promise<
-    (StudentOnSubject & { scores: ScoreOnStudent[]; totalScore: number })[]
-  > {
+  ): Promise<StudentOnSubject[]> {
     try {
       const member = await this.prisma.teacherOnSubject.findFirst({
         where: {
@@ -62,26 +61,16 @@ export class StudentOnSubjectService {
         throw new ForbiddenException('You are not a member of this subject');
       }
 
-      const scoreOnStudents =
-        await this.scoreOnStudentRepository.getAllScoreOnStudentBySubjectId({
+      const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
+        where: {
           subjectId: dto.subjectId,
-        });
-
-      const studentOnSubjects =
-        await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId({
-          subjectId: dto.subjectId,
-        });
-
-      return studentOnSubjects.map((studentOnSubject) => {
-        const scores = scoreOnStudents.filter(
-          (score) => score.studentOnSubjectId === studentOnSubject.id,
-        );
-        return {
-          ...studentOnSubject,
-          scores,
-          totalScore: scores.reduce((acc, score) => acc + score.score, 0),
-        };
+        },
+        orderBy: {
+          order: 'asc',
+        },
       });
+
+      return studentOnSubjects;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -205,6 +194,54 @@ export class StudentOnSubjectService {
       return await this.studentOnSubjectRepository.createStudentOnSubject(
         studentData,
       );
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async sortStudentOnSubjects(dto: SortDto, user: User) {
+    try {
+      const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
+        where: {
+          id: {
+            in: dto.studentOnSubjectIds,
+          },
+        },
+      });
+      studentOnSubjects.forEach((studentOnSubject) => {
+        if (!studentOnSubject) {
+          throw new NotFoundException('Student on subject does not exist');
+        }
+      });
+
+      const member = await this.prisma.teacherOnSubject.findFirst({
+        where: {
+          subjectId: studentOnSubjects[0].subjectId,
+          userId: user.id,
+        },
+      });
+
+      if (!member) {
+        throw new ForbiddenException('You are not a member of this subject');
+      }
+
+      const updates = await Promise.allSettled(
+        dto.studentOnSubjectIds.map((id, index) => {
+          return this.prisma.studentOnSubject.update({
+            where: {
+              id,
+            },
+            data: {
+              order: index,
+            },
+          });
+        }),
+      );
+      const filterSuccess = updates.filter(
+        (update) => update.status === 'fulfilled',
+      );
+      return filterSuccess;
     } catch (error) {
       this.logger.error(error);
       throw error;

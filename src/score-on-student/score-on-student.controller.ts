@@ -14,6 +14,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
@@ -23,9 +24,9 @@ import { UserGuard } from '../auth/guard';
 export class ScoreOnStudentController {
   constructor(private scoreOnStudentService: ScoreOnStudentService) {}
 
-  @Get('subject/:subjectId')
+  @Get('subject')
   getAllScoreOnStudentBySubjectId(
-    @Param() dto: GetAllScoreOnStudentBySubjectIdDto,
+    @Query() dto: GetAllScoreOnStudentBySubjectIdDto,
     @GetUser() user: User,
   ) {
     return this.scoreOnStudentService.getAllScoreOnStudentBySubjectId(

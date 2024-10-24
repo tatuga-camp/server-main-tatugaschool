@@ -82,11 +82,11 @@ export class ScoreOnSubjectService {
         subjectId: dto.subjectId,
       });
 
-      return await this.scoreOnSubjectRepository.getAllScoreOnSubjectBySubjectId(
-        {
+      return await this.scoreOnSubjectRepository.findMany({
+        where: {
           subjectId: dto.subjectId,
         },
-      );
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

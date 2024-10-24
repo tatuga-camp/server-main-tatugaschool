@@ -69,11 +69,19 @@ export class ScoreOnStudentService {
         userId: user.id,
         subjectId: dto.subjectId,
       });
-      return await this.scoreOnStudentRepository.getAllScoreOnStudentBySubjectId(
-        {
+
+      return await this.scoreOnStudentRepository.findMany({
+        where: {
           subjectId: dto.subjectId,
+          ...(dto.filter?.startDate &&
+            dto.filter?.endDate && {
+              createAt: {
+                gte: dto.filter.startDate,
+                lte: dto.filter.endDate,
+              },
+            }),
         },
-      );
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
