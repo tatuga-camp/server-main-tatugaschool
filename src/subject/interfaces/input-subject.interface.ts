@@ -7,6 +7,7 @@ export type RequestCreateSubject = {
   educationYear: Date;
   description: string;
   backgroundImage?: string;
+  blurHash?: string;
   order: number;
   classId: string;
   userId: string;
@@ -22,6 +23,7 @@ export type RequestUpdateSubject = {
     educationYear?: Date;
     description?: string;
     order?: number;
+    blurHash?: string;
     backgroundImage?: string;
   };
 };

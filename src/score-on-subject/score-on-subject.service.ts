@@ -6,6 +6,7 @@ import {
   Get,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -127,6 +128,9 @@ export class ScoreOnSubjectService {
     user: User,
   ): Promise<ScoreOnSubject> {
     try {
+      if (dto.body.icon && !dto.body.blurHash) {
+        throw new BadRequestException('BlurHash is required for icon');
+      }
       const scoreOnSubject = await this.prisma.scoreOnSubject.findUnique({
         where: {
           id: dto.query.socreOnSubjectId,

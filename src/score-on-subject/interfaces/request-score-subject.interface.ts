@@ -8,6 +8,7 @@ export type RequestCreateSocreOnSubject = {
   icon: string;
   schoolId: string;
   subjectId: string;
+  blurHash: string;
 };
 
 export type RequestUpdateScoreOnSubject = {
@@ -19,5 +20,6 @@ export type RequestUpdateScoreOnSubject = {
     title?: string;
     icon?: string;
     isDeleted?: boolean;
+    blurHash?: string;
   };
 };

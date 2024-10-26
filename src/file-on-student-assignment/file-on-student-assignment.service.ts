@@ -6,6 +6,7 @@ import { StudentOnAssignmentRepository } from './../student-on-assignment/studen
 import { FileOnStudentAssignmentRepository } from './file-on-student-assignment.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -102,6 +103,11 @@ export class FileOnStudentAssignmentService {
     student: Student,
   ) {
     try {
+      const type = dto.type.split('/')[0];
+
+      if (type === 'image' && !dto.blurHash) {
+        throw new BadRequestException('BlurHash is required for image type');
+      }
       const studnetOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,

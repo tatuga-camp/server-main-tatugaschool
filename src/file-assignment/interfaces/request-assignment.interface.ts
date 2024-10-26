@@ -9,6 +9,7 @@ export type RequestCreateFileAssignment = {
   type: string;
   url: string;
   size: number;
+  blurHash?: string;
   subjectId: string;
   schoolId: string;
   assignmentId: string;

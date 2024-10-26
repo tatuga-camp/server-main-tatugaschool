@@ -25,6 +25,10 @@ export class UpdateUserDto {
   photo?: string;
 
   @IsOptional()
+  @IsString()
+  blurHash?: string;
+
+  @IsOptional()
   @IsPhoneNumber()
   phone?: string;
 }

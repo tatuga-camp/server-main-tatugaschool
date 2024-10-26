@@ -10,6 +10,7 @@ export interface RequestCreateMemberOnSchool {
   phone: string;
   userId: string;
   schoolId: string;
+  blurHash?: string;
 }
 
 export interface RequestUpdateMemberOnSchool {

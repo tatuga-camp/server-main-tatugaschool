@@ -178,6 +178,7 @@ export class TeacherOnSubjectService {
         lastName: teacher.lastName,
         email: teacher.email,
         photo: teacher.phone,
+        blurHash: teacher.blurHash,
         phone: teacher.phone,
         schoolId: subject.schoolId,
       });

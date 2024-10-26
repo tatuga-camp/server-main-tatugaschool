@@ -20,6 +20,7 @@ export type RequestCreateStudentOnAssignment = {
   photo: string;
   number: string;
   score?: number;
+  blurHash: string;
   body?: string;
   isCompleted?: boolean;
   isReviewed?: boolean;
@@ -39,6 +40,7 @@ export type RequestUpdateStudentOnAssignment = {
     firstName?: string;
     lastName?: string;
     photo?: string;
+    blurHash?: string;
     number?: string;
     score?: number;
     body?: string;

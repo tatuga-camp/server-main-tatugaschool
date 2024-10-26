@@ -75,12 +75,17 @@ export class FileAssignmentService {
     user: User,
   ): Promise<FileOnAssignment> {
     try {
+      const type = dto.type.split('/')[0];
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
       });
 
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
+      }
+
+      if (type === 'image' && !dto.blurHash) {
+        throw new NotFoundException('BlurHash is required for image type');
       }
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({

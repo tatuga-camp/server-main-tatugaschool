@@ -5,19 +5,8 @@ export interface RequestCreateStudent {
   photo: string;
   number: string;
   classId: string;
+  blurHash: string;
   schoolId: string;
-}
-
-export interface RequestCreateManyStudents {
-  data: {
-    title: string;
-    firstName: string;
-    lastName: string;
-    photo: string;
-    number: string;
-    classId: string;
-    schoolId: string;
-  }[];
 }
 
 export interface RequestGetStudent {
@@ -41,6 +30,7 @@ export interface RequestUpdateStudent {
     firstName?: string;
     lastName?: string;
     photo?: string;
+    blurHash?: string;
     number?: string;
     password?: string;
   };

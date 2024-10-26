@@ -97,12 +97,14 @@ export class UserRepository implements UserRepositoryType {
         email?: string;
         phone?: string;
         photo?: string;
+        blurHash?: string;
       } = {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         phone: user.phone,
         photo: user.photo,
+        blurHash: user.blurHash,
       };
       await Promise.allSettled([
         this.prisma.memberOnSchool.updateMany({

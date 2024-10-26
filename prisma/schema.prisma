@@ -17,6 +17,7 @@ model User {
   email                     String    @unique
   phone                     String
   photo                     String
+  blurHash                  String?
   password                  String?
   role                      UserRole  @default(USER)
   createBySchoolId          String?   @db.ObjectId
@@ -57,7 +58,9 @@ model School {
   address String
   zipCode String
 
-  logo        String
+  logo     String
+  blurHash String?
+
   phoneNumber String
 
   totalStorage Float @default(0)
@@ -105,6 +108,7 @@ model MemberOnSchool {
   lastName  String
   email     String
   photo     String
+  blurHash  String?
   phone     String
 
   userId   String @db.ObjectId
@@ -146,6 +150,7 @@ model Student {
   firstName String
   lastName  String
   photo     String
+  blurHash  String?
   number    String
   password  String?
 
@@ -190,6 +195,7 @@ model MemberOnTeam {
   lastName  String
   email     String
   photo     String
+  blurHash  String?
   phone     String
 
   userId           String @db.ObjectId
@@ -217,6 +223,7 @@ model Subject {
   order         Int
 
   backgroundImage String?
+  blurHash        String?
 
   classId  String @db.ObjectId
   userId   String @db.ObjectId
@@ -253,6 +260,7 @@ model TeacherOnSubject {
   lastName  String
   email     String
   photo     String
+  blurHash  String?
   phone     String
 
   userId    String @db.ObjectId
@@ -276,7 +284,9 @@ model StudentOnSubject {
   firstName String
   lastName  String
   photo     String
-  number    String
+  blurHash  String?
+
+  number String
 
   totalSpeicalScore Float @default(0)
 
@@ -334,9 +344,10 @@ model FileOnAssignment {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  type String
-  url  String
-  size Float
+  type     String
+  blurHash String?
+  url      String
+  size     Float
 
   subjectId    String     @db.ObjectId
   subject      Subject    @relation(fields: [subjectId], references: [id])
@@ -355,7 +366,9 @@ model StudentOnAssignment {
   firstName String
   lastName  String
   photo     String
-  number    String
+  blurHash  String?
+
+  number String
 
   score       Float?
   body        String?
@@ -386,9 +399,10 @@ model FileOnStudentAssignment {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  type String
-  url  String
-  size Float
+  type     String
+  blurHash String?
+  url      String
+  size     Float
 
   subjectId             String              @db.ObjectId
   subject               Subject             @relation(fields: [subjectId], references: [id])
@@ -413,6 +427,7 @@ model CommentOnAssignment {
   firstName String
   lastName  String
   photo     String?
+  blurHash  String?
   number    String?
 
   status Status?     @default(PENDDING)
@@ -442,6 +457,7 @@ model ScoreOnSubject {
   score     Float
   title     String
   icon      String
+  blurHash  String?
   isDeleted Boolean @default(false)
 
   schoolId  String  @db.ObjectId
@@ -457,9 +473,10 @@ model ScoreOnStudent {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  score Float
-  title String
-  icon  String
+  score    Float
+  blurHash String?
+  title    String
+  icon     String
 
   subjectId          String           @db.ObjectId
   subject            Subject          @relation(fields: [subjectId], references: [id])

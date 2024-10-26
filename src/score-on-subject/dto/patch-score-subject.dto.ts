@@ -36,6 +36,10 @@ class UpdateScoreOnSubjectBody {
   icon?: string;
 
   @IsOptional()
+  @IsString()
+  blurHash?: string;
+
+  @IsOptional()
   @IsBoolean()
   isDeleted?: boolean;
 }

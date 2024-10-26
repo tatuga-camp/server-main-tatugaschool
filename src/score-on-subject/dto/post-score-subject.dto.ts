@@ -26,6 +26,10 @@ export class CreateScoreOnSubjectDto {
   icon: string;
 
   @IsNotEmpty()
+  @IsString()
+  blurHash: string;
+
+  @IsNotEmpty()
   @IsMongoId()
   subjectId: string;
 }

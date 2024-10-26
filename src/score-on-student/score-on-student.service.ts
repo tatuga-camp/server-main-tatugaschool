@@ -151,6 +151,7 @@ export class ScoreOnStudentService {
       const create = this.scoreOnStudentRepository.createSocreOnStudent({
         ...dto,
         title: scoreOnSubject.title,
+        blurHash: scoreOnSubject.blurHash,
         icon: scoreOnSubject.icon,
         subjectId: studentOnSubject.subjectId,
         schoolId: studentOnSubject.schoolId,
