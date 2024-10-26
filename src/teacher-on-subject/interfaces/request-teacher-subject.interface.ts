@@ -25,6 +25,7 @@ export type RequestCreateTeacherOnSubject = {
   email: string;
   photo: string;
   phone: string;
+  blurHash: string;
   userId: string;
   subjectId: string;
   schoolId: string;
@@ -41,6 +42,7 @@ export type RequestUpdateTeacherOnSubject = {
     lastName?: string;
     email?: string;
     photo?: string;
+    blurHash?: string;
     phone?: string;
   };
 };

@@ -179,7 +179,7 @@ export class StudentOnSubjectService {
         throw new NotFoundException('Student does not exist');
       }
 
-      const studentData = {
+      return await this.studentOnSubjectRepository.createStudentOnSubject({
         title: student.title,
         firstName: student.firstName,
         lastName: student.lastName,
@@ -188,12 +188,9 @@ export class StudentOnSubjectService {
         studentId: student.id,
         classId: student.classId,
         subjectId: dto.subjectId,
+        blurHash: student.blurHash,
         schoolId: student.schoolId,
-      };
-
-      return await this.studentOnSubjectRepository.createStudentOnSubject(
-        studentData,
-      );
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

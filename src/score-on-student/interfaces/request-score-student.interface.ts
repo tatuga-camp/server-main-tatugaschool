@@ -9,6 +9,7 @@ export class RequestCreateScoreOnStudent {
   score: number;
   title: string;
   icon: string;
+  blurHash: string;
   subjectId: string;
   schoolId: string;
   studentId: string;

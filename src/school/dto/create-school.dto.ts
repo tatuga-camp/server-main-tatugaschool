@@ -46,6 +46,10 @@ export class CreateSchoolDto {
   logo: string;
 
   @IsNotEmpty()
+  @IsString()
+  blurHash: string;
+
+  @IsNotEmpty()
   @IsPhoneNumber()
   phoneNumber: string;
 }

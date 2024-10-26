@@ -20,6 +20,10 @@ export class CreateStudentDto {
 
   @IsNotEmpty()
   @IsString()
+  blurHash: string;
+
+  @IsNotEmpty()
+  @IsString()
   number: string;
 
   @IsNotEmpty()

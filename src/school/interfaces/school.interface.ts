@@ -8,6 +8,7 @@ export interface RequestCreateSchool {
   stripe_price_id?: string;
   stripe_subscription_id?: string;
   stripe_subscription_expireAt?: Date;
+  blurHash: string;
   billingManagerId: string;
 }
 

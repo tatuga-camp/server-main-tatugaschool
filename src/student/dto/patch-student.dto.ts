@@ -35,6 +35,10 @@ class UpdateStudenBody {
 
   @IsOptional()
   @IsString()
+  blurHash?: string;
+
+  @IsOptional()
+  @IsString()
   number?: string;
 
   @IsOptional()

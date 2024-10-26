@@ -136,6 +136,7 @@ export class MemberOnTeamService {
           lastName: targetUser.lastName,
           email: targetUser.email,
           photo: targetUser.photo,
+          blurHash: targetUser.blurHash,
           phone: targetUser.phone,
         },
       });

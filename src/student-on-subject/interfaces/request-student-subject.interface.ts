@@ -15,6 +15,7 @@ export type RequestCreateStudentOnSubject = {
   firstName: string;
   lastName: string;
   photo: string;
+  blurHash: string;
   number: string;
   studentId: string;
   classId: string;
@@ -30,6 +31,7 @@ export type RequestUpdateStudentOnSubject = {
     title?: string;
     firstName?: string;
     lastName?: string;
+    blurHash?: string;
     photo?: string;
     number?: string;
     totalSpeicalScore?: number;

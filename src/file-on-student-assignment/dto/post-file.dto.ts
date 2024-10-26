@@ -3,6 +3,7 @@ import {
   IsMongoId,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   IsUrl,
   MaxLength,
@@ -18,6 +19,10 @@ export class CreateFileOnStudentAssignmentDto {
   @IsNotEmpty()
   @IsUrl()
   url: string;
+
+  @IsOptional()
+  @IsString()
+  blurHash?: string;
 
   @IsNotEmpty()
   @IsNumber()

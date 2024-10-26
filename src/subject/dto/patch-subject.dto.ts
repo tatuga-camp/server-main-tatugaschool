@@ -37,6 +37,10 @@ class UpdateSubjectBody {
   @IsOptional()
   @IsUrl()
   backgroundImage?: string;
+
+  @IsOptional()
+  @IsString()
+  blurHash?: string;
 }
 
 export class UpdateSubjectDto {

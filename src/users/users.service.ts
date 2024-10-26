@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './users.repository';
@@ -47,6 +52,11 @@ export class UsersService {
 
   async updateUser(dto: UpdateUserDto, user: User): Promise<User> {
     try {
+      if (dto.photo && !dto.blurHash) {
+        throw new BadRequestException(
+          'blurHash is required when photo is provided',
+        );
+      }
       return await this.userRepository.update({
         where: {
           id: user.id,

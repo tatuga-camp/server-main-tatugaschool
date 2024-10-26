@@ -136,6 +136,7 @@ export class SchoolService {
         lastName: user.lastName,
         photo: user.photo,
         phone: user.phone,
+        blurHash: user.blurHash,
         userId: user.id,
         role: MemberRole.ADMIN,
         status: Status.ACCEPT,

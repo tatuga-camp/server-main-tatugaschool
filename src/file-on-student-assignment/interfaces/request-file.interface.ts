@@ -13,6 +13,7 @@ export type RequestCreateFileOnStudentAssignment = {
   subjectId: string;
   schoolId: string;
   studentOnAssignmentId: string;
+  blurHash?: string;
   assignmentId: string;
   studentId: string;
 };

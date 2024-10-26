@@ -173,6 +173,7 @@ export class MemberOnSchoolService {
         photo: newMember.photo,
         phone: newMember.phone,
         userId: newMember.id,
+        blurHash: newMember.blurHash,
         schoolId: school.id,
       });
 

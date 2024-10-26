@@ -19,7 +19,6 @@ import { MemberOnSchool, Student, User } from '@prisma/client';
 import { UpdateStudentDto } from './dto/patch-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RequestCreateManyStudents } from './interface/request-student.interface';
 
 @Injectable()
 export class StudentService {
@@ -135,6 +134,9 @@ export class StudentService {
 
   async updateStudent(dto: UpdateStudentDto, user: User): Promise<Student> {
     try {
+      if (dto.body.photo && !dto.body.blurHash) {
+        throw new BadRequestException('BlurHash is required for photo');
+      }
       const student = await this.studentRepository.findById({
         studentId: dto.query.studentId,
       });

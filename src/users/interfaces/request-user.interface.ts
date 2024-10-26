@@ -35,6 +35,7 @@ export type RequestUpdateUser = {
     firstName?: string;
     lastName?: string;
     photo?: string;
+    blurHash?: string;
     phone?: string;
   };
 };

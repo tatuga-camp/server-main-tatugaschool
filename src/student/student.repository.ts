@@ -3,7 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Student } from '@prisma/client';
 
 import {
-  RequestCreateManyStudents,
   RequestCreateStudent,
   RequestDeleteStudent,
   RequestGetAllStudents,
@@ -33,6 +32,14 @@ export class StudentRepository implements StudentRepositoryType {
         where: { id: request.query.studentId },
         data: request.body,
       });
+      const data = {
+        title: student.title,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        photo: student.photo,
+        blurHash: student.blurHash,
+        number: student.number,
+      };
 
       delete request.body.password;
       await Promise.allSettled([
@@ -40,25 +47,25 @@ export class StudentRepository implements StudentRepositoryType {
           where: {
             studentId: student.id,
           },
-          data: request.body,
+          data: data,
         }),
         this.prisma.studentOnSubject.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.body,
+          data: data,
         }),
         this.prisma.commentOnAssignment.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.body,
+          data: data,
         }),
         this.prisma.scoreOnStudent.updateMany({
           where: {
             studentId: student.id,
           },
-          data: request.body,
+          data: data,
         }),
       ]);
 
