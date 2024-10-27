@@ -15,6 +15,7 @@ import {
   DeleteMemberOnSchoolDto,
   GetMemberOnSchoolByIdDto,
   GetMemberOnSchoolsDto,
+  QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchool, MemberRole, User } from '@prisma/client';
@@ -107,15 +108,20 @@ export class MemberOnSchoolService {
     }
   }
 
-  async getAllMemberOnSchools(dto: GetMemberOnSchoolsDto, user: User) {
+  async getAllMemberOnSchools(
+    dto: GetMemberOnSchoolsDto & QueryMemberOnSchoolDto,
+    user: User,
+  ) {
     try {
       await this.validateAccess({
         user: user,
         schoolId: dto.schoolId,
       });
-      return await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId(
-        dto,
-      );
+      return await this.memberOnSchoolRepository.findMany({
+        where: {
+          schoolId: dto.schoolId,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -229,12 +235,8 @@ export class MemberOnSchoolService {
         });
 
       if (!memberOnSchool) {
-        throw new NotFoundException(`ไม่พบ MemberOnSchool ที่ต้องการอัพเดท`);
-      }
-
-      if (memberOnSchool.status !== 'ACCEPT') {
-        throw new ForbiddenException(
-          "You can't update this member because the member has not accepted the invitation",
+        throw new NotFoundException(
+          `MemberOnSchool with ID ${dto.query.memberOnSchoolId} not found`,
         );
       }
 
