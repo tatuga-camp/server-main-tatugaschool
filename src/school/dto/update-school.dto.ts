@@ -3,11 +3,12 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
+  IsPhoneNumber,
   IsString,
+  IsUrl,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { CreateSchoolDto } from './create-school.dto';
 import { Type } from 'class-transformer';
 
 class UpdateSchoolQuery {
@@ -30,6 +31,38 @@ class UpdateSchoolBody {
   @IsOptional()
   @IsMongoId()
   billingManagerId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(999)
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(999)
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(999)
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(999)
+  zipCode?: string;
+
+  @IsOptional()
+  @IsUrl()
+  logo?: string;
+
+  @IsOptional()
+  @IsString()
+  blurHash?: string;
+
+  @IsOptional()
+  @IsPhoneNumber()
+  phoneNumber?: string;
 }
 
 export class UpdateSchoolDto {
