@@ -17,6 +17,7 @@ import {
   DeleteMemberOnSchoolDto,
   GetMemberOnSchoolByIdDto,
   GetMemberOnSchoolsDto,
+  QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchool, User } from '@prisma/client';
@@ -32,11 +33,17 @@ export class MemberOnSchoolController {
   async getByUserId(@GetUser() user: User) {
     return this.memberOnSchoolService.getMemberOnSchoolByUserId(user);
   }
+
   @Get('school/:schoolId')
   async getAllMemberOnSchools(
-    @Param() dto: GetMemberOnSchoolsDto,
+    @Param() param: GetMemberOnSchoolsDto,
+    @Query() query: QueryMemberOnSchoolDto,
     @GetUser() user: User,
   ) {
+    const dto: GetMemberOnSchoolsDto & QueryMemberOnSchoolDto = {
+      ...param,
+      ...query,
+    };
     return this.memberOnSchoolService.getAllMemberOnSchools(dto, user);
   }
 

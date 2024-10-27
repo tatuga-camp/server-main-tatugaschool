@@ -1,5 +1,5 @@
 import { MemberRole } from '@prisma/client';
-import { IsEnum, IsMongoId, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsEnum, IsMongoId, IsNotEmpty } from 'class-validator';
 
 export class CreateTeacherOnSubjectDto {
   @IsNotEmpty()
@@ -7,8 +7,8 @@ export class CreateTeacherOnSubjectDto {
   role: MemberRole;
 
   @IsNotEmpty()
-  @IsMongoId()
-  userId: string;
+  @IsEmail()
+  email: string;
 
   @IsNotEmpty()
   @IsMongoId()

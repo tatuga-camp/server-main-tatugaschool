@@ -131,19 +131,37 @@ export class TeacherOnSubjectService {
       if (!subject) {
         throw new NotFoundException('Subject not found');
       }
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
-          {
-            userId: user.id,
+
+      const [memberOnSchool, targetMemberOnSchool] = await Promise.all([
+        this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId({
+          userId: user.id,
+          schoolId: subject.schoolId,
+        }),
+
+        this.memberOnSchoolRepository.findFirst({
+          where: {
+            email: dto.email,
             schoolId: subject.schoolId,
           },
-        );
+        }),
+      ]);
       if (!memberOnSchool) {
         throw new ForbiddenException("You're not a member of this school");
       }
       if (memberOnSchool.status !== 'ACCEPT') {
         throw new ForbiddenException(
           "You're not a member of this school or your status is not accepted",
+        );
+      }
+
+      if (!targetMemberOnSchool) {
+        throw new ForbiddenException(
+          'This user is not a member of this school, please invite this user to join the school first',
+        );
+      }
+      if (targetMemberOnSchool.status !== 'ACCEPT') {
+        throw new ForbiddenException(
+          "this user is not a member of this school or the user's status is not accepted, please wait for the user to accept the invitation to join the school first",
         );
       }
 
@@ -161,7 +179,7 @@ export class TeacherOnSubjectService {
 
       const teacher = await this.prisma.user.findUnique({
         where: {
-          id: dto.userId,
+          email: dto.email,
         },
       });
 
@@ -171,13 +189,13 @@ export class TeacherOnSubjectService {
 
       const create = await this.teacherOnSubjectRepository.create({
         role: dto.role,
-        userId: dto.userId,
+        userId: teacher.id,
         subjectId: subject.id,
         status: 'ACCEPT',
         firstName: teacher.firstName,
         lastName: teacher.lastName,
         email: teacher.email,
-        photo: teacher.phone,
+        photo: teacher.photo,
         blurHash: teacher.blurHash,
         phone: teacher.phone,
         schoolId: subject.schoolId,
