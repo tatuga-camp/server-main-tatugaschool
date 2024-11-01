@@ -4,13 +4,14 @@ export type RequestGetSubjectById = {
 
 export type RequestCreateSubject = {
   title: string;
-  educationYear: Date;
+  educationYear: string;
   description: string;
   backgroundImage?: string;
   blurHash?: string;
   order: number;
   classId: string;
   userId: string;
+  code:string
   schoolId: string;
 };
 
@@ -20,7 +21,7 @@ export type RequestUpdateSubject = {
   };
   body: {
     title?: string;
-    educationYear?: Date;
+    educationYear?: string;
     description?: string;
     order?: number;
     blurHash?: string;
