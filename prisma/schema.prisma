@@ -218,12 +218,18 @@ model Subject {
   updateAt DateTime @updatedAt
 
   title         String
-  educationYear DateTime
+  educationYear String
   description   String
   order         Int
+  code          String
 
   backgroundImage String?
   blurHash        String?
+
+  allowStudentDeleteWork       Boolean @default(true)
+  allowStudentViewOverallScore Boolean @default(false)
+  allowStudentViewGrade        Boolean @default(false)
+  allowStudentViewAttendance   Boolean @default(true)
 
   classId  String @db.ObjectId
   userId   String @db.ObjectId

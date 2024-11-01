@@ -12,6 +12,7 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
+import { IsEducationYear } from '../../custom-validate';
 
 class UpdateSubjectQuery {
   @IsNotEmpty()
@@ -26,8 +27,8 @@ class UpdateSubjectBody {
   title?: string;
 
   @IsOptional()
-  @IsDateString()
-  educationYear?: Date;
+  @IsEducationYear()
+  eduYear?: string;
 
   @IsOptional()
   @IsString()
@@ -69,6 +70,6 @@ export class ReorderSubjectsDto {
   schoolId: string;
 
   @IsNotEmpty()
-  @IsDateString()
-  educationYear: Date;
+  @IsEducationYear()
+  eduYear: string;
 }

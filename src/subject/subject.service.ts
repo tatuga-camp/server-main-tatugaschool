@@ -24,7 +24,7 @@ import {
   getAllSubjectsByTeamIdParam,
   getAllSubjectsByTeamIdQuery,
 } from './dto';
-
+import * as crypto from 'crypto';
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
@@ -97,6 +97,9 @@ export class SubjectService {
     user: User,
   ): Promise<Pagination<Subject>> {
     try {
+      const educationYear = dto.eduYear 
+      delete dto.eduYear
+
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
@@ -136,7 +139,7 @@ export class SubjectService {
       const counts = await this.prisma.subject.count({
         where: {
           schoolId: dto.schoolId,
-          educationYear: dto.educationYear,
+          educationYear: educationYear,
           OR: [...queryTitles, ...queryDescriptions],
         },
       });
@@ -156,11 +159,11 @@ export class SubjectService {
       }
 
       const skip = (dto.page - 1) * dto.limit;
-
+      
       const subjects = await this.prisma.subject.findMany({
         where: {
           schoolId: dto.schoolId,
-          educationYear: dto.educationYear,
+          educationYear: educationYear,
           OR: [...queryTitles, ...queryDescriptions],
         },
         skip,
@@ -185,6 +188,8 @@ export class SubjectService {
 
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
     try {
+      const educationYear = dto.eduYear
+      delete dto.eduYear
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
@@ -192,19 +197,22 @@ export class SubjectService {
         },
       });
 
-      if (!memberOnSchool && user.role !== 'ADMIN') {
+      if (!memberOnSchool) {
         throw new ForbiddenException('Access denied');
       }
 
       const totalSubject = await this.prisma.subject.count({
         where: {
           userId: user.id,
-          educationYear: dto.educationYear,
+          educationYear: educationYear,
         },
       });
-
+   
+      const code = crypto.randomBytes(6).toString('hex');
       const subject = await this.subjectRepository.createSubject({
         ...dto,
+        educationYear: educationYear,
+        code,
         userId: user.id,
         order: totalSubject + 1,
       });
@@ -299,6 +307,8 @@ export class SubjectService {
     user: User,
   ): Promise<Subject[]> {
     try {
+      const educationYear = dto.eduYear
+      delete dto.eduYear
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
@@ -314,7 +324,7 @@ export class SubjectService {
           id: {
             in: dto.subjectIds,
           },
-          educationYear: dto.educationYear,
+          educationYear: educationYear,
         },
       });
 

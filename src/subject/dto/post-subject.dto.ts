@@ -7,6 +7,7 @@ import {
   IsUrl,
   MaxLength,
 } from 'class-validator';
+import { IsEducationYear } from '../../custom-validate';
 export class CreateSubjectDto {
   @IsNotEmpty()
   @IsString()
@@ -14,8 +15,8 @@ export class CreateSubjectDto {
   title: string;
 
   @IsNotEmpty()
-  @IsDateString()
-  educationYear: Date;
+  @IsEducationYear()
+  eduYear: string;
 
   @IsNotEmpty()
   @IsString()

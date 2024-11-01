@@ -13,6 +13,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { IsEducationYear } from '../../custom-validate';
 export class GetSubjectByIdDto {
   @IsNotEmpty()
   @IsMongoId()
@@ -42,8 +43,8 @@ export class GetSubjectByPageDto {
   search: string;
 
   @IsNotEmpty()
-  @IsDateString()
-  educationYear: Date;
+  @IsEducationYear()
+  eduYear: string;
 }
 
 export class getAllSubjectsByTeamIdParam {
@@ -54,6 +55,6 @@ export class getAllSubjectsByTeamIdParam {
 
 export class getAllSubjectsByTeamIdQuery {
   @IsNotEmpty()
-  @IsDateString()
-  educationYear: Date;
+  @IsEducationYear()
+  educationYear: string;
 }
