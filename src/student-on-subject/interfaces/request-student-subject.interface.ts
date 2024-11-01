@@ -34,6 +34,7 @@ export type RequestUpdateStudentOnSubject = {
     blurHash?: string;
     photo?: string;
     number?: string;
+    isActive?: boolean;
     totalSpeicalScore?: number;
   };
 };

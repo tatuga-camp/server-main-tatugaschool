@@ -1,5 +1,5 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { ScoreOnStudentRepository } from './../score-on-student/score-on-student.repository';
-import { StudentAccessTokenStrategy } from './../auth/strategy/accessToken.strategy';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   ForbiddenException,
@@ -20,16 +20,21 @@ import {
   StudentOnSubjectRepository,
   StudentOnSubjectRepositoryType,
 } from './student-on-subject.repository';
-import { SortDto } from './dto/patch-student-on-subject.dto';
+import {
+  SortDto,
+  UpdateStudentOnSubjectDto,
+} from './dto/patch-student-on-subject.dto';
 
 @Injectable()
 export class StudentOnSubjectService {
   private logger: Logger = new Logger(StudentOnSubjectService.name);
   studentOnSubjectRepository: StudentOnSubjectRepositoryType;
   private scoreOnStudentRepository: ScoreOnStudentRepository;
+
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       prisma,
@@ -43,13 +48,10 @@ export class StudentOnSubjectService {
     user: User,
   ): Promise<StudentOnSubject[]> {
     try {
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: dto.subjectId,
-          userId: user.id,
-        },
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
       });
-
       const schoolMember = await this.prisma.memberOnSchool.findFirst({
         where: {
           schoolId: member.schoolId,
@@ -57,7 +59,7 @@ export class StudentOnSubjectService {
         },
       });
 
-      if (!member || !schoolMember) {
+      if (!schoolMember) {
         throw new ForbiddenException('You are not a member of this subject');
       }
 
@@ -77,6 +79,36 @@ export class StudentOnSubjectService {
     }
   }
 
+  async update(
+    dto: UpdateStudentOnSubjectDto,
+    user: User,
+  ): Promise<StudentOnSubject> {
+    try {
+      const studentOnSubject =
+        await this.studentOnSubjectRepository.getStudentOnSubjectById({
+          studentOnSubjectId: dto.query.id,
+        });
+
+      if (!studentOnSubject) {
+        throw new NotFoundException('Student on subject does not exist');
+      }
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnSubject.subjectId,
+      });
+
+      return await this.studentOnSubjectRepository.updateStudentOnSubject({
+        query: {
+          studentOnSubjectId: dto.query.id,
+        },
+        data: dto.data,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async getStudentOnSubjectsByStudentId(
     dto: GetStudentOnSubjectsByStudentIdDto,
     user: User,
@@ -90,17 +122,10 @@ export class StudentOnSubjectService {
       if (studentOnSubject.length === 0) {
         return [];
       }
-
-      const schoolMember = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          schoolId: studentOnSubject[0].schoolId,
-          userId: user.id,
-        },
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnSubject[0].subjectId,
       });
-
-      if (!schoolMember) {
-        throw new ForbiddenException('You are not a member of this subject');
-      }
 
       return studentOnSubject;
     } catch (error) {
@@ -122,23 +147,11 @@ export class StudentOnSubjectService {
       if (!studentOnSubject) {
         throw new NotFoundException('StudentOnSubject not found');
       }
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: studentOnSubject.subjectId,
-          userId: user.id,
-        },
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnSubject.subjectId,
       });
 
-      const schoolMember = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          schoolId: member.schoolId,
-          userId: user.id,
-        },
-      });
-
-      if (!member || !schoolMember) {
-        throw new ForbiddenException('You are not a member of this subject');
-      }
       return studentOnSubject;
     } catch (error) {
       this.logger.error(error);
@@ -151,23 +164,10 @@ export class StudentOnSubjectService {
     user: User,
   ): Promise<StudentOnSubject> {
     try {
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: dto.subjectId,
-          userId: user.id,
-        },
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
       });
-
-      const schoolMember = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          schoolId: member.schoolId,
-          userId: user.id,
-        },
-      });
-
-      if (!member && user.role !== 'ADMIN' && schoolMember.role !== 'ADMIN') {
-        throw new ForbiddenException('You are not a member of this subject');
-      }
 
       const student = await this.prisma.student.findUnique({
         where: {
@@ -212,16 +212,10 @@ export class StudentOnSubjectService {
         }
       });
 
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: studentOnSubjects[0].subjectId,
-          userId: user.id,
-        },
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnSubjects[0].subjectId,
       });
-
-      if (!member) {
-        throw new ForbiddenException('You are not a member of this subject');
-      }
 
       const updates = await Promise.allSettled(
         dto.studentOnSubjectIds.map((id, index) => {
@@ -258,21 +252,12 @@ export class StudentOnSubjectService {
       if (!studentOnSubject) {
         throw new NotFoundException('Student on subject does not exist');
       }
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: studentOnSubject.subjectId,
-          userId: user.id,
-        },
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnSubject.subjectId,
       });
 
-      const schoolMember = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          schoolId: member.schoolId,
-          userId: user.id,
-        },
-      });
-
-      if (!member && user.role !== 'ADMIN' && schoolMember.role !== 'ADMIN') {
+      if (!member) {
         throw new ForbiddenException('You are not a member of this subject');
       }
 

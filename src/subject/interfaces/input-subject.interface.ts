@@ -15,19 +15,6 @@ export type RequestCreateSubject = {
   schoolId: string;
 };
 
-export type RequestUpdateSubject = {
-  query: {
-    subjectId: string;
-  };
-  body: {
-    title?: string;
-    educationYear?: string;
-    description?: string;
-    order?: number;
-    blurHash?: string;
-    backgroundImage?: string;
-  };
-};
 
 export type RequestDeleteSubject = {
   subjectId: string;

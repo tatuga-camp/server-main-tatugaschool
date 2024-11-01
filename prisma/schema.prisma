@@ -221,7 +221,7 @@ model Subject {
   educationYear String
   description   String
   order         Int
-  code          String
+  code          String @unique
 
   backgroundImage String?
   blurHash        String?
@@ -301,6 +301,8 @@ model StudentOnSubject {
   subjectId String @db.ObjectId
   schoolId  String @db.ObjectId
   order     Int?
+
+  isActive Boolean @default(true)
 
   school               School                @relation(fields: [schoolId], references: [id])
   class                Class                 @relation(fields: [classId], references: [id])
