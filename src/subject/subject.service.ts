@@ -97,8 +97,8 @@ export class SubjectService {
     user: User,
   ): Promise<Pagination<Subject>> {
     try {
-      const educationYear = dto.eduYear 
-      delete dto.eduYear
+      const educationYear = dto.eduYear;
+      delete dto.eduYear;
 
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
@@ -159,7 +159,7 @@ export class SubjectService {
       }
 
       const skip = (dto.page - 1) * dto.limit;
-      
+
       const subjects = await this.prisma.subject.findMany({
         where: {
           schoolId: dto.schoolId,
@@ -188,8 +188,8 @@ export class SubjectService {
 
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
     try {
-      const educationYear = dto.eduYear
-      delete dto.eduYear
+      const educationYear = dto.eduYear;
+      delete dto.eduYear;
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,
@@ -207,8 +207,8 @@ export class SubjectService {
           educationYear: educationYear,
         },
       });
-   
-      const code = crypto.randomBytes(6).toString('hex');
+
+      const code = crypto.randomBytes(4).toString('hex');
       const subject = await this.subjectRepository.createSubject({
         ...dto,
         educationYear: educationYear,
@@ -289,12 +289,17 @@ export class SubjectService {
         userId: user.id,
         subjectId: dto.query.subjectId,
       });
+      let educationYear = dto.body.eduYear;
+
+      if (educationYear) {
+        delete dto.body.eduYear;
+      }
 
       return await this.subjectRepository.updateSubject({
-        query: {
-          subjectId: dto.query.subjectId,
+        where: {
+          id: dto.query.subjectId,
         },
-        body: dto.body,
+        data: { ...dto.body, ...(educationYear && { educationYear }) },
       });
     } catch (error) {
       this.logger.error(error);
@@ -307,8 +312,8 @@ export class SubjectService {
     user: User,
   ): Promise<Subject[]> {
     try {
-      const educationYear = dto.eduYear
-      delete dto.eduYear
+      const educationYear = dto.eduYear;
+      delete dto.eduYear;
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
         where: {
           userId: user.id,

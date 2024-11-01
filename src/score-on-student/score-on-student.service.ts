@@ -143,6 +143,10 @@ export class ScoreOnStudentService {
         throw new NotFoundException('Score on subject not found');
       }
 
+      if (!studentOnSubject.isActive) {
+        throw new ForbiddenException('Student is disabled');
+      }
+
       await this.validateAccessOnSubject({
         userId: user.id,
         subjectId: studentOnSubject.subjectId,

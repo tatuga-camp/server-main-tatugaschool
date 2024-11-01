@@ -4,13 +4,12 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Subject } from '@prisma/client';
+import { Prisma, Subject } from '@prisma/client';
 import {
   RequestCreateSubject,
   RequestDeleteSubject,
   RequestGetSubjectById,
   RequestReorderSubjects,
-  RequestUpdateSubject,
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -18,7 +17,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 export type SubjectRepositoryType = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
-  updateSubject(request: RequestUpdateSubject): Promise<Subject>;
+  updateSubject(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
   deleteSubject(request: RequestDeleteSubject): Promise<{ message: string }>;
   reorderSubjects(request: RequestReorderSubjects): Promise<Subject[]>;
 };
@@ -68,16 +67,9 @@ export class SubjectRepository implements SubjectRepositoryType {
     }
   }
 
-  async updateSubject(request: RequestUpdateSubject): Promise<Subject> {
+  async updateSubject(request: Prisma.SubjectUpdateArgs): Promise<Subject> {
     try {
-      return await this.prisma.subject.update({
-        where: {
-          id: request.query.subjectId,
-        },
-        data: {
-          ...request.body,
-        },
-      });
+      return await this.prisma.subject.update(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

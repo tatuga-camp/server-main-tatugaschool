@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsMongoId,
   IsNotEmpty,
@@ -42,6 +43,22 @@ class UpdateSubjectBody {
   @IsOptional()
   @IsString()
   blurHash?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentDeleteWork?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewOverallScore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewGrade?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewAttendance?: boolean;
 }
 
 export class UpdateSubjectDto {

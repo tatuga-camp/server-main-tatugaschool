@@ -13,7 +13,7 @@ import {
   RequestGetTeacherOnSubjectsByTeacherId,
   RequestUpdateTeacherOnSubject,
 } from './interfaces';
-import { TeacherOnSubject } from '@prisma/client';
+import { Prisma, TeacherOnSubject } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -30,6 +30,9 @@ type TeacherOnSubjectRepositoryType = {
   ): Promise<TeacherOnSubject[]>;
   create(request: RequestCreateTeacherOnSubject): Promise<TeacherOnSubject>;
   update(request: RequestUpdateTeacherOnSubject): Promise<TeacherOnSubject>;
+  findMany(
+    request: Prisma.TeacherOnSubjectFindManyArgs,
+  ): Promise<TeacherOnSubject[]>;
   delete(request: RequestDeleteTeacherOnSubject): Promise<{ message: string }>;
 };
 @Injectable()
@@ -38,6 +41,22 @@ export class TeacherOnSubjectRepository
 {
   logger: Logger = new Logger(TeacherOnSubjectRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findMany(
+    request: Prisma.TeacherOnSubjectFindManyArgs,
+  ): Promise<TeacherOnSubject[]> {
+    try {
+      return await this.prisma.teacherOnSubject.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getById(
     request: RequestGetTeacherOnSubjectById,

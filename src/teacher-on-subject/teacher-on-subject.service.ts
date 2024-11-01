@@ -2,6 +2,7 @@ import { EmailService } from '../email/email.service';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { TeacherOnSubjectRepository } from './teacher-on-subject.repository';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -32,6 +33,29 @@ export class TeacherOnSubjectService {
     private config: ConfigService,
     private emailService: EmailService,
   ) {}
+
+  async ValidateAccess({
+    userId,
+    subjectId,
+  }: {
+    userId: string;
+    subjectId: string;
+  }) {
+    try {
+      const memberOnSubject =
+        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+          teacherId: userId,
+          subjectId,
+        });
+      if (!memberOnSubject || memberOnSubject.status !== 'ACCEPT') {
+        throw new ForbiddenException("You're not a teacher on this subject");
+      }
+      return memberOnSubject;
+    } catch (error) {
+      this.logger.error(error.message);
+      throw error;
+    }
+  }
 
   async getTeacherOnSubjectById(dto: GetTeacherOnSubjectByIdDto, user: User) {
     try {
@@ -291,6 +315,10 @@ export class TeacherOnSubjectService {
       const teacherOnSubject = await this.teacherOnSubjectRepository.getById({
         teacherOnSubjectId: dto.teacherOnSubjectId,
       });
+
+      if (!teacherOnSubject) {
+        throw new NotFoundException('Teacher on subject does not exist');
+      }
       const memberOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
           teacherId: user.id,
@@ -298,14 +326,33 @@ export class TeacherOnSubjectService {
         });
 
       if (!memberOnSubject) {
-        throw new ForbiddenException('Unauthorized');
+        throw new ForbiddenException("You're not a teacher on this subject");
       }
 
       if (
         teacherOnSubject.userId !== user.id &&
         memberOnSubject.role !== 'ADMIN'
       ) {
-        throw new ForbiddenException('Unauthorized');
+        throw new ForbiddenException('You are not allowed to delete this data');
+      }
+
+      const exsitingTeacherOnSubjects =
+        await this.teacherOnSubjectRepository.findMany({
+          where: {
+            subjectId: teacherOnSubject.subjectId,
+          },
+        });
+
+      const filterAdmin = exsitingTeacherOnSubjects.filter(
+        (t) => t.role === 'ADMIN',
+      );
+
+      const filterNonDuplicate = filterAdmin.filter(
+        (t) => t.id !== teacherOnSubject.id,
+      );
+
+      if (filterNonDuplicate.length < 1) {
+        throw new BadRequestException("You can't delete the last admin");
       }
 
       return await this.teacherOnSubjectRepository.delete({
