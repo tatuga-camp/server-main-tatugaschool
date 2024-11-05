@@ -1,3 +1,5 @@
+import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
+import { SubjectRepository } from './../subject/subject.repository';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { ScoreOnStudentRepository } from './../score-on-student/score-on-student.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
@@ -30,11 +32,15 @@ export class StudentOnSubjectService {
   private logger: Logger = new Logger(StudentOnSubjectService.name);
   studentOnSubjectRepository: StudentOnSubjectRepositoryType;
   private scoreOnStudentRepository: ScoreOnStudentRepository;
-
+  private subjectRepository: SubjectRepository = new SubjectRepository(
+    this.prisma,
+    this.googleStorageService,
+  );
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private wheelOfNameService: WheelOfNameService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       prisma,
@@ -88,6 +94,13 @@ export class StudentOnSubjectService {
         await this.studentOnSubjectRepository.getStudentOnSubjectById({
           studentOnSubjectId: dto.query.id,
         });
+      const subject = await this.subjectRepository.getSubjectById({
+        subjectId: studentOnSubject.subjectId,
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
 
       if (!studentOnSubject) {
         throw new NotFoundException('Student on subject does not exist');
@@ -97,12 +110,52 @@ export class StudentOnSubjectService {
         subjectId: studentOnSubject.subjectId,
       });
 
-      return await this.studentOnSubjectRepository.updateStudentOnSubject({
-        query: {
-          studentOnSubjectId: dto.query.id,
-        },
-        data: dto.data,
-      });
+      const update =
+        await this.studentOnSubjectRepository.updateStudentOnSubject({
+          query: {
+            studentOnSubjectId: dto.query.id,
+          },
+          data: dto.data,
+        });
+
+      if (subject.wheelOfNamePath) {
+        const studentActives = await this.studentOnSubjectRepository.findMany({
+          where: {
+            subjectId: studentOnSubject.subjectId,
+            isActive: true,
+          },
+        });
+        const studentOnSubjectCreates = studentActives.map((student) => {
+          return {
+            title: student.title,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            photo: student.photo,
+            blurHash: student.blurHash,
+            number: student.number,
+            studentId: student.id,
+            classId: student.classId,
+            subjectId: subject.id,
+            schoolId: student.schoolId,
+          };
+        });
+        this.wheelOfNameService
+          .update({
+            path: subject.wheelOfNamePath,
+            texts: studentOnSubjectCreates.map((student) => {
+              return {
+                text: `${student.title} ${student.firstName} ${student.lastName}`,
+              };
+            }),
+            title: subject.title,
+            description: subject.description,
+          })
+          .catch((error) => {
+            this.logger.error(error);
+          });
+      }
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;

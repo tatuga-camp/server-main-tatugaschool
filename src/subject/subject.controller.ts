@@ -1,3 +1,4 @@
+import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import {
   Body,
   Controller,

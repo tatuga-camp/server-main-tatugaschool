@@ -8,16 +8,18 @@ import {
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { GetAttendanceByIdDto, UpdateAttendanceDto } from './dto';
+import {
+  attendanceId,
+  notFoundAttendanceId,
+  pendingOnSchoolMemberUserId,
+  subjectId,
+  userId,
+  userIdOutsideSchool,
+  userIdOutsideSubject,
+} from '../common/constants';
 
 describe('AttendanceService', () => {
   let attendanceService: AttendanceService;
-  const userId = '66d5edd6ab46227db7d5e2db';
-  const anotherOutsideSchoolUserId = '66ace7578c5561b748d8b3b3';
-  const anotherOutsideSubjectUserId = '66cca07986f8be03df898fb6';
-  const pendingOnSchoolMemberUserId = '66cca2fe86f8be03df898fb7';
-  const subjectId = '66d5f00eab46227db7d5e2df';
-  const attendanceId = '66ec4ab87e1d88db2d7fd9ce';
-  const notFoundAttendanceId = '66ec4ab87e1d88db2d7fd9ca';
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -36,7 +38,7 @@ describe('AttendanceService', () => {
     it('should not allow user outside school', async () => {
       try {
         await attendanceService.validateAccess({
-          userId: anotherOutsideSchoolUserId,
+          userId: userIdOutsideSchool,
           subjectId: subjectId,
         });
       } catch (error) {
@@ -47,7 +49,7 @@ describe('AttendanceService', () => {
     it('should not allow user outside subject', async () => {
       try {
         await attendanceService.validateAccess({
-          userId: anotherOutsideSubjectUserId,
+          userId: userIdOutsideSubject,
           subjectId: subjectId,
         });
       } catch (error) {

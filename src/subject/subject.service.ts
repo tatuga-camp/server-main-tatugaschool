@@ -1,3 +1,5 @@
+import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
+import { StudentRepository } from './../student/student.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
@@ -21,10 +23,10 @@ import {
   GetSubjectByPageDto,
   ReorderSubjectsDto,
   UpdateSubjectDto,
-  getAllSubjectsByTeamIdParam,
-  getAllSubjectsByTeamIdQuery,
 } from './dto';
 import * as crypto from 'crypto';
+import { ClassRepository } from '../class/class.repository';
+import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
@@ -32,13 +34,20 @@ export class SubjectService {
     this.prisma,
     this.googleStorageService,
   );
-  attendanceTableRepository: AttendanceTableRepository;
-  scoreOnSubjectRepository: ScoreOnSubjectRepository;
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+  private attendanceTableRepository: AttendanceTableRepository;
+  private scoreOnSubjectRepository: ScoreOnSubjectRepository;
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
+  private classRepository: ClassRepository = new ClassRepository(this.prisma);
+  private studentRepository: StudentRepository = new StudentRepository(
+    this.prisma,
+  );
+  private studentOnSubject: StudentOnSubjectRepository =
+    new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private wheelOfNameService: WheelOfNameService,
   ) {
     this.attendanceTableRepository = new AttendanceTableRepository(prisma);
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
@@ -190,32 +199,91 @@ export class SubjectService {
     try {
       const educationYear = dto.eduYear;
       delete dto.eduYear;
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: dto.schoolId,
-        },
-      });
+      const [memberOnSchool, classroom, totalSubject] = await Promise.all([
+        this.prisma.memberOnSchool.findFirst({
+          where: {
+            userId: user.id,
+            schoolId: dto.schoolId,
+          },
+        }),
+        this.classRepository.findById({
+          classId: dto.classId,
+        }),
+        this.prisma.subject.count({
+          where: {
+            userId: user.id,
+            educationYear: educationYear,
+          },
+        }),
+      ]);
+
+      if (!classroom) {
+        throw new NotFoundException('Class not found');
+      }
 
       if (!memberOnSchool) {
         throw new ForbiddenException('Access denied');
       }
+      if (classroom.schoolId !== memberOnSchool.schoolId) {
+        throw new ForbiddenException("Class doesn't belong to this school");
+      }
 
-      const totalSubject = await this.prisma.subject.count({
-        where: {
-          userId: user.id,
-          educationYear: educationYear,
-        },
+      const students = await this.studentRepository.findByClassId({
+        classId: dto.classId,
       });
 
       const code = crypto.randomBytes(4).toString('hex');
-      const subject = await this.subjectRepository.createSubject({
+      let subject = await this.subjectRepository.createSubject({
         ...dto,
         educationYear: educationYear,
         code,
         userId: user.id,
         order: totalSubject + 1,
       });
+
+      const studentOnSubjectCreates = students.map((student) => {
+        return {
+          title: student.title,
+          firstName: student.firstName,
+          lastName: student.lastName,
+          photo: student.photo,
+          blurHash: student.blurHash,
+          number: student.number,
+          studentId: student.id,
+          classId: student.classId,
+          subjectId: subject.id,
+          schoolId: student.schoolId,
+        };
+      });
+
+      await this.studentOnSubject.createMany({
+        data: studentOnSubjectCreates,
+      });
+
+      await this.wheelOfNameService
+        .create({
+          title: subject.title,
+          description: subject.description,
+          texts: students.map((student) => {
+            return {
+              text: `${student.title} ${student.firstName} ${student.lastName}`,
+            };
+          }),
+        })
+        .then(async (wheel) => {
+          subject = await this.subjectRepository.updateSubject({
+            where: {
+              id: subject.id,
+            },
+            data: {
+              wheelOfNamePath: wheel.data.path,
+            },
+          });
+        })
+        .catch((error) => {
+          this.logger.error(error);
+        });
+
       const scoreOnSubjectTitlesDefault = [
         {
           title: 'Good Job',

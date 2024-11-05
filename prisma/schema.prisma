@@ -225,6 +225,7 @@ model Subject {
 
   backgroundImage String?
   blurHash        String?
+  wheelOfNamePath String?
 
   allowStudentDeleteWork       Boolean @default(true)
   allowStudentViewOverallScore Boolean @default(false)

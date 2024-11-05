@@ -5,7 +5,7 @@ export interface RequestCreateStudent {
   photo: string;
   number: string;
   classId: string;
-  blurHash: string;
+  blurHash?: string;
   schoolId: string;
 }
 
