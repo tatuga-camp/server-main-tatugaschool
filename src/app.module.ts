@@ -34,6 +34,7 @@ import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/sk
 import { CareerModule } from './career/career.module';
 import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
 import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
+import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
     CareerModule,
     MemberOnTeamModule,
     SkillOnCareerModule,
+    WheelOfNameModule,
   ],
   controllers: [AppController],
   providers: [AppService],

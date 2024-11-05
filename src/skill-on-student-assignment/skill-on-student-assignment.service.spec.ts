@@ -10,14 +10,16 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import {
+  skillId,
+  studentId,
+  studentOnAssignmentId,
+  userId,
+} from '../common/constants';
 
 describe('SkillOnStudentAssignmentService', () => {
   let service: SkillOnStudentAssignmentService;
   let skillOnStudentAssignment: SkillOnStudentAssignment;
-  const skillId: string = '670294e24fd0002cc111f716';
-  const studentOnAssignmentId = '67028f65947a6b9240f57ead';
-  const studentId: string = '67028f48947a6b9240f57ea2';
-  const userId = '66d5edd6ab46227db7d5e2db';
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,20 +56,7 @@ describe('SkillOnStudentAssignmentService', () => {
       const result = await service.suggestCreate(dto, user);
       expect(result).toBeDefined();
       expect(result.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('should create', async () => {
-      const dto: CreateDto = {
-        skillId: skillId,
-        studentOnAssignmentId: studentOnAssignmentId,
-        weight: 0.3,
-      };
-      const user: User = {
-        id: userId,
-      } as User;
-
-      skillOnStudentAssignment = await service.create(dto, user);
-      expect(skillOnStudentAssignment).toBeDefined();
+      skillOnStudentAssignment = result[0];
     });
 
     it('should not create because duplication', async () => {

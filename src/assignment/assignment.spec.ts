@@ -16,14 +16,16 @@ import { EmailModule } from '../email/email.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { VectorModule } from '../vector/vector.module';
 import { GoogleStorageModule } from '../google-storage/google-storage.module';
+import {
+  anotherUserId,
+  assignmentIdNotFound,
+  subjectId,
+  userId,
+} from '../common/constants';
 
 describe('AssignmentService', () => {
   let assignmentService: AssignmentService;
   let assignment: Assignment;
-  const userId = '66d5edd6ab46227db7d5e2db';
-  const anotherUserId = '66ace7578c5561b748d8b3b3';
-  const subjectId = '66e7bded002943028083dda4';
-  const assignmentIdNotFound = '66ebc40ead22355cc1e8e13b';
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({

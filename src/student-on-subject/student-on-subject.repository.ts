@@ -40,6 +40,9 @@ export type StudentOnSubjectRepositoryType = {
   findMany(
     request: Prisma.StudentOnSubjectFindManyArgs,
   ): Promise<StudentOnSubject[]>;
+  createMany(
+    request: Prisma.StudentOnSubjectCreateManyArgs,
+  ): Promise<Prisma.BatchPayload>;
 };
 @Injectable()
 export class StudentOnSubjectRepository
@@ -141,6 +144,23 @@ export class StudentOnSubjectRepository
         }
       }
       this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async createMany(
+    request: Prisma.StudentOnSubjectCreateManyArgs,
+  ): Promise<Prisma.BatchPayload> {
+    try {
+      const create = await this.prisma.studentOnSubject.createMany(request);
+      return create;
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
       throw error;
     }
   }

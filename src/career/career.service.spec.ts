@@ -2,12 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CareerService } from './career.service';
 import { Career } from '@prisma/client';
 import { DeleteCareerDto, UpdateCareerDto } from './dto';
-import e from 'express';
-import { VectorService } from '../vector/vector.service';
-import { PrismaService } from '../prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { AuthService } from '../auth/auth.service';
 import { AppModule } from '../app.module';
 
 describe('CareerService', () => {

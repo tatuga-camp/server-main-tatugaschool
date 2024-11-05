@@ -1,0 +1,60 @@
+type WheelConfig = {
+  displayWinnerDialog: boolean;
+  slowSpin: boolean;
+  pageBackgroundColor: string;
+  description: string;
+  animateWinner: boolean;
+  winnerMessage: string;
+  title: string;
+  type: string;
+  autoRemoveWinner: boolean;
+  path: string;
+  customPictureName: string;
+  customCoverImageDataUri: string;
+  playClickWhenWinnerRemoved: boolean;
+  duringSpinSound: string;
+  maxNames: number;
+  centerText: string;
+  afterSpinSoundVolume: number;
+  spinTime: number;
+  hubSize: string;
+  coverImageName: string;
+  entries: {
+    text: string;
+    image: string;
+    color: string;
+    weight: number;
+    id: string;
+    enabled: boolean;
+    sound: string;
+    message: string;
+  }[];
+  isAdvanced: boolean;
+  galleryPicture: string;
+  customPictureDataUri: string;
+  showTitle: boolean;
+  displayHideButton: boolean;
+  afterSpinSound: string;
+  colorSettings: {
+    color: string;
+    enabled: boolean;
+  }[];
+  duringSpinSoundVolume: number;
+  displayRemoveButton: boolean;
+  pictureType: string;
+  allowDuplicates: boolean;
+  coverImageType: string;
+  drawOutlines: boolean;
+  launchConfetti: boolean;
+  drawShadow: boolean;
+};
+
+export type WheelOfName = {
+  wheelConfig: WheelConfig;
+  created: number;
+  lastRead: number;
+  lastWrite: number;
+  path: string;
+  readCount: number;
+  shareMode: string;
+};

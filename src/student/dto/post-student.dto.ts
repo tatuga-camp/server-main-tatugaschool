@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsMongoId } from 'class-validator';
+import { IsNotEmpty, IsString, IsMongoId, IsOptional } from 'class-validator';
 import { IsArray } from 'class-validator';
 
 export class CreateStudentDto {
@@ -18,9 +18,9 @@ export class CreateStudentDto {
   @IsString()
   photo: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  blurHash: string;
+  blurHash?: string;
 
   @IsNotEmpty()
   @IsString()
