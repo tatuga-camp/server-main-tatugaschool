@@ -1,3 +1,4 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import {
   AttendanceTableRepository,
   AttendanceTableRepositoryType,
@@ -18,51 +19,22 @@ import {
 } from './dto';
 import { AttendanceTable, User } from '@prisma/client';
 import { ResponseGetAttendanceTableById } from './interfaces';
+import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
 
 @Injectable()
 export class AttendanceTableService {
-  logger: Logger;
+  private logger: Logger;
   attendanceTableRepository: AttendanceTableRepositoryType;
-  constructor(private prisma: PrismaService) {
+
+  constructor(
+    private prisma: PrismaService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
+  ) {
     this.logger = new Logger(AttendanceTableService.name);
     this.attendanceTableRepository = new AttendanceTableRepository(prisma);
   }
 
-  async validateAccess({
-    userId,
-    schoolId,
-    subjectId,
-  }: {
-    userId: string;
-    schoolId: string;
-    subjectId: string;
-  }) {
-    const [memberOnSchool, teacherOnSubject] = await Promise.all([
-      this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: userId,
-          schoolId: schoolId,
-        },
-      }),
-
-      this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: subjectId,
-          userId: userId,
-        },
-      }),
-    ]);
-
-    if (!memberOnSchool) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
-      throw new ForbiddenException('Access denied');
-    }
-  }
-
-  async getAttendanceTables(
+  async getBySubjectId(
     dto: GetAttendanceTablesDto,
     user: User,
   ): Promise<AttendanceTable[]> {
@@ -77,9 +49,8 @@ export class AttendanceTableService {
         throw new NotFoundException('Subject not found');
       }
 
-      await this.validateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: subject.schoolId,
         subjectId: dto.subjectId,
       });
 
@@ -108,9 +79,8 @@ export class AttendanceTableService {
         throw new NotFoundException('Attendance table not found');
       }
 
-      await this.validateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: table.schoolId,
         subjectId: table.subjectId,
       });
 
@@ -136,9 +106,8 @@ export class AttendanceTableService {
         throw new NotFoundException('Subject not found');
       }
 
-      await this.validateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: subject.schoolId,
         subjectId: dto.subjectId,
       });
 
@@ -167,9 +136,8 @@ export class AttendanceTableService {
         throw new NotFoundException('Attendance table not found');
       }
 
-      await this.validateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: table.schoolId,
         subjectId: table.subjectId,
       });
 
@@ -195,9 +163,8 @@ export class AttendanceTableService {
         throw new NotFoundException('Attendance table not found');
       }
 
-      await this.validateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: table.schoolId,
         subjectId: table.subjectId,
       });
 

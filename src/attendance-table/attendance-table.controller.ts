@@ -26,12 +26,12 @@ export class AttendanceTableController {
   constructor(private attendanceTableService: AttendanceTableService) {}
 
   @UseGuards(UserGuard)
-  @Get()
+  @Get('subject/:subjectId')
   GetAttendanceTables(
-    @Query() dto: GetAttendanceTablesDto,
+    @Param() dto: GetAttendanceTablesDto,
     @GetUser() user: User,
   ) {
-    return this.attendanceTableService.getAttendanceTables(dto, user);
+    return this.attendanceTableService.getBySubjectId(dto, user);
   }
 
   @UseGuards(UserGuard)

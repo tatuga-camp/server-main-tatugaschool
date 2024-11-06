@@ -24,7 +24,7 @@ class UpdateSubjectQuery {
 class UpdateSubjectBody {
   @IsOptional()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(50)
   title?: string;
 
   @IsOptional()
@@ -33,7 +33,7 @@ class UpdateSubjectBody {
 
   @IsOptional()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(200)
   description?: string;
 
   @IsOptional()

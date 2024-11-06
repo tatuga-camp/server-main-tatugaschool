@@ -9,12 +9,12 @@ import {
 export class CreateAttendanceTableDto {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(599)
+  @MaxLength(100)
   title: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(200)
   description?: string;
 
   @IsNotEmpty()

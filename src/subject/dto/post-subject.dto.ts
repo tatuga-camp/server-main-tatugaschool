@@ -11,7 +11,7 @@ import { IsEducationYear } from '../../custom-validate';
 export class CreateSubjectDto {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(50)
   title: string;
 
   @IsNotEmpty()
@@ -20,7 +20,7 @@ export class CreateSubjectDto {
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(200)
   description: string;
 
   @IsNotEmpty()
