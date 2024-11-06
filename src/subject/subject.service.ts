@@ -289,26 +289,31 @@ export class SubjectService {
           title: 'Good Job',
           icon: 'https://storage.googleapis.com/development-tatuga-school/public/Good-job.svg',
           blurHash: 'UEO{GV?D05-m~9WDIqah0NWV08M~X_ows.ov',
+          score: 1,
         },
         {
           title: 'Well Done',
           icon: 'https://storage.googleapis.com/development-tatuga-school/public/Well-Done.svg',
           blurHash: 'UlMi|;xpE4n+IrWDs.bFIqahE5bY~QovIrjI',
+          score: 1,
         },
         {
           title: 'Keep It Up',
           icon: 'https://storage.googleapis.com/development-tatuga-school/public/Keep-It-Up.svg',
           blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
+          score: 1,
         },
         {
           title: 'Excellent',
           icon: 'https://storage.googleapis.com/development-tatuga-school/public/Excellent.svg',
           blurHash: 'UAP63q^z06?C^}WCM~a#05WC07Ir~jt5E4oe',
+          score: 1,
         },
         {
           title: 'Needs Improvement',
           icon: 'https://storage.googleapis.com/development-tatuga-school/public/Needs-Improvement.svg',
           blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
+          score: -1,
         },
       ];
       await Promise.all([
@@ -337,7 +342,7 @@ export class SubjectService {
             title: score.title,
             icon: score.icon,
             subjectId: subject.id,
-            score: 1,
+            score: score.score,
             schoolId: dto.schoolId,
             blurHash: score.blurHash,
           }),
