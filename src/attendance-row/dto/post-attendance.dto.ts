@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateAttendanceRowDto {
@@ -17,6 +18,7 @@ export class CreateAttendanceRowDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(9999)
   note?: string;
 
   @IsNotEmpty()

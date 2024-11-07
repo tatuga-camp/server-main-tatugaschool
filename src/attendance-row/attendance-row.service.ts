@@ -1,3 +1,4 @@
+import { AttendanceRepository } from './../attendance/attendance.repository';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import {
   AttendanceRowRepository,
@@ -11,7 +12,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AttendanceRow, User } from '@prisma/client';
+import { Attendance, AttendanceRow, User } from '@prisma/client';
 import {
   CreateAttendanceRowDto,
   DeleteAttendanceRowDto,
@@ -30,6 +31,9 @@ export class AttendanceRowService {
   attendanceRowRepository: AttendanceRowRepositoryType;
   private attendanceTableRepository: AttendanceTableRepository =
     new AttendanceTableRepository(this.prisma);
+  private attendanceRepository: AttendanceRepository = new AttendanceRepository(
+    this.prisma,
+  );
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
@@ -72,7 +76,7 @@ export class AttendanceRowService {
   async GetAttendanceRows(
     dto: GetAttendanceRowsDto,
     user: User,
-  ): Promise<AttendanceRow[]> {
+  ): Promise<(AttendanceRow & { attendances: Attendance[] })[]> {
     try {
       const table = await this.prisma.attendanceTable.findUnique({
         where: {
@@ -92,7 +96,22 @@ export class AttendanceRowService {
         attendanceTableId: dto.attendanceTableId,
       });
 
-      return rows;
+      const attendances = await this.attendanceRepository.findMany({
+        where: {
+          attendanceRowId: {
+            in: rows.map((row) => row.id),
+          },
+        },
+      });
+
+      return rows.map((row) => {
+        return {
+          ...row,
+          attendances: attendances.filter(
+            (attendance) => attendance.attendanceRowId === row.id,
+          ),
+        };
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -124,7 +143,7 @@ export class AttendanceRowService {
   async CreateAttendanceRow(
     dto: CreateAttendanceRowDto,
     user: User,
-  ): Promise<AttendanceRow> {
+  ): Promise<AttendanceRow & { attendances: Attendance[] }> {
     try {
       const table = await this.attendanceTableRepository.getAttendanceTableById(
         {
@@ -145,8 +164,13 @@ export class AttendanceRowService {
         schoolId: table.schoolId,
         subjectId: table.subjectId,
       });
+      const attendances = await this.attendanceRepository.findMany({
+        where: {
+          attendanceRowId: row.id,
+        },
+      });
 
-      return row;
+      return { ...row, attendances };
     } catch (error) {
       this.logger.error(error);
       throw error;
