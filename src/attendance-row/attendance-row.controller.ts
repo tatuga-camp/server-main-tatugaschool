@@ -26,8 +26,8 @@ import { User } from '@prisma/client';
 export class AttendanceRowController {
   constructor(private attendanceRowService: AttendanceRowService) {}
 
-  @Get()
-  getAttendanceRows(@Query() dto: GetAttendanceRowsDto, @GetUser() user: User) {
+  @Get('/attendance-table/:attendanceTableId')
+  getAttendanceRows(@Param() dto: GetAttendanceRowsDto, @GetUser() user: User) {
     return this.attendanceRowService.GetAttendanceRows(dto, user);
   }
 
