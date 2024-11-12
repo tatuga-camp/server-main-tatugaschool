@@ -2,11 +2,9 @@ import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import { StudentRepository } from './../student/student.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
-import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { SubjectRepository, SubjectRepositoryType } from './subject.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
-  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -27,6 +25,7 @@ import {
 import * as crypto from 'crypto';
 import { ClassRepository } from '../class/class.repository';
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
+import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
@@ -34,10 +33,7 @@ export class SubjectService {
     this.prisma,
     this.googleStorageService,
   );
-  private attendanceTableRepository: AttendanceTableRepository;
   private scoreOnSubjectRepository: ScoreOnSubjectRepository;
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
   private classRepository: ClassRepository = new ClassRepository(this.prisma);
   private studentRepository: StudentRepository = new StudentRepository(
     this.prisma,
@@ -48,8 +44,8 @@ export class SubjectService {
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private wheelOfNameService: WheelOfNameService,
+    private attendanceTableService: AttendanceTableService,
   ) {
-    this.attendanceTableRepository = new AttendanceTableRepository(prisma);
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
   }
 
@@ -316,27 +312,30 @@ export class SubjectService {
           score: -1,
         },
       ];
-      await Promise.all([
-        this.prisma.teacherOnSubject.create({
-          data: {
-            userId: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            phone: user.phone,
-            email: user.email,
-            role: 'ADMIN',
-            status: 'ACCEPT',
-            photo: user.photo,
-            subjectId: subject.id,
-            schoolId: dto.schoolId,
-          },
-        }),
-        this.attendanceTableRepository.createAttendanceTable({
-          title: 'Default',
-          description: 'Attendance table for ' + subject.title,
+
+      await this.prisma.teacherOnSubject.create({
+        data: {
+          userId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          email: user.email,
+          role: 'ADMIN',
+          status: 'ACCEPT',
+          photo: user.photo,
           subjectId: subject.id,
           schoolId: dto.schoolId,
-        }),
+        },
+      });
+      await Promise.all([
+        this.attendanceTableService.createAttendanceTable(
+          {
+            title: 'Default',
+            description: 'Attendance table for ' + subject.title,
+            subjectId: subject.id,
+          },
+          user,
+        ),
         ...scoreOnSubjectTitlesDefault.map((score) =>
           this.scoreOnSubjectRepository.createSocreOnSubject({
             title: score.title,

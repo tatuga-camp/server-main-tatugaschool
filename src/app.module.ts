@@ -35,6 +35,7 @@ import { CareerModule } from './career/career.module';
 import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
 import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
+import { AttendanceStatusListModule } from './attendance-status-list/attendance-status-list.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
     MemberOnTeamModule,
     SkillOnCareerModule,
     WheelOfNameModule,
+    AttendanceStatusListModule,
   ],
   controllers: [AppController],
   providers: [AppService],

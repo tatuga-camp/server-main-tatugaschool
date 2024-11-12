@@ -94,6 +94,7 @@ model School {
   tasks                    Task[]
   fileOnStudentAssignments FileOnStudentAssignment[]
   commentOnAssignments     CommentOnAssignment[]
+  attendanceStatusLists    AttendanceStatusList[]
 }
 
 model MemberOnSchool {
@@ -254,6 +255,7 @@ model Subject {
   commentOnAssignments      CommentOnAssignment[]
   skillOnAssignments        SkillOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
+  attendanceStatusLists     AttendanceStatusList[]
 }
 
 model TeacherOnSubject {
@@ -506,14 +508,33 @@ model AttendanceTable {
 
   title       String
   description String?
+  subjectId   String  @db.ObjectId
+  subject     Subject @relation(fields: [subjectId], references: [id])
 
-  subjectId String  @db.ObjectId
-  subject   Subject @relation(fields: [subjectId], references: [id])
+  schoolId              String                 @db.ObjectId
+  school                School                 @relation(fields: [schoolId], references: [id])
+  attendances           Attendance[]
+  attendanceRows        AttendanceRow[]
+  attendanceStatusLists AttendanceStatusList[]
+}
 
-  schoolId       String          @db.ObjectId
-  school         School          @relation(fields: [schoolId], references: [id])
-  attendances    Attendance[]
-  attendanceRows AttendanceRow[]
+model AttendanceStatusList {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title String
+  value Int
+  color String
+
+  attendanceTableId String          @db.ObjectId
+  attendanceTable   AttendanceTable @relation(fields: [attendanceTableId], references: [id])
+  schoolId          String          @db.ObjectId
+  school            School          @relation(fields: [schoolId], references: [id])
+  subjectId         String          @db.ObjectId
+  subject           Subject         @relation(fields: [subjectId], references: [id])
+
+  @@unique([title, attendanceTableId])
 }
 
 model AttendanceRow {
@@ -543,12 +564,8 @@ model Attendance {
   startDate DateTime
   endDate   DateTime
 
-  absent  Boolean @default(false)
-  present Boolean @default(false)
-  holiday Boolean @default(false)
-  sick    Boolean @default(false)
-  late    Boolean @default(false)
-  note    String?
+  status String  @default("UNKNOW")
+  note   String?
 
   attendanceTableId  String           @db.ObjectId
   attendanceTable    AttendanceTable  @relation(fields: [attendanceTableId], references: [id])

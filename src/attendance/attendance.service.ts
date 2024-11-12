@@ -1,9 +1,6 @@
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { SubjectRepository } from './../subject/subject.repository';
-import {
-  AttendanceRepository,
-  AttendanceRepositoryType,
-} from './attendance.repository';
+import { AttendanceRepository } from './attendance.repository';
 import {
   ForbiddenException,
   Injectable,
@@ -12,7 +9,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Attendance, User } from '@prisma/client';
-import { GetAttendanceByIdDto, UpdateAttendanceDto } from './dto';
+import {
+  GetAttendanceByIdDto,
+  UpdateAttendanceDto,
+  UpdateManyDto,
+} from './dto';
+import { AttendanceStatusListSRepository } from '../attendance-status-list/attendance-status-list.repository';
 
 @Injectable()
 export class AttendanceService {
@@ -21,13 +23,17 @@ export class AttendanceService {
     this.prisma,
     this.googleStorageService,
   );
-  attendanceRepository: AttendanceRepositoryType;
+  attendanceRepository: AttendanceRepository;
+  private attendanceStatusListSRepository: AttendanceStatusListSRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {
     this.logger = new Logger(AttendanceService.name);
     this.attendanceRepository = new AttendanceRepository(prisma);
+    this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
+      prisma,
+    );
   }
 
   async validateAccess({
@@ -98,10 +104,7 @@ export class AttendanceService {
     }
   }
 
-  async updateAttendance(
-    dto: UpdateAttendanceDto,
-    user: User,
-  ): Promise<Attendance> {
+  async update(dto: UpdateAttendanceDto, user: User): Promise<Attendance> {
     try {
       const attendance = await this.attendanceRepository.getAttendanceById({
         attendanceId: dto.query.attendanceId,
@@ -109,12 +112,67 @@ export class AttendanceService {
       if (!attendance) {
         throw new NotFoundException('Attendance not found');
       }
+      const status = await this.attendanceStatusListSRepository.findMany({
+        where: {
+          attendanceTableId: attendance.attendanceTableId,
+        },
+      });
+
+      if (!status.some((s) => s.title === dto.body.status)) {
+        throw new ForbiddenException('Status not found');
+      }
 
       await this.validateAccess({
         userId: user.id,
         subjectId: attendance.subjectId,
       });
       return await this.attendanceRepository.updateAttendanceById(dto);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async updateMany(dto: UpdateManyDto, user: User): Promise<Attendance[]> {
+    try {
+      const attendance = await this.attendanceRepository.getAttendanceById({
+        attendanceId: dto.data[0].query.attendanceId,
+      });
+
+      if (!attendance) {
+        throw new NotFoundException('Attendance not found');
+      }
+      const status = await this.attendanceStatusListSRepository.findMany({
+        where: {
+          attendanceTableId: attendance.attendanceTableId,
+        },
+      });
+
+      const attendances = await Promise.allSettled(
+        dto.data.map(async (data) => {
+          const attendance = await this.attendanceRepository.getAttendanceById({
+            attendanceId: data.query.attendanceId,
+          });
+          if (!attendance) {
+            throw new NotFoundException('Attendance not found');
+          }
+
+          if (!status.some((s) => s.title === data.body.status)) {
+            throw new ForbiddenException('Status not found');
+          }
+
+          await this.validateAccess({
+            userId: user.id,
+            subjectId: attendance.subjectId,
+          });
+          return await this.attendanceRepository.updateAttendanceById(data);
+        }),
+      );
+
+      const success = attendances.filter(
+        (result) => result.status === 'fulfilled',
+      );
+      return success.map((result) => result.value);
     } catch (error) {
       this.logger.error(error);
       throw error;
