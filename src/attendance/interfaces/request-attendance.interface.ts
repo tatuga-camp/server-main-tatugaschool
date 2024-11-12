@@ -7,11 +7,7 @@ export type RequestUpdateAttendanceById = {
     attendanceId: string;
   };
   body: {
-    absent?: boolean;
-    present?: boolean;
-    holiday?: boolean;
-    sick?: boolean;
-    late?: boolean;
+    status?: string;
     note?: string;
   };
 };

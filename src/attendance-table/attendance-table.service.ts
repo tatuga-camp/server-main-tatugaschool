@@ -17,27 +17,30 @@ import {
   GetAttendanceTablesDto,
   UpdateAttendanceTableDto,
 } from './dto';
-import { AttendanceTable, User } from '@prisma/client';
+import { AttendanceStatusList, AttendanceTable, User } from '@prisma/client';
 import { ResponseGetAttendanceTableById } from './interfaces';
-import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
+import { AttendanceStatusListSRepository } from '../attendance-status-list/attendance-status-list.repository';
 
 @Injectable()
 export class AttendanceTableService {
   private logger: Logger;
   attendanceTableRepository: AttendanceTableRepositoryType;
-
+  attendanceStatusListSRepository: AttendanceStatusListSRepository;
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.logger = new Logger(AttendanceTableService.name);
     this.attendanceTableRepository = new AttendanceTableRepository(prisma);
+    this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
+      prisma,
+    );
   }
 
   async getBySubjectId(
     dto: GetAttendanceTablesDto,
     user: User,
-  ): Promise<AttendanceTable[]> {
+  ): Promise<(AttendanceTable & { statusList: AttendanceStatusList[] })[]> {
     try {
       const subject = await this.prisma.subject.findUnique({
         where: {
@@ -54,10 +57,23 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      const tables = this.attendanceTableRepository.getAttendanceTables({
+      const tables = await this.attendanceTableRepository.getAttendanceTables({
         subjectId: dto.subjectId,
       });
-      return tables;
+
+      const statusLists = await this.attendanceStatusListSRepository.findMany({
+        where: {
+          attendanceTableId: {
+            in: tables.map((table) => table.id),
+          },
+        },
+      });
+      return tables.map((table) => ({
+        ...table,
+        statusList: statusLists.filter(
+          (status) => status.attendanceTableId === table.id,
+        ),
+      }));
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -94,7 +110,7 @@ export class AttendanceTableService {
   async createAttendanceTable(
     dto: CreateAttendanceTableDto,
     user: User,
-  ): Promise<AttendanceTable> {
+  ): Promise<AttendanceTable & { statusLists: AttendanceStatusList[] }> {
     try {
       const subject = await this.prisma.subject.findUnique({
         where: {
@@ -111,10 +127,57 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      return await this.attendanceTableRepository.createAttendanceTable({
-        ...dto,
-        schoolId: subject.schoolId,
-      });
+      const statusLists = [
+        {
+          title: 'Present',
+          value: 1,
+          color: '#22c55e',
+        },
+        {
+          title: 'Late',
+          value: 1,
+          color: '#eab308',
+        },
+        {
+          title: 'Sick',
+          value: 1,
+          color: '#f97316',
+        },
+        {
+          title: 'Absent',
+          value: -1,
+          color: '#ef4444',
+        },
+        {
+          title: 'Holiday',
+          value: 1,
+          color: '#0ea5e9',
+        },
+      ];
+
+      const create = await this.attendanceTableRepository.createAttendanceTable(
+        {
+          ...dto,
+          schoolId: subject.schoolId,
+        },
+      );
+
+      const statusList = await Promise.all(
+        statusLists.map((status) =>
+          this.attendanceStatusListSRepository.create({
+            data: {
+              schoolId: subject.schoolId,
+              title: status.title,
+              value: status.value,
+              attendanceTableId: create.id,
+              subjectId: dto.subjectId,
+              color: status.color,
+            },
+          }),
+        ),
+      );
+
+      return { ...create, statusLists: statusList };
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -1,5 +1,7 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsMongoId,
   IsNotEmpty,
@@ -17,24 +19,8 @@ class UpdateAttendanceQuery {
 
 class UpdateAttendanceBody {
   @IsOptional()
-  @IsBoolean()
-  absent?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  present?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  holiday?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  sick?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  late?: boolean;
+  @IsString()
+  status: string;
 
   @IsOptional()
   @IsString()
@@ -53,4 +39,13 @@ export class UpdateAttendanceDto {
   @Type(() => UpdateAttendanceBody)
   @ValidateNested()
   body: UpdateAttendanceBody;
+}
+
+export class UpdateManyDto {
+  @IsArray()
+  @IsObject({ each: true })
+  @Type(() => UpdateAttendanceDto)
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  data: UpdateAttendanceDto[];
 }

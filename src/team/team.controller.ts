@@ -44,7 +44,6 @@ export class TeamController {
     @Param() deleteTeamDto: DeleteTeamDto,
     @GetUser() user: User,
   ) {
-    console.log('deleteTeamDto', deleteTeamDto);
     return this.teamService.deleteTeam(deleteTeamDto, user);
   }
 

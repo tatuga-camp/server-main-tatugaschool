@@ -2,7 +2,11 @@ import { User } from '@prisma/client';
 import { GetUser } from '../auth/decorators';
 import { AttendanceService } from './attendance.service';
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
-import { GetAttendanceByIdDto, UpdateAttendanceDto } from './dto';
+import {
+  GetAttendanceByIdDto,
+  UpdateAttendanceDto,
+  UpdateManyDto,
+} from './dto';
 import { UserGuard } from '../auth/guard';
 
 @UseGuards(UserGuard)
@@ -17,6 +21,10 @@ export class AttendanceController {
 
   @Patch()
   updateAttendance(@Body() dto: UpdateAttendanceDto, @GetUser() user: User) {
-    return this.attendanceService.updateAttendance(dto, user);
+    return this.attendanceService.update(dto, user);
+  }
+  @Patch('many')
+  updateMany(@Body() dto: UpdateManyDto, @GetUser() user: User) {
+    return this.attendanceService.updateMany(dto, user);
   }
 }
