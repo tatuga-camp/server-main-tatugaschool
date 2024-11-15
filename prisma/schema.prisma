@@ -527,6 +527,8 @@ model AttendanceStatusList {
   value Int
   color String
 
+  isHidden Boolean @default(false)
+
   attendanceTableId String          @db.ObjectId
   attendanceTable   AttendanceTable @relation(fields: [attendanceTableId], references: [id])
   schoolId          String          @db.ObjectId

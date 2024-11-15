@@ -36,9 +36,16 @@ import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
 import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { AttendanceStatusListModule } from './attendance-status-list/attendance-status-list.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     AuthModule,
     UsersModule,
     PrismaModule,
