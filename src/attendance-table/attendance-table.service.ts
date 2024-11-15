@@ -40,7 +40,7 @@ export class AttendanceTableService {
   async getBySubjectId(
     dto: GetAttendanceTablesDto,
     user: User,
-  ): Promise<(AttendanceTable & { statusList: AttendanceStatusList[] })[]> {
+  ): Promise<(AttendanceTable & { statusLists: AttendanceStatusList[] })[]> {
     try {
       const subject = await this.prisma.subject.findUnique({
         where: {
@@ -70,7 +70,7 @@ export class AttendanceTableService {
       });
       return tables.map((table) => ({
         ...table,
-        statusList: statusLists.filter(
+        statusLists: statusLists.filter(
           (status) => status.attendanceTableId === table.id,
         ),
       }));
@@ -127,7 +127,7 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      const statusLists = [
+      const statusListsData = [
         {
           title: 'Present',
           value: 1,
@@ -162,8 +162,8 @@ export class AttendanceTableService {
         },
       );
 
-      const statusList = await Promise.all(
-        statusLists.map((status) =>
+      const statusLists = await Promise.all(
+        statusListsData.map((status) =>
           this.attendanceStatusListSRepository.create({
             data: {
               schoolId: subject.schoolId,
@@ -177,7 +177,7 @@ export class AttendanceTableService {
         ),
       );
 
-      return { ...create, statusLists: statusList };
+      return { ...create, statusLists: statusLists };
     } catch (error) {
       this.logger.error(error);
       throw error;

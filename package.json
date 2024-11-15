@@ -43,6 +43,7 @@
     "@nestjs/mapped-types": "^2.0.5",
     "@nestjs/passport": "^10.0.3",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/throttler": "^6.2.1",
     "@prisma/client": "^5.20.0",
     "bcrypt": "^5.1.1",
     "canvas": "^2.11.2",
