@@ -71,10 +71,32 @@ export class StudentService {
         user: user,
         schoolId: classroom.schoolId,
       });
+      const picture = [
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/1.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/2.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/3.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/4.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/5.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/6.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/7.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/8.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/9.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/10.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/11.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/12.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/13.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/14.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/15.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/16.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/17.png',
+        'https://storage.googleapis.com/development-tatuga-school/public/avatars/18.png',
+      ];
 
+      const randomPicture = picture[Math.floor(Math.random() * picture.length)];
       return await this.studentRepository.create({
         ...dto,
         schoolId: classroom.schoolId,
+        photo: randomPicture,
       });
     } catch (error) {
       this.logger.error(error);

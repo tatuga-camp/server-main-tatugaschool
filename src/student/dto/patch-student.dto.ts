@@ -8,6 +8,7 @@ import {
   IsObject,
   ValidateNested,
   MinLength,
+  IsUrl,
 } from 'class-validator';
 
 class UpdateStudentQuery {
@@ -30,7 +31,7 @@ class UpdateStudenBody {
   lastName?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   photo?: string;
 
   @IsOptional()
