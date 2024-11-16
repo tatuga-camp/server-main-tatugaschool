@@ -14,10 +14,6 @@ export class CreateStudentDto {
   @IsString()
   lastName: string;
 
-  @IsNotEmpty()
-  @IsString()
-  photo: string;
-
   @IsOptional()
   @IsString()
   blurHash?: string;
