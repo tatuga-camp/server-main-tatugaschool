@@ -41,10 +41,6 @@ class UpdateAssignmentBody {
   beginDate?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isAllowDeleteWork?: boolean;
-
-  @IsOptional()
   @IsDateString()
   dueDate?: string;
 }
