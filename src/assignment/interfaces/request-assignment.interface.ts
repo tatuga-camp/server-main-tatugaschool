@@ -1,3 +1,5 @@
+import { AssignmentType } from '@prisma/client';
+
 export type RequestGetAssignmentById = {
   assignmentId: string;
 };
@@ -16,6 +18,7 @@ export type RequestCreateAssignment = {
   subjectId: string;
   schoolId: string;
   userId: string;
+  type: AssignmentType;
 };
 
 export type RequestUpdateAssignment = {

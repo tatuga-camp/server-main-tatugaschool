@@ -1,7 +1,6 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { VectorService } from './../vector/vector.service';
-import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
-import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { AssignmentRepository } from './assignment.repository';
 import {
   ForbiddenException,
@@ -26,14 +25,12 @@ export class AssignmentService {
     this.prisma,
     this.googleStorageService,
   );
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  private memberOnSchoolRepository: MemberOnSchoolRepository =
-    new MemberOnSchoolRepository(this.prisma);
+
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
     private googleStorageService: GoogleStorageService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {}
 
   async getAssignmentById(
@@ -49,33 +46,10 @@ export class AssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
-          {
-            userId: user.id,
-            schoolId: assignment.schoolId,
-          },
-        );
-
-      if (!memberOnSchool) {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment because you are not a member of the school',
-        );
-      }
-
-      if (
-        (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') &&
-        memberOnSchool.role !== 'ADMIN'
-      ) {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment',
-        );
-      }
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: assignment.subjectId,
+      });
 
       return assignment;
     } catch (error) {
@@ -89,37 +63,10 @@ export class AssignmentService {
     user: User,
   ): Promise<Assignment[]> {
     try {
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: dto.subjectId,
-        });
-
-      if (!teacherOnSubject) {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment',
-        );
-      }
-
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
-          {
-            userId: user.id,
-            schoolId: teacherOnSubject.schoolId,
-          },
-        );
-
-      if (!memberOnSchool) {
-        throw new ForbiddenException("You're not a member of this school");
-      }
-      if (
-        (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') &&
-        memberOnSchool.role !== 'ADMIN'
-      ) {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment',
-        );
-      }
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
+      });
 
       return await this.assignmentRepository.getBySubjectId({
         subjectId: dto.subjectId,
@@ -135,17 +82,10 @@ export class AssignmentService {
     user: User,
   ): Promise<Assignment> {
     try {
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: dto.subjectId,
-        });
-
-      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment',
-        );
-      }
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
+      });
 
       const text = `${dto.title} ${dto.description}`;
 
@@ -154,7 +94,7 @@ export class AssignmentService {
       return await this.assignmentRepository.create({
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
-        schoolId: teacherOnSubject.schoolId,
+        schoolId: member.schoolId,
         userId: user.id,
       });
     } catch (error) {
@@ -176,17 +116,10 @@ export class AssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-
-      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment',
-        );
-      }
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: assignment.subjectId,
+      });
 
       let textArray: string[] = [];
 
@@ -231,18 +164,10 @@ export class AssignmentService {
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
       }
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-
-      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
-        throw new ForbiddenException(
-          'You are not allowed to access this assignment',
-        );
-      }
-
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: assignment.subjectId,
+      });
       return await this.assignmentRepository.delete(dto);
     } catch (error) {
       this.logger.error(error);

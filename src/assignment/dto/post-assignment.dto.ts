@@ -1,6 +1,8 @@
+import { AssignmentType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsDateString,
+  IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -44,4 +46,8 @@ export class CreateAssignmentDto {
   @IsNotEmpty()
   @IsMongoId()
   subjectId: string;
+
+  @IsNotEmpty()
+  @IsEnum(AssignmentType)
+  type: AssignmentType;
 }

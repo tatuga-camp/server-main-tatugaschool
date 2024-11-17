@@ -328,7 +328,7 @@ model Assignment {
   maxScore    Float
   weight      Float  @default(1)
 
-  isAllowDeleteWork Boolean @default(false)
+  type AssignmentType
 
   beginDate DateTime
   dueDate   DateTime?
@@ -348,6 +348,11 @@ model Assignment {
   studentOnAssignments     StudentOnAssignment[]
   skillOnAssignments       SkillOnAssignment[]
   fileOnStudentAssignments FileOnStudentAssignment[]
+}
+
+enum AssignmentType {
+  Assignment
+  Announcement
 }
 
 model FileOnAssignment {
