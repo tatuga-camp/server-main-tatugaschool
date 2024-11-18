@@ -3,7 +3,11 @@ import { AttendanceTableRepository } from './../attendance-table/attendance-tabl
 import { AttendanceStatusListSRepository } from './attendance-status-list.repository';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateStatusAttendanceDto, UpdateStatusDto } from './dto';
+import {
+  CreateStatusAttendanceDto,
+  DeleteStatusDto,
+  UpdateStatusDto,
+} from './dto';
 import { AttendanceStatusList, User } from '@prisma/client';
 
 @Injectable()
@@ -85,6 +89,37 @@ export class AttendanceStatusListService {
       });
 
       return update;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async delete(
+    dto: DeleteStatusDto,
+    user: User,
+  ): Promise<AttendanceStatusList> {
+    try {
+      const status = await this.attendanceStatusListSRepository.findUnique({
+        where: {
+          id: dto.id,
+        },
+      });
+
+      if (!status) {
+        throw new NotFoundException('Status not found');
+      }
+
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: status.subjectId,
+      });
+
+      return await this.attendanceStatusListSRepository.delete({
+        where: {
+          id: dto.id,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -90,12 +90,15 @@ export class AssignmentService {
       const text = `${dto.title} ${dto.description}`;
 
       const vectors = await this.vectorService.embbedingText(text);
-
+      const counts = await this.assignmentRepository.count({
+        where: { subjectId: dto.subjectId },
+      });
       return await this.assignmentRepository.create({
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
         schoolId: member.schoolId,
         userId: user.id,
+        order: counts + 1,
       });
     } catch (error) {
       this.logger.error(error);

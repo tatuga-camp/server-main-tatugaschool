@@ -1,6 +1,18 @@
 import { AttendanceStatusListService } from './attendance-status-list.service';
-import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
-import { CreateStatusAttendanceDto, UpdateStatusDto } from './dto';
+import {
+  Body,
+  Controller,
+  Delete,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  CreateStatusAttendanceDto,
+  DeleteStatusDto,
+  UpdateStatusDto,
+} from './dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { UserGuard } from '../auth/guard';
@@ -20,5 +32,10 @@ export class AttendanceStatusListController {
   @Patch()
   async update(@Body() dto: UpdateStatusDto, @GetUser() user: User) {
     return this.attendanceStatusListService.update(dto, user);
+  }
+
+  @Delete(':id')
+  async delete(@Param() dto: DeleteStatusDto, @GetUser() user: User) {
+    return this.attendanceStatusListService.delete(dto, user);
   }
 }

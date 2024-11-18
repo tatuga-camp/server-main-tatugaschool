@@ -1,3 +1,5 @@
+import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
+import { AttendanceRowRepository } from './../attendance-row/attendance-row.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { SubjectRepository } from './../subject/subject.repository';
 import { AttendanceRepository } from './attendance.repository';
@@ -10,6 +12,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Attendance, User } from '@prisma/client';
 import {
+  CreateAttendanceDto,
   GetAttendanceByIdDto,
   UpdateAttendanceDto,
   UpdateManyDto,
@@ -25,6 +28,8 @@ export class AttendanceService {
   );
   attendanceRepository: AttendanceRepository;
   private attendanceStatusListSRepository: AttendanceStatusListSRepository;
+  private attendanceRowRepository: AttendanceRowRepository;
+  private studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -33,6 +38,11 @@ export class AttendanceService {
     this.attendanceRepository = new AttendanceRepository(prisma);
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       prisma,
+    );
+    this.attendanceRowRepository = new AttendanceRowRepository(prisma);
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      prisma,
+      googleStorageService,
     );
   }
 
@@ -98,6 +108,56 @@ export class AttendanceService {
       });
 
       return attendance;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async create(dto: CreateAttendanceDto, user: User): Promise<Attendance> {
+    try {
+      const [attendanceRow, studentOnSubject] = await Promise.all([
+        this.attendanceRowRepository.getAttendanceRowById({
+          attendanceRowId: dto.attendanceRowId,
+        }),
+        this.studentOnSubjectRepository.getStudentOnSubjectById({
+          studentOnSubjectId: dto.studentOnSubjectId,
+        }),
+      ]);
+
+      if (!studentOnSubject) {
+        throw new NotFoundException('Student not found');
+      }
+
+      if (!attendanceRow) {
+        throw new NotFoundException('Attendance row not found');
+      }
+
+      await this.validateAccess({
+        userId: user.id,
+        subjectId: attendanceRow.subjectId,
+      });
+
+      const status = await this.attendanceStatusListSRepository.findMany({
+        where: {
+          attendanceTableId: attendanceRow.attendanceTableId,
+        },
+      });
+
+      if (!status.some((s) => s.title === dto.status)) {
+        throw new ForbiddenException('Status not found');
+      }
+      return await this.attendanceRepository.create({
+        data: {
+          ...dto,
+          startDate: attendanceRow.startDate,
+          endDate: attendanceRow.endDate,
+          studentId: studentOnSubject.studentId,
+          schoolId: studentOnSubject.schoolId,
+          attendanceTableId: attendanceRow.attendanceTableId,
+          subjectId: studentOnSubject.subjectId,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

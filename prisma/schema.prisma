@@ -327,6 +327,9 @@ model Assignment {
   description String
   maxScore    Float
   weight      Float  @default(1)
+  order       Int
+
+  status AssignmentStatus @default(Draft)
 
   type AssignmentType
 
@@ -352,7 +355,12 @@ model Assignment {
 
 enum AssignmentType {
   Assignment
-  Announcement
+  Material
+}
+
+enum AssignmentStatus {
+  Published
+  Draft
 }
 
 model FileOnAssignment {

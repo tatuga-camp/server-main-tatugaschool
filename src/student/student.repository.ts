@@ -83,11 +83,38 @@ export class StudentRepository implements StudentRepositoryType {
 
   async create(request: RequestCreateStudent): Promise<Student> {
     try {
-      return await this.prisma.student.create({
+      const student = await this.prisma.student.create({
         data: {
           ...request,
         },
       });
+
+      const subjects = await this.prisma.subject.findMany({
+        where: {
+          classId: student.classId,
+        },
+      });
+
+      await Promise.allSettled(
+        subjects.map(async (subject) => {
+          await this.prisma.studentOnSubject.create({
+            data: {
+              studentId: student.id,
+              subjectId: subject.id,
+              schoolId: student.schoolId,
+              classId: student.classId,
+              title: student.title,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              photo: student.photo,
+              blurHash: student.blurHash,
+              number: student.number,
+            },
+          });
+        }),
+      );
+
+      return student;
     } catch (err) {
       this.logger.error(err);
       throw err;

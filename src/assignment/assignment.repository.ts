@@ -13,7 +13,7 @@ import {
   RequestGetAssignmentBySubjectId,
   RequestUpdateAssignment,
 } from './interfaces';
-import { Assignment } from '@prisma/client';
+import { Assignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
@@ -24,6 +24,8 @@ type AssignmentRepositoryType = {
   getBySubjectId(
     request: RequestGetAssignmentBySubjectId,
   ): Promise<Assignment[]>;
+  findMany(request: Prisma.AssignmentFindManyArgs): Promise<Assignment[]>;
+  count(request: Prisma.AssignmentCountArgs): Promise<number>;
   create(request: RequestCreateAssignment): Promise<Assignment>;
   update(request: RequestUpdateAssignment): Promise<Assignment>;
   delete(request: RequestDeleteAssignment): Promise<{ message: string }>;
@@ -54,6 +56,36 @@ export class AssignmentRepository implements AssignmentRepositoryType {
           id: request.assignmentId,
         },
       });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findMany(
+    request: Prisma.AssignmentFindManyArgs,
+  ): Promise<Assignment[]> {
+    try {
+      return await this.prisma.assignment.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async count(request: Prisma.AssignmentCountArgs): Promise<number> {
+    try {
+      return await this.prisma.assignment.count(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

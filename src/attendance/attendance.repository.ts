@@ -17,12 +17,27 @@ export type AttendanceRepositoryType = {
     request: RequestUpdateAttendanceById,
   ): Promise<Attendance>;
   findMany(request: Prisma.AttendanceFindManyArgs): Promise<Attendance[]>;
+  create(request: Prisma.AttendanceCreateArgs): Promise<Attendance>;
 };
 @Injectable()
 export class AttendanceRepository implements AttendanceRepositoryType {
   logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(AttendanceRepository.name);
+  }
+
+  async create(request: Prisma.AttendanceCreateArgs): Promise<Attendance> {
+    try {
+      return await this.prisma.attendance.create(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findMany(

@@ -30,7 +30,7 @@ export type AttendanceRowRepositoryType = {
   ): Promise<AttendanceRow>;
   deleteAttendanceRow(
     request: RequestDeleteAttendanceRow,
-  ): Promise<{ message: string }>;
+  ): Promise<AttendanceRow>;
 };
 @Injectable()
 export class AttendanceRowRepository implements AttendanceRowRepositoryType {
@@ -162,7 +162,7 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
 
   async deleteAttendanceRow(
     request: RequestDeleteAttendanceRow,
-  ): Promise<{ message: string }> {
+  ): Promise<AttendanceRow> {
     try {
       await this.prisma.attendance.deleteMany({
         where: {
@@ -170,13 +170,12 @@ export class AttendanceRowRepository implements AttendanceRowRepositoryType {
         },
       });
 
-      await this.prisma.attendanceRow.delete({
+      const remove = await this.prisma.attendanceRow.delete({
         where: {
           id: request.attendanceRowId,
         },
       });
-
-      return { message: 'Attendance row deleted successfully' };
+      return remove;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
