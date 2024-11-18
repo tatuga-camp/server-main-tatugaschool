@@ -128,6 +128,11 @@ export class SubjectRepository implements SubjectRepositoryType {
           subjectId: subjectId,
         },
       });
+      await this.prisma.attendanceStatusList.deleteMany({
+        where: {
+          subjectId: subjectId,
+        },
+      });
 
       // Delete related attendanceRow records
       await this.prisma.attendanceRow.deleteMany({

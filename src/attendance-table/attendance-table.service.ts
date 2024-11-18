@@ -214,7 +214,7 @@ export class AttendanceTableService {
   async deleteAttendanceTable(
     dto: DeleteAttendanceTableDto,
     user: User,
-  ): Promise<{ message: string }> {
+  ): Promise<AttendanceTable> {
     try {
       const table = await this.prisma.attendanceTable.findUnique({
         where: {

@@ -208,7 +208,7 @@ export class AttendanceRowService {
   async DeleteAttendanceRow(
     dto: DeleteAttendanceRowDto,
     user: User,
-  ): Promise<{ message: string }> {
+  ): Promise<AttendanceRow> {
     try {
       const row = await this.prisma.attendanceRow.findUnique({
         where: {
@@ -226,11 +226,11 @@ export class AttendanceRowService {
         subjectId: row.subjectId,
       });
 
-      await this.attendanceRowRepository.deleteAttendanceRow({
+      const remove = await this.attendanceRowRepository.deleteAttendanceRow({
         attendanceRowId: dto.attendanceRowId,
       });
 
-      return { message: 'Attendance row deleted successfully' };
+      return remove;
     } catch (error) {
       this.logger.error(error);
       throw error;
