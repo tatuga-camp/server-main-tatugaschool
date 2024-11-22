@@ -7,11 +7,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import {
-  RequestCreateAssignment,
   RequestDeleteAssignment,
   RequestGetAssignmentById,
   RequestGetAssignmentBySubjectId,
-  RequestUpdateAssignment,
 } from './interfaces';
 import { Assignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -26,8 +24,8 @@ type AssignmentRepositoryType = {
   ): Promise<Assignment[]>;
   findMany(request: Prisma.AssignmentFindManyArgs): Promise<Assignment[]>;
   count(request: Prisma.AssignmentCountArgs): Promise<number>;
-  create(request: RequestCreateAssignment): Promise<Assignment>;
-  update(request: RequestUpdateAssignment): Promise<Assignment>;
+  create(request: Prisma.AssignmentCreateArgs): Promise<Assignment>;
+  update(request: Prisma.AssignmentUpdateArgs): Promise<Assignment>;
   delete(request: RequestDeleteAssignment): Promise<{ message: string }>;
 };
 @Injectable()
@@ -117,11 +115,9 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async create(request: RequestCreateAssignment): Promise<Assignment> {
+  async create(request: Prisma.AssignmentCreateArgs): Promise<Assignment> {
     try {
-      return await this.prisma.assignment.create({
-        data: request,
-      });
+      return await this.prisma.assignment.create(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -133,14 +129,9 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async update(request: RequestUpdateAssignment): Promise<Assignment> {
+  async update(request: Prisma.AssignmentUpdateArgs): Promise<Assignment> {
     try {
-      return await this.prisma.assignment.update({
-        where: {
-          id: request.query.assignmentId,
-        },
-        data: request.data,
-      });
+      return await this.prisma.assignment.update(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

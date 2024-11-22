@@ -13,7 +13,7 @@ import {
   RequestGetStudentOnAssignmentByStudentIdAndAssignmentId,
   RequestUpdateStudentOnAssignment,
 } from './interfaces';
-import { StudentOnAssignment } from '@prisma/client';
+import { Prisma, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -33,6 +33,9 @@ type StudentOnAssignmentRepositoryType = {
   create(
     request: RequestCreateStudentOnAssignment,
   ): Promise<StudentOnAssignment>;
+  createMany(
+    request: Prisma.StudentOnAssignmentCreateManyArgs,
+  ): Promise<Prisma.BatchPayload>;
   update(
     request: RequestUpdateStudentOnAssignment,
   ): Promise<StudentOnAssignment>;
@@ -138,6 +141,26 @@ export class StudentOnAssignmentRepository
       return await this.prisma.studentOnAssignment.create({
         data: request,
       });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new BadRequestException('Duplicate student on assignment');
+        }
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async createMany(
+    request: Prisma.StudentOnAssignmentCreateManyArgs,
+  ): Promise<Prisma.BatchPayload> {
+    try {
+      const create = await this.prisma.studentOnAssignment.createMany(request);
+      return create;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

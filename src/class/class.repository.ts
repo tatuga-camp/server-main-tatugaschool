@@ -213,10 +213,6 @@ export class ClassRepository {
         });
       });
 
-      console.log(
-        'Class and related entities deleted successfully:',
-        deletedClass,
-      );
       return deletedClass;
     } catch (error) {
       this.logger.error(error);
