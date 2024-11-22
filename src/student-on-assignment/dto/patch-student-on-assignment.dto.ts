@@ -37,6 +37,10 @@ class UpdateStudentOnAssignmentBody {
   @IsOptional()
   @IsBoolean()
   isReviewed?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isAssigned?: boolean;
 }
 
 export class UpdateStudentOnAssignmentDto {

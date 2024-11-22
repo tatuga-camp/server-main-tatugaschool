@@ -15,6 +15,7 @@ import {
   DeleteAssignmentDto,
   GetAssignmentByIdDto,
   GetAssignmentBySubjectIdDto,
+  ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
 import { GetUser } from '../auth/decorators';
@@ -56,6 +57,14 @@ export class AssignmentController {
     @GetUser() user: User,
   ) {
     return await this.assignmentService.updateAssignment(dto, user);
+  }
+
+  @Patch('reorder')
+  async reorderAssignment(
+    @Body() dto: ReorderAssignmentDto,
+    @GetUser() user: User,
+  ) {
+    return await this.assignmentService.reorder(dto, user);
   }
 
   @Delete(':assignmentId')

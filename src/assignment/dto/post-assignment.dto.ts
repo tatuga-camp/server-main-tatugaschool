@@ -1,4 +1,4 @@
-import { AssignmentType } from '@prisma/client';
+import { AssignmentStatus, AssignmentType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
   IsDateString,
@@ -23,17 +23,17 @@ export class CreateAssignmentDto {
   @MaxLength(3999)
   description: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @Min(0)
-  maxScore: number;
+  maxScore?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber()
   @Transform(({ value }) => Number(value))
   @Min(0)
-  weight: number;
+  weight?: number;
 
   @IsNotEmpty()
   @IsDateString()
@@ -50,4 +50,8 @@ export class CreateAssignmentDto {
   @IsNotEmpty()
   @IsEnum(AssignmentType)
   type: AssignmentType;
+
+  @IsNotEmpty()
+  @IsEnum(AssignmentStatus)
+  status: AssignmentStatus;
 }

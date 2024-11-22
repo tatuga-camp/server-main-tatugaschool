@@ -46,6 +46,7 @@ export type RequestUpdateStudentOnAssignment = {
     body?: string;
     isCompleted?: boolean;
     isReviewed?: boolean;
+    isAssigned?: boolean;
   };
 };
 

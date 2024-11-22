@@ -325,8 +325,8 @@ model Assignment {
 
   title       String
   description String
-  maxScore    Float
-  weight      Float  @default(1)
+  maxScore    Float?
+  weight      Float?
   order       Int
 
   status AssignmentStatus @default(Draft)
@@ -398,6 +398,7 @@ model StudentOnAssignment {
   body        String?
   isCompleted Boolean @default(false)
   isReviewed  Boolean @default(false)
+  isAssigned  Boolean @default(false)
 
   studentId          String @db.ObjectId
   assignmentId       String @db.ObjectId

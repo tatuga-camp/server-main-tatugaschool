@@ -1,7 +1,11 @@
+import { AssignmentStatus, AssignmentType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -32,7 +36,6 @@ class UpdateAssignmentBody {
 
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => Number(value))
   @Min(0)
   weight?: number;
 
@@ -43,6 +46,10 @@ class UpdateAssignmentBody {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @IsOptional()
+  @IsEnum(AssignmentStatus)
+  status: AssignmentStatus;
 }
 
 class UpdateAssignmentQuery {
@@ -63,4 +70,11 @@ export class UpdateAssignmentDto {
   @Type(() => UpdateAssignmentBody)
   @ValidateNested()
   data: UpdateAssignmentBody;
+}
+
+export class ReorderAssignmentDto {
+  @IsArray()
+  @IsMongoId({ each: true })
+  @ArrayMinSize(1)
+  assignmentIds: string[];
 }

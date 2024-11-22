@@ -132,7 +132,7 @@ export class FileAssignmentService {
   async deleteFileAssignment(
     dto: DeleteFileAssignmentDto,
     user: User,
-  ): Promise<{ message: string }> {
+  ): Promise<FileOnAssignment> {
     try {
       const fileOnAssignment = await this.fileAssignmentRepository.getById({
         fileOnAssignmentId: dto.fileOnAssignmentId,
@@ -181,7 +181,7 @@ export class FileAssignmentService {
         },
       });
 
-      return { message: 'File deleted successfully' };
+      return fileOnAssignment;
     } catch (error) {
       this.logger.error(error);
       throw error;

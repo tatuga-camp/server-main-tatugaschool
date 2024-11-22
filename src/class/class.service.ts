@@ -135,8 +135,6 @@ export class ClassService {
       return await this.classRepository.reorder(request);
     } catch (error) {
       this.logger.error(error);
-      console.log('error', error);
-
       throw error;
     }
   }

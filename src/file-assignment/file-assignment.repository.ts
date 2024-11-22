@@ -11,11 +11,11 @@ import {
   RequestGetFileById,
   RequestGetFilesByAssignmentId,
 } from './interfaces';
-import { FileOnAssignment } from '@prisma/client';
+import { FileOnAssignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-type FileAssignmentRepositoryType = {
+type Repository = {
   getById(request: RequestGetFileById): Promise<FileOnAssignment>;
   getByAssignmentId(
     request: RequestGetFilesByAssignmentId,
@@ -25,14 +25,33 @@ type FileAssignmentRepositoryType = {
   deleteByAssignmentId(request: {
     assignmentId: string;
   }): Promise<{ message: string }>;
+  findMany(
+    request: Prisma.FileOnAssignmentFindManyArgs,
+  ): Promise<FileOnAssignment[]>;
 };
 @Injectable()
-export class FileAssignmentRepository implements FileAssignmentRepositoryType {
+export class FileAssignmentRepository implements Repository {
   logger: Logger = new Logger(FileAssignmentRepository.name);
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {}
+
+  async findMany(
+    request: Prisma.FileOnAssignmentFindManyArgs,
+  ): Promise<FileOnAssignment[]> {
+    try {
+      return await this.prisma.fileOnAssignment.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getById(request: RequestGetFileById): Promise<FileOnAssignment> {
     try {
