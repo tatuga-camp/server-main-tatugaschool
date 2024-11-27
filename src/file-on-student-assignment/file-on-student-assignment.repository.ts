@@ -11,7 +11,7 @@ import {
   RequestGetFileOnStudentAssignmentById,
   RequestGetFileOnStudentAssignmentByStudentOnAssignmentId,
 } from './interfaces';
-import { FileOnStudentAssignment } from '@prisma/client';
+import { FileOnStudentAssignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -25,6 +25,9 @@ type FileOnStudentAssignmentRepositoryType = {
   create(
     request: RequestCreateFileOnStudentAssignment,
   ): Promise<FileOnStudentAssignment>;
+  findMany(
+    request: Prisma.FileOnStudentAssignmentFindManyArgs,
+  ): Promise<FileOnStudentAssignment[]>;
   delete(
     request: RequestDeleteFileOnStudentAssignment,
   ): Promise<{ message: string }>;
@@ -42,6 +45,22 @@ export class FileOnStudentAssignmentRepository
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {}
+
+  async findMany(
+    request: Prisma.FileOnStudentAssignmentFindManyArgs,
+  ): Promise<FileOnStudentAssignment[]> {
+    try {
+      return await this.prisma.fileOnStudentAssignment.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getById(
     request: RequestGetFileOnStudentAssignmentById,

@@ -1,9 +1,14 @@
+import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
-import { StudentOnAssignment, User } from '@prisma/client';
+import {
+  FileOnStudentAssignment,
+  StudentOnAssignment,
+  User,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateStudentOnAssignmentDto,
@@ -14,6 +19,7 @@ import {
 } from './dto';
 import { StudentOnAssignmentRepository } from './student-on-assignment.repository';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -39,6 +45,11 @@ export class StudentOnAssignmentService {
     this.prisma,
     this.googleStorageService,
   );
+  private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
+    new FileOnStudentAssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -47,7 +58,7 @@ export class StudentOnAssignmentService {
   async getByAssignmentId(
     dto: GetStudentOnAssignmentByAssignmentIdDto,
     user: User,
-  ): Promise<StudentOnAssignment[]> {
+  ): Promise<(StudentOnAssignment & { files: FileOnStudentAssignment[] })[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
@@ -77,9 +88,22 @@ export class StudentOnAssignmentService {
       }
 
       const studentOnAssignments =
-        this.studentOnAssignmentRepository.getByAssignmentId(dto);
-
-      return studentOnAssignments;
+        await this.studentOnAssignmentRepository.getByAssignmentId(dto);
+      const files = await this.prisma.fileOnStudentAssignment.findMany({
+        where: {
+          studentOnAssignmentId: {
+            in: studentOnAssignments.map(
+              (studentOnAssignment) => studentOnAssignment.id,
+            ),
+          },
+        },
+      });
+      return studentOnAssignments.map((studentOnAssignment) => ({
+        ...studentOnAssignment,
+        files: files.filter(
+          (file) => file.studentOnAssignmentId === studentOnAssignment.id,
+        ),
+      }));
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -185,8 +209,16 @@ export class StudentOnAssignmentService {
           studentOnAssignmentId: dto.query.studentOnAssignmentId,
         });
 
+      const assignment = await this.assignmentRepository.getById({
+        assignmentId: studentOnAssignment.assignmentId,
+      });
+
       if (!studentOnAssignment) {
         throw new NotFoundException('StudentOnAssignment not found');
+      }
+
+      if (dto.body.score && dto.body.score > assignment.maxScore) {
+        throw new BadRequestException('Score must be less than max score');
       }
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
@@ -208,8 +240,18 @@ export class StudentOnAssignmentService {
         );
       }
       return await this.studentOnAssignmentRepository.update({
-        query: dto.query,
-        body: dto.body,
+        where: { id: dto.query.studentOnAssignmentId },
+        data: {
+          ...dto.body,
+          reviewdAt:
+            dto.body.status === 'REVIEWD'
+              ? new Date().toISOString()
+              : undefined,
+          completedAt:
+            dto.body.status === 'SUBMITTED'
+              ? new Date().toISOString()
+              : undefined,
+        },
       });
     } catch (error) {
       this.logger.error(error);

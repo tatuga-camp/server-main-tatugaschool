@@ -1,3 +1,4 @@
+import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import { SubjectRepository } from './../subject/subject.repository';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
@@ -36,6 +37,7 @@ export class StudentOnSubjectService {
     this.prisma,
     this.googleStorageService,
   );
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -47,6 +49,9 @@ export class StudentOnSubjectService {
       googleStorageService,
     );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(prisma);
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      prisma,
+    );
   }
 
   async getStudentOnSubjectsBySubjectId(
@@ -118,6 +123,17 @@ export class StudentOnSubjectService {
           data: dto.data,
         });
 
+      if (dto.data?.isActive === false) {
+        this.studentOnAssignmentRepository.updateMany({
+          where: {
+            studentOnSubjectId: studentOnSubject.id,
+          },
+          data: {
+            isAssigned: dto.data.isActive,
+          },
+        });
+      }
+
       if (subject.wheelOfNamePath) {
         const studentActives = await this.studentOnSubjectRepository.findMany({
           where: {
@@ -125,24 +141,10 @@ export class StudentOnSubjectService {
             isActive: true,
           },
         });
-        const studentOnSubjectCreates = studentActives.map((student) => {
-          return {
-            title: student.title,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            photo: student.photo,
-            blurHash: student.blurHash,
-            number: student.number,
-            studentId: student.id,
-            classId: student.classId,
-            subjectId: subject.id,
-            schoolId: student.schoolId,
-          };
-        });
         this.wheelOfNameService
           .update({
             path: subject.wheelOfNamePath,
-            texts: studentOnSubjectCreates.map((student) => {
+            texts: studentActives.map((student) => {
               return {
                 text: `${student.title} ${student.firstName} ${student.lastName}`,
               };

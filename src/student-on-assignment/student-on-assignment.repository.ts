@@ -11,7 +11,6 @@ import {
   RequestGetStudentOnAssignmentById,
   RequestGetStudentOnAssignmentByStudentId,
   RequestGetStudentOnAssignmentByStudentIdAndAssignmentId,
-  RequestUpdateStudentOnAssignment,
 } from './interfaces';
 import { Prisma, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -37,8 +36,11 @@ type StudentOnAssignmentRepositoryType = {
     request: Prisma.StudentOnAssignmentCreateManyArgs,
   ): Promise<Prisma.BatchPayload>;
   update(
-    request: RequestUpdateStudentOnAssignment,
+    request: Prisma.StudentOnAssignmentUpdateArgs,
   ): Promise<StudentOnAssignment>;
+  updateMany(
+    request: Prisma.StudentOnAssignmentUpdateManyArgs,
+  ): Promise<Prisma.BatchPayload>;
   delete(
     request: RequestDeleteStudentOnAssignment,
   ): Promise<{ message: string }>;
@@ -176,15 +178,26 @@ export class StudentOnAssignmentRepository
   }
 
   async update(
-    request: RequestUpdateStudentOnAssignment,
+    request: Prisma.StudentOnAssignmentUpdateArgs,
   ): Promise<StudentOnAssignment> {
     try {
-      return await this.prisma.studentOnAssignment.update({
-        where: {
-          id: request.query.studentOnAssignmentId,
-        },
-        data: request.body,
-      });
+      return await this.prisma.studentOnAssignment.update(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateMany(
+    request: Prisma.StudentOnAssignmentUpdateManyArgs,
+  ): Promise<Prisma.BatchPayload> {
+    try {
+      return await this.prisma.studentOnAssignment.updateMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

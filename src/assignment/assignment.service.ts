@@ -133,16 +133,13 @@ export class AssignmentService {
       const text = `${dto.title} ${dto.description}`;
 
       const vectors = await this.vectorService.embbedingText(text);
-      const counts = await this.assignmentRepository.count({
-        where: { subjectId: dto.subjectId },
-      });
+
       const assignment = await this.assignmentRepository.create({
         data: {
           ...dto,
           vector: vectors.predictions[0].embeddings.values,
           schoolId: member.schoolId,
           userId: user.id,
-          order: counts + 1,
         },
       });
 
@@ -201,7 +198,7 @@ export class AssignmentService {
       const sortAssignments = dto.assignmentIds.map((assignmentId, index) => {
         return this.assignmentRepository.update({
           where: { id: assignmentId },
-          data: { order: index },
+          data: { order: index + 1 },
         });
       });
 
@@ -238,31 +235,12 @@ export class AssignmentService {
         subjectId: assignment.subjectId,
       });
 
-      let textArray: string[] = [];
-
-      if (dto.data.title) {
-        textArray.push(dto.data.title);
-      } else if (!dto.data.title) {
-        textArray.push(assignment.title);
-      }
-
-      if (dto.data.description) {
-        textArray.push(dto.data.description);
-      } else if (!dto.data.description) {
-        textArray.push(assignment.description);
-      }
-
-      const text = textArray.join(' ');
-
-      const vectors = await this.vectorService.embbedingText(text);
-
       return await this.assignmentRepository.update({
         where: {
           id: dto.query.assignmentId,
         },
         data: {
           ...dto.data,
-          vector: vectors.predictions[0].embeddings.values,
         },
       });
     } catch (error) {

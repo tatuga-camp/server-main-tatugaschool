@@ -1,6 +1,8 @@
+import { StudentAssignmentStatus } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
+  IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -31,12 +33,8 @@ class UpdateStudentOnAssignmentBody {
   body?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isCompleted?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  isReviewed?: boolean;
+  @IsEnum(StudentAssignmentStatus)
+  status?: StudentAssignmentStatus;
 
   @IsOptional()
   @IsBoolean()
