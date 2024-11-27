@@ -31,25 +31,6 @@ export type RequestCreateStudentOnAssignment = {
   subjectId: string;
 };
 
-export type RequestUpdateStudentOnAssignment = {
-  query: {
-    studentOnAssignmentId: string;
-  };
-  body: {
-    title?: string;
-    firstName?: string;
-    lastName?: string;
-    photo?: string;
-    blurHash?: string;
-    number?: string;
-    score?: number;
-    body?: string;
-    isCompleted?: boolean;
-    isReviewed?: boolean;
-    isAssigned?: boolean;
-  };
-};
-
 export type RequestDeleteStudentOnAssignment = {
   studentOnAssignmentId: string;
 };

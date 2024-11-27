@@ -327,7 +327,7 @@ model Assignment {
   description String
   maxScore    Float?
   weight      Float?
-  order       Int
+  order       Int?
 
   status AssignmentStatus @default(Draft)
 
@@ -396,9 +396,10 @@ model StudentOnAssignment {
 
   score       Float?
   body        String?
-  isCompleted Boolean @default(false)
-  isReviewed  Boolean @default(false)
-  isAssigned  Boolean @default(false)
+  completedAt DateTime?
+  reviewdAt   DateTime?
+  isAssigned  Boolean                 @default(false)
+  status      StudentAssignmentStatus @default(PENDDING)
 
   studentId          String @db.ObjectId
   assignmentId       String @db.ObjectId
@@ -417,6 +418,12 @@ model StudentOnAssignment {
   skillOnStudentAssignments SkillOnStudentAssignment[]
 
   @@unique([studentOnSubjectId, assignmentId])
+}
+
+enum StudentAssignmentStatus {
+  PENDDING
+  SUBMITTED
+  REVIEWD
 }
 
 model FileOnStudentAssignment {
