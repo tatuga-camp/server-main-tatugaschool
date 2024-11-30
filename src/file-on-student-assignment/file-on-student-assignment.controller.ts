@@ -15,7 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
-import { GetStudnet, GetUser } from '../auth/decorators';
+import { GetStudent, GetUser } from '../auth/decorators';
 
 @Controller('v1/file-on-student-assignments')
 export class FileOnStudentAssignmentController {
@@ -27,7 +27,7 @@ export class FileOnStudentAssignmentController {
   @Get('student-on-assignment/:studentOnAssignmentId/student')
   getByStudentOnAssignmentIdFromStudnet(
     @Param() dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
   ) {
     return this.fileOnStudentAssignmentService.getFileByStudentOnAssignmentIdFromStudent(
       dto,
@@ -51,7 +51,7 @@ export class FileOnStudentAssignmentController {
   @Post('student')
   createFileOnStudentAssignmentFromStudent(
     @Body() dto: CreateFileOnStudentAssignmentDto,
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
   ) {
     return this.fileOnStudentAssignmentService.createFileOnStudentAssignmentFromStudent(
       dto,
@@ -63,7 +63,7 @@ export class FileOnStudentAssignmentController {
   @Delete(':fileOnStudentAssignmentId/student')
   deleteFileOnStudentAssignmentFromStudnet(
     @Param() dto: DeleteFileOnStudentAssignmentDto,
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
   ) {
     return this.fileOnStudentAssignmentService.deleteFileOnStudentAssignmentFromStudnet(
       dto,

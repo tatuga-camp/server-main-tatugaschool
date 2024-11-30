@@ -16,8 +16,10 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 export type SubjectRepositoryType = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
+  findUnique(request: Prisma.SubjectFindUniqueArgs): Promise<Subject | null>;
+  findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
-  updateSubject(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
+  update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
   deleteSubject(request: RequestDeleteSubject): Promise<{ message: string }>;
   reorderSubjects(request: RequestReorderSubjects): Promise<Subject[]>;
 };
@@ -28,6 +30,36 @@ export class SubjectRepository implements SubjectRepositoryType {
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {}
+
+  async findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]> {
+    try {
+      return await this.prisma.subject.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findUnique(
+    request: Prisma.SubjectFindUniqueArgs,
+  ): Promise<Subject | null> {
+    try {
+      return await this.prisma.subject.findUnique(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getSubjectById(
     request: RequestGetSubjectById,
@@ -67,7 +99,7 @@ export class SubjectRepository implements SubjectRepositoryType {
     }
   }
 
-  async updateSubject(request: Prisma.SubjectUpdateArgs): Promise<Subject> {
+  async update(request: Prisma.SubjectUpdateArgs): Promise<Subject> {
     try {
       return await this.prisma.subject.update(request);
     } catch (error) {

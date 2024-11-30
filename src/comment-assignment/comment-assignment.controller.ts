@@ -15,7 +15,7 @@ import {
   GetCommentAssignmentByStudentOnAssignmentIdDto,
   UpdateCommentOnAssignmentDto,
 } from './dto';
-import { GetStudnet, GetUser } from '../auth/decorators';
+import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
 import { StudentGuard, UserGuard } from '../auth/guard';
 
@@ -27,7 +27,7 @@ export class CommentAssignmentController {
   @Get('studentOnAssignmentId/:studentOnAssignmentId/student')
   getByStudentOnAssignmentIdFromStudent(
     @Param() dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
   ) {
     return this.commentAssignmentService.getByStudentOnAssignmentIdFromStudent(
       dto,
@@ -50,7 +50,7 @@ export class CommentAssignmentController {
   @UseGuards(StudentGuard)
   @Post('student')
   createCommentOnAssignmentFromStudent(
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
     @Body() dto: CreateCommentOnAssignmentDto,
   ) {
     return this.commentAssignmentService.createFromStudent(dto, student);
@@ -68,7 +68,7 @@ export class CommentAssignmentController {
   @UseGuards(StudentGuard)
   @Patch('student')
   updateCommentOnAssignmentFromStudent(
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
     @Body() dto: UpdateCommentOnAssignmentDto,
   ) {
     return this.commentAssignmentService.updateFromStudent(dto, student);
@@ -86,7 +86,7 @@ export class CommentAssignmentController {
   @UseGuards(StudentGuard)
   @Delete(':commentOnAssignmentId/student')
   deleteCommentOnAssignmentFromStudent(
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
     @Param() dto: DeleteCommentAssignmentDto,
   ) {
     return this.commentAssignmentService.deleteFromStudent(dto, student);

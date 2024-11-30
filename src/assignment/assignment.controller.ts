@@ -18,15 +18,15 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { GetUser } from '../auth/decorators';
-import { User } from '@prisma/client';
-import { UserGuard } from '../auth/guard';
+import { GetStudent, GetUser } from '../auth/decorators';
+import { Student, User } from '@prisma/client';
+import { StudentGuard, UserGuard } from '../auth/guard';
 
-@UseGuards(UserGuard)
 @Controller('v1/assignments')
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
 
+  @UseGuards(UserGuard)
   @Post()
   async createAssignment(
     @Body() dto: CreateAssignmentDto,
@@ -35,6 +35,7 @@ export class AssignmentController {
     return await this.assignmentService.createAssignment(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Get('subject/:subjectId')
   async getAssignments(
     @Param() dto: GetAssignmentBySubjectIdDto,
@@ -43,6 +44,20 @@ export class AssignmentController {
     return await this.assignmentService.getAssignmentBySubjectId(dto, user);
   }
 
+  @UseGuards(StudentGuard)
+  @Get('student/subject/:subjectId')
+  async studentGetAssignments(
+    @Param() dto: GetAssignmentBySubjectIdDto,
+    @GetStudent() student: Student,
+  ) {
+    return await this.assignmentService.getAssignmentBySubjectId(
+      dto,
+      undefined,
+      student,
+    );
+  }
+
+  @UseGuards(UserGuard)
   @Get(':assignmentId')
   async getAssignmentById(
     @Param() dto: GetAssignmentByIdDto,
@@ -51,6 +66,7 @@ export class AssignmentController {
     return await this.assignmentService.getAssignmentById(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Patch()
   async updateAssignment(
     @Body() dto: UpdateAssignmentDto,
@@ -59,6 +75,7 @@ export class AssignmentController {
     return await this.assignmentService.updateAssignment(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Patch('reorder')
   async reorderAssignment(
     @Body() dto: ReorderAssignmentDto,
@@ -67,6 +84,7 @@ export class AssignmentController {
     return await this.assignmentService.reorder(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Delete(':assignmentId')
   async deleteAssignment(
     @Param() dto: DeleteAssignmentDto,

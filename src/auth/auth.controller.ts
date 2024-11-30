@@ -65,7 +65,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('student-sign-in')
+  @Post('student/sign-in')
   async studentSignIn(
     @Body() dto: StudentSignInDto,
   ): Promise<{ accessToken: string; refreshToken: string }> {
@@ -81,7 +81,7 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
-  @Post('student-refresh-token')
+  @Post('student/refresh-token')
   async studentRefreshToken(
     @Body() dto: RefreshTokenDto,
   ): Promise<{ accessToken: string }> {

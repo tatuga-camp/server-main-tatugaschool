@@ -3,7 +3,7 @@ import { GetSignURLDto } from './dto';
 import { GoogleStorageService } from './google-storage.service';
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
-import { GetStudnet, GetUser } from '../auth/decorators';
+import { GetStudent, GetUser } from '../auth/decorators';
 
 @Controller('v1/google-storage')
 export class GoogleStorageController {
@@ -23,7 +23,7 @@ export class GoogleStorageController {
   @Get('get-signURL/student')
   UserGetSignURLStudent(
     @Query() dto: GetSignURLDto,
-    @GetStudnet() student: Student,
+    @GetStudent() student: Student,
   ) {
     return this.googleStorageService.GetSignURL({
       studentId: student.id,

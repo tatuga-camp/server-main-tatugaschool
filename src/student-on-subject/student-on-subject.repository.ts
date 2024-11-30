@@ -43,6 +43,9 @@ export type StudentOnSubjectRepositoryType = {
   createMany(
     request: Prisma.StudentOnSubjectCreateManyArgs,
   ): Promise<Prisma.BatchPayload>;
+  findFirst(
+    request: Prisma.StudentOnSubjectFindFirstArgs,
+  ): Promise<StudentOnSubject | null>;
 };
 @Injectable()
 export class StudentOnSubjectRepository
@@ -53,6 +56,22 @@ export class StudentOnSubjectRepository
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {}
+
+  async findFirst(
+    request: Prisma.StudentOnSubjectFindFirstArgs,
+  ): Promise<StudentOnSubject | null> {
+    try {
+      return await this.prisma.studentOnSubject.findFirst(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getStudentOnSubjectsBySubjectId(
     request: RequestGetStudentOnSubjectBySubjectId,

@@ -20,7 +20,13 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { Assignment, FileOnAssignment, Prisma, User } from '@prisma/client';
+import {
+  Assignment,
+  FileOnAssignment,
+  Prisma,
+  Student,
+  User,
+} from '@prisma/client';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 
 @Injectable()
@@ -74,13 +80,30 @@ export class AssignmentService {
 
   async getAssignmentBySubjectId(
     dto: GetAssignmentBySubjectIdDto,
-    user: User,
+    user?: User | undefined,
+    student?: Student | undefined,
   ): Promise<(Assignment & { files: FileOnAssignment[] })[]> {
     try {
-      const member = await this.teacherOnSubjectService.ValidateAccess({
-        userId: user.id,
-        subjectId: dto.subjectId,
-      });
+      if (user) {
+        const member = await this.teacherOnSubjectService.ValidateAccess({
+          userId: user.id,
+          subjectId: dto.subjectId,
+        });
+      }
+
+      if (student) {
+        const studentOnSubject =
+          await this.studentOnSubjectRepository.findFirst({
+            where: {
+              studentId: student.id,
+              subjectId: dto.subjectId,
+            },
+          });
+
+        if (!studentOnSubject) {
+          throw new ForbiddenException('Student not enrolled in this subject');
+        }
+      }
 
       const assignments = await this.assignmentRepository
         .getBySubjectId({

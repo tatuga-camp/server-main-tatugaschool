@@ -58,3 +58,22 @@ export class getAllSubjectsByTeamIdQuery {
   @IsEducationYear()
   educationYear: string;
 }
+
+export class GetSubjectByCode {
+  @IsNotEmpty()
+  @MaxLength(6)
+  @MinLength(6)
+  code: string;
+}
+
+export class PararmSubjectThatStudentBelongto {
+  @IsNotEmpty()
+  @IsMongoId()
+  studentId: string;
+}
+
+export class QuerySubjectThatStudentBelongto {
+  @IsNotEmpty()
+  @IsEducationYear()
+  eduYear: string;
+}

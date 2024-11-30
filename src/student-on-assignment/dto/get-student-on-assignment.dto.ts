@@ -11,3 +11,9 @@ export class GetStudentOnAssignmentByStudentIdDto {
   @IsMongoId()
   studentId: string;
 }
+
+export class GetByIdDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  id: string;
+}
