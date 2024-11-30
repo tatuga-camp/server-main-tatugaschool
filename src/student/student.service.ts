@@ -33,31 +33,6 @@ export class StudentService {
     this.studentRepository = new StudentRepository(prisma);
   }
 
-  async validateAccessMember({
-    user,
-    schoolId,
-  }: {
-    user: User;
-    schoolId: string;
-  }): Promise<MemberOnSchool> {
-    try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: schoolId,
-        },
-      });
-
-      if (!memberOnSchool) {
-        throw new ForbiddenException('Access denied');
-      }
-      return memberOnSchool;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
   async createStudent(dto: CreateStudentDto, user: User) {
     try {
       const classroom = await this.classRepository.findById({
@@ -106,11 +81,10 @@ export class StudentService {
 
   async getStudentById(
     getStudentDto: GetStudentDto,
-    userId: string,
+    user?: User | undefined,
+    studentUser?: Student | undefined,
   ): Promise<Student> {
     try {
-      const user = await this.userService.getUserById(userId);
-
       const student = await this.studentRepository.findById({
         studentId: getStudentDto.studentId,
       });
@@ -119,10 +93,16 @@ export class StudentService {
         throw new NotFoundException('Student not found');
       }
 
-      await this.validateAccessMember({
-        user: user,
-        schoolId: student.schoolId,
-      });
+      if (user) {
+        await this.memberOnSchoolService.validateAccess({
+          user: user,
+          schoolId: student.schoolId,
+        });
+      }
+
+      if (studentUser && student.id !== studentUser.id) {
+        throw new ForbiddenException('Forbidden access');
+      }
 
       return student;
     } catch (error) {
@@ -154,7 +134,11 @@ export class StudentService {
     }
   }
 
-  async updateStudent(dto: UpdateStudentDto, user: User): Promise<Student> {
+  async updateStudent(
+    dto: UpdateStudentDto,
+    user?: User | undefined,
+    studentUser?: Student | undefined,
+  ): Promise<Student> {
     try {
       if (dto.body.photo && !dto.body.blurHash) {
         throw new BadRequestException('BlurHash is required for photo');
@@ -166,6 +150,18 @@ export class StudentService {
       if (!student) {
         throw new NotFoundException('Student not found');
       }
+
+      if (user) {
+        await this.memberOnSchoolService.validateAccess({
+          user: user,
+          schoolId: student.schoolId,
+        });
+      }
+
+      if (studentUser && student.id !== studentUser.id) {
+        throw new ForbiddenException('Forbidden access');
+      }
+
       let hash: string | null = student.password;
       await this.memberOnSchoolService.validateAccess({
         user: user,

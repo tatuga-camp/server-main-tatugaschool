@@ -7,7 +7,7 @@ export const GetUser = createParamDecorator(
   },
 );
 
-export const GetStudnet = createParamDecorator(
+export const GetStudent = createParamDecorator(
   (data: unknown, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
     return request.user;

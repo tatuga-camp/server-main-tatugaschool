@@ -6,6 +6,7 @@ import { AssignmentRepository } from './../assignment/assignment.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import {
   FileOnStudentAssignment,
+  Student,
   StudentOnAssignment,
   User,
 } from '@prisma/client';
@@ -26,6 +27,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { StudentRepository } from '../student/student.repository';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -53,7 +55,35 @@ export class StudentOnAssignmentService {
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {}
+
+  async getById(
+    dto: { id: string },
+    student: Student,
+  ): Promise<StudentOnAssignment> {
+    try {
+      const studentOnAssignment =
+        await this.studentOnAssignmentRepository.getById({
+          studentOnAssignmentId: dto.id,
+        });
+
+      if (!studentOnAssignment) {
+        throw new NotFoundException('StudentOnAssignment not found');
+      }
+
+      if (student.id !== studentOnAssignment.studentId) {
+        throw new ForbiddenException(
+          'You are not allowed to access this resource',
+        );
+      }
+
+      return studentOnAssignment;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 
   async getByAssignmentId(
     dto: GetStudentOnAssignmentByAssignmentIdDto,
@@ -201,7 +231,8 @@ export class StudentOnAssignmentService {
 
   async update(
     dto: UpdateStudentOnAssignmentDto,
-    user: User,
+    user?: User | undefined,
+    student?: Student | undefined,
   ): Promise<StudentOnAssignment> {
     try {
       const studentOnAssignment =
@@ -220,25 +251,31 @@ export class StudentOnAssignmentService {
       if (dto.body.score && dto.body.score > assignment.maxScore) {
         throw new BadRequestException('Score must be less than max score');
       }
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
+
+      if (user) {
+        const member = await this.teacherOnSubjectService.ValidateAccess({
           subjectId: studentOnAssignment.subjectId,
+          userId: user.id,
         });
-
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
-          {
-            schoolId: studentOnAssignment.schoolId,
-            userId: user.id,
-          },
-        );
-
-      if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
-        throw new ForbiddenException(
-          'You are not allowed to access this resource',
-        );
       }
+
+      if (student) {
+        if (student.id !== studentOnAssignment.studentId) {
+          throw new ForbiddenException(
+            'You are not allowed to access this resource',
+          );
+        }
+
+        if (dto.body.status === 'REVIEWD') {
+          throw new ForbiddenException(
+            'You are not allowed to access this resource',
+          );
+        }
+
+        delete dto.body?.score;
+        delete dto.body?.isAssigned;
+      }
+
       return await this.studentOnAssignmentRepository.update({
         where: { id: dto.query.studentOnAssignmentId },
         data: {

@@ -1,3 +1,4 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import { StudentRepository } from './../student/student.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
@@ -11,7 +12,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Subject, User } from '@prisma/client';
+import {
+  Student,
+  StudentOnSubject,
+  Subject,
+  TeacherOnSubject,
+  User,
+} from '@prisma/client';
 import { NotFoundError } from 'rxjs';
 import { Pagination } from '../interfaces';
 import {
@@ -29,7 +36,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
-  subjectRepository: SubjectRepositoryType = new SubjectRepository(
+  subjectRepository: SubjectRepository = new SubjectRepository(
     this.prisma,
     this.googleStorageService,
   );
@@ -38,59 +45,106 @@ export class SubjectService {
   private studentRepository: StudentRepository = new StudentRepository(
     this.prisma,
   );
-  private studentOnSubject: StudentOnSubjectRepository =
+  private studentOnSubjectRepository: StudentOnSubjectRepository =
     new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private wheelOfNameService: WheelOfNameService,
     private attendanceTableService: AttendanceTableService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
   }
 
-  async validateAccessOnSubject({
-    userId,
-    subjectId,
-  }: {
-    userId: string;
-    subjectId: string;
-  }): Promise<void> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          userId: userId,
-          subjectId: subjectId,
-        },
-      });
-
-      if (!member && user.role !== 'ADMIN') {
-        throw new ForbiddenException('You do not have access to this subject');
-      }
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
   async getSubjectById(dto: GetSubjectByIdDto, user: User): Promise<Subject> {
     try {
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
       return await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
       });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getSubjectsThatStudentBelongTo(
+    dto: { studentId: string; eduYear: string },
+    studentUser: Student,
+  ): Promise<Subject[]> {
+    try {
+      const student = await this.studentRepository.findById({
+        studentId: dto.studentId,
+      });
+
+      if (!student) {
+        throw new NotFoundException('Student not found');
+      }
+
+      if (studentUser.id !== student.id) {
+        throw new ForbiddenException('Forbidden access');
+      }
+      const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
+        where: {
+          studentId: student.id,
+        },
+      });
+      const subjects = await this.subjectRepository.findMany({
+        where: {
+          id: {
+            in: studentOnSubjects.map(
+              (studentOnSubject) => studentOnSubject.subjectId,
+            ),
+          },
+          educationYear: dto.eduYear,
+        },
+      });
+
+      return subjects;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getByCode(dto: { code: string }): Promise<
+    Subject & {
+      studentOnSubjects: StudentOnSubject[];
+      teacherOnSubjects: TeacherOnSubject[];
+    }
+  > {
+    try {
+      const subject = await this.subjectRepository.findUnique({
+        where: {
+          code: dto.code,
+        },
+      });
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+
+      const [students, teachers] = await Promise.all([
+        this.studentOnSubjectRepository.findMany({
+          where: {
+            subjectId: subject.id,
+          },
+        }),
+        this.teacherOnSubjectService.teacherOnSubjectRepository.findMany({
+          where: {
+            subjectId: subject.id,
+          },
+        }),
+      ]);
+
+      return {
+        ...subject,
+        studentOnSubjects: students,
+        teacherOnSubjects: teachers,
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -228,7 +282,7 @@ export class SubjectService {
         classId: dto.classId,
       });
 
-      const code = crypto.randomBytes(4).toString('hex');
+      const code = crypto.randomBytes(3).toString('hex');
       let subject = await this.subjectRepository.createSubject({
         ...dto,
         educationYear: educationYear,
@@ -252,7 +306,7 @@ export class SubjectService {
         };
       });
 
-      await this.studentOnSubject.createMany({
+      await this.studentOnSubjectRepository.createMany({
         data: studentOnSubjectCreates,
       });
 
@@ -267,7 +321,7 @@ export class SubjectService {
           }),
         })
         .then(async (wheel) => {
-          subject = await this.subjectRepository.updateSubject({
+          subject = await this.subjectRepository.update({
             where: {
               id: subject.id,
             },
@@ -357,7 +411,7 @@ export class SubjectService {
 
   async updateSubject(dto: UpdateSubjectDto, user: User): Promise<Subject> {
     try {
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.query.subjectId,
       });
@@ -367,7 +421,7 @@ export class SubjectService {
         delete dto.body.eduYear;
       }
 
-      return await this.subjectRepository.updateSubject({
+      return await this.subjectRepository.update({
         where: {
           id: dto.query.subjectId,
         },
@@ -434,7 +488,7 @@ export class SubjectService {
     user: User,
   ): Promise<{ message: string }> {
     try {
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });

@@ -1,8 +1,9 @@
-import { User } from '@prisma/client';
-import { GetUser } from '../auth/decorators';
+import { Student, User } from '@prisma/client';
+import { GetStudent, GetUser } from '../auth/decorators';
 import {
   CreateStudentOnAssignmentDto,
   DeleteStudentOnAssignmentDto,
+  GetByIdDto,
   GetStudentOnAssignmentByAssignmentIdDto,
   GetStudentOnAssignmentByStudentIdDto,
   UpdateStudentOnAssignmentDto,
@@ -18,13 +19,19 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { UserGuard } from '../auth/guard';
+import { StudentGuard, UserGuard } from '../auth/guard';
 
-@UseGuards(UserGuard)
 @Controller('v1/student-on-assignments')
 export class StudentOnAssignmentController {
   constructor(private studentOnAssignmentService: StudentOnAssignmentService) {}
 
+  @UseGuards(StudentGuard)
+  @Get(':id')
+  getById(@Param() dto: GetByIdDto, @GetStudent() student: Student) {
+    return this.studentOnAssignmentService.getById(dto, student);
+  }
+
+  @UseGuards(UserGuard)
   @Get('assignment/:assignmentId')
   getByAssignmentId(
     @Param() dto: GetStudentOnAssignmentByAssignmentIdDto,
@@ -33,6 +40,7 @@ export class StudentOnAssignmentController {
     return this.studentOnAssignmentService.getByAssignmentId(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Get('student/:studentId')
   getByStudentId(
     @Param() dto: GetStudentOnAssignmentByStudentIdDto,
@@ -41,6 +49,7 @@ export class StudentOnAssignmentController {
     return this.studentOnAssignmentService.getByStudentId(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Post()
   createStudentOnAssignment(
     @GetUser() user: User,
@@ -49,12 +58,22 @@ export class StudentOnAssignmentController {
     return this.studentOnAssignmentService.create(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Patch()
   updateStudentOnAssignment(
     @GetUser() user: User,
     @Body() dto: UpdateStudentOnAssignmentDto,
   ) {
     return this.studentOnAssignmentService.update(dto, user);
+  }
+
+  @UseGuards(StudentGuard)
+  @Patch('student')
+  studentUpdateStudentOnAssignment(
+    @GetStudent() student: Student,
+    @Body() dto: UpdateStudentOnAssignmentDto,
+  ) {
+    return this.studentOnAssignmentService.update(dto, undefined, student);
   }
 
   @Delete(':studentOnAssignmentId')
