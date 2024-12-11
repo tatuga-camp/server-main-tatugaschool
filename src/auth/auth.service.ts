@@ -274,17 +274,17 @@ export class AuthService {
         studentId: dto.studentId,
       });
       if (!student) {
-        throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
+        throw new NotFoundException("Student isn't found");
       }
 
       if (student.password && !dto.password) {
-        throw new UnauthorizedException('กรุณากรอกรหัสผ่าน');
+        throw new BadRequestException('Please enter your password');
       }
 
       if (student.password) {
         const isMatch = await bcrypt.compare(dto.password, student.password);
         if (!isMatch) {
-          throw new UnauthorizedException('รหัสผ่านไม่ถูกต้อง');
+          throw new BadRequestException("Password isn't correct");
         }
       }
 

@@ -30,10 +30,10 @@ type FileOnStudentAssignmentRepositoryType = {
   ): Promise<FileOnStudentAssignment[]>;
   delete(
     request: RequestDeleteFileOnStudentAssignment,
-  ): Promise<{ message: string }>;
-  deleteByAssignmentId(request: {
-    assignmentId: string;
-  }): Promise<{ message: string }>;
+  ): Promise<FileOnStudentAssignment>;
+  deleteMany(
+    request: Prisma.FileOnStudentAssignmentDeleteManyArgs,
+  ): Promise<void>;
 };
 @Injectable()
 export class FileOnStudentAssignmentRepository
@@ -122,7 +122,7 @@ export class FileOnStudentAssignmentRepository
 
   async delete(
     request: RequestDeleteFileOnStudentAssignment,
-  ): Promise<{ message: string }> {
+  ): Promise<FileOnStudentAssignment> {
     try {
       const fileOnStudentAssignment =
         await this.prisma.fileOnStudentAssignment.findUnique({
@@ -134,12 +134,12 @@ export class FileOnStudentAssignmentRepository
         fileName: fileOnStudentAssignment.url,
       });
 
-      await this.prisma.fileOnStudentAssignment.delete({
+      const remove = await this.prisma.fileOnStudentAssignment.delete({
         where: {
           id: request.fileOnStudentAssignmentId,
         },
       });
-      return { message: 'FileOnStudentAssignment deleted successfully' };
+      return remove;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -151,32 +151,21 @@ export class FileOnStudentAssignmentRepository
     }
   }
 
-  async deleteByAssignmentId(request: {
-    assignmentId: string;
-  }): Promise<{ message: string }> {
+  async deleteMany(
+    request: Prisma.FileOnStudentAssignmentDeleteManyArgs,
+  ): Promise<void> {
     try {
       const fileOnStudentAssignments =
-        await this.prisma.fileOnStudentAssignment.findMany({
-          where: {
-            assignmentId: request.assignmentId,
-          },
-        });
+        await this.prisma.fileOnStudentAssignment.findMany(request);
 
-      await this.prisma.fileOnStudentAssignment.deleteMany({
-        where: {
-          assignmentId: request.assignmentId,
-        },
-      });
-
-      await Promise.all(
+      Promise.allSettled(
         fileOnStudentAssignments.map(async (fileOnStudentAssignment) => {
           await this.googleStorageService.DeleteFileOnStorage({
             fileName: fileOnStudentAssignment.url,
           });
         }),
       );
-
-      return { message: 'FileOnStudentAssignment deleted successfully' };
+      await this.prisma.fileOnStudentAssignment.deleteMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

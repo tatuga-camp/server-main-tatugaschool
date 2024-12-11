@@ -38,6 +38,15 @@ export class SubjectController {
     return this.subjectService.getSubjectById(dto, user);
   }
 
+  @UseGuards(StudentGuard)
+  @Get('student/:subjectId')
+  async getSubjectByIdFromStudnet(
+    @Param() dto: GetSubjectByIdDto,
+    @GetStudent() student: Student,
+  ) {
+    return this.subjectService.getSubjectById(dto, null, student);
+  }
+
   @Get('code/:code')
   async getSubjectByCode(@Param() dto: GetSubjectByCode) {
     return this.subjectService.getByCode(dto);

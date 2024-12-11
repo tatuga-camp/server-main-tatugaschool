@@ -153,8 +153,10 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         assignmentId: request.assignmentId,
       });
 
-      await this.fileOnStudentAssignmentRepository.deleteByAssignmentId({
-        assignmentId: request.assignmentId,
+      await this.fileOnStudentAssignmentRepository.deleteMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
       });
 
       await this.skillOnAssignmentRepository.deleteByAssignmentId({
