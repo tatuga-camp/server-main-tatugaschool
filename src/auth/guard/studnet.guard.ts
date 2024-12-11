@@ -1,7 +1,7 @@
 import {
   ExecutionContext,
-  ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
@@ -14,7 +14,7 @@ export class StudentGuard extends AuthGuard('student-jwt') {
 
   handleRequest(err, student, info) {
     if (err || !student) {
-      throw new ForbiddenException('Access denied');
+      throw new UnauthorizedException('Access denied');
     } else {
       return student;
     }

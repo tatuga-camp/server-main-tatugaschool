@@ -57,12 +57,34 @@ export class SubjectService {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
   }
 
-  async getSubjectById(dto: GetSubjectByIdDto, user: User): Promise<Subject> {
+  async getSubjectById(
+    dto: GetSubjectByIdDto,
+    user?: User,
+    student?: Student,
+  ): Promise<Subject> {
     try {
-      await this.teacherOnSubjectService.ValidateAccess({
-        userId: user.id,
-        subjectId: dto.subjectId,
-      });
+      if (user) {
+        await this.teacherOnSubjectService.ValidateAccess({
+          userId: user.id,
+          subjectId: dto.subjectId,
+        });
+      }
+
+      if (student) {
+        const studentOnSubject =
+          await this.studentOnSubjectRepository.findFirst({
+            where: {
+              subjectId: dto.subjectId,
+              studentId: student.id,
+            },
+          });
+        if (!studentOnSubject) {
+          throw new ForbiddenException(
+            "Student doesn't belong to this subject",
+          );
+        }
+      }
+
       return await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
       });

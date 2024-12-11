@@ -34,12 +34,9 @@ export class StudentController {
   }
 
   @UseGuards(StudentGuard)
-  @Get('student/:studentId')
-  async studentGetStudentById(
-    @GetStudent() student: Student,
-    @Param() dto: GetStudentDto,
-  ) {
-    return this.studentService.getStudentById(dto, undefined, student);
+  @Get('student/get-as-user')
+  async studentGetStudentById(@GetStudent() student: Student) {
+    return student;
   }
 
   @UseGuards(UserGuard)
@@ -64,7 +61,7 @@ export class StudentController {
   }
 
   @UseGuards(StudentGuard)
-  @Patch()
+  @Patch('student')
   async studentUpdateStudent(
     @GetStudent() student: Student,
     @Body() updateStudentDto: UpdateStudentDto,
