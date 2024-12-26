@@ -50,8 +50,8 @@ export class SkillRepository implements SkillRepositoryType {
             $vectorSearch: {
               queryVector: vector,
               path: 'vector',
-              numCandidates: 1536,
-              limit: 5,
+              numCandidates: 768,
+              limit: 3,
               index: 'skillIndexing',
             },
           },
@@ -67,7 +67,6 @@ export class SkillRepository implements SkillRepositoryType {
           },
         ],
       })) as unknown as RawSkill[];
-
       const skills = rawSkills.map((skill) => ({
         id: (skill._id as any).$oid,
         createAt: (skill.createAt as any).$date,

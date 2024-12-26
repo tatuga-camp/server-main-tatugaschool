@@ -3,6 +3,7 @@ import {
   CreateFileOnStudentAssignmentDto,
   DeleteFileOnStudentAssignmentDto,
   GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
+  UpdateFileDto,
 } from './dto';
 import { FileOnStudentAssignmentService } from './file-on-student-assignment.service';
 import {
@@ -11,6 +12,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -65,10 +67,16 @@ export class FileOnStudentAssignmentController {
     @Param() dto: DeleteFileOnStudentAssignmentDto,
     @GetStudent() student: Student,
   ) {
-    return this.fileOnStudentAssignmentService.deleteFileOnStudentAssignmentFromStudnet(
-      dto,
-      student,
-    );
+    return this.fileOnStudentAssignmentService.delete(dto, student);
+  }
+
+  @UseGuards(StudentGuard)
+  @Patch('student')
+  updateFileOnStudentAssignmentFromStudent(
+    @Body() dto: UpdateFileDto,
+    @GetStudent() student: Student,
+  ) {
+    return this.fileOnStudentAssignmentService.updateFile(dto, null, student);
   }
 
   @UseGuards(UserGuard)

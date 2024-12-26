@@ -1,5 +1,7 @@
+import { StudentAssignmentContentType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
+  IsEnum,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
@@ -17,8 +19,8 @@ export class CreateFileOnStudentAssignmentDto {
   type: string;
 
   @IsNotEmpty()
-  @IsUrl()
-  url: string;
+  @IsString()
+  body: string;
 
   @IsOptional()
   @IsString()
@@ -29,6 +31,10 @@ export class CreateFileOnStudentAssignmentDto {
   @Transform(({ value }) => Number(value))
   @Min(0)
   size: number;
+
+  @IsNotEmpty()
+  @IsEnum(StudentAssignmentContentType)
+  contentType: StudentAssignmentContentType;
 
   @IsNotEmpty()
   @IsMongoId()

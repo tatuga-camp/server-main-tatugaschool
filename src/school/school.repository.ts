@@ -112,12 +112,17 @@ export class SchoolRepository implements SchoolRepositoryType {
           },
         });
 
-      const files = [...fileOnAssignments, ...fileOnStudentAssignments];
-
       Promise.allSettled([
-        ...files.map((file) => {
+        ...fileOnAssignments.map((file) => {
           this.googleStorageService.DeleteFileOnStorage({ fileName: file.url });
         }),
+        ...fileOnStudentAssignments
+          .filter((f) => f.contentType === 'FILE')
+          .map((file) => {
+            this.googleStorageService.DeleteFileOnStorage({
+              fileName: file.body,
+            });
+          }),
       ]);
 
       await Promise.all([

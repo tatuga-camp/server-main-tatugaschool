@@ -133,7 +133,10 @@ export class SubjectService {
     }
   }
 
-  async getByCode(dto: { code: string }): Promise<
+  async getSubjectWithTeacherAndStudent(dto: {
+    code?: string;
+    subjectId?: string;
+  }): Promise<
     Subject & {
       studentOnSubjects: StudentOnSubject[];
       teacherOnSubjects: TeacherOnSubject[];
@@ -142,7 +145,8 @@ export class SubjectService {
     try {
       const subject = await this.subjectRepository.findUnique({
         where: {
-          code: dto.code,
+          ...(dto.code && { code: dto.code }),
+          ...(dto.subjectId && { id: dto.subjectId }),
         },
       });
       if (!subject) {

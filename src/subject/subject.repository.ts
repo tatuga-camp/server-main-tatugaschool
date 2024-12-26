@@ -251,11 +251,13 @@ export class SubjectRepository implements SubjectRepositoryType {
             fileName: file.url,
           }),
         ),
-        ...fileOnStudentAssignments.map((file) =>
-          this.googleStorageService.DeleteFileOnStorage({
-            fileName: file.url,
-          }),
-        ),
+        ...fileOnStudentAssignments
+          .filter((f) => f.contentType === 'FILE')
+          .map((file) =>
+            this.googleStorageService.DeleteFileOnStorage({
+              fileName: file.body,
+            }),
+          ),
       ]);
       // Delete the subject
       await this.prisma.subject.delete({

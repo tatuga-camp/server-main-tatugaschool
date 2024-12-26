@@ -282,9 +282,13 @@ export class StudentOnSubjectRepository
 
       // Use Promise.allSettled to delete files in Google Storage
       Promise.allSettled(
-        fileOnStudentAssignments.map((file) =>
-          this.googleStorageService.DeleteFileOnStorage({ fileName: file.url }),
-        ),
+        fileOnStudentAssignments
+          .filter((f) => f.contentType === 'FILE')
+          .map((file) =>
+            this.googleStorageService.DeleteFileOnStorage({
+              fileName: file.body,
+            }),
+          ),
       );
 
       // Delete the StudentOnSubject
