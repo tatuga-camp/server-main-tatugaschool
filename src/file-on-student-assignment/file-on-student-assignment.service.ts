@@ -18,7 +18,7 @@ import {
   CreateFileOnStudentAssignmentDto,
   GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
 } from './dto';
-import { Student, User } from '@prisma/client';
+import { FileOnStudentAssignment, Student, User } from '@prisma/client';
 
 @Injectable()
 export class FileOnStudentAssignmentService {
@@ -134,11 +134,13 @@ export class FileOnStudentAssignmentService {
       }
 
       const create = await this.fileOnStudentAssignmentRepository.create({
-        ...dto,
-        schoolId: studnetOnAssignment.schoolId,
-        subjectId: studnetOnAssignment.subjectId,
-        assignmentId: studnetOnAssignment.assignmentId,
-        studentId: studnetOnAssignment.studentId,
+        data: {
+          ...dto,
+          schoolId: studnetOnAssignment.schoolId,
+          subjectId: studnetOnAssignment.subjectId,
+          assignmentId: studnetOnAssignment.assignmentId,
+          studentId: studnetOnAssignment.studentId,
+        },
       });
 
       const school = await this.schoolRepository.getById({
@@ -159,10 +161,54 @@ export class FileOnStudentAssignmentService {
     }
   }
 
-  async deleteFileOnStudentAssignmentFromStudnet(
-    dto: DeleteFileOnStudentAssignmentDto,
+  async updateFile(
+    dto: { query: { id: string }; body: { body?: string } },
+    user: User | null,
     student: Student,
   ) {
+    try {
+      const file = await this.fileOnStudentAssignmentRepository.getById({
+        fileOnStudentAssignmentId: dto.query.id,
+      });
+
+      if (!file) {
+        throw new NotFoundException('File not found');
+      }
+
+      if (file.contentType === 'FILE') {
+        throw new BadRequestException("You can't update file");
+      }
+
+      if (user) {
+        const teacherOnSubject =
+          await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+            teacherId: user.id,
+            subjectId: file.subjectId,
+          });
+
+        if (!teacherOnSubject) {
+          throw new ForbiddenException("You don't have permission to access");
+        }
+      }
+
+      if (file.studentId !== student.id) {
+        throw new ForbiddenException("You don't have permission to access");
+      }
+
+      return await this.fileOnStudentAssignmentRepository.update({
+        where: { id: dto.query.id },
+        data: dto.body,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async delete(
+    dto: DeleteFileOnStudentAssignmentDto,
+    student: Student,
+  ): Promise<FileOnStudentAssignment> {
     try {
       const fileOnStudentAssignment =
         await this.fileOnStudentAssignmentRepository.getById({

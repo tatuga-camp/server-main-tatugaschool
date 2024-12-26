@@ -44,12 +44,12 @@ export class SubjectController {
     @Param() dto: GetSubjectByIdDto,
     @GetStudent() student: Student,
   ) {
-    return this.subjectService.getSubjectById(dto, null, student);
+    return this.subjectService.getSubjectWithTeacherAndStudent(dto);
   }
 
   @Get('code/:code')
   async getSubjectByCode(@Param() dto: GetSubjectByCode) {
-    return this.subjectService.getByCode(dto);
+    return this.subjectService.getSubjectWithTeacherAndStudent(dto);
   }
 
   @UseGuards(StudentGuard)

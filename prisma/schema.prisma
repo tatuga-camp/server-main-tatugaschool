@@ -431,10 +431,11 @@ model FileOnStudentAssignment {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  type     String
-  blurHash String?
-  url      String
-  size     Float
+  type        String
+  blurHash    String?
+  body        String
+  size        Float?
+  contentType StudentAssignmentContentType
 
   subjectId             String              @db.ObjectId
   subject               Subject             @relation(fields: [subjectId], references: [id])
@@ -446,6 +447,11 @@ model FileOnStudentAssignment {
   student               Student             @relation(fields: [studentId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+}
+
+enum StudentAssignmentContentType {
+  TEXT
+  FILE
 }
 
 model CommentOnAssignment {

@@ -25,6 +25,7 @@ import {
   FileOnAssignment,
   Prisma,
   Student,
+  StudentOnAssignment,
   User,
 } from '@prisma/client';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
@@ -82,7 +83,12 @@ export class AssignmentService {
     dto: GetAssignmentBySubjectIdDto,
     user?: User | undefined,
     student?: Student | undefined,
-  ): Promise<(Assignment & { files: FileOnAssignment[] })[]> {
+  ): Promise<
+    (Assignment & {
+      files: FileOnAssignment[];
+      studentOnAssignment?: StudentOnAssignment;
+    })[]
+  > {
     try {
       if (user) {
         const member = await this.teacherOnSubjectService.ValidateAccess({
@@ -90,7 +96,7 @@ export class AssignmentService {
           subjectId: dto.subjectId,
         });
       }
-
+      let studentsOnAssignments: StudentOnAssignment[] = [];
       if (student) {
         const studentOnSubject =
           await this.studentOnSubjectRepository.findFirst({
@@ -100,14 +106,33 @@ export class AssignmentService {
             },
           });
 
+        studentsOnAssignments =
+          await this.studentOnAssignmentRepository.findMany({
+            where: {
+              subjectId: dto.subjectId,
+              studentOnSubjectId: studentOnSubject.id,
+              isAssigned: true,
+            },
+          });
+
         if (!studentOnSubject) {
           throw new ForbiddenException('Student not enrolled in this subject');
         }
       }
 
       const assignments = await this.assignmentRepository
-        .getBySubjectId({
-          subjectId: dto.subjectId,
+        .findMany({
+          where: {
+            ...(student
+              ? {
+                  id: {
+                    in: studentsOnAssignments.map((s) => s?.assignmentId),
+                  },
+                }
+              : {
+                  subjectId: dto.subjectId,
+                }),
+          },
         })
         .then((assignments) => {
           return assignments.map((assignment) => {
@@ -130,6 +155,13 @@ export class AssignmentService {
         return {
           ...assignment,
           files: files.filter((file) => file.assignmentId === assignment.id),
+          //if request come from student attrach studentOnAssignment
+          studentOnAssignment:
+            studentsOnAssignments.length > 0
+              ? studentsOnAssignments.find(
+                  (s) => s.assignmentId === assignment.id,
+                )
+              : undefined,
         };
       });
     } catch (error) {
@@ -147,6 +179,11 @@ export class AssignmentService {
         throw new BadRequestException(
           'Assign at and max score are required for assignment ',
         );
+      }
+      if (dto.type === 'Material') {
+        delete dto?.maxScore;
+        delete dto?.dueDate;
+        delete dto?.weight;
       }
       const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,

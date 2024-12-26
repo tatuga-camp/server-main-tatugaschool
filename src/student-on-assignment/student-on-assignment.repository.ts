@@ -20,6 +20,9 @@ type StudentOnAssignmentRepositoryType = {
   getById(
     request: RequestGetStudentOnAssignmentById,
   ): Promise<StudentOnAssignment>;
+  findMany(
+    request: Prisma.StudentOnAssignmentFindManyArgs,
+  ): Promise<StudentOnAssignment[]>;
   getByStudentId(
     request: RequestGetStudentOnAssignmentByStudentId,
   ): Promise<StudentOnAssignment[]>;
@@ -54,6 +57,22 @@ export class StudentOnAssignmentRepository
 {
   logger: Logger = new Logger(StudentOnAssignmentRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findMany(
+    request: Prisma.StudentOnAssignmentFindManyArgs,
+  ): Promise<StudentOnAssignment[]> {
+    try {
+      return await this.prisma.studentOnAssignment.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async getById(
     request: RequestGetStudentOnAssignmentById,

@@ -23,13 +23,16 @@ type FileOnStudentAssignmentRepositoryType = {
     request: RequestGetFileOnStudentAssignmentByStudentOnAssignmentId,
   ): Promise<FileOnStudentAssignment[]>;
   create(
-    request: RequestCreateFileOnStudentAssignment,
+    request: Prisma.FileOnStudentAssignmentCreateArgs,
   ): Promise<FileOnStudentAssignment>;
   findMany(
     request: Prisma.FileOnStudentAssignmentFindManyArgs,
   ): Promise<FileOnStudentAssignment[]>;
   delete(
     request: RequestDeleteFileOnStudentAssignment,
+  ): Promise<FileOnStudentAssignment>;
+  update(
+    request: Prisma.FileOnStudentAssignmentUpdateArgs,
   ): Promise<FileOnStudentAssignment>;
   deleteMany(
     request: Prisma.FileOnStudentAssignmentDeleteManyArgs,
@@ -45,6 +48,22 @@ export class FileOnStudentAssignmentRepository
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {}
+
+  async update(
+    request: Prisma.FileOnStudentAssignmentUpdateArgs,
+  ): Promise<FileOnStudentAssignment> {
+    try {
+      return await this.prisma.fileOnStudentAssignment.update(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async findMany(
     request: Prisma.FileOnStudentAssignmentFindManyArgs,
@@ -103,12 +122,10 @@ export class FileOnStudentAssignmentRepository
   }
 
   async create(
-    request: RequestCreateFileOnStudentAssignment,
+    request: Prisma.FileOnStudentAssignmentCreateArgs,
   ): Promise<FileOnStudentAssignment> {
     try {
-      return await this.prisma.fileOnStudentAssignment.create({
-        data: request,
-      });
+      return await this.prisma.fileOnStudentAssignment.create(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -130,9 +147,12 @@ export class FileOnStudentAssignmentRepository
             id: request.fileOnStudentAssignmentId,
           },
         });
-      await this.googleStorageService.DeleteFileOnStorage({
-        fileName: fileOnStudentAssignment.url,
-      });
+
+      if (fileOnStudentAssignment.contentType === 'FILE') {
+        await this.googleStorageService.DeleteFileOnStorage({
+          fileName: fileOnStudentAssignment.body,
+        });
+      }
 
       const remove = await this.prisma.fileOnStudentAssignment.delete({
         where: {
@@ -159,11 +179,13 @@ export class FileOnStudentAssignmentRepository
         await this.prisma.fileOnStudentAssignment.findMany(request);
 
       Promise.allSettled(
-        fileOnStudentAssignments.map(async (fileOnStudentAssignment) => {
-          await this.googleStorageService.DeleteFileOnStorage({
-            fileName: fileOnStudentAssignment.url,
-          });
-        }),
+        fileOnStudentAssignments
+          .filter((f) => f.contentType === 'FILE')
+          .map(async (fileOnStudentAssignment) => {
+            await this.googleStorageService.DeleteFileOnStorage({
+              fileName: fileOnStudentAssignment.body,
+            });
+          }),
       );
       await this.prisma.fileOnStudentAssignment.deleteMany(request);
     } catch (error) {
