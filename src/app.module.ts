@@ -37,6 +37,7 @@ import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { AttendanceStatusListModule } from './attendance-status-list/attendance-status-list.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { PusherModule } from './pusher/prisma.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     AuthModule,
     UsersModule,
     PrismaModule,
+    PusherModule,
     EmailModule,
     MemberOnSchoolModule,
     TeamModule,

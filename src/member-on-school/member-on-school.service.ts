@@ -26,6 +26,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository, UserRepositoryType } from '../users/users.repository';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { PusherService } from 'src/pusher/pusher.service';
 
 @Injectable()
 export class MemberOnSchoolService {
@@ -37,6 +38,7 @@ export class MemberOnSchoolService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private googleStorageService: GoogleStorageService,
+    private readonly pusherService: PusherService,
   ) {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
     this.userRepository = new UserRepository(prisma);
@@ -128,6 +130,34 @@ export class MemberOnSchoolService {
     }
   }
 
+  private async notifyMembers(
+    schoolId: string,
+    type: 'create' | 'update' | 'accept' | 'reject' | 'delete',
+  ): Promise<void> {
+    const members =
+      await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId({
+        schoolId: schoolId,
+      });
+
+    const notifications = members.map((member) =>
+      this.pusherService.trigger(`member-${member.userId}`, 'notification', {
+        message:
+          type === 'create'
+            ? 'New member added'
+            : type === 'update'
+              ? 'Member updated'
+              : type === 'accept'
+                ? 'Member accepted'
+                : type === 'reject'
+                  ? 'Member rejected'
+                  : 'Member deleted',
+        memberId: member.userId,
+      }),
+    );
+
+    await Promise.all(notifications);
+  }
+
   async createMemberOnSchool(
     dto: CreateMemberOnSchoolDto,
     user: User,
@@ -217,6 +247,8 @@ export class MemberOnSchoolService {
         html: emailHTML,
       });
 
+      await this.notifyMembers(dto.schoolId, 'create');
+
       return create;
     } catch (error) {
       this.logger.error(error);
@@ -248,6 +280,8 @@ export class MemberOnSchoolService {
       if (member.role !== MemberRole.ADMIN) {
         throw new ForbiddenException('คุณไม่มีสิทธิ์ใช้งานนี้');
       }
+
+      await this.notifyMembers(memberOnSchool.schoolId, 'update');
 
       return await this.memberOnSchoolRepository.updateMemberOnSchool({
         query: { id: memberOnSchool.id },
@@ -288,11 +322,15 @@ export class MemberOnSchoolService {
               status: 'ACCEPT',
             },
           });
+
+        await this.notifyMembers(memberOnSchool.schoolId, 'accept');
         return { message: 'Accept success' };
       } else if (dto.body.status === 'REJECT') {
         const rejectMember = await this.memberOnSchoolRepository.delete({
           memberOnSchoolId: dto.query.memberOnSchoolId,
         });
+
+        await this.notifyMembers(memberOnSchool.schoolId, 'reject');
         return { message: 'Reject success' };
       } else {
         throw new BadRequestException('Invalid status');
@@ -326,6 +364,7 @@ export class MemberOnSchoolService {
         throw new ForbiddenException("You don't have permission to delete");
       }
 
+      await this.notifyMembers(memberOnSchool.schoolId, 'delete');
       return await this.memberOnSchoolRepository.delete({
         memberOnSchoolId: dto.memberOnSchoolId,
       });
