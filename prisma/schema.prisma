@@ -434,6 +434,7 @@ model FileOnStudentAssignment {
   type        String
   blurHash    String?
   body        String
+  name        String?
   size        Float?
   contentType StudentAssignmentContentType
 

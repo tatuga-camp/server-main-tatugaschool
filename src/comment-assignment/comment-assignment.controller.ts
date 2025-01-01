@@ -29,8 +29,9 @@ export class CommentAssignmentController {
     @Param() dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
     @GetStudent() student: Student,
   ) {
-    return this.commentAssignmentService.getByStudentOnAssignmentIdFromStudent(
+    return this.commentAssignmentService.getByStudentOnAssignment(
       dto,
+      null,
       student,
     );
   }
@@ -41,9 +42,10 @@ export class CommentAssignmentController {
     @Param() dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
     @GetUser() user: User,
   ) {
-    return this.commentAssignmentService.getByStudentOnAssignmentIdFromTeacher(
+    return this.commentAssignmentService.getByStudentOnAssignment(
       dto,
       user,
+      null,
     );
   }
 

@@ -162,7 +162,7 @@ export class FileOnStudentAssignmentService {
   }
 
   async updateFile(
-    dto: { query: { id: string }; body: { body?: string } },
+    dto: { query: { id: string }; body: { body?: string; name?: string } },
     user: User | null,
     student: Student,
   ) {

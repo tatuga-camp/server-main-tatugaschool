@@ -29,9 +29,10 @@ export class CommentAssignmentService {
     new TeacherOnSubjectRepository(this.prisma);
   constructor(private prisma: PrismaService) {}
 
-  async getByStudentOnAssignmentIdFromStudent(
+  async getByStudentOnAssignment(
     dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
-    student: Student,
+    user: User | null,
+    student: Student | null,
   ) {
     try {
       const studentOnAssignment =
@@ -39,36 +40,22 @@ export class CommentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
-      if (studentOnAssignment.studentId !== student.id) {
+      if (user) {
+        const teacherOnSubject =
+          await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+            teacherId: user.id,
+            subjectId: studentOnAssignment.subjectId,
+          });
+
+        if (!teacherOnSubject) {
+          throw new ForbiddenException("You don't have permission to access");
+        }
+      }
+
+      if (student && studentOnAssignment.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
-      return await this.commentAssignmentRepository.getByStudentOnAssignmentId(
-        dto,
-      );
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
 
-  async getByStudentOnAssignmentIdFromTeacher(
-    dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
-    user: User,
-  ) {
-    try {
-      const studentOnAssignment =
-        await this.studentOnAssignmentRepository.getById({
-          studentOnAssignmentId: dto.studentOnAssignmentId,
-        });
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: studentOnAssignment.subjectId,
-        });
-
-      if (!teacherOnSubject) {
-        throw new ForbiddenException("You don't have permission to access");
-      }
       return await this.commentAssignmentRepository.getByStudentOnAssignmentId(
         dto,
       );

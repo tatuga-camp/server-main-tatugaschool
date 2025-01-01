@@ -12,8 +12,4 @@ export class CreateCommentOnAssignmentDto {
   @IsOptional()
   @IsMongoId()
   userId?: string;
-
-  @IsOptional()
-  @IsMongoId()
-  studentId?: string;
 }
