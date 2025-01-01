@@ -23,7 +23,7 @@ type CommentAssignmentRepositoryType = {
   ): Promise<CommentOnAssignment[]>;
   create(request: RequestCreateCommentAssignment): Promise<CommentOnAssignment>;
   update(request: RequestUpdateCommentAssignment): Promise<CommentOnAssignment>;
-  delete(request: RequestDeleteCommentAssignment): Promise<{ message: string }>;
+  delete(request: RequestDeleteCommentAssignment): Promise<CommentOnAssignment>;
 };
 @Injectable()
 export class CommentAssignmentRepository
@@ -115,17 +115,15 @@ export class CommentAssignmentRepository
 
   async delete(
     request: RequestDeleteCommentAssignment,
-  ): Promise<{ message: string }> {
+  ): Promise<CommentOnAssignment> {
     try {
       const { commentOnAssignmentId } = request;
 
-      await this.prisma.commentOnAssignment.delete({
+      return await this.prisma.commentOnAssignment.delete({
         where: {
           id: commentOnAssignmentId,
         },
       });
-
-      return { message: 'Comment deleted successfully' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

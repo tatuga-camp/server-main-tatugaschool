@@ -3,6 +3,7 @@ import {
   IsMongoId,
   IsNotEmpty,
   IsObject,
+  IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -17,6 +18,10 @@ class BodyUpdateFile {
   @IsNotEmpty()
   @IsString()
   body: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
 }
 
 export class UpdateFileDto {

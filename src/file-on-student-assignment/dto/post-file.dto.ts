@@ -32,6 +32,10 @@ export class CreateFileOnStudentAssignmentDto {
   @Min(0)
   size: number;
 
+  @IsOptional()
+  @IsString()
+  name?: string;
+
   @IsNotEmpty()
   @IsEnum(StudentAssignmentContentType)
   contentType: StudentAssignmentContentType;

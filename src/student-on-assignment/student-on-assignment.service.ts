@@ -248,6 +248,10 @@ export class StudentOnAssignmentService {
         throw new NotFoundException('StudentOnAssignment not found');
       }
 
+      if (studentOnAssignment.status === 'REVIEWD' && student) {
+        throw new ForbiddenException('You cannot update a reviewd assignment');
+      }
+
       if (dto.body.score && dto.body.score > assignment.maxScore) {
         throw new BadRequestException('Score must be less than max score');
       }
