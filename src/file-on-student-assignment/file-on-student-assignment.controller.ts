@@ -78,6 +78,14 @@ export class FileOnStudentAssignmentController {
   ) {
     return this.fileOnStudentAssignmentService.updateFile(dto, null, student);
   }
+  @UseGuards(UserGuard)
+  @Patch('teacher')
+  updateFileOnStudentAssignmentFromTeachers(
+    @Body() dto: UpdateFileDto,
+    @GetUser() user: User,
+  ) {
+    return this.fileOnStudentAssignmentService.updateFile(dto, user, null);
+  }
 
   @UseGuards(UserGuard)
   @Delete(':fileOnStudentAssignmentId/teacher')

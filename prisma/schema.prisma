@@ -469,8 +469,8 @@ model CommentOnAssignment {
   blurHash  String?
   number    String?
 
-  status Status?     @default(PENDDING)
-  role   MemberRole? @default(TEACHER)
+  status Status?
+  role   MemberRole?
   email  String?
   phone  String?
 

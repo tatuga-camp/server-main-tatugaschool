@@ -120,7 +120,7 @@ export class AssignmentService {
         }
       }
 
-      const assignments = await this.assignmentRepository
+      let assignments = await this.assignmentRepository
         .findMany({
           where: {
             ...(student
@@ -142,6 +142,12 @@ export class AssignmentService {
             };
           });
         });
+
+      if (student) {
+        assignments = assignments.filter(
+          (assignment) => assignment.status === 'Published',
+        );
+      }
 
       const files = await this.fileAssignmentRepository.findMany({
         where: {
