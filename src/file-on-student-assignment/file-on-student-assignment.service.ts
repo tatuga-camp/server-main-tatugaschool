@@ -164,7 +164,7 @@ export class FileOnStudentAssignmentService {
   async updateFile(
     dto: { query: { id: string }; body: { body?: string; name?: string } },
     user: User | null,
-    student: Student,
+    student: Student | null,
   ) {
     try {
       const file = await this.fileOnStudentAssignmentRepository.getById({
@@ -191,7 +191,7 @@ export class FileOnStudentAssignmentService {
         }
       }
 
-      if (file.studentId !== student.id) {
+      if (student && file.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
 
