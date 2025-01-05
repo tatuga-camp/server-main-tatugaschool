@@ -1,4 +1,3 @@
-import { Public } from './../auth/decorators/public.decorator';
 import {
   Body,
   Controller,
@@ -15,7 +14,6 @@ import { MemberOnSchoolService } from './member-on-school.service';
 import {
   CreateMemberOnSchoolDto,
   DeleteMemberOnSchoolDto,
-  GetMemberOnSchoolByIdDto,
   GetMemberOnSchoolsDto,
   QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,

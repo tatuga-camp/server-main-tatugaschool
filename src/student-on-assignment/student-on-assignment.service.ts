@@ -28,6 +28,7 @@ import {
 } from '@nestjs/common';
 import { StudentRepository } from '../student/student.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { PushService } from 'src/push/push.service';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -56,7 +57,25 @@ export class StudentOnAssignmentService {
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private pushService: PushService,
   ) {}
+
+  private async notifyTeachers(subjectId: string): Promise<void> {
+    const teachers = await this.teacherOnSubjectRepository.getManyBySubjectId({
+      subjectId: subjectId,
+    });
+
+    const notifications = teachers.map((teacher) =>
+      teacher.user.Subscription.map((subscription) =>
+        this.pushService.sendNotification(subscription.data, {
+          title: 'New assignment submitted',
+          message: 'New assignment submitted',
+        }),
+      ),
+    );
+
+    await Promise.all(notifications);
+  }
 
   async getById(
     dto: { id: string },
@@ -257,7 +276,7 @@ export class StudentOnAssignmentService {
       }
 
       if (user) {
-        const member = await this.teacherOnSubjectService.ValidateAccess({
+        await this.teacherOnSubjectService.ValidateAccess({
           subjectId: studentOnAssignment.subjectId,
           userId: user.id,
         });
@@ -278,6 +297,10 @@ export class StudentOnAssignmentService {
 
         delete dto.body?.score;
         delete dto.body?.isAssigned;
+      }
+
+      if (dto.body.status === 'SUBMITTED') {
+        await this.notifyTeachers(studentOnAssignment.subjectId);
       }
 
       return await this.studentOnAssignmentRepository.update({
