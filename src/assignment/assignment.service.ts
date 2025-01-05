@@ -176,6 +176,39 @@ export class AssignmentService {
     }
   }
 
+  async getOverviewScoreOnAssignment(
+    dto: { subjectId: string },
+    user: User,
+  ): Promise<{ assignment: Assignment; students: StudentOnAssignment[] }[]> {
+    try {
+      const member = await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
+      });
+
+      const assignments = await this.assignmentRepository.findMany({
+        where: { subjectId: dto.subjectId, status: 'Published' },
+      });
+
+      const studentsOnSubjects =
+        await this.studentOnAssignmentRepository.findMany({
+          where: { subjectId: dto.subjectId },
+        });
+
+      return assignments.map((assignment) => {
+        return {
+          assignment,
+          students: studentsOnSubjects.filter(
+            (student) => student.assignmentId === assignment.id,
+          ),
+        };
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async createAssignment(
     dto: CreateAssignmentDto,
     user: User,

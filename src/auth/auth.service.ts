@@ -8,7 +8,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
@@ -184,7 +183,7 @@ export class AuthService {
       }
 
       if (user.verifyEmailTokenExpiresAt < new Date()) {
-        throw new UnauthorizedException('Token expired');
+        throw new ForbiddenException('Token expired');
       }
 
       await this.usersRepository.updateVerified({
@@ -205,7 +204,7 @@ export class AuthService {
         throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
       }
       if (user.resetPasswordTokenExpiresAt < new Date()) {
-        throw new UnauthorizedException('Token expired');
+        throw new ForbiddenException('Token expired');
       }
 
       await this.usersRepository.updatePassword({
@@ -230,7 +229,7 @@ export class AuthService {
       }
 
       if (!user.isVerifyEmail) {
-        throw new UnauthorizedException(
+        throw new ForbiddenException(
           "Email isn't verified yet, Please check your email",
         );
       }
@@ -386,7 +385,7 @@ export class AuthService {
 
       if (user) {
         if (!user.isVerifyEmail) {
-          throw new UnauthorizedException('ยังไม่ได้ยืนยันอีเมล');
+          throw new ForbiddenException('ยังไม่ได้ยืนยันอีเมล');
         }
 
         await this.usersRepository.updateLastActiveAt({ email: user.email });
