@@ -13,7 +13,7 @@ import {
   RequestGetTeacherOnSubjectsByTeacherId,
   RequestUpdateTeacherOnSubject,
 } from './interfaces';
-import { Prisma, TeacherOnSubject } from '@prisma/client';
+import { Prisma, Subscription, TeacherOnSubject } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -21,7 +21,7 @@ type TeacherOnSubjectRepositoryType = {
   getById(request: RequestGetTeacherOnSubjectById): Promise<TeacherOnSubject>;
   getManyBySubjectId(
     request: RequestGetTeacherOnSubjectsBySubjectId,
-  ): Promise<TeacherOnSubject[]>;
+  ): Promise<(TeacherOnSubject & { user: { Subscription: Subscription[] } })[]>;
   getByTeacherIdAndSubjectId(
     request: RequestGetTeacherOnSubjectByTeacherIdAndSubjectId,
   ): Promise<TeacherOnSubject>;
@@ -101,10 +101,19 @@ export class TeacherOnSubjectRepository
 
   async getManyBySubjectId(
     request: RequestGetTeacherOnSubjectsBySubjectId,
-  ): Promise<TeacherOnSubject[]> {
+  ): Promise<
+    (TeacherOnSubject & { user: { Subscription: Subscription[] } })[]
+  > {
     try {
       const teacherOnSubjects = await this.prisma.teacherOnSubject.findMany({
         where: { subjectId: request.subjectId },
+        include: {
+          user: {
+            include: {
+              Subscription: true,
+            },
+          },
+        },
       });
       return teacherOnSubjects;
     } catch (error) {
