@@ -336,7 +336,8 @@ model Assignment {
   beginDate DateTime
   dueDate   DateTime?
 
-  vector Float[]
+  vector        Float[]
+  vectorResouce String?
 
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])

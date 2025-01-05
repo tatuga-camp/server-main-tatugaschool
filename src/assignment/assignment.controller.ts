@@ -44,6 +44,15 @@ export class AssignmentController {
     return await this.assignmentService.getAssignmentBySubjectId(dto, user);
   }
 
+  @UseGuards(UserGuard)
+  @Get('subject/:subjectId/overview')
+  async getAssignmentOverview(
+    @Param() dto: GetAssignmentBySubjectIdDto,
+    @GetUser() user: User,
+  ) {
+    return await this.assignmentService.getOverviewScoreOnAssignment(dto, user);
+  }
+
   @UseGuards(StudentGuard)
   @Get('student/subject/:subjectId')
   async studentGetAssignments(

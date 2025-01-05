@@ -514,10 +514,14 @@ export class SubjectService {
     user: User,
   ): Promise<{ message: string }> {
     try {
-      await this.teacherOnSubjectService.ValidateAccess({
+      const teacer = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
+
+      if (teacer.role !== 'ADMIN') {
+        throw new ForbiddenException('You do not have access to this subject');
+      }
 
       return await this.subjectRepository.deleteSubject({
         subjectId: dto.subjectId,
