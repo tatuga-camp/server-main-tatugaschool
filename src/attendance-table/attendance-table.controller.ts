@@ -10,16 +10,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { UserGuard } from '../auth/guard';
+import { StudentGuard, UserGuard } from '../auth/guard';
 import {
   CreateAttendanceTableDto,
   DeleteAttendanceTableDto,
   GetAttendanceTableById,
+  GetAttendanceTableBySubjectIdDto,
   GetAttendanceTablesDto,
   UpdateAttendanceTableDto,
 } from './dto';
-import { GetUser } from '../auth/decorators';
-import { User } from '@prisma/client';
+import { GetStudent, GetUser } from '../auth/decorators';
+import { Student, User } from '@prisma/client';
 
 @Controller('v1/attendance-tables')
 export class AttendanceTableController {
@@ -43,6 +44,17 @@ export class AttendanceTableController {
     return this.attendanceTableService.getAttendanceTableById(dto, user);
   }
 
+  @UseGuards(StudentGuard)
+  @Get('student/:studentId/subject/:subjectId')
+  GetAttendanceTableByStudentId(
+    @Param() dto: GetAttendanceTableBySubjectIdDto,
+    @GetStudent() student: Student,
+  ) {
+    return this.attendanceTableService.getBySubjectIdOnStudentOnSubject(
+      dto,
+      student,
+    );
+  }
   @UseGuards(UserGuard)
   @Post()
   CreateAttendanceTable(

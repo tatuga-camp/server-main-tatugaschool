@@ -1,8 +1,7 @@
+import { AttendanceRepository } from './../attendance/attendance.repository';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import {
-  AttendanceTableRepository,
-  AttendanceTableRepositoryType,
-} from './attendance-table.repository';
+import { AttendanceTableRepository } from './attendance-table.repository';
 import {
   ForbiddenException,
   Injectable,
@@ -17,21 +16,40 @@ import {
   GetAttendanceTablesDto,
   UpdateAttendanceTableDto,
 } from './dto';
-import { AttendanceStatusList, AttendanceTable, User } from '@prisma/client';
+import {
+  Attendance,
+  AttendanceRow,
+  AttendanceStatusList,
+  AttendanceTable,
+  Student,
+  User,
+} from '@prisma/client';
 import { ResponseGetAttendanceTableById } from './interfaces';
 import { AttendanceStatusListSRepository } from '../attendance-status-list/attendance-status-list.repository';
+import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
+import { AttendanceRowRepository } from '../attendance-row/attendance-row.repository';
 
 @Injectable()
 export class AttendanceTableService {
   private logger: Logger;
-  attendanceTableRepository: AttendanceTableRepositoryType;
+  attendanceTableRepository: AttendanceTableRepository;
   attendanceStatusListSRepository: AttendanceStatusListSRepository;
+  studentOnSubjectRepository: StudentOnSubjectRepository;
+  attendanceRowRepository: AttendanceRowRepository;
+  attendanceRepository: AttendanceRepository;
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private googleStorageService: GoogleStorageService,
   ) {
     this.logger = new Logger(AttendanceTableService.name);
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      prisma,
+      googleStorageService,
+    );
+    this.attendanceRowRepository = new AttendanceRowRepository(prisma);
     this.attendanceTableRepository = new AttendanceTableRepository(prisma);
+    this.attendanceRepository = new AttendanceRepository(prisma);
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       prisma,
     );
@@ -70,6 +88,78 @@ export class AttendanceTableService {
       });
       return tables.map((table) => ({
         ...table,
+        statusLists: statusLists.filter(
+          (status) => status.attendanceTableId === table.id,
+        ),
+      }));
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getBySubjectIdOnStudentOnSubject(
+    dto: { subjectId: string; studentId: string },
+    student: Student,
+  ): Promise<
+    (AttendanceTable & {
+      statusLists: AttendanceStatusList[];
+      rows: AttendanceRow[];
+      attendances: Attendance[];
+    })[]
+  > {
+    try {
+      if (student.id !== dto.studentId) {
+        throw new ForbiddenException("You don't have access to this student");
+      }
+      const studentOnSubject = await this.studentOnSubjectRepository.findFirst({
+        where: {
+          subjectId: dto.subjectId,
+          studentId: student.id,
+        },
+      });
+
+      if (!studentOnSubject) {
+        throw new ForbiddenException('Student not found');
+      }
+
+      const tables = await this.attendanceTableRepository.findMany({
+        where: {
+          subjectId: dto.subjectId,
+        },
+      });
+
+      const [rows, attendances, statusLists] = await Promise.all([
+        this.attendanceRowRepository.findMany({
+          where: {
+            attendanceTableId: {
+              in: tables.map((table) => table.id),
+            },
+          },
+        }),
+        this.attendanceRepository.findMany({
+          where: {
+            attendanceTableId: {
+              in: tables.map((table) => table.id),
+            },
+            studentOnSubjectId: studentOnSubject.id,
+          },
+        }),
+        this.attendanceStatusListSRepository.findMany({
+          where: {
+            attendanceTableId: {
+              in: tables.map((table) => table.id),
+            },
+          },
+        }),
+      ]);
+
+      return tables.map((table) => ({
+        ...table,
+        rows: rows.filter((row) => row.attendanceTableId === table.id),
+        attendances: attendances.filter(
+          (attendance) => attendance.attendanceTableId === table.id,
+        ),
         statusLists: statusLists.filter(
           (status) => status.attendanceTableId === table.id,
         ),
