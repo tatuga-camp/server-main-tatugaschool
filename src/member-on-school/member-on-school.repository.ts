@@ -5,10 +5,9 @@ import {
 } from '@nestjs/common';
 import {
   RequestCreateMemberOnSchool,
-  RequestGetMemberOnSchoolByEmail,
   RequestUpdateMemberOnSchool,
 } from './interfaces';
-import { $Enums, MemberOnSchool, Prisma } from '@prisma/client';
+import { MemberOnSchool, Prisma, Subscription } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -26,7 +25,7 @@ export type MemberOnSchoolRepositoryType = {
   delete(request: { memberOnSchoolId: string }): Promise<{ message: string }>;
   getAllMemberOnSchoolsBySchoolId(request: {
     schoolId: string;
-  }): Promise<MemberOnSchool[]>;
+  }): Promise<(MemberOnSchool & { user: { Subscription: Subscription[] } })[]>;
   getByUserId(request: { userId: string }): Promise<MemberOnSchool[]>;
   getMemberOnSchoolByUserIdAndSchoolId(request: {
     userId: string;
@@ -193,13 +192,21 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
 
   async getAllMemberOnSchoolsBySchoolId(request: {
     schoolId: string;
-  }): Promise<MemberOnSchool[]> {
+  }): Promise<(MemberOnSchool & { user: { Subscription: Subscription[] } })[]> {
     try {
-      return await this.prisma.memberOnSchool.findMany({
+      const members = await this.prisma.memberOnSchool.findMany({
         where: {
           schoolId: request.schoolId,
         },
+        include: {
+          user: {
+            include: {
+              Subscription: true,
+            },
+          },
+        },
       });
+      return members;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
