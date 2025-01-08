@@ -11,11 +11,12 @@ import {
   RequestUpdateAttendanceRow,
   ResponseGetAttendanceRowById,
 } from './interfaces';
-import { AttendanceRow, StudentOnSubject } from '@prisma/client';
+import { AttendanceRow, Prisma, StudentOnSubject } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type AttendanceRowRepositoryType = {
+export type Repository = {
+  findMany(request: Prisma.AttendanceRowFindManyArgs): Promise<AttendanceRow[]>;
   getAttendanceRows(
     request: RequestGetAttendanceRows,
   ): Promise<AttendanceRow[]>;
@@ -33,10 +34,26 @@ export type AttendanceRowRepositoryType = {
   ): Promise<AttendanceRow>;
 };
 @Injectable()
-export class AttendanceRowRepository implements AttendanceRowRepositoryType {
+export class AttendanceRowRepository implements Repository {
   logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(AttendanceRowRepository.name);
+  }
+
+  async findMany(
+    request: Prisma.AttendanceRowFindManyArgs,
+  ): Promise<AttendanceRow[]> {
+    try {
+      return await this.prisma.attendanceRow.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async getAttendanceRows(

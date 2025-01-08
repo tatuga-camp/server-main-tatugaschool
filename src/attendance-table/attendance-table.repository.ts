@@ -11,11 +11,11 @@ import {
   RequestUpdateAttendanceTable,
   ResponseGetAttendanceTableById,
 } from './interfaces';
-import { AttendanceTable } from '@prisma/client';
+import { AttendanceTable, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type AttendanceTableRepositoryType = {
+type Repository = {
   getAttendanceTables(
     request: RequestGetAttendanceTables,
   ): Promise<AttendanceTable[]>;
@@ -31,14 +31,31 @@ export type AttendanceTableRepositoryType = {
   deleteAttendanceTable(
     request: RequestDeleteAttendanceTable,
   ): Promise<AttendanceTable>;
+  findMany(
+    request: Prisma.AttendanceTableFindManyArgs,
+  ): Promise<AttendanceTable[]>;
 };
 @Injectable()
-export class AttendanceTableRepository
-  implements AttendanceTableRepositoryType
-{
+export class AttendanceTableRepository implements Repository {
   logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(AttendanceTableRepository.name);
+  }
+
+  async findMany(
+    request: Prisma.AttendanceTableFindManyArgs,
+  ): Promise<AttendanceTable[]> {
+    try {
+      return await this.prisma.attendanceTable.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async getAttendanceTables(

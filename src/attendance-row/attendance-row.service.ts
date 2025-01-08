@@ -1,9 +1,6 @@
 import { AttendanceRepository } from './../attendance/attendance.repository';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
-import {
-  AttendanceRowRepository,
-  AttendanceRowRepositoryType,
-} from './attendance-row.repository';
+import { AttendanceRowRepository } from './attendance-row.repository';
 import {
   Injectable,
   Logger,
@@ -28,7 +25,7 @@ import {
 @Injectable()
 export class AttendanceRowService {
   logger: Logger;
-  attendanceRowRepository: AttendanceRowRepositoryType;
+  attendanceRowRepository: AttendanceRowRepository;
   private attendanceTableRepository: AttendanceTableRepository =
     new AttendanceTableRepository(this.prisma);
   private attendanceRepository: AttendanceRepository = new AttendanceRepository(
