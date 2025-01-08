@@ -26,6 +26,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository, UserRepositoryType } from '../users/users.repository';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { PushService } from 'src/push/push.service';
 
 @Injectable()
 export class MemberOnSchoolService {
@@ -37,6 +38,7 @@ export class MemberOnSchoolService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private googleStorageService: GoogleStorageService,
+    private pushService: PushService,
   ) {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
     this.userRepository = new UserRepository(prisma);
@@ -69,6 +71,24 @@ export class MemberOnSchoolService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  private async notifyMembers(schoolId: string): Promise<void> {
+    const members =
+      await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId({
+        schoolId: schoolId,
+      });
+
+    const notifications = members.map((member) =>
+      member.user.Subscription.map((subscription) =>
+        this.pushService.sendNotification(subscription.data, {
+          title: 'New member added',
+          message: 'New member added',
+        }),
+      ),
+    );
+
+    await Promise.all(notifications);
   }
 
   async getMemberOnSchoolByUserId(user: User) {
@@ -204,7 +224,7 @@ export class MemberOnSchoolService {
          <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
-         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
+         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีีมา 30000<br>
          โทร 0610277960 Email: permlap@tatugacamp.com<br>
          </div>
        </div>
@@ -216,6 +236,8 @@ export class MemberOnSchoolService {
         subject: 'Invite to join school - Tatuga School',
         html: emailHTML,
       });
+
+      await this.notifyMembers(dto.schoolId);
 
       return create;
     } catch (error) {
@@ -249,10 +271,15 @@ export class MemberOnSchoolService {
         throw new ForbiddenException('คุณไม่มีสิทธิ์ใช้งานนี้');
       }
 
-      return await this.memberOnSchoolRepository.updateMemberOnSchool({
-        query: { id: memberOnSchool.id },
-        data: dto.body,
-      });
+      const updateMemberOnSchool =
+        await this.memberOnSchoolRepository.updateMemberOnSchool({
+          query: { id: memberOnSchool.id },
+          data: dto.body,
+        });
+
+      await this.notifyMembers(memberOnSchool.schoolId);
+
+      return updateMemberOnSchool;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -277,22 +304,25 @@ export class MemberOnSchoolService {
 
       if (memberOnSchool.userId !== user.id) {
         throw new ForbiddenException(
-          'You dont have permission to accept this invitation',
+          "You don't have permission to accept this invitation",
         );
       }
       if (dto.body.status === 'ACCEPT') {
-        const acceptMember =
-          await this.memberOnSchoolRepository.updateMemberOnSchool({
-            query: { id: dto.query.memberOnSchoolId },
-            data: {
-              status: 'ACCEPT',
-            },
-          });
+        await this.memberOnSchoolRepository.updateMemberOnSchool({
+          query: { id: dto.query.memberOnSchoolId },
+          data: {
+            status: 'ACCEPT',
+          },
+        });
+
+        await this.notifyMembers(memberOnSchool.schoolId);
         return { message: 'Accept success' };
       } else if (dto.body.status === 'REJECT') {
-        const rejectMember = await this.memberOnSchoolRepository.delete({
+        await this.memberOnSchoolRepository.delete({
           memberOnSchoolId: dto.query.memberOnSchoolId,
         });
+
+        await this.notifyMembers(memberOnSchool.schoolId);
         return { message: 'Reject success' };
       } else {
         throw new BadRequestException('Invalid status');
@@ -326,9 +356,13 @@ export class MemberOnSchoolService {
         throw new ForbiddenException("You don't have permission to delete");
       }
 
-      return await this.memberOnSchoolRepository.delete({
+      const deleteMemberOnSchool = await this.memberOnSchoolRepository.delete({
         memberOnSchoolId: dto.memberOnSchoolId,
       });
+
+      await this.notifyMembers(memberOnSchool.schoolId);
+
+      return deleteMemberOnSchool;
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -41,6 +41,18 @@ model User {
   schools              School[]
   assignments          Assignment[]
   commentOnAssignments CommentOnAssignment[]
+  Subscription         Subscription[]
+}
+
+model Subscription {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  data Json
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model School {
