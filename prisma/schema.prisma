@@ -34,25 +34,30 @@ model User {
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
 
-  memberOnSchools      MemberOnSchool[]
-  subjects             Subject[]
-  memberOnTeams        MemberOnTeam[]
-  teacherOnSubjects    TeacherOnSubject[]
-  schools              School[]
-  assignments          Assignment[]
-  commentOnAssignments CommentOnAssignment[]
-  Subscription         Subscription[]
+  memberOnSchools          MemberOnSchool[]
+  subjects                 Subject[]
+  memberOnTeams            MemberOnTeam[]
+  teacherOnSubjects        TeacherOnSubject[]
+  schools                  School[]
+  assignments              Assignment[]
+  commentOnAssignments     CommentOnAssignment[]
+  SubscriptionNotification SubscriptionNotification[]
 }
 
-model Subscription {
+model SubscriptionNotification {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  data Json
+  data      Json
+  endpoint  String
+  userAgent String
+  expiredAt DateTime
 
   userId String @db.ObjectId
   user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([endpoint, userId])
 }
 
 model School {

@@ -28,7 +28,8 @@ import {
 } from '@nestjs/common';
 import { StudentRepository } from '../student/student.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { PushService } from 'src/push/push.service';
+import { PushService } from 'src/web-push/push.service';
+import { PushSubscription } from '../web-push/interfaces';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -60,17 +61,33 @@ export class StudentOnAssignmentService {
     private pushService: PushService,
   ) {}
 
-  private async notifyTeachers(subjectId: string): Promise<void> {
+  private async notifyTeachers({
+    user,
+    subjectId,
+    title,
+    body,
+    url,
+  }: {
+    user: User;
+    subjectId: string;
+    title: string;
+    body: string;
+    url: URL;
+  }): Promise<void> {
     const teachers = await this.teacherOnSubjectRepository.getManyBySubjectId({
       subjectId: subjectId,
     });
 
     const notifications = teachers.map((teacher) =>
-      teacher.user.Subscription.map((subscription) =>
-        this.pushService.sendNotification(subscription.data, {
-          title: 'New assignment submitted',
-          message: 'New assignment submitted',
-        }),
+      teacher.user.SubscriptionNotification.map((subscription) =>
+        this.pushService.sendNotification(
+          subscription.data as PushSubscription,
+          {
+            title,
+            body,
+            url,
+          },
+        ),
       ),
     );
 
@@ -300,7 +317,15 @@ export class StudentOnAssignmentService {
       }
 
       if (dto.body.status === 'SUBMITTED') {
-        await this.notifyTeachers(studentOnAssignment.subjectId);
+        await this.notifyTeachers({
+          user: user,
+          subjectId: studentOnAssignment.subjectId,
+          title: 'New Assignment Submitted',
+          body: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
+          url: new URL(
+            `${process.env.CLIENT_URL}/subject/${studentOnAssignment.subjectId}/assignment/${studentOnAssignment.assignmentId}`,
+          ),
+        });
       }
 
       return await this.studentOnAssignmentRepository.update({

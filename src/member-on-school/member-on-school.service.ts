@@ -26,7 +26,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository, UserRepositoryType } from '../users/users.repository';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
-import { PushService } from 'src/push/push.service';
+import { PushService } from 'src/web-push/push.service';
+import { PushSubscription } from '../web-push/interfaces';
 
 @Injectable()
 export class MemberOnSchoolService {
@@ -73,20 +74,38 @@ export class MemberOnSchoolService {
     }
   }
 
-  private async notifyMembers(schoolId: string): Promise<void> {
+  private async notifyMembers({
+    user,
+    schoolId,
+    title,
+    body,
+    url,
+  }: {
+    user: User;
+    schoolId: string;
+    title: string;
+    body: string;
+    url: URL;
+  }): Promise<void> {
     const members =
       await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId({
         schoolId: schoolId,
       });
 
-    const notifications = members.map((member) =>
-      member.user.Subscription.map((subscription) =>
-        this.pushService.sendNotification(subscription.data, {
-          title: 'New member added',
-          message: 'New member added',
-        }),
-      ),
-    );
+    const notifications = members
+      .filter((m) => m.userId !== user.id)
+      .map((member) =>
+        member.user.SubscriptionNotification.map((subscription) =>
+          this.pushService.sendNotification(
+            subscription.data as PushSubscription,
+            {
+              title: title,
+              body: body,
+              url,
+            },
+          ),
+        ),
+      );
 
     await Promise.all(notifications);
   }
@@ -237,7 +256,13 @@ export class MemberOnSchoolService {
         html: emailHTML,
       });
 
-      await this.notifyMembers(dto.schoolId);
+      await this.notifyMembers({
+        user: user,
+        schoolId: dto.schoolId,
+        title: `Your school ${school.title} has a new member`,
+        body: `${newMember.firstName} ${newMember.lastName} has been invited to join the school`,
+        url: new URL(`${process.env.CLIENT_URL}/school/${dto.schoolId}`),
+      });
 
       return create;
     } catch (error) {
@@ -277,7 +302,15 @@ export class MemberOnSchoolService {
           data: dto.body,
         });
 
-      await this.notifyMembers(memberOnSchool.schoolId);
+      await this.notifyMembers({
+        user: user,
+        schoolId: memberOnSchool.schoolId,
+        title: `Your school has updated member`,
+        body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been updated`,
+        url: new URL(
+          `${process.env.CLIENT_URL}/school/${memberOnSchool.schoolId}`,
+        ),
+      });
 
       return updateMemberOnSchool;
     } catch (error) {
@@ -315,14 +348,30 @@ export class MemberOnSchoolService {
           },
         });
 
-        await this.notifyMembers(memberOnSchool.schoolId);
+        await this.notifyMembers({
+          user: user,
+          schoolId: memberOnSchool.schoolId,
+          title: `Your school has a new member`,
+          body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been accepted to join the school`,
+          url: new URL(
+            `${process.env.CLIENT_URL}/school/${memberOnSchool.schoolId}`,
+          ),
+        });
         return { message: 'Accept success' };
       } else if (dto.body.status === 'REJECT') {
         await this.memberOnSchoolRepository.delete({
           memberOnSchoolId: dto.query.memberOnSchoolId,
         });
 
-        await this.notifyMembers(memberOnSchool.schoolId);
+        await this.notifyMembers({
+          user: user,
+          schoolId: memberOnSchool.schoolId,
+          title: `Your school has rejected member`,
+          body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been rejected to join the school`,
+          url: new URL(
+            `${process.env.CLIENT_URL}/school/${memberOnSchool.schoolId}`,
+          ),
+        });
         return { message: 'Reject success' };
       } else {
         throw new BadRequestException('Invalid status');
@@ -360,7 +409,15 @@ export class MemberOnSchoolService {
         memberOnSchoolId: dto.memberOnSchoolId,
       });
 
-      await this.notifyMembers(memberOnSchool.schoolId);
+      await this.notifyMembers({
+        user: user,
+        schoolId: memberOnSchool.schoolId,
+        title: `Your school has removed member`,
+        body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been removed from the school`,
+        url: new URL(
+          `${process.env.CLIENT_URL}/school/${memberOnSchool.schoolId}`,
+        ),
+      });
 
       return deleteMemberOnSchool;
     } catch (error) {

@@ -7,7 +7,11 @@ import {
   RequestCreateMemberOnSchool,
   RequestUpdateMemberOnSchool,
 } from './interfaces';
-import { MemberOnSchool, Prisma, Subscription } from '@prisma/client';
+import {
+  MemberOnSchool,
+  Prisma,
+  SubscriptionNotification,
+} from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
@@ -25,7 +29,11 @@ export type MemberOnSchoolRepositoryType = {
   delete(request: { memberOnSchoolId: string }): Promise<{ message: string }>;
   getAllMemberOnSchoolsBySchoolId(request: {
     schoolId: string;
-  }): Promise<(MemberOnSchool & { user: { Subscription: Subscription[] } })[]>;
+  }): Promise<
+    (MemberOnSchool & {
+      user: { SubscriptionNotification: SubscriptionNotification[] };
+    })[]
+  >;
   getByUserId(request: { userId: string }): Promise<MemberOnSchool[]>;
   getMemberOnSchoolByUserIdAndSchoolId(request: {
     userId: string;
@@ -192,7 +200,11 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
 
   async getAllMemberOnSchoolsBySchoolId(request: {
     schoolId: string;
-  }): Promise<(MemberOnSchool & { user: { Subscription: Subscription[] } })[]> {
+  }): Promise<
+    (MemberOnSchool & {
+      user: { SubscriptionNotification: SubscriptionNotification[] };
+    })[]
+  > {
     try {
       const members = await this.prisma.memberOnSchool.findMany({
         where: {
@@ -201,7 +213,7 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
         include: {
           user: {
             include: {
-              Subscription: true,
+              SubscriptionNotification: true,
             },
           },
         },
