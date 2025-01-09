@@ -37,7 +37,7 @@ import { SkillOnCareerModule } from './skill-on-career/skill-on-career.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { AttendanceStatusListModule } from './attendance-status-list/attendance-status-list.module';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { PushModule } from './push/push.module';
+import { PushModule } from './web-push/push.module';
 
 @Module({
   imports: [
