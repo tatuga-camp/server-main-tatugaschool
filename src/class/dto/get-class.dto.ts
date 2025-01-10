@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsNotEmpty,
   IsString,
@@ -6,14 +6,8 @@ import {
   IsInt,
   IsOptional,
   Min,
+  IsBoolean,
 } from 'class-validator';
-
-export class GetClassDto {
-  @IsNotEmpty()
-  @IsString()
-  @IsMongoId()
-  classId: string;
-}
 
 export class GetClassByClassIdDto {
   @IsNotEmpty()
@@ -22,20 +16,16 @@ export class GetClassByClassIdDto {
   classId: string;
 }
 
-export class GetClassByPageDto {
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page: number;
-
-  @IsNotEmpty()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit: number;
-
+export class GetClassBySchoolIdDto {
   @IsNotEmpty()
   @IsString()
+  @IsMongoId()
   schoolId: string;
+}
+
+export class GetClassByQueryDto {
+  @IsNotEmpty()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true')
+  isAchieved: boolean;
 }

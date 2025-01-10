@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as webPush from 'web-push';
 import { PushRepository } from './push.repository';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { User } from '@prisma/client';
+import { SubscriptionNotification, User } from '@prisma/client';
 import { PushSubscription } from './interfaces';
 
 @Injectable()
@@ -56,7 +56,7 @@ export class PushService {
   async subscribe(
     dto: { payload: PushSubscription; userAgent: string },
     user: User,
-  ) {
+  ): Promise<SubscriptionNotification> {
     try {
       if (!dto.payload.endpoint) {
         throw new BadRequestException('Invalid payload');
@@ -70,8 +70,10 @@ export class PushService {
           userId: user.id,
         },
       });
+
+      let subscription: SubscriptionNotification;
       if (existingSubscription) {
-        return await this.pushRepository.update({
+        subscription = await this.pushRepository.update({
           where: {
             id: existingSubscription.id,
           },
@@ -82,7 +84,7 @@ export class PushService {
           },
         });
       } else {
-        return await this.pushRepository.create({
+        subscription = await this.pushRepository.create({
           data: {
             endpoint: dto.payload.endpoint,
             expiredAt: expiredAt,
@@ -92,6 +94,14 @@ export class PushService {
           },
         });
       }
+
+      await this.sendNotification(subscription.data as PushSubscription, {
+        title: 'Thanks for allowing notification',
+        body: "You'll receive notification from us",
+        url: new URL(process.env.CLIENT_URL),
+      });
+
+      return subscription;
     } catch (error) {
       this.logger.error(error);
       throw error;

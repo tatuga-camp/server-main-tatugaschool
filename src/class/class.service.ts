@@ -5,8 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ClassRepository } from './class.repository';
-import { CreateClassDto } from './dto/create-class.dto';
-import { ReorderClassDto, UpdateClassDto } from './dto/update-class.dto';
 import {
   RequestDeleteClass,
   RequestGetClass,
@@ -14,24 +12,61 @@ import {
   RequestReorderClass,
 } from './interfaces/class.interface';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
-import { User } from '@prisma/client';
+import { Class, Student, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { StudentRepository } from '../student/student.repository';
+import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
 
 @Injectable()
 export class ClassService {
-  logger = new Logger(ClassService.name);
+  private logger = new Logger(ClassService.name);
+  private studentRepository: StudentRepository;
   constructor(
     private classRepository: ClassRepository,
     private memberOnSchoolService: MemberOnSchoolService,
     private prisma: PrismaService,
-  ) {}
+  ) {
+    this.studentRepository = new StudentRepository(prisma);
+  }
+
+  async getById(
+    dto: { classId: string },
+    user: User,
+  ): Promise<Class & { students: Student[] }> {
+    try {
+      const classroom = await this.classRepository.findById({
+        classId: dto.classId,
+      });
+      if (!classroom) {
+        throw new NotFoundException('Class not found');
+      }
+      const member = await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: classroom.schoolId,
+      });
+
+      const students = await this.studentRepository.findByClassId({
+        classId: dto.classId,
+      });
+
+      return { ...classroom, students };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 
   async createClass(createClassDto: CreateClassDto, user: User) {
     try {
-      await this.memberOnSchoolService.validateAccess({
+      const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: createClassDto.schoolId,
       });
+
+      if (member.role !== 'ADMIN') {
+        throw new ForbiddenException("You're not allowed to create class");
+      }
+
       return await this.classRepository.create(createClassDto);
     } catch (error) {
       this.logger.error(error);
@@ -39,151 +74,130 @@ export class ClassService {
     }
   }
 
-  async updateClass(dto: UpdateClassDto, user: User) {
+  async getBySchool(
+    dto: {
+      schoolId: string;
+      isAchieved: boolean;
+    },
+    user: User,
+  ): Promise<(Class & { studentNumbers: number })[]> {
     try {
-      const { classId } = dto.query;
-      const classroom = await this.classRepository.findById({ classId });
+      const member = await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: dto.schoolId,
+      });
+      const classes = await this.prisma.class.findMany({
+        where: {
+          schoolId: dto.schoolId,
+          isAchieved: dto.isAchieved,
+        },
+      });
+
+      const classesWithStudetNumber = await Promise.all(
+        classes.map(async (c) => {
+          const studentNumbers = await this.studentRepository.count({
+            where: {
+              classId: c.id,
+            },
+          });
+          return { ...c, studentNumbers };
+        }),
+      );
+
+      return classesWithStudetNumber;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async reorder(dto: { classIds: string[] }, user: User): Promise<Class[]> {
+    try {
+      const classroom = await this.classRepository.findById({
+        classId: dto.classIds[0],
+      });
+
       if (!classroom) {
-        throw new NotFoundException(`Class with ID ${classId} not found`);
+        throw new NotFoundException('Class not found');
       }
-      await this.memberOnSchoolService.validateAccess({
+
+      const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: classroom.schoolId,
       });
 
-      const existingClass = await this.classRepository.findById({
-        classId: classId,
-      });
-      if (!existingClass) {
-        throw new NotFoundException(`Class with ID ${classId} not found`);
+      if (member.role !== 'ADMIN') {
+        throw new ForbiddenException('You are not allowed to reorder class');
       }
 
-      const updateClasses = await this.classRepository.update({
-        query: { classId },
-        data: { ...dto.body },
-      });
+      const result = await Promise.allSettled(
+        dto.classIds.map(async (classId, index) => {
+          return await this.classRepository.update({
+            where: { id: classId },
+            data: { order: index + 1 },
+          });
+        }),
+      );
 
-      return updateClasses;
+      const success = result
+        .filter((r) => r.status === 'fulfilled')
+        .map((r) => r.value);
+
+      return success;
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  async getClassById(classId: string, user: User) {
+  async update(dto: UpdateClassDto, user: User) {
     try {
-      const request: RequestGetClass = { classId };
-      const existingClass = await this.classRepository.findById(request);
+      const classroom = await this.classRepository.findById({
+        classId: dto.query.classId,
+      });
 
-      if (!existingClass) {
-        throw new NotFoundException(`Class with ID ${classId} not found`);
+      if (!classroom) {
+        throw new NotFoundException('Class not found');
       }
 
-      await this.memberOnSchoolService.validateAccess({
+      const member = await this.memberOnSchoolService.validateAccess({
         user: user,
-        schoolId: existingClass.schoolId,
+        schoolId: classroom.schoolId,
       });
 
-      return existingClass;
+      if (member.role !== 'ADMIN') {
+        throw new ForbiddenException("You're not allowed to update class");
+      }
+      return await this.classRepository.update({
+        where: { id: dto.query.classId },
+        data: dto.body,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  async getAllClasses(user: User, schoolId: string) {
+  async delete(dto: DeleteClassDto, user: User) {
     try {
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: schoolId,
+      const classroom = await this.classRepository.findById({
+        classId: dto.classId,
       });
 
-      return await this.classRepository.findAll();
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async getClassesWithPagination(
-    page: number,
-    limit: number,
-    schoolId: string,
-    user: User,
-  ) {
-    try {
-      const request: RequestGetClassByPage = { page, limit, schoolId };
-
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: schoolId,
-      });
-
-      return await this.classRepository.findWithPagination(request);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async reorderClasses(reorderClassDto: ReorderClassDto, user: User) {
-    try {
-      const request: RequestReorderClass = {
-        classIds: reorderClassDto.classIds,
-      };
-      await this.validateClasses(request, user);
-      return await this.classRepository.reorder(request);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  private async validateClasses(request: RequestReorderClass, user: User) {
-    await Promise.all(
-      request.classIds.map(async (id) => {
-        const classData = await this.prisma.class.findUnique({
-          where: { id },
-          include: {
-            school: {
-              include: {
-                memberOnSchools: true,
-              },
-            },
-          },
-        });
-
-        if (!classData) {
-          throw new ForbiddenException(`Class with id ${id} not found`);
-        }
-
-        const hasPermission = classData.school.memberOnSchools.some(
-          (member) => member.userId === user.id && member.role === 'ADMIN',
-        );
-
-        if (!hasPermission) {
-          throw new ForbiddenException(
-            `Permission denied for class with id ${id}`,
-          );
-        }
-      }),
-    );
-  }
-
-  async deleteClass(classId: string, user: User) {
-    try {
-      const request: RequestDeleteClass = { classId };
-      const existingClass = await this.classRepository.findById({ classId });
-      if (!existingClass) {
-        throw new NotFoundException(`Class with ID ${classId} not found`);
+      if (!classroom) {
+        throw new NotFoundException('Class not found');
       }
 
-      await this.memberOnSchoolService.validateAccess({
+      const member = await this.memberOnSchoolService.validateAccess({
         user: user,
-        schoolId: existingClass.schoolId,
+        schoolId: classroom.schoolId,
       });
 
-      return await this.classRepository.delete(request);
+      if (member.role !== 'ADMIN') {
+        throw new ForbiddenException('You are not allowed to delete class');
+      }
+
+      return await this.classRepository.delete({ classId: dto.classId });
     } catch (error) {
       this.logger.error(error);
       throw error;

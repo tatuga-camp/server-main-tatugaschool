@@ -12,11 +12,15 @@ import {
 import { ClassService } from './class.service';
 import { CreateClassDto } from './dto/create-class.dto';
 import { ReorderClassDto, UpdateClassDto } from './dto/update-class.dto';
-import { GetClassByPageDto, GetClassDto } from './dto/get-class.dto';
 import { DeleteClassDto } from './dto/delete-class.dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { UserGuard } from '../auth/guard';
+import {
+  GetClassByClassIdDto,
+  GetClassByQueryDto,
+  GetClassBySchoolIdDto,
+} from './dto';
 
 @UseGuards(UserGuard)
 @Controller('v1/classes')
@@ -24,30 +28,31 @@ export class ClassController {
   constructor(private classService: ClassService) {}
 
   @Get(':classId')
-  async getClassById(@Param() params: GetClassDto, @GetUser() user: User) {
-    return await this.classService.getClassById(params.classId, user);
-  }
-
-  @Get()
-  async getClassesWithPagination(
-    @Query() query: GetClassByPageDto,
+  async getClassById(
+    @Param() dto: GetClassByClassIdDto,
     @GetUser() user: User,
   ) {
-    const { page, limit, schoolId } = query;
-    return await this.classService.getClassesWithPagination(
-      page,
-      limit,
-      schoolId,
+    return await this.classService.getById(dto, user);
+  }
+
+  @Get('school/:schoolId')
+  getClassBySchool(
+    @Param() param: GetClassBySchoolIdDto,
+    @Query() query: GetClassByQueryDto,
+    @GetUser() user: User,
+  ) {
+    return this.classService.getBySchool(
+      { schoolId: param.schoolId, isAchieved: query.isAchieved },
       user,
     );
   }
 
-  @Post('reorder')
+  @Patch('reorder')
   async reorderClasses(
     @Body() reorderClassDto: ReorderClassDto,
     @GetUser() user: User,
   ) {
-    return await this.classService.reorderClasses(reorderClassDto, user);
+    return await this.classService.reorder(reorderClassDto, user);
   }
 
   @Post()
@@ -63,11 +68,11 @@ export class ClassController {
     @Body() updateClassDto: UpdateClassDto,
     @GetUser() user: User,
   ) {
-    return await this.classService.updateClass(updateClassDto, user);
+    return await this.classService.update(updateClassDto, user);
   }
 
   @Delete(':classId')
-  async deleteClass(@Param() params: DeleteClassDto, @GetUser() user: User) {
-    return await this.classService.deleteClass(params.classId, user);
+  async deleteClass(@Param() dto: DeleteClassDto, @GetUser() user: User) {
+    return await this.classService.delete(dto, user);
   }
 }

@@ -148,8 +148,9 @@ model Class {
   title         String
   level         String
   description   String?
-  educationYear DateTime
+  educationYear String
   order         Int
+  isAchieved    Boolean @default(false)
 
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
