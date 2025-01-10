@@ -229,14 +229,9 @@ export class AssignmentService {
         subjectId: dto.subjectId,
       });
 
-      const text = `${dto.title} ${dto.description}`;
-
-      const vectors = await this.vectorService.embbedingText(text);
-
       const assignment = await this.assignmentRepository.create({
         data: {
           ...dto,
-          vector: vectors.predictions[0].embeddings.values,
           schoolId: member.schoolId,
           userId: user.id,
         },
@@ -269,6 +264,39 @@ export class AssignmentService {
       });
 
       return assignment;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async EmbedingAssignment(assignmentId: string) {
+    try {
+      let text: string = '';
+      const assignment = await this.assignmentRepository.getById({
+        assignmentId: assignmentId,
+      });
+      const files = await this.fileAssignmentRepository.getByAssignmentId({
+        assignmentId: assignment.id,
+      });
+
+      if (files.length > 0) {
+        // get text from file using AI to extract text and summarize
+      }
+
+      if (assignment.title && assignment.description) {
+        // if title and description is not English then translate to English
+      }
+
+      if (assignment.description) {
+        // if description contain of url then read the content of the url and summarize by AI
+      }
+
+      const vectors = await this.vectorService.embbedingText(text);
+      return await this.assignmentRepository.update({
+        where: { id: assignmentId },
+        data: { vector: vectors.predictions[0].embeddings.values },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

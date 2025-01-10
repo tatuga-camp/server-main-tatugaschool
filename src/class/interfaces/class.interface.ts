@@ -2,7 +2,7 @@ export interface RequestCreateClass {
   title: string;
   level: string;
   description?: string;
-  educationYear: Date;
+  educationYear: string;
   schoolId: string;
 }
 
@@ -14,26 +14,13 @@ export interface RequestUpdateClass {
     title?: string;
     level?: string;
     description?: string;
-    educationYear?: Date;
+    educationYear?: string;
     schoolId?: string;
   };
 }
 
 export interface RequestGetClass {
   classId: string;
-}
-
-export interface RequestUpdateClass {
-  query: {
-    classId: string;
-  };
-  data: {
-    title?: string;
-    level?: string;
-    description?: string;
-    educationYear?: Date;
-    schoolId?: string;
-  };
 }
 
 export interface RequestGetClassByPage {

@@ -7,20 +7,22 @@ import {
   IsNotEmpty,
   IsObject,
   ValidateNested,
+  ArrayMinSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsEducationYear } from '../../custom-validate';
 
 export class ReorderClassDto {
   @IsArray()
   @IsNotEmpty({ each: true })
-  @IsString({ each: true })
   @IsMongoId({ each: true })
+  @ArrayMinSize(2)
   classIds: string[];
 }
 
 class UpdateClassQuery {
   @IsNotEmpty()
-  // @IsMongoId()
+  @IsMongoId()
   classId: string;
 }
 
@@ -38,8 +40,8 @@ class UpdateClassBody {
   description?: string;
 
   @IsOptional()
-  @IsDateString()
-  educationYear?: Date;
+  @IsEducationYear()
+  educationYear?: string;
 }
 
 export class UpdateClassDto {

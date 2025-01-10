@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Class } from '@prisma/client';
+import { Class, Prisma } from '@prisma/client';
 import {
   RequestCreateClass,
   RequestDeleteClass,
@@ -16,22 +16,33 @@ import {
 import { Pagination } from '../interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type ClassRepositoryType = {
+export type Repository = {
   create(request: RequestCreateClass): Promise<Class>;
-  update(request: RequestUpdateClass): Promise<Class>;
+  update(request: Prisma.ClassUpdateArgs): Promise<Class>;
   findById(request: RequestGetClass): Promise<Class | null>;
   findAll(): Promise<Class[]>;
-  findWithPagination(
-    request: RequestGetClassByPage,
-  ): Promise<{ data: Class[]; total: number; page: number; limit: number }>;
-  reorder(request: RequestReorderClass): Promise<Class[]>;
+  findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]>;
   delete(request: RequestDeleteClass): Promise<Class>;
 };
 
 @Injectable()
-export class ClassRepository {
+export class ClassRepository implements Repository {
   logger = new Logger(ClassRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]> {
+    try {
+      return await this.prisma.class.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async create(request: RequestCreateClass) {
     try {
@@ -58,16 +69,9 @@ export class ClassRepository {
     }
   }
 
-  async update(request: RequestUpdateClass): Promise<Class> {
+  async update(request: Prisma.ClassUpdateArgs): Promise<Class> {
     try {
-      return await this.prisma.class.update({
-        where: {
-          id: request.query.classId,
-        },
-        data: {
-          ...request.data,
-        },
-      });
+      return await this.prisma.class.update(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -98,85 +102,6 @@ export class ClassRepository {
   async findAll(): Promise<Class[]> {
     try {
       return await this.prisma.class.findMany();
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async findWithPagination(
-    request: RequestGetClassByPage,
-  ): Promise<Pagination<Class>> {
-    try {
-      const { page, limit } = request;
-      const skip = (page - 1) * limit;
-      const [data, count] = await Promise.all([
-        this.prisma.class.findMany({
-          skip,
-          take: limit,
-          where: {
-            schoolId: request.schoolId,
-          },
-        }),
-        this.prisma.class.count({
-          where: {
-            schoolId: request.schoolId,
-          },
-        }),
-      ]);
-      const total = Math.ceil(count / limit);
-      if (page > total) {
-        return {
-          data: [],
-          meta: {
-            total: 1,
-            lastPage: 1,
-            currentPage: 1,
-            prev: 1,
-            next: 1,
-          },
-        };
-      }
-      return {
-        data,
-        meta: {
-          total: total,
-          lastPage: total,
-          currentPage: page,
-          prev: page - 1 < 0 ? page : page - 1,
-          next: page + 1 > total ? page : page + 1,
-        },
-      };
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async reorder(request: RequestReorderClass): Promise<Class[]> {
-    const { classIds } = request;
-
-    try {
-      const updateOperations = classIds.map((id, index) => ({
-        where: { id },
-        data: { order: index },
-      }));
-
-      const data = await this.prisma.$transaction(
-        updateOperations.map((update) => this.prisma.class.update(update)),
-      );
-
-      return data;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

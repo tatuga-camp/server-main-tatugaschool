@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Student } from '@prisma/client';
+import { Prisma, Student } from '@prisma/client';
 
 import {
   RequestCreateStudent,
@@ -13,16 +13,17 @@ import {
 import { Logger } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type StudentRepositoryType = {
+type Repository = {
   create(request: RequestCreateStudent): Promise<Student>;
   update(request: RequestUpdateStudent): Promise<Student>;
   findById(request: RequestGetStudent): Promise<Student | null>;
   findByClassId(request: RequestGetAllStudents): Promise<Student[]>;
   delete(request: RequestDeleteStudent): Promise<{ message: string }>;
+  count(request: Prisma.StudentCountArgs): Promise<number>;
 };
 
 @Injectable()
-export class StudentRepository implements StudentRepositoryType {
+export class StudentRepository implements Repository {
   logger = new Logger(StudentRepository.name);
   constructor(private prisma: PrismaService) {}
 
@@ -126,6 +127,20 @@ export class StudentRepository implements StudentRepositoryType {
       return await this.prisma.student.findUnique({
         where: { id: request.studentId },
       });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async count(request: Prisma.StudentCountArgs): Promise<number> {
+    try {
+      return await this.prisma.student.count(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
