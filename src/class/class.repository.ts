@@ -10,7 +10,6 @@ import {
   RequestDeleteClass,
   RequestGetClass,
   RequestGetClassByPage,
-  RequestReorderClass,
   RequestUpdateClass,
 } from './interfaces/class.interface';
 import { Pagination } from '../interfaces';
@@ -46,16 +45,9 @@ export class ClassRepository implements Repository {
 
   async create(request: RequestCreateClass) {
     try {
-      const totalClass = await this.prisma.class.count({
-        where: {
-          schoolId: request.schoolId,
-          educationYear: request.educationYear,
-        },
-      });
       return await this.prisma.class.create({
         data: {
           ...request,
-          order: totalClass || 1,
         },
       });
     } catch (error) {

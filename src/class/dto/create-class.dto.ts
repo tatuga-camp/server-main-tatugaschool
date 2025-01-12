@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsMongoId,
 } from 'class-validator';
-import { IsEducationYear } from '../../custom-validate';
+import { IsClassLevel, IsEducationYear } from '../../custom-validate';
 
 export class CreateClassDto {
   @IsNotEmpty()
@@ -13,16 +13,12 @@ export class CreateClassDto {
   title: string;
 
   @IsNotEmpty()
-  @IsString()
+  @IsClassLevel()
   level: string;
 
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsNotEmpty()
-  @IsEducationYear()
-  educationYear: string;
 
   @IsNotEmpty()
   @IsMongoId()
