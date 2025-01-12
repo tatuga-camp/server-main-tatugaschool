@@ -9,7 +9,6 @@ import {
   RequestDeleteClass,
   RequestGetClass,
   RequestGetClassByPage,
-  RequestReorderClass,
 } from './interfaces/class.interface';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { Class, Student, User } from '@prisma/client';

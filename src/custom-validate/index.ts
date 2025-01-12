@@ -1,1 +1,2 @@
-export *from "./educationYear"
+export * from './educationYear';
+export * from './classLevel';

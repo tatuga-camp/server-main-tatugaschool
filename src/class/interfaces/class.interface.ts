@@ -2,7 +2,6 @@ export interface RequestCreateClass {
   title: string;
   level: string;
   description?: string;
-  educationYear: string;
   schoolId: string;
 }
 
@@ -14,7 +13,6 @@ export interface RequestUpdateClass {
     title?: string;
     level?: string;
     description?: string;
-    educationYear?: string;
     schoolId?: string;
   };
 }
@@ -27,10 +25,6 @@ export interface RequestGetClassByPage {
   page: number;
   limit: number;
   schoolId: string;
-}
-
-export interface RequestReorderClass {
-  classIds: string[];
 }
 
 export interface RequestDeleteClass {

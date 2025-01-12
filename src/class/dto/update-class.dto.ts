@@ -38,10 +38,6 @@ class UpdateClassBody {
   @IsOptional()
   @IsString()
   description?: string;
-
-  @IsOptional()
-  @IsEducationYear()
-  educationYear?: string;
 }
 
 export class UpdateClassDto {
