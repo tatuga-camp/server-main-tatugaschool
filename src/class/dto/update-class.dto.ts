@@ -8,6 +8,7 @@ import {
   IsObject,
   ValidateNested,
   ArrayMinSize,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { IsEducationYear } from '../../custom-validate';
@@ -38,6 +39,10 @@ class UpdateClassBody {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isAchieved?: boolean;
 }
 
 export class UpdateClassDto {

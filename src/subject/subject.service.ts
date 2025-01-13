@@ -33,6 +33,8 @@ import * as crypto from 'crypto';
 import { ClassRepository } from '../class/class.repository';
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
+import { ClassService } from '../class/class.service';
+
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
@@ -41,7 +43,6 @@ export class SubjectService {
     this.googleStorageService,
   );
   private scoreOnSubjectRepository: ScoreOnSubjectRepository;
-  private classRepository: ClassRepository = new ClassRepository(this.prisma);
   private studentRepository: StudentRepository = new StudentRepository(
     this.prisma,
   );
@@ -53,6 +54,7 @@ export class SubjectService {
     private wheelOfNameService: WheelOfNameService,
     private attendanceTableService: AttendanceTableService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private classroomService: ClassService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
   }
@@ -282,7 +284,7 @@ export class SubjectService {
             schoolId: dto.schoolId,
           },
         }),
-        this.classRepository.findById({
+        this.classroomService.classRepository.findById({
           classId: dto.classId,
         }),
         this.prisma.subject.count({
@@ -296,6 +298,11 @@ export class SubjectService {
       if (!classroom) {
         throw new NotFoundException('Class not found');
       }
+
+      await this.classroomService.validateAccess({
+        classroom: classroom,
+        classId: dto.classId,
+      });
 
       if (!memberOnSchool) {
         throw new ForbiddenException('Access denied');
@@ -446,6 +453,19 @@ export class SubjectService {
       if (educationYear) {
         delete dto.body.eduYear;
       }
+      const subject = await this.subjectRepository.findUnique({
+        where: {
+          id: dto.query.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+
+      await this.classroomService.validateAccess({
+        classId: subject.classId,
+      });
 
       return await this.subjectRepository.update({
         where: {

@@ -11,6 +11,9 @@ export type Repository = {
   create(
     request: Prisma.SubscriptionNotificationCreateArgs,
   ): Promise<SubscriptionNotification>;
+  findMany(
+    request: Prisma.SubscriptionNotificationFindManyArgs,
+  ): Promise<SubscriptionNotification[]>;
   findUnique(
     request: Prisma.SubscriptionNotificationFindUniqueArgs,
   ): Promise<SubscriptionNotification>;
@@ -26,6 +29,22 @@ export class PushRepository implements Repository {
   private logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(PushRepository.name);
+  }
+
+  async findMany(
+    request: Prisma.SubscriptionNotificationFindManyArgs,
+  ): Promise<SubscriptionNotification[]> {
+    try {
+      return await this.prisma.subscriptionNotification.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findFirst(
