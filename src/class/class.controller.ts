@@ -63,7 +63,7 @@ export class ClassController {
     return await this.classService.createClass(createClassDto, user);
   }
 
-  @Patch(':classId')
+  @Patch()
   async updateClass(
     @Body() updateClassDto: UpdateClassDto,
     @GetUser() user: User,

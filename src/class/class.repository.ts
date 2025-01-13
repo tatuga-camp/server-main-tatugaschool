@@ -1,3 +1,4 @@
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   Injectable,
   InternalServerErrorException,
@@ -14,6 +15,10 @@ import {
 } from './interfaces/class.interface';
 import { Pagination } from '../interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { SubjectRepository } from '../subject/subject.repository';
+import { StudentRepository } from '../student/student.repository';
+import { EmailService } from '../email/email.service';
+import { PushService } from '../web-push/push.service';
 
 export type Repository = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -27,7 +32,18 @@ export type Repository = {
 @Injectable()
 export class ClassRepository implements Repository {
   logger = new Logger(ClassRepository.name);
-  constructor(private prisma: PrismaService) {}
+  private subjectRepositry: SubjectRepository;
+  private studentRepository: StudentRepository;
+  constructor(
+    private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
+  ) {
+    this.subjectRepositry = new SubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.studentRepository = new StudentRepository(this.prisma);
+  }
 
   async findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]> {
     try {
@@ -107,30 +123,29 @@ export class ClassRepository implements Repository {
 
   async delete(request: RequestDeleteClass): Promise<Class> {
     try {
-      const deletedClass = await this.prisma.$transaction(async (prisma) => {
-        await this.prisma.studentOnSubject.deleteMany({
-          where: {
-            classId: request.classId,
-          },
-        });
-        await this.prisma.student.deleteMany({
-          where: {
-            classId: request.classId,
-          },
-        });
-        await this.prisma.subject.deleteMany({
-          where: {
-            classId: request.classId,
-          },
-        });
-        return prisma.class.delete({
-          where: {
-            id: request.classId,
-          },
-        });
+      const subjects = await this.subjectRepositry.findMany({
+        where: { classId: request.classId },
       });
 
-      return deletedClass;
+      for (const subject of subjects) {
+        await this.subjectRepositry.deleteSubject({
+          subjectId: subject.id,
+        });
+      }
+
+      const students = await this.studentRepository.findByClassId({
+        classId: request.classId,
+      });
+
+      for (const student of students) {
+        await this.studentRepository.delete({ studentId: student.id });
+      }
+
+      const classDelete = await this.prisma.class.delete({
+        where: { id: request.classId },
+      });
+      this.logger.log(`Class ${request.classId} has been deleted`);
+      return classDelete;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

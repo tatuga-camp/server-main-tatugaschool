@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class EmailService {
-  logger: Logger;
+  private logger: Logger;
 
   constructor(
     private mailService: MailerService,
@@ -32,6 +32,7 @@ export class EmailService {
       };
 
       await this.mailService.sendMail(mailOptions);
+      this.logger.log(`Email sent to ${to}`);
     } catch (error) {
       this.logger.error(error);
       throw error;

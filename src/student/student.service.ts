@@ -1,3 +1,4 @@
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { ClassRepository } from './../class/class.repository';
 import {
   BadRequestException,
@@ -19,29 +20,40 @@ import { MemberOnSchool, Student, User } from '@prisma/client';
 import { UpdateStudentDto } from './dto/patch-student.dto';
 import { DeleteStudentDto } from './dto/delete-student.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
+import { PushService } from '../web-push/push.service';
+import { ClassService } from '../class/class.service';
 
 @Injectable()
 export class StudentService {
   logger = new Logger(StudentService.name);
   studentRepository: StudentRepository;
-  classRepository: ClassRepository = new ClassRepository(this.prisma);
+
   constructor(
     private prisma: PrismaService,
     private userService: UsersService,
     private memberOnSchoolService: MemberOnSchoolService,
+    private googleStorageService: GoogleStorageService,
+    private classroomService: ClassService,
   ) {
     this.studentRepository = new StudentRepository(prisma);
   }
 
   async createStudent(dto: CreateStudentDto, user: User) {
     try {
-      const classroom = await this.classRepository.findById({
+      const classroom = await this.classroomService.classRepository.findById({
         classId: dto.classId,
       });
 
       if (!classroom) {
         throw new NotFoundException('class not found');
       }
+
+      await this.classroomService.validateAccess({
+        classroom: classroom,
+        classId: classroom.id,
+      });
+
       await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: classroom.schoolId,
@@ -113,7 +125,7 @@ export class StudentService {
 
   async getAllStudents(dto: GetAllStudentsDto, user: User) {
     try {
-      const classroom = await this.classRepository.findById({
+      const classroom = await this.classroomService.classRepository.findById({
         classId: dto.classId,
       });
 
@@ -150,6 +162,10 @@ export class StudentService {
       if (!student) {
         throw new NotFoundException('Student not found');
       }
+
+      await this.classroomService.validateAccess({
+        classId: student.classId,
+      });
 
       if (user) {
         await this.memberOnSchoolService.validateAccess({

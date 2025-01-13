@@ -33,6 +33,7 @@ export class PushService {
           icon: 'https://storage.googleapis.com/development-tatuga-school/public/logo.avif',
         }),
       );
+      this.logger.log('Notification sent:', endpoint);
     } catch (error) {
       if (error?.statusCode === 410) {
         this.logger.error('Error sending notification:', error.statusCode);

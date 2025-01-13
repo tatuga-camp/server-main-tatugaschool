@@ -4,6 +4,7 @@ import { StudentController } from './student.controller';
 import { StudentRepository } from './student.repository';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { UsersService } from '../users/users.service';
+import { ClassService } from '../class/class.service';
 
 @Module({
   providers: [
@@ -11,6 +12,7 @@ import { UsersService } from '../users/users.service';
     StudentRepository,
     MemberOnSchoolService,
     UsersService,
+    ClassService,
   ],
   controllers: [StudentController],
 })

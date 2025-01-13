@@ -5,6 +5,8 @@ import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { ClassService } from '../class/class.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 
 @Module({
   imports: [HttpModule],
@@ -13,6 +15,8 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
     WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
+    ClassService,
+    MemberOnSchoolService,
   ],
   controllers: [SubjectController],
 })
