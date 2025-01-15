@@ -30,6 +30,7 @@ import { GoogleProfile } from './strategy/google-oauth.strategy';
 import { UserRepository } from '../users/users.repository';
 import { EmailService } from '../email/email.service';
 import { ImageService } from '../image/image.service';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 @Injectable()
 export class AuthService {
@@ -43,11 +44,15 @@ export class AuthService {
     private base64ImageService: ImageService,
     private config: ConfigService,
     private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
     this.usersRepository = new UserRepository(prisma);
-    this.studentRepository = new StudentRepository(prisma);
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {

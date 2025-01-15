@@ -36,11 +36,14 @@ export class StudentService {
     private googleStorageService: GoogleStorageService,
     private classroomService: ClassService,
   ) {
-    this.studentRepository = new StudentRepository(prisma);
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
-
   async createStudent(dto: CreateStudentDto, user: User) {
     try {
+      let photo = dto.photo;
       const classroom = await this.classroomService.classRepository.findById({
         classId: dto.classId,
       });
@@ -49,41 +52,49 @@ export class StudentService {
         throw new NotFoundException('class not found');
       }
 
-      await this.classroomService.validateAccess({
-        classroom: classroom,
-        classId: classroom.id,
-      });
+      await Promise.all([
+        this.classroomService.validateAccess({
+          classroom: classroom,
+          classId: classroom.id,
+        }),
+        this.memberOnSchoolService.validateAccess({
+          user: user,
+          schoolId: classroom.schoolId,
+        }),
+      ]);
 
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: classroom.schoolId,
-      });
-      const picture = [
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/1.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/2.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/3.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/4.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/5.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/6.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/7.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/8.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/9.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/10.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/11.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/12.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/13.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/14.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/15.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/16.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/17.png',
-        'https://storage.googleapis.com/development-tatuga-school/public/avatars/18.png',
-      ];
+      if (!dto.photo) {
+        const picture = [
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/1.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/2.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/3.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/4.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/5.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/6.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/7.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/8.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/9.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/10.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/11.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/12.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/13.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/14.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/15.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/16.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/17.png',
+          'https://storage.googleapis.com/development-tatuga-school/public/avatars/18.png',
+        ];
 
-      const randomPicture = picture[Math.floor(Math.random() * picture.length)];
+        const randomPicture =
+          picture[Math.floor(Math.random() * picture.length)];
+        photo = randomPicture;
+      }
+
+      delete dto.photo;
       return await this.studentRepository.create({
         ...dto,
         schoolId: classroom.schoolId,
-        photo: randomPicture,
+        photo: photo,
       });
     } catch (error) {
       this.logger.error(error);
@@ -202,7 +213,10 @@ export class StudentService {
     }
   }
 
-  async deleteStudent(deleteStudentDto: DeleteStudentDto, user: User) {
+  async deleteStudent(
+    deleteStudentDto: DeleteStudentDto,
+    user: User,
+  ): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({
         studentId: deleteStudentDto.studentId,

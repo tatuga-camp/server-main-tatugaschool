@@ -33,9 +33,7 @@ export type StudentOnSubjectRepositoryType = {
   updateStudentOnSubject(
     request: RequestUpdateStudentOnSubject,
   ): Promise<StudentOnSubject>;
-  deleteStudentOnSubject(
-    request: RequestDeleteStudentOnSubject,
-  ): Promise<{ message: string }>;
+  delete(request: RequestDeleteStudentOnSubject): Promise<StudentOnSubject>;
   update(request: Prisma.StudentOnSubjectUpdateArgs): Promise<StudentOnSubject>;
   findMany(
     request: Prisma.StudentOnSubjectFindManyArgs,
@@ -221,9 +219,9 @@ export class StudentOnSubjectRepository
     }
   }
 
-  async deleteStudentOnSubject(
+  async delete(
     request: RequestDeleteStudentOnSubject,
-  ): Promise<{ message: string }> {
+  ): Promise<StudentOnSubject> {
     try {
       const { studentOnSubjectId } = request;
 
@@ -252,11 +250,6 @@ export class StudentOnSubjectRepository
 
       // Delete related scoreOnStudents records
       await this.prisma.scoreOnStudent.deleteMany({
-        where: { studentOnSubjectId },
-      });
-
-      // Delete related studentOnAssignments records
-      await this.prisma.studentOnAssignment.deleteMany({
         where: { studentOnSubjectId },
       });
 
@@ -291,12 +284,16 @@ export class StudentOnSubjectRepository
           ),
       );
 
-      // Delete the StudentOnSubject
-      await this.prisma.studentOnSubject.delete({
-        where: { id: studentOnSubjectId },
+      // Delete related studentOnAssignments records
+      await this.prisma.studentOnAssignment.deleteMany({
+        where: { studentOnSubjectId },
       });
 
-      return { message: 'Delete StudentOnSubject successfully' };
+      // Delete the StudentOnSubject
+
+      return await this.prisma.studentOnSubject.delete({
+        where: { id: studentOnSubjectId },
+      });
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

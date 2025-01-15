@@ -45,6 +45,7 @@ export class SubjectService {
   private scoreOnSubjectRepository: ScoreOnSubjectRepository;
   private studentRepository: StudentRepository = new StudentRepository(
     this.prisma,
+    this.googleStorageService,
   );
   private studentOnSubjectRepository: StudentOnSubjectRepository =
     new StudentOnSubjectRepository(this.prisma, this.googleStorageService);

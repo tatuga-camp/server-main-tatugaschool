@@ -42,7 +42,10 @@ export class ClassRepository implements Repository {
       this.prisma,
       this.googleStorageService,
     );
-    this.studentRepository = new StudentRepository(this.prisma);
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
 
   async findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]> {

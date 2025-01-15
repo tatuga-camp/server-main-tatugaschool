@@ -1,4 +1,10 @@
-import { IsNotEmpty, IsString, IsMongoId, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsMongoId,
+  IsOptional,
+  IsUrl,
+} from 'class-validator';
 import { IsArray } from 'class-validator';
 
 export class CreateStudentDto {
@@ -17,6 +23,10 @@ export class CreateStudentDto {
   @IsOptional()
   @IsString()
   blurHash?: string;
+
+  @IsOptional()
+  @IsUrl()
+  photo?: string | undefined;
 
   @IsNotEmpty()
   @IsString()

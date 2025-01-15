@@ -24,6 +24,7 @@ export class SkillOnStudentAssignmentService {
     new SkillOnStudentAssignmentRepository(this.prisma);
   private studentRepository: StudentRepository = new StudentRepository(
     this.prisma,
+    this.googleStorageService,
   );
   private skillOnAssignmentRepository: SkillOnAssignmentRepository =
     new SkillOnAssignmentRepository(this.prisma);
