@@ -1,3 +1,5 @@
+import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, Student } from '@prisma/client';
@@ -18,14 +20,21 @@ type Repository = {
   update(request: RequestUpdateStudent): Promise<Student>;
   findById(request: RequestGetStudent): Promise<Student | null>;
   findByClassId(request: RequestGetAllStudents): Promise<Student[]>;
-  delete(request: RequestDeleteStudent): Promise<{ message: string }>;
+  delete(request: RequestDeleteStudent): Promise<Student>;
   count(request: Prisma.StudentCountArgs): Promise<number>;
 };
 
 @Injectable()
 export class StudentRepository implements Repository {
-  logger = new Logger(StudentRepository.name);
-  constructor(private prisma: PrismaService) {}
+  private logger = new Logger(StudentRepository.name);
+  private studentOnSubjectRepository = new StudentOnSubjectRepository(
+    this.prisma,
+    this.googleStorageService,
+  );
+  constructor(
+    private prisma: PrismaService,
+    private googleStorageService: GoogleStorageService,
+  ) {}
 
   async update(request: RequestUpdateStudent): Promise<Student> {
     try {
@@ -96,9 +105,9 @@ export class StudentRepository implements Repository {
         },
       });
 
-      await Promise.allSettled(
+      const studentOnSubjects = await Promise.allSettled(
         subjects.map(async (subject) => {
-          await this.prisma.studentOnSubject.create({
+          return this.prisma.studentOnSubject.create({
             data: {
               studentId: student.id,
               subjectId: subject.id,
@@ -113,6 +122,41 @@ export class StudentRepository implements Repository {
             },
           });
         }),
+      ).then((result) =>
+        result.filter((r) => r.status === 'fulfilled').map((r) => r.value),
+      );
+
+      const assignments = await this.prisma.assignment.findMany({
+        where: {
+          OR: subjects.map((subject) => ({
+            subjectId: subject.id,
+          })),
+        },
+      });
+
+      await Promise.allSettled(
+        assignments.map(async (assignment) => {
+          const studentOnSubject = studentOnSubjects.find(
+            (s) => s.subjectId === assignment.subjectId,
+          );
+          return this.prisma.studentOnAssignment.create({
+            data: {
+              studentId: student.id,
+              assignmentId: assignment.id,
+              studentOnSubjectId: studentOnSubject.id,
+              subjectId: assignment.subjectId,
+              schoolId: student.schoolId,
+              title: student.title,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              photo: student.photo,
+              blurHash: student.blurHash,
+              number: student.number,
+            },
+          });
+        }),
+      ).then((result) =>
+        result.filter((r) => r.status === 'fulfilled').map((r) => r.value),
       );
 
       return student;
@@ -168,12 +212,22 @@ export class StudentRepository implements Repository {
     }
   }
 
-  async delete(request: RequestDeleteStudent): Promise<{ message: string }> {
+  async delete(request: RequestDeleteStudent): Promise<Student> {
     try {
-      await this.prisma.student.delete({
+      const studentOnSubjects = await this.prisma.studentOnSubject.findMany({
+        where: { studentId: request.studentId },
+      });
+
+      await Promise.allSettled(
+        studentOnSubjects.map(async (studentOnSubject) => {
+          return this.studentOnSubjectRepository.delete({
+            studentOnSubjectId: studentOnSubject.id,
+          });
+        }),
+      );
+      return await this.prisma.student.delete({
         where: { id: request.studentId },
       });
-      return { message: 'Student deleted' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

@@ -297,7 +297,7 @@ export class StudentOnSubjectService {
   async deleteStudentOnSubject(
     dto: DeleteStudentOnSubjectDto,
     user: User,
-  ): Promise<{ message: string }> {
+  ): Promise<StudentOnSubject> {
     try {
       const studentOnSubject =
         await this.studentOnSubjectRepository.getStudentOnSubjectById({
@@ -316,7 +316,7 @@ export class StudentOnSubjectService {
         throw new ForbiddenException('You are not a member of this subject');
       }
 
-      return await this.studentOnSubjectRepository.deleteStudentOnSubject({
+      return await this.studentOnSubjectRepository.delete({
         studentOnSubjectId: dto.studentOnSubjectId,
       });
     } catch (error) {

@@ -34,7 +34,10 @@ export class ClassService {
     private pushService: PushService,
     private googleStorageService: GoogleStorageService,
   ) {
-    this.studentRepository = new StudentRepository(prisma);
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
     this.classRepository = new ClassRepository(
       this.prisma,
       this.googleStorageService,
