@@ -1,3 +1,4 @@
+import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { PushRepository } from './../web-push/push.repository';
 import { PushService } from './../web-push/push.service';
 import { EmailService } from './../email/email.service';
@@ -14,17 +15,22 @@ import {
   RequestGetClassByPage,
 } from './interfaces/class.interface';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
-import { Class, Student, User } from '@prisma/client';
+import { Class, Student, Subject, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentRepository } from '../student/student.repository';
 import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
 import { PushSubscription } from '../web-push/interfaces';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { SubjectRepository } from '../subject/subject.repository';
+import { AssignmentRepository } from '../assignment/assignment.repository';
 
 @Injectable()
 export class ClassService {
   private logger = new Logger(ClassService.name);
   private studentRepository: StudentRepository;
+  private subjectRepository: SubjectRepository;
+  private assignmentRepository: AssignmentRepository;
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   classRepository: ClassRepository;
 
   constructor(
@@ -41,6 +47,17 @@ export class ClassService {
     this.classRepository = new ClassRepository(
       this.prisma,
       this.googleStorageService,
+    );
+    this.subjectRepository = new SubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
     );
   }
 
@@ -309,6 +326,104 @@ export class ClassService {
           );
         }
       }
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getGradeSummaryReport(
+    dto: { classId: string },
+    user: User,
+  ): Promise<
+    (Subject & {
+      students: {
+        id: string;
+        title: string;
+        firstName: string;
+        lastName: string;
+        assignmentId: string;
+        totalScore: number;
+      }[];
+    })[]
+  > {
+    try {
+      const classroom = await this.classRepository.findById({
+        classId: dto.classId,
+      });
+
+      if (!classroom) {
+        throw new NotFoundException('Class not found');
+      }
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: classroom.schoolId,
+      });
+
+      const subjects = await this.subjectRepository.findMany({
+        where: {
+          classId: dto.classId,
+        },
+      });
+
+      const [studentAssignments, assignments] = await Promise.all([
+        this.studentOnAssignmentRepository.findMany({
+          where: {
+            OR: subjects.map((s) => ({ subjectId: s.id })),
+          },
+        }),
+        this.assignmentRepository.findMany({
+          where: {
+            OR: subjects.map((s) => ({ subjectId: s.id })),
+          },
+        }),
+      ]);
+
+      const groups = subjects.map((subject) => {
+        const students = studentAssignments.reduce<
+          Record<
+            string,
+            {
+              id: string;
+              title: string;
+              firstName: string;
+              lastName: string;
+              totalScore: number;
+              assignmentId: string;
+            }
+          >
+        >((acc, studentAssignment) => {
+          const assignment = assignments.find(
+            (a) => a.id === studentAssignment.assignmentId,
+          );
+          let score = studentAssignment.score;
+
+          const originalScore = studentAssignment.score / assignment.maxScore;
+
+          if (assignment.weight !== null) {
+            score = originalScore * assignment.weight;
+          }
+          if (!acc[studentAssignment.studentId]) {
+            acc[studentAssignment.studentId] = {
+              id: studentAssignment.studentId,
+              title: studentAssignment.title,
+              firstName: studentAssignment.firstName,
+              lastName: studentAssignment.lastName,
+              totalScore: score,
+              assignmentId: studentAssignment.assignmentId,
+            };
+          } else {
+            acc[studentAssignment.studentId].totalScore += score;
+          }
+
+          return acc;
+        }, {});
+
+        return { ...subject, students: Object.values(students) };
+      });
+
+      return groups;
     } catch (error) {
       this.logger.error(error);
       throw error;

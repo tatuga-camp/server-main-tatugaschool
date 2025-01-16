@@ -14,7 +14,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type SubjectRepositoryType = {
+type Repository = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
   findUnique(request: Prisma.SubjectFindUniqueArgs): Promise<Subject | null>;
   findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]>;
@@ -24,7 +24,7 @@ export type SubjectRepositoryType = {
   reorderSubjects(request: RequestReorderSubjects): Promise<Subject[]>;
 };
 @Injectable()
-export class SubjectRepository implements SubjectRepositoryType {
+export class SubjectRepository implements Repository {
   logger: Logger = new Logger(SubjectRepository.name);
   constructor(
     private prisma: PrismaService,

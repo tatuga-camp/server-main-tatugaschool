@@ -35,6 +35,14 @@ export class ClassController {
     return await this.classService.getById(dto, user);
   }
 
+  @Get(':classId/grade-summary')
+  async getGradeSummaryReport(
+    @Param() dto: GetClassByClassIdDto,
+    @GetUser() user: User,
+  ) {
+    return await this.classService.getGradeSummaryReport(dto, user);
+  }
+
   @Get('school/:schoolId')
   getClassBySchool(
     @Param() param: GetClassBySchoolIdDto,

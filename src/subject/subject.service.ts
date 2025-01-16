@@ -3,7 +3,7 @@ import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import { StudentRepository } from './../student/student.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
-import { SubjectRepository, SubjectRepositoryType } from './subject.repository';
+import { SubjectRepository } from './subject.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   ForbiddenException,
