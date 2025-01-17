@@ -251,6 +251,11 @@ export class AuthService {
         email: user.email,
       });
       delete user.password;
+      delete user.email;
+      delete user.phone;
+      delete user.blurHash;
+      delete user.firstName;
+      delete user.lastName;
       delete user.verifyEmailToken;
       delete user.verifyEmailTokenExpiresAt;
       delete user.resetPasswordToken;
@@ -291,8 +296,13 @@ export class AuthService {
           throw new BadRequestException("Password isn't correct");
         }
       }
-
       delete student.password;
+      delete student.photo;
+      delete student.blurHash;
+      delete student.title;
+      delete student.firstName;
+      delete student.lastName;
+      delete student.number;
 
       return {
         accessToken: await this.jwtService.signAsync(student, {
@@ -322,13 +332,18 @@ export class AuthService {
           throw new BadRequestException('Refresh token is Expired or Invalid');
         });
 
-      const user = await this.usersRepository.findByEmail({
-        email: verify.email,
+      const user = await this.usersRepository.findById({
+        id: verify.id,
       });
       if (!user) {
         throw new BadRequestException('Refresh token is invalid');
       }
       delete user.password;
+      delete user.email;
+      delete user.phone;
+      delete user.blurHash;
+      delete user.firstName;
+      delete user.lastName;
       delete user.verifyEmailToken;
       delete user.verifyEmailTokenExpiresAt;
       delete user.resetPasswordToken;
@@ -365,6 +380,12 @@ export class AuthService {
         throw new BadRequestException('Refresh token is invalid');
       }
       delete student.password;
+      delete student.photo;
+      delete student.blurHash;
+      delete student.title;
+      delete student.firstName;
+      delete student.lastName;
+      delete student.number;
 
       return {
         accessToken: await this.jwtService.signAsync(student, {
@@ -395,12 +416,16 @@ export class AuthService {
 
         await this.usersRepository.updateLastActiveAt({ email: user.email });
         delete user.password;
+        delete user.email;
+        delete user.phone;
+        delete user.blurHash;
+        delete user.firstName;
+        delete user.lastName;
         delete user.verifyEmailToken;
         delete user.verifyEmailTokenExpiresAt;
         delete user.resetPasswordToken;
         delete user.resetPasswordTokenExpiresAt;
         delete user.photo;
-
         const accessToken = await this.jwtService.signAsync(user, {
           secret: this.config.get('JWT_ACCESS_SECRET'),
           expiresIn: '40s',
