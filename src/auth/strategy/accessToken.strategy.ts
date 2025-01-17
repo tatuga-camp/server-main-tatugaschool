@@ -69,7 +69,6 @@ export class StudentAccessTokenStrategy extends PassportStrategy(
         },
       });
 
-      delete student.password;
       return student;
     } catch (err) {
       this.logger.error(err);

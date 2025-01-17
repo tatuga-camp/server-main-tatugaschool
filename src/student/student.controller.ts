@@ -19,6 +19,7 @@ import {
   UpdateStudentDto,
 } from './dto';
 import { StudentGuard, UserGuard } from '../auth/guard';
+import { use } from 'passport';
 
 @Controller('v1/students')
 export class StudentController {
@@ -58,6 +59,12 @@ export class StudentController {
     @Body() updateStudentDto: UpdateStudentDto,
   ) {
     return this.studentService.updateStudent(updateStudentDto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Patch(':studentId/reset-password')
+  async resetPassword(@GetUser() user: User, @Param() dto: GetStudentDto) {
+    return this.studentService.resetStudnetPassword(dto, user);
   }
 
   @UseGuards(StudentGuard)

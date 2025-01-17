@@ -157,6 +157,35 @@ export class StudentService {
     }
   }
 
+  async resetStudnetPassword(dto: { studentId: string }, user: User) {
+    try {
+      const student = await this.studentRepository.findById({
+        studentId: dto.studentId,
+      });
+
+      if (!student) {
+        throw new NotFoundException('Student not found');
+      }
+
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: student.schoolId,
+      });
+
+      return await this.studentRepository.update({
+        query: {
+          studentId: dto.studentId,
+        },
+        body: {
+          password: null,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async updateStudent(
     dto: UpdateStudentDto,
     user?: User | undefined,
