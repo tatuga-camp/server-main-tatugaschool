@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsDateString,
@@ -78,15 +79,7 @@ export class UpdateSubjectDto {
 export class ReorderSubjectsDto {
   @IsNotEmpty()
   @IsMongoId({ each: true })
-  @Type(() => String)
   @IsArray()
+  @ArrayMinSize(2)
   subjectIds: string[];
-
-  @IsNotEmpty()
-  @IsMongoId()
-  schoolId: string;
-
-  @IsNotEmpty()
-  @IsEducationYear()
-  eduYear: string;
 }

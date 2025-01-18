@@ -20,7 +20,7 @@ type Repository = {
   findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
   update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
-  deleteSubject(request: RequestDeleteSubject): Promise<{ message: string }>;
+  deleteSubject(request: RequestDeleteSubject): Promise<Subject>;
   reorderSubjects(request: RequestReorderSubjects): Promise<Subject[]>;
 };
 @Injectable()
@@ -138,9 +138,7 @@ export class SubjectRepository implements Repository {
     }
   }
 
-  async deleteSubject(
-    request: RequestDeleteSubject,
-  ): Promise<{ message: string }> {
+  async deleteSubject(request: RequestDeleteSubject): Promise<Subject> {
     try {
       const { subjectId } = request;
       const fileOnAssignments = await this.prisma.fileOnAssignment.findMany({
@@ -260,13 +258,11 @@ export class SubjectRepository implements Repository {
           ),
       ]);
       // Delete the subject
-      await this.prisma.subject.delete({
+      return await this.prisma.subject.delete({
         where: {
           id: subjectId,
         },
       });
-
-      return { message: 'Delete subject successfully' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

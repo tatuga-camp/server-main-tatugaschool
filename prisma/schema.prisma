@@ -238,7 +238,7 @@ model Subject {
   title         String
   educationYear String
   description   String
-  order         Int
+  order         Int?
   code          String @unique
 
   backgroundImage String?

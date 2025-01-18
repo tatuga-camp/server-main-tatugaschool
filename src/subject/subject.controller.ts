@@ -18,7 +18,9 @@ import {
   GetSubjectByCode,
   GetSubjectByIdDto,
   GetSubjectByPageDto,
-  PararmSubjectThatStudentBelongto,
+  ParamGetSubjectFromSchool,
+  ParamSubjectThatStudentBelongto,
+  QueryGetSubjectFromSchool,
   QuerySubjectThatStudentBelongto,
   ReorderSubjectsDto,
   UpdateSubjectDto,
@@ -52,25 +54,26 @@ export class SubjectController {
     return this.subjectService.getSubjectWithTeacherAndStudent(dto);
   }
 
+  @UseGuards(UserGuard)
+  @Get('school/:schoolId')
+  getSubjectFromSchool(
+    @Param() param: ParamGetSubjectFromSchool,
+    @Query() query: QueryGetSubjectFromSchool,
+    @GetUser() user: User,
+  ) {
+    const dto = { ...param, ...query };
+    return this.subjectService.getBySchoolId(dto, user);
+  }
+
   @UseGuards(StudentGuard)
   @Get('student/:studentId')
   async getSubjectThatStudentBelongto(
-    @Param() param: PararmSubjectThatStudentBelongto,
+    @Param() param: ParamSubjectThatStudentBelongto,
     @Query() query: QuerySubjectThatStudentBelongto,
     @GetStudent() student: Student,
   ) {
     const dto = { ...param, ...query };
     return this.subjectService.getSubjectsThatStudentBelongTo(dto, student);
-  }
-
-  @Get('')
-  @UseGuards(UserGuard)
-  @Get()
-  async getSubjectByPage(
-    @Query() dto: GetSubjectByPageDto,
-    @GetUser() user: User,
-  ) {
-    return this.subjectService.getSubjectByPage(dto, user);
   }
 
   @UseGuards(UserGuard)
