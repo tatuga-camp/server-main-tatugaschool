@@ -1,3 +1,4 @@
+import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import { StudentRepository } from './../student/student.repository';
@@ -13,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
+  Class,
   Student,
   StudentOnSubject,
   Subject,
@@ -56,6 +58,7 @@ export class SubjectService {
     private attendanceTableService: AttendanceTableService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private classroomService: ClassService,
+    private memberOnSchoolService: MemberOnSchoolService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
   }
@@ -90,6 +93,67 @@ export class SubjectService {
 
       return await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getBySchoolId(
+    dto: { schoolId: string; educationYear: string },
+    user: User,
+  ): Promise<(Subject & { teachers: TeacherOnSubject[]; class: Class })[]> {
+    try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+        where: {
+          userId: user.id,
+          schoolId: dto.schoolId,
+        },
+      });
+
+      if (!memberOnSchool) {
+        throw new ForbiddenException('Access denied');
+      }
+
+      const subjects = await this.subjectRepository.findMany({
+        where: {
+          schoolId: dto.schoolId,
+          educationYear: dto.educationYear,
+        },
+      });
+
+      const [teachers, classrooms] = await Promise.all([
+        this.teacherOnSubjectService.teacherOnSubjectRepository.findMany({
+          where: {
+            OR: subjects.map((subject) => {
+              return {
+                subjectId: subject.id,
+                status: 'ACCEPT',
+              };
+            }),
+          },
+        }),
+        this.classroomService.classRepository.findMany({
+          where: {
+            OR: subjects.map((subject) => {
+              return {
+                id: subject.classId,
+              };
+            }),
+          },
+        }),
+      ]);
+      return subjects.map((subject) => {
+        return {
+          ...subject,
+          teachers: teachers.filter(
+            (teacher) => teacher.subjectId === subject.id,
+          ),
+          class: classrooms.find(
+            (classroom) => classroom.id === subject.classId,
+          ),
+        };
       });
     } catch (error) {
       this.logger.error(error);
@@ -180,105 +244,11 @@ export class SubjectService {
     }
   }
 
-  async getSubjectByPage(
-    dto: GetSubjectByPageDto,
-    user: User,
-  ): Promise<Pagination<Subject>> {
-    try {
-      const educationYear = dto.eduYear;
-      delete dto.eduYear;
-
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: dto.schoolId,
-        },
-      });
-
-      if (!memberOnSchool) {
-        throw new ForbiddenException('Access denied');
-      }
-
-      const teacherOnSubjects = await this.prisma.teacherOnSubject.findMany({
-        where: {
-          userId: user.id,
-          status: 'ACCEPT',
-        },
-      });
-
-      const queryTitles = teacherOnSubjects.map((teacherOnSubject) => {
-        return {
-          id: teacherOnSubject.subjectId,
-          title: {
-            contains: dto.search,
-          },
-        };
-      });
-
-      const queryDescriptions = teacherOnSubjects.map((teacherOnSubject) => {
-        return {
-          id: teacherOnSubject.subjectId,
-          title: {
-            contains: dto.search,
-          },
-        };
-      });
-
-      const counts = await this.prisma.subject.count({
-        where: {
-          schoolId: dto.schoolId,
-          educationYear: educationYear,
-          OR: [...queryTitles, ...queryDescriptions],
-        },
-      });
-
-      const totalPages = Math.ceil(counts / dto.limit);
-      if (dto.page > totalPages) {
-        return {
-          data: [],
-          meta: {
-            total: 1,
-            lastPage: 1,
-            currentPage: 1,
-            prev: 1,
-            next: 1,
-          },
-        };
-      }
-
-      const skip = (dto.page - 1) * dto.limit;
-
-      const subjects = await this.prisma.subject.findMany({
-        where: {
-          schoolId: dto.schoolId,
-          educationYear: educationYear,
-          OR: [...queryTitles, ...queryDescriptions],
-        },
-        skip,
-        take: dto.limit,
-      });
-
-      return {
-        data: subjects,
-        meta: {
-          total: totalPages,
-          lastPage: totalPages,
-          currentPage: dto.page,
-          prev: dto.page - 1 < 0 ? dto.page : dto.page - 1,
-          next: dto.page + 1 > totalPages ? dto.page : dto.page + 1,
-        },
-      };
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
     try {
       const educationYear = dto.eduYear;
       delete dto.eduYear;
-      const [memberOnSchool, classroom, totalSubject] = await Promise.all([
+      const [memberOnSchool, classroom] = await Promise.all([
         this.prisma.memberOnSchool.findFirst({
           where: {
             userId: user.id,
@@ -287,12 +257,6 @@ export class SubjectService {
         }),
         this.classroomService.classRepository.findById({
           classId: dto.classId,
-        }),
-        this.prisma.subject.count({
-          where: {
-            userId: user.id,
-            educationYear: educationYear,
-          },
         }),
       ]);
 
@@ -322,7 +286,6 @@ export class SubjectService {
         educationYear: educationYear,
         code,
         userId: user.id,
-        order: totalSubject + 1,
       });
 
       const studentOnSubjectCreates = students.map((student) => {
@@ -485,40 +448,22 @@ export class SubjectService {
     user: User,
   ): Promise<Subject[]> {
     try {
-      const educationYear = dto.eduYear;
-      delete dto.eduYear;
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+      const getRandomIdFromArray =
+        dto.subjectIds[Math.floor(Math.random() * dto.subjectIds.length)];
+
+      const subject = await this.subjectRepository.findUnique({
         where: {
-          userId: user.id,
-          schoolId: dto.schoolId,
+          id: getRandomIdFromArray,
         },
       });
 
-      if (!memberOnSchool && user.role !== 'ADMIN') {
-        throw new ForbiddenException('Access denied');
-      }
-      const subjects = await this.prisma.subject.findMany({
-        where: {
-          id: {
-            in: dto.subjectIds,
-          },
-          educationYear: educationYear,
-        },
-      });
-
-      if (subjects.length !== dto.subjectIds.length) {
+      if (!subject) {
         throw new NotFoundException('Subject not found');
       }
 
-      subjects.forEach((subject) => {
-        if (!subject.id) {
-          throw new NotFoundException("Subject doesn't have id");
-        }
-        if (subject.userId !== user.id) {
-          throw new ForbiddenException(
-            'You do not have access to this subject',
-          );
-        }
+      await this.memberOnSchoolService.validateAccess({
+        user: user,
+        schoolId: subject.schoolId,
       });
 
       return await this.subjectRepository.reorderSubjects({
@@ -530,10 +475,7 @@ export class SubjectService {
     }
   }
 
-  async deleteSubject(
-    dto: DeleteSubjectDto,
-    user: User,
-  ): Promise<{ message: string }> {
+  async deleteSubject(dto: DeleteSubjectDto, user: User): Promise<Subject> {
     try {
       const teacer = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,

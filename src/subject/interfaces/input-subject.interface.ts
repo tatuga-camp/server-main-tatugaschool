@@ -8,13 +8,12 @@ export type RequestCreateSubject = {
   description: string;
   backgroundImage?: string;
   blurHash?: string;
-  order: number;
+  order?: number;
   classId: string;
   userId: string;
-  code:string
+  code: string;
   schoolId: string;
 };
-
 
 export type RequestDeleteSubject = {
   subjectId: string;

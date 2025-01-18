@@ -66,7 +66,7 @@ export class GetSubjectByCode {
   code: string;
 }
 
-export class PararmSubjectThatStudentBelongto {
+export class ParamSubjectThatStudentBelongto {
   @IsNotEmpty()
   @IsMongoId()
   studentId: string;
@@ -76,4 +76,16 @@ export class QuerySubjectThatStudentBelongto {
   @IsNotEmpty()
   @IsEducationYear()
   eduYear: string;
+}
+
+export class ParamGetSubjectFromSchool {
+  @IsNotEmpty()
+  @IsMongoId()
+  schoolId: string;
+}
+
+export class QueryGetSubjectFromSchool {
+  @IsNotEmpty()
+  @IsEducationYear()
+  educationYear: string;
 }
