@@ -60,7 +60,7 @@ export class SubjectService {
     private classroomService: ClassService,
     private memberOnSchoolService: MemberOnSchoolService,
   ) {
-    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(prisma);
+    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
   }
 
   async getSubjectById(
@@ -162,7 +162,7 @@ export class SubjectService {
   }
 
   async getSubjectsThatStudentBelongTo(
-    dto: { studentId: string; eduYear: string },
+    dto: { studentId: string; educationYear: string },
     studentUser: Student,
   ): Promise<Subject[]> {
     try {
@@ -189,7 +189,7 @@ export class SubjectService {
               (studentOnSubject) => studentOnSubject.subjectId,
             ),
           },
-          educationYear: dto.eduYear,
+          educationYear: dto.educationYear,
         },
       });
 
@@ -245,9 +245,10 @@ export class SubjectService {
   }
 
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
+    let subjectId: string;
     try {
-      const educationYear = dto.eduYear;
-      delete dto.eduYear;
+      const educationYear = dto.educationYear;
+      delete dto.educationYear;
       const [memberOnSchool, classroom] = await Promise.all([
         this.prisma.memberOnSchool.findFirst({
           where: {
@@ -288,6 +289,8 @@ export class SubjectService {
         userId: user.id,
       });
 
+      subjectId = subject.id;
+
       const studentOnSubjectCreates = students.map((student) => {
         return {
           title: student.title,
@@ -303,9 +306,11 @@ export class SubjectService {
         };
       });
 
-      await this.studentOnSubjectRepository.createMany({
-        data: studentOnSubjectCreates,
-      });
+      if (studentOnSubjectCreates.length > 0) {
+        await this.studentOnSubjectRepository.createMany({
+          data: studentOnSubjectCreates,
+        });
+      }
 
       await this.wheelOfNameService
         .create({
@@ -401,6 +406,9 @@ export class SubjectService {
 
       return subject;
     } catch (error) {
+      await this.subjectRepository.deleteSubject({
+        subjectId: subjectId,
+      });
       this.logger.error(error);
       throw error;
     }
@@ -412,10 +420,10 @@ export class SubjectService {
         userId: user.id,
         subjectId: dto.query.subjectId,
       });
-      let educationYear = dto.body.eduYear;
+      let educationYear = dto.body.educationYear;
 
       if (educationYear) {
-        delete dto.body.eduYear;
+        delete dto.body.educationYear;
       }
       const subject = await this.subjectRepository.findUnique({
         where: {

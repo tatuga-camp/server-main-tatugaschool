@@ -30,7 +30,7 @@ class UpdateSubjectBody {
 
   @IsOptional()
   @IsEducationYear()
-  eduYear?: string;
+  educationYear?: string;
 
   @IsOptional()
   @IsString()
