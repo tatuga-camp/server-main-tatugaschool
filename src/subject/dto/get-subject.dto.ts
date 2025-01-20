@@ -44,7 +44,7 @@ export class GetSubjectByPageDto {
 
   @IsNotEmpty()
   @IsEducationYear()
-  eduYear: string;
+  educationYear: string;
 }
 
 export class getAllSubjectsByTeamIdParam {
@@ -75,7 +75,7 @@ export class ParamSubjectThatStudentBelongto {
 export class QuerySubjectThatStudentBelongto {
   @IsNotEmpty()
   @IsEducationYear()
-  eduYear: string;
+  educationYear: string;
 }
 
 export class ParamGetSubjectFromSchool {
