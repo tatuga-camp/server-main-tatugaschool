@@ -57,7 +57,7 @@ export class MemberOnSchoolController {
   async deleteMemberOnSchool(
     @Param() dto: DeleteMemberOnSchoolDto,
     @GetUser() user: User,
-  ): Promise<{ message: string }> {
+  ) {
     return await this.memberOnSchoolService.deleteMemberOnSchool(dto, user);
   }
 

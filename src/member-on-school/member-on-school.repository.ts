@@ -26,10 +26,8 @@ export type MemberOnSchoolRepositoryType = {
   updateMemberOnSchool(
     request: RequestUpdateMemberOnSchool,
   ): Promise<MemberOnSchool>;
-  delete(request: { memberOnSchoolId: string }): Promise<{ message: string }>;
-  getAllMemberOnSchoolsBySchoolId(request: {
-    schoolId: string;
-  }): Promise<
+  delete(request: { memberOnSchoolId: string }): Promise<MemberOnSchool>;
+  getAllMemberOnSchoolsBySchoolId(request: { schoolId: string }): Promise<
     (MemberOnSchool & {
       user: { SubscriptionNotification: SubscriptionNotification[] };
     })[]
@@ -168,10 +166,13 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     }
   }
 
-  async delete(request: {
-    memberOnSchoolId: string;
-  }): Promise<{ message: string }> {
+  async delete(request: { memberOnSchoolId: string }): Promise<MemberOnSchool> {
     try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findUnique({
+        where: {
+          id: request.memberOnSchoolId,
+        },
+      });
       // Delete related MemberOnTeam records first
       await this.prisma.memberOnTeam.deleteMany({
         where: {
@@ -179,14 +180,20 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
         },
       });
 
+      await this.prisma.teacherOnSubject.deleteMany({
+        where: {
+          userId: memberOnSchool.userId,
+          schoolId: memberOnSchool.schoolId,
+        },
+      });
+
       // Finally, delete the MemberOnSchool record
-      await this.prisma.memberOnSchool.delete({
+
+      return await this.prisma.memberOnSchool.delete({
         where: {
           id: request.memberOnSchoolId,
         },
       });
-
-      return { message: 'MemberOnSchool deleted successfully' };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -198,9 +205,7 @@ export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
     }
   }
 
-  async getAllMemberOnSchoolsBySchoolId(request: {
-    schoolId: string;
-  }): Promise<
+  async getAllMemberOnSchoolsBySchoolId(request: { schoolId: string }): Promise<
     (MemberOnSchool & {
       user: { SubscriptionNotification: SubscriptionNotification[] };
     })[]

@@ -489,14 +489,14 @@ export class SubjectService {
         userId: user.id,
         subjectId: dto.subjectId,
       });
-
       if (teacer.role !== 'ADMIN') {
         throw new ForbiddenException('You do not have access to this subject');
       }
 
-      return await this.subjectRepository.deleteSubject({
+      const remove = await this.subjectRepository.deleteSubject({
         subjectId: dto.subjectId,
       });
+      return remove;
     } catch (error) {
       this.logger.error(error);
       throw error;
