@@ -18,7 +18,7 @@ import {
   QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
-import { MemberOnSchool, MemberRole, User } from '@prisma/client';
+import { MemberOnSchool, MemberRole, School, User } from '@prisma/client';
 import {
   MemberOnSchoolRepository,
   MemberOnSchoolRepositoryType,
@@ -75,45 +75,59 @@ export class MemberOnSchoolService {
   }
 
   private async notifyMembers({
-    user,
     schoolId,
     title,
     body,
     url,
+    members,
   }: {
-    user: User;
     schoolId: string;
     title: string;
     body: string;
     url: URL;
+    members: MemberOnSchool[];
   }): Promise<void> {
-    const members =
-      await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId({
-        schoolId: schoolId,
-      });
+    const users = await this.userRepository.findMany({
+      where: {
+        OR: members.map((member) => ({ id: member.userId })),
+      },
+    });
 
-    const notifications = members
-      .filter((m) => m.userId !== user.id)
-      .map((member) =>
-        member.user.SubscriptionNotification.map((subscription) =>
-          this.pushService.sendNotification(
-            subscription.data as PushSubscription,
-            {
-              title: title,
-              body: body,
-              url,
-            },
-          ),
-        ),
-      );
+    const notificaitons = await this.pushService.pushRepository.findMany({
+      where: {
+        OR: users.map((user) => ({ userId: user.id })),
+      },
+    });
+    const notifications = notificaitons.map((subscription) =>
+      this.pushService.sendNotification(subscription.data as PushSubscription, {
+        title: title,
+        body: body,
+        url,
+      }),
+    );
 
     await Promise.all(notifications);
   }
 
-  async getMemberOnSchoolByUserId(user: User) {
+  async getMemberOnSchoolByUserId(
+    user: User,
+  ): Promise<(MemberOnSchool & { school: School })[]> {
     try {
-      return await this.memberOnSchoolRepository.getByUserId({
+      const memberOnSchools = await this.memberOnSchoolRepository.getByUserId({
         userId: user.id,
+      });
+      const school = await this.schoolRepository.findMany({
+        where: {
+          OR: memberOnSchools.map((m) => ({ id: m.schoolId })),
+        },
+      });
+
+      return memberOnSchools.map((member) => {
+        const schoolData = school.find((s) => s.id === member.schoolId);
+        return {
+          ...member,
+          school: schoolData,
+        };
       });
     } catch (error) {
       this.logger.error(error);
@@ -187,8 +201,10 @@ export class MemberOnSchoolService {
         user: user,
       });
 
-      if (member.role !== MemberRole.ADMIN) {
-        throw new ForbiddenException('Access denied: User is not an admin');
+      if (member.role !== MemberRole.ADMIN && dto.role === 'ADMIN') {
+        throw new ForbiddenException(
+          "You don't have permission to invite other user as a admin",
+        );
       }
 
       const newMember = await this.userRepository.findByEmail({
@@ -238,7 +254,7 @@ export class MemberOnSchoolService {
             Do not reply to this email, this email is automatically generated.
             If you have any questions, please contact this email permlap@tatugacamp.com or the address below
            </p>
-           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${process.env.CLIENT_URL}/invite/${create.id}">Click</a>
+           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${process.env.CLIENT_URL}/account?menu=Invitations">Click</a>
          </div>
          <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
@@ -257,11 +273,11 @@ export class MemberOnSchoolService {
       });
 
       await this.notifyMembers({
-        user: user,
+        members: [create],
         schoolId: dto.schoolId,
         title: `Your school ${school.title} has a new member`,
         body: `${newMember.firstName} ${newMember.lastName} has been invited to join the school`,
-        url: new URL(`${process.env.CLIENT_URL}/school/${dto.schoolId}`),
+        url: new URL(`${process.env.CLIENT_URL}/account?menu=Invitations`),
       });
 
       return create;
@@ -303,7 +319,7 @@ export class MemberOnSchoolService {
         });
 
       await this.notifyMembers({
-        user: user,
+        members: [updateMemberOnSchool],
         schoolId: memberOnSchool.schoolId,
         title: `Your school has updated member`,
         body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been updated`,
@@ -340,6 +356,13 @@ export class MemberOnSchoolService {
           "You don't have permission to accept this invitation",
         );
       }
+
+      const memberOnSchools = await this.memberOnSchoolRepository.findMany({
+        where: {
+          schoolId: memberOnSchool.schoolId,
+          status: 'ACCEPT',
+        },
+      });
       if (dto.body.status === 'ACCEPT') {
         await this.memberOnSchoolRepository.updateMemberOnSchool({
           query: { id: dto.query.memberOnSchoolId },
@@ -349,7 +372,7 @@ export class MemberOnSchoolService {
         });
 
         await this.notifyMembers({
-          user: user,
+          members: memberOnSchools.filter((m) => m.userId !== user.id),
           schoolId: memberOnSchool.schoolId,
           title: `Your school has a new member`,
           body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been accepted to join the school`,
@@ -364,7 +387,7 @@ export class MemberOnSchoolService {
         });
 
         await this.notifyMembers({
-          user: user,
+          members: memberOnSchools.filter((m) => m.userId !== user.id),
           schoolId: memberOnSchool.schoolId,
           title: `Your school has rejected member`,
           body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been rejected to join the school`,
@@ -385,24 +408,43 @@ export class MemberOnSchoolService {
   async deleteMemberOnSchool(
     dto: DeleteMemberOnSchoolDto,
     user: User,
-  ): Promise<{ message: string }> {
+  ): Promise<MemberOnSchool> {
     try {
-      const memberOnSchool =
+      const targetDeleteMember =
         await this.memberOnSchoolRepository.getMemberOnSchoolById({
           memberOnSchoolId: dto.memberOnSchoolId,
         });
 
-      if (!memberOnSchool) {
+      if (!targetDeleteMember) {
         throw new NotFoundException('Not found member on school');
       }
 
       const member = await this.validateAccess({
         user: user,
-        schoolId: memberOnSchool.schoolId,
+        schoolId: targetDeleteMember.schoolId,
       });
 
-      if (member.role !== MemberRole.ADMIN) {
+      const checksExists =
+        await this.memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId({
+          schoolId: targetDeleteMember.schoolId,
+        });
+
+      // Check if the user is not an admin and the user is not the target user to delete
+      if (
+        member.role !== MemberRole.ADMIN &&
+        user.id !== targetDeleteMember.userId
+      ) {
         throw new ForbiddenException("You don't have permission to delete");
+      }
+
+      if (
+        member.role === MemberRole.ADMIN &&
+        checksExists.filter((m) => m.role === 'ADMIN').length === 1 &&
+        user.id === targetDeleteMember.userId
+      ) {
+        throw new BadRequestException(
+          "You are the last admin in this school you can't delete yourself",
+        );
       }
 
       const deleteMemberOnSchool = await this.memberOnSchoolRepository.delete({
@@ -410,12 +452,14 @@ export class MemberOnSchoolService {
       });
 
       await this.notifyMembers({
-        user: user,
-        schoolId: memberOnSchool.schoolId,
+        members: checksExists
+          .filter((m) => m.userId !== user.id)
+          .filter((m) => m.status === 'ACCEPT'),
+        schoolId: targetDeleteMember.schoolId,
         title: `Your school has removed member`,
-        body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been removed from the school`,
+        body: `${targetDeleteMember.firstName} ${targetDeleteMember.lastName} has been removed from the school`,
         url: new URL(
-          `${process.env.CLIENT_URL}/school/${memberOnSchool.schoolId}`,
+          `${process.env.CLIENT_URL}/school/${targetDeleteMember.schoolId}`,
         ),
       });
 

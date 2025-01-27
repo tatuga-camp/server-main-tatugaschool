@@ -1,3 +1,4 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { CommentAssignmentRepository } from './comment-assignment.repository';
@@ -25,9 +26,11 @@ export class CommentAssignmentService {
     new StudentOnAssignmentRepository(this.prisma);
   commentAssignmentRepository: CommentAssignmentRepository =
     new CommentAssignmentRepository(this.prisma);
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  constructor(private prisma: PrismaService) {}
+
+  constructor(
+    private prisma: PrismaService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
+  ) {}
 
   async getByStudentOnAssignment(
     dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
@@ -41,15 +44,10 @@ export class CommentAssignmentService {
         });
 
       if (user) {
-        const teacherOnSubject =
-          await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-            teacherId: user.id,
-            subjectId: studentOnAssignment.subjectId,
-          });
-
-        if (!teacherOnSubject) {
-          throw new ForbiddenException("You don't have permission to access");
-        }
+        await this.teacherOnSubjectService.ValidateAccess({
+          subjectId: studentOnAssignment.subjectId,
+          userId: user.id,
+        });
       }
 
       if (student && studentOnAssignment.studentId !== student.id) {
@@ -100,16 +98,12 @@ export class CommentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
-      if (!studentOnAssignment) {
-        throw new NotFoundException('studentOnAssignment is not found');
-      }
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: studentOnAssignment.subjectId,
-        });
+      const teacher = await this.teacherOnSubjectService.ValidateAccess({
+        subjectId: studentOnAssignment.subjectId,
+        userId: user.id,
+      });
 
-      if (!teacherOnSubject) {
+      if (!teacher) {
         throw new ForbiddenException("You don't have permission to access");
       }
 
@@ -121,11 +115,11 @@ export class CommentAssignmentService {
         lastName: user.lastName,
         photo: user.photo,
         userId: user.id,
-        teacherOnSubjectId: teacherOnSubject.id,
-        role: teacherOnSubject.role,
+        teacherOnSubjectId: teacher.id,
+        role: teacher.role,
         email: user.email,
         subjectId: studentOnAssignment.subjectId,
-        schoolId: teacherOnSubject.schoolId,
+        schoolId: teacher.schoolId,
       });
     } catch (error) {
       this.logger.error(error);
@@ -154,14 +148,10 @@ export class CommentAssignmentService {
         commentOnAssignmentId: dto.query.commentOnAssignmentId,
       });
       const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
+        await this.teacherOnSubjectService.ValidateAccess({
           subjectId: commentAssignment.subjectId,
+          userId: user.id,
         });
-
-      if (!teacherOnSubject) {
-        throw new ForbiddenException("You don't have permission to access");
-      }
       return await this.commentAssignmentRepository.update(dto);
     } catch (error) {
       this.logger.error(error);
@@ -199,15 +189,11 @@ export class CommentAssignmentService {
         throw new NotFoundException('Comment assignment is not found');
       }
 
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: commentAssignment.subjectId,
-        });
+      await this.teacherOnSubjectService.ValidateAccess({
+        subjectId: commentAssignment.subjectId,
+        userId: user.id,
+      });
 
-      if (!teacherOnSubject) {
-        throw new ForbiddenException("You don't have permission to access");
-      }
       return await this.commentAssignmentRepository.delete(dto);
     } catch (error) {
       this.logger.error(error);

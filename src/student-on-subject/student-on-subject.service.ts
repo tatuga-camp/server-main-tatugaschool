@@ -59,20 +59,10 @@ export class StudentOnSubjectService {
     user: User,
   ): Promise<StudentOnSubject[]> {
     try {
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
-      const schoolMember = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          schoolId: member.schoolId,
-          userId: user.id,
-        },
-      });
-
-      if (!schoolMember) {
-        throw new ForbiddenException('You are not a member of this subject');
-      }
 
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
         where: {
@@ -110,7 +100,7 @@ export class StudentOnSubjectService {
       if (!studentOnSubject) {
         throw new NotFoundException('Student on subject does not exist');
       }
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnSubject.subjectId,
       });
@@ -177,7 +167,7 @@ export class StudentOnSubjectService {
       if (studentOnSubject.length === 0) {
         return [];
       }
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnSubject[0].subjectId,
       });
@@ -202,7 +192,7 @@ export class StudentOnSubjectService {
       if (!studentOnSubject) {
         throw new NotFoundException('StudentOnSubject not found');
       }
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnSubject.subjectId,
       });

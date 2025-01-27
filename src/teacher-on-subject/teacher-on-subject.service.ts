@@ -17,7 +17,7 @@ import {
   GetTeacherOnSubjectsByTeacherIdDto,
   UpdateTeacherOnSubjectDto,
 } from './dto';
-import { User } from '@prisma/client';
+import { TeacherOnSubject, User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -40,14 +40,34 @@ export class TeacherOnSubjectService {
   }: {
     userId: string;
     subjectId: string;
-  }) {
+  }): Promise<TeacherOnSubject | null> {
     try {
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: subjectId,
+        },
+      });
+
+      const memberOnSchool = await this.memberOnSchoolRepository.findFirst({
+        where: {
+          schoolId: subject.schoolId,
+        },
+      });
+
+      if (!memberOnSchool) {
+        throw new ForbiddenException("You're not a member of this school");
+      }
+
       const memberOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
           teacherId: userId,
           subjectId,
         });
-      if (!memberOnSubject || memberOnSubject.status !== 'ACCEPT') {
+
+      if (
+        (!memberOnSubject || memberOnSubject?.status !== 'ACCEPT') &&
+        memberOnSchool.role !== 'ADMIN'
+      ) {
         throw new ForbiddenException("You're not a teacher on this subject");
       }
       return memberOnSubject;
@@ -62,24 +82,13 @@ export class TeacherOnSubjectService {
       const teacherOnSubject = await this.teacherOnSubjectRepository.getById({
         teacherOnSubjectId: dto.teacherOnSubjectId,
       });
-
-      const adminOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: teacherOnSubject.subjectId,
-        });
-
-      if (!adminOnSubject) {
-        throw new ForbiddenException('Unauthorized');
+      if (!teacherOnSubject) {
+        throw new NotFoundException('Teacher on subject not found');
       }
-
-      if (
-        teacherOnSubject.userId !== user.id &&
-        adminOnSubject.role !== 'ADMIN'
-      ) {
-        throw new ForbiddenException('Unauthorized');
-      }
-
+      await this.ValidateAccess({
+        userId: user.id,
+        subjectId: teacherOnSubject.subjectId,
+      });
       return teacherOnSubject;
     } catch (error) {
       this.logger.error(error.message);
@@ -92,31 +101,15 @@ export class TeacherOnSubjectService {
     user: User,
   ) {
     try {
-      const memberOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: dto.subjectId,
-        });
-      if (!memberOnSubject && user.role !== 'ADMIN') {
-        throw new ForbiddenException("You're not a teacher on this subject");
-      }
-
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
-          {
-            userId: user.id,
-            schoolId: memberOnSubject.schoolId,
-          },
-        );
-
-      if (!memberOnSchool) {
-        throw new ForbiddenException("You're not a member of this school");
-      }
-
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getManyBySubjectId({
           subjectId: dto.subjectId,
         });
+
+      await this.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
+      });
 
       return teacherOnSubject;
     } catch (error) {
