@@ -48,7 +48,7 @@ export class GoogleStorageService {
       const corsConfiguration = [
         {
           maxAgeSeconds: 3600,
-          method: ['PUT'],
+          method: ['PUT', 'GET'],
           origin: allowedOrigins,
           responseHeader: ['content-type'],
         },
