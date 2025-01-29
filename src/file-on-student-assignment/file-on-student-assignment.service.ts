@@ -175,10 +175,6 @@ export class FileOnStudentAssignmentService {
         throw new NotFoundException('File not found');
       }
 
-      if (file.contentType === 'FILE') {
-        throw new BadRequestException("You can't update file");
-      }
-
       if (user) {
         const teacherOnSubject =
           await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
@@ -195,10 +191,18 @@ export class FileOnStudentAssignmentService {
         throw new ForbiddenException("You don't have permission to access");
       }
 
-      return await this.fileOnStudentAssignmentRepository.update({
+      const update = await this.fileOnStudentAssignmentRepository.update({
         where: { id: dto.query.id },
         data: dto.body,
       });
+
+      if (file.contentType === 'FILE') {
+        await this.googleStorageService.DeleteFileOnStorage({
+          fileName: file.body,
+        });
+      }
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;
