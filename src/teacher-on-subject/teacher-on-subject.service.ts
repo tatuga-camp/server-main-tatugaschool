@@ -51,10 +51,11 @@ export class TeacherOnSubjectService {
       const memberOnSchool = await this.memberOnSchoolRepository.findFirst({
         where: {
           schoolId: subject.schoolId,
+          userId: userId,
         },
       });
 
-      if (!memberOnSchool) {
+      if (!memberOnSchool || memberOnSchool?.status !== 'ACCEPT') {
         throw new ForbiddenException("You're not a member of this school");
       }
 
@@ -68,8 +69,10 @@ export class TeacherOnSubjectService {
         (!memberOnSubject || memberOnSubject?.status !== 'ACCEPT') &&
         memberOnSchool.role !== 'ADMIN'
       ) {
+        console.log(memberOnSubject);
         throw new ForbiddenException("You're not a teacher on this subject");
       }
+
       return memberOnSubject;
     } catch (error) {
       this.logger.error(error.message);
