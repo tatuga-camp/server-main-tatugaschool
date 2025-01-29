@@ -29,6 +29,8 @@ import {
   User,
 } from '@prisma/client';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
+import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import { Workbook } from 'exceljs';
 
 @Injectable()
 export class AssignmentService {
@@ -48,6 +50,7 @@ export class AssignmentService {
     private vectorService: VectorService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private studentOnSubjectService: StudentOnSubjectService,
   ) {}
 
   async getAssignmentById(
@@ -399,5 +402,53 @@ export class AssignmentService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  async exportExcel(subjectId: string, user: User) {
+    const listStudentOnSubject =
+      await this.studentOnSubjectService.getStudentOnSubjectsBySubjectId(
+        { subjectId },
+        user,
+      );
+    const listAssignment = await this.getOverviewScoreOnAssignment(
+      { subjectId },
+      user,
+    );
+
+    const data = {
+      header: [
+        'Name',
+        ...listAssignment.map(
+          (assignment) =>
+            assignment.assignment.title +
+            ' ' +
+            assignment.assignment.maxScore +
+            ' points',
+        ),
+      ],
+      data: await Promise.all(
+        listStudentOnSubject.map((student) => {
+          return [
+            student.firstName + ' ' + student.lastName,
+            ...listAssignment.map((assignment) => {
+              return assignment.students.find(
+                (student) => student.studentId === student.studentId,
+              )?.score;
+            }),
+          ];
+        }),
+      ),
+    };
+
+    const workbook = new Workbook();
+
+    const worksheet = workbook.addWorksheet('Assignment');
+    worksheet.addRow(data.header);
+    worksheet.addRows(data.data);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+
+    return `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
   }
 }

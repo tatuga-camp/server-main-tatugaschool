@@ -18,7 +18,11 @@ import {
   UpdateManyDto,
 } from './dto';
 import { AttendanceStatusListSRepository } from '../attendance-status-list/attendance-status-list.repository';
-
+import { Workbook } from 'exceljs';
+import axios from 'axios';
+import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import { AttendanceTableService } from 'src/attendance-table/attendance-table.service';
+import { AttendanceRowService } from 'src/attendance-row/attendance-row.service';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
@@ -33,6 +37,9 @@ export class AttendanceService {
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private studentOnSubjectService: StudentOnSubjectService,
+    private attendanceTableService: AttendanceTableService,
+    private attendanceRowService: AttendanceRowService,
   ) {
     this.logger = new Logger(AttendanceService.name);
     this.attendanceRepository = new AttendanceRepository(prisma);
@@ -237,5 +244,66 @@ export class AttendanceService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  async exportExcel(subjectId: string, user: User) {
+    const listStudentOnSubject =
+      await this.studentOnSubjectService.getStudentOnSubjectsBySubjectId(
+        { subjectId },
+        user,
+      );
+    const listAttendanceTable =
+      await this.attendanceTableService.getBySubjectId({ subjectId }, user);
+
+    const data = await Promise.all(
+      listAttendanceTable.map(async (row) => {
+        const listAttendanceTableBySubjectId =
+          await this.attendanceRowService.GetAttendanceRows(
+            { attendanceTableId: row.id },
+            user,
+          );
+        return {
+          worksheetName: row.title,
+          attendanceRows: [
+            'Name',
+            ...listAttendanceTableBySubjectId.map((row) => {
+              return new Date(row.startDate)
+                .toLocaleString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: 'numeric',
+                  second: 'numeric',
+                })
+                .replace(',', '')
+                .replace('at', '');
+            }),
+          ],
+          attendanceValues: listStudentOnSubject.map((student) => {
+            return [
+              student.firstName + ' ' + student.lastName,
+              ...listAttendanceTableBySubjectId.map((row) => {
+                return row.attendances.find(
+                  (att) => att.studentId === student.studentId,
+                )?.status;
+              }),
+            ];
+          }),
+        };
+      }),
+    );
+
+    const workbook = new Workbook();
+    data.forEach(async (row) => {
+      const worksheet = workbook.addWorksheet(row.worksheetName);
+
+      worksheet.addRow(row.attendanceRows);
+      worksheet.addRows(row.attendanceValues);
+    });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const base64 = Buffer.from(buffer).toString('base64');
+
+    return `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
   }
 }
