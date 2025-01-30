@@ -196,7 +196,7 @@ export class FileOnStudentAssignmentService {
         data: dto.body,
       });
 
-      if (file.contentType === 'FILE') {
+      if (file.contentType === 'FILE' && dto.body.body !== file.body) {
         await this.googleStorageService.DeleteFileOnStorage({
           fileName: file.body,
         });

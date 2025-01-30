@@ -16,6 +16,7 @@ import {
 } from './dto';
 import { ScoreOnStudent, User } from '@prisma/client';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 
 @Injectable()
 export class ScoreOnStudentService {
@@ -27,45 +28,15 @@ export class ScoreOnStudentService {
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {}
-  async validateAccessOnSubject({
-    userId,
-    subjectId,
-  }: {
-    userId: string;
-    subjectId: string;
-  }): Promise<void> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
 
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          userId: userId,
-          subjectId: subjectId,
-        },
-      });
-
-      if (!member && user.role !== 'ADMIN') {
-        throw new ForbiddenException('You do not have access to this subject');
-      }
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
   async getAllScoreOnStudentBySubjectId(
     dto: GetAllScoreOnStudentBySubjectIdDto,
     user: User,
   ): Promise<ScoreOnStudent[]> {
     try {
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -103,7 +74,7 @@ export class ScoreOnStudentService {
         throw new NotFoundException('Student not found');
       }
 
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: student.subjectId,
       });
@@ -147,7 +118,7 @@ export class ScoreOnStudentService {
         throw new ForbiddenException('Student is disabled');
       }
 
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnSubject.subjectId,
       });
@@ -202,7 +173,7 @@ export class ScoreOnStudentService {
         throw new NotFoundException('Student not found');
       }
 
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnSubject.subjectId,
       });

@@ -16,6 +16,7 @@ import {
 } from './dto';
 import { ScoreOnSubject, User } from '@prisma/client';
 import { SubjectRepository } from '../subject/subject.repository';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 
 @Injectable()
 export class ScoreOnSubjectService {
@@ -26,43 +27,12 @@ export class ScoreOnSubjectService {
     this.prisma,
     this.googleStorageService,
   );
+
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {}
-
-  async validateAccessOnSubject({
-    userId,
-    subjectId,
-  }: {
-    userId: string;
-    subjectId: string;
-  }): Promise<void> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: userId,
-        },
-      });
-
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      const member = await this.prisma.teacherOnSubject.findFirst({
-        where: {
-          userId: userId,
-          subjectId: subjectId,
-        },
-      });
-
-      if (!member && user.role !== 'ADMIN') {
-        throw new ForbiddenException('You do not have access to this subject');
-      }
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
 
   async GetAllScoreOnSubjectBySubjectId(
     dto: GetAllScoreOnSubjectBySujectIdDto,
@@ -78,7 +48,7 @@ export class ScoreOnSubjectService {
           `Subject with id ${dto.subjectId} not found`,
         );
       }
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -108,7 +78,7 @@ export class ScoreOnSubjectService {
           `Subject with id ${dto.subjectId} not found`,
         );
       }
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -145,7 +115,7 @@ export class ScoreOnSubjectService {
           'Subject with id ${scoreOnSubject.subjectId} not found',
         );
       }
-      await this.validateAccessOnSubject({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: subject.id,
       });
