@@ -15,6 +15,7 @@ import {
   DeleteAssignmentDto,
   GetAssignmentByIdDto,
   GetAssignmentBySubjectIdDto,
+  GetAssignmentExportExcelDto,
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
@@ -25,6 +26,15 @@ import { StudentGuard, UserGuard } from '../auth/guard';
 @Controller('v1/assignments')
 export class AssignmentController {
   constructor(private readonly assignmentService: AssignmentService) {}
+
+  @UseGuards(UserGuard)
+  @Get('export-excel')
+  exportExcel(
+    @Query() dto: GetAssignmentExportExcelDto,
+    @GetUser() user: User,
+  ) {
+    return this.assignmentService.exportExcel(dto.subjectId, user);
+  }
 
   @UseGuards(UserGuard)
   @Post()
