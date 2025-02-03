@@ -15,6 +15,8 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -25,6 +27,7 @@ import {
   UpdateManyDto,
 } from './dto';
 import { UserGuard } from '../auth/guard';
+import { Request, Response } from 'express';
 
 @UseGuards(UserGuard)
 @Controller('v1/attendances')
@@ -35,8 +38,9 @@ export class AttendanceController {
   exportExcel(
     @Query() dto: GetAttendanceExportExcelDto,
     @GetUser() user: User,
+    @Req() req: Request,
   ) {
-    return this.attendanceService.exportExcel(dto.subjectId, user);
+    return this.attendanceService.exportExcel(dto.subjectId, user, req);
   }
 
   @Get(':attendanceId')

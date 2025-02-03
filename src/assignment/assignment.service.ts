@@ -417,26 +417,54 @@ export class AssignmentService {
 
     const data = {
       header: [
-        'Name',
-        ...listAssignment.map(
-          (assignment) =>
-            assignment.assignment.title +
-            ' ' +
-            assignment.assignment.maxScore +
-            ' points',
+        'Number',
+        'Student Name',
+        ...listAssignment.map((assignment) =>
+          assignment.assignment.weight
+            ? `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points / ${assignment.assignment.weight}% `
+            : `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points`,
         ),
       ],
       data: await Promise.all(
-        listStudentOnSubject.map((student) => {
-          return [
-            student.firstName + ' ' + student.lastName,
-            ...listAssignment.map((assignment) => {
-              return assignment.students.find(
-                (student) => student.studentId === student.studentId,
-              )?.score;
-            }),
-          ];
-        }),
+        listStudentOnSubject
+          .sort((a, b) => Number(a.number) - Number(b.number))
+          .map((student) => {
+            return [
+              student.number,
+              student.firstName + ' ' + student.lastName,
+              ...listAssignment.map((assignment) => {
+                const studentOnAssignment = assignment.students.find(
+                  (studentOnAssignment) =>
+                    studentOnAssignment.studentOnSubjectId === student.id,
+                );
+
+                if (!studentOnAssignment) {
+                  return 'Student not assigned';
+                }
+
+                if (
+                  !studentOnAssignment.score &&
+                  studentOnAssignment.status !== 'REVIEWD'
+                ) {
+                  return 'No Work';
+                }
+                let score: string | number = 0;
+                score = studentOnAssignment.score;
+                const originalScore =
+                  studentOnAssignment.score / assignment.assignment.maxScore;
+
+                if (
+                  assignment.assignment.weight !== null &&
+                  studentOnAssignment.status === 'REVIEWD'
+                ) {
+                  score = (
+                    originalScore * assignment.assignment.weight
+                  ).toFixed(2);
+                }
+                return score;
+              }),
+            ];
+          }),
       ),
     };
 
@@ -445,6 +473,31 @@ export class AssignmentService {
     const worksheet = workbook.addWorksheet('Assignment');
     worksheet.addRow(data.header);
     worksheet.addRows(data.data);
+    const firstRow = worksheet.getRow(1);
+    const columA = worksheet.getColumn(1);
+    const columB = worksheet.getColumn(2);
+    columA.width = 10;
+    columB.width = 35;
+    columA.alignment = {
+      vertical: 'middle',
+      horizontal: 'center',
+    };
+
+    firstRow.font = { bold: true, size: 10 };
+    firstRow.alignment = {
+      vertical: 'middle',
+      horizontal: 'center',
+    };
+
+    for (let i = 3; i <= listAssignment.length + 3; i++) {
+      const column = worksheet.getColumn(i);
+      column.alignment = {
+        vertical: 'middle',
+        horizontal: 'center',
+        wrapText: true,
+      };
+      column.width = 30;
+    }
 
     const buffer = await workbook.xlsx.writeBuffer();
     const base64 = Buffer.from(buffer).toString('base64');
