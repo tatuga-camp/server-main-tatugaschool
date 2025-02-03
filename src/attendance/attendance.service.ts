@@ -19,10 +19,10 @@ import {
 } from './dto';
 import { AttendanceStatusListSRepository } from '../attendance-status-list/attendance-status-list.repository';
 import { Workbook } from 'exceljs';
-import axios from 'axios';
 import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
 import { AttendanceTableService } from 'src/attendance-table/attendance-table.service';
 import { AttendanceRowService } from 'src/attendance-row/attendance-row.service';
+import { Request, Response } from 'express';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
@@ -246,7 +246,9 @@ export class AttendanceService {
     }
   }
 
-  async exportExcel(subjectId: string, user: User) {
+  async exportExcel(subjectId: string, user: User, req: Request) {
+    const userLang = req.headers['accept-language']?.split(',')[0] || 'en-US';
+
     const listStudentOnSubject =
       await this.studentOnSubjectService.getStudentOnSubjectsBySubjectId(
         { subjectId },
@@ -265,31 +267,34 @@ export class AttendanceService {
         return {
           worksheetName: row.title,
           attendanceRows: [
-            'Name',
+            'Nunber',
+            'Student Name',
             ...listAttendanceTableBySubjectId.map((row) => {
               return new Date(row.startDate)
-                .toLocaleString('en-US', {
+                .toLocaleString(userLang, {
                   month: 'long',
                   day: 'numeric',
                   year: 'numeric',
                   hour: 'numeric',
                   minute: 'numeric',
-                  second: 'numeric',
                 })
                 .replace(',', '')
                 .replace('at', '');
             }),
           ],
-          attendanceValues: listStudentOnSubject.map((student) => {
-            return [
-              student.firstName + ' ' + student.lastName,
-              ...listAttendanceTableBySubjectId.map((row) => {
-                return row.attendances.find(
-                  (att) => att.studentId === student.studentId,
-                )?.status;
-              }),
-            ];
-          }),
+          attendanceValues: listStudentOnSubject
+            .sort((a, b) => Number(a.number) - Number(b.number))
+            .map((student) => {
+              return [
+                student.number,
+                student.firstName + ' ' + student.lastName,
+                ...listAttendanceTableBySubjectId.map((row) => {
+                  return row.attendances.find(
+                    (att) => att.studentId === student.studentId,
+                  )?.status;
+                }),
+              ];
+            }),
         };
       }),
     );
@@ -300,6 +305,28 @@ export class AttendanceService {
 
       worksheet.addRow(row.attendanceRows);
       worksheet.addRows(row.attendanceValues);
+
+      const firstRow = worksheet.getRow(1);
+      const columA = worksheet.getColumn(1);
+      const columB = worksheet.getColumn(2);
+      columA.width = 10;
+      columB.width = 40;
+      // set bold font and center alignment
+      firstRow.font = { bold: true, size: 10 };
+      firstRow.alignment = {
+        vertical: 'middle',
+        horizontal: 'center',
+      };
+
+      for (let i = 3; i <= row.attendanceRows.length; i++) {
+        const column = worksheet.getColumn(i);
+        column.alignment = {
+          vertical: 'middle',
+          horizontal: 'center',
+          wrapText: true,
+        };
+        column.width = 20;
+      }
     });
     const buffer = await workbook.xlsx.writeBuffer();
     const base64 = Buffer.from(buffer).toString('base64');

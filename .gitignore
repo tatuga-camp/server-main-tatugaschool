@@ -40,3 +40,4 @@ lerna-debug.log*
 .env.test
 
 bun.lockb
+pnpm-lock.yaml
