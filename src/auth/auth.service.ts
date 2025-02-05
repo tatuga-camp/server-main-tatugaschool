@@ -80,8 +80,7 @@ export class AuthService {
 
       const token = crypto.randomBytes(32).toString('hex');
       const expiration = new Date();
-      expiration.setHours(expiration.getHours() + 1); // Token valid for 1 hour
-
+      expiration.setMinutes(expiration.getMinutes() + 5);
       await this.usersRepository.updateResetToken({
         query: { email: dto.email },
         data: {
@@ -90,20 +89,40 @@ export class AuthService {
         },
       });
 
-      await this.sendResetEmail(dto.email, token);
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  private async sendResetEmail(email: string, token: string): Promise<void> {
-    try {
       const resetUrl = `${process.env.CLIENT_URL}/auth/reset-password?token=${token}`;
+
+      const emailHTML = `
+         <body style="background-color: #f8f9fa;">
+       <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/development-tatuga-school/public/logo.avif" />
+         <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+           <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
+          Reset your password
+           </h1>
+           <p style="margin: 0 0 16px;">
+           Hello ${user.firstName} ${user.lastName},<br>
+            You requested a password reset. Click button below to reset your password
+           You have 5 minutes to reset your password. It Will be expired at ${expiration.toUTCString()}  
+           </p>
+            <p style="margin: 0 0 16px; color: #6c757d">
+            Do not reply to this email, this email is automatically generated.
+            If you have any questions, please contact this email permlap@tatugacamp.com or the address below
+           </p>
+           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${resetUrl}">Click!</a>
+         </div>
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
+         <div style="color: #6c757d; text-align: center; margin: 24px 0;">
+         Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
+         879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
+         โทร 0610277960 Email: permlap@tatugacamp.com<br>
+         </div>
+       </div>
+     </body>
+     `;
       await this.emailService.sendMail({
-        to: email,
+        to: user.email,
         subject: 'Reset your password',
-        html: `You requested a password reset. Click here to reset your password: ${resetUrl}`,
+        html: emailHTML,
       });
     } catch (error) {
       this.logger.error(error);
@@ -160,7 +179,7 @@ export class AuthService {
          <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
-         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
+         879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
          โทร 0610277960 Email: permlap@tatugacamp.com<br>
          </div>
        </div>
@@ -206,7 +225,7 @@ export class AuthService {
         resetPasswordToken: dto.token,
       });
       if (!user) {
-        throw new NotFoundException('ไม่พบผู้ใช้งานนี้ในระบบ');
+        throw new NotFoundException("Token isn't valid");
       }
       if (user.resetPasswordTokenExpiresAt < new Date()) {
         throw new ForbiddenException('Token expired');
@@ -490,7 +509,7 @@ export class AuthService {
          <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
-         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
+         879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
          โทร 0610277960 Email: permlap@tatugacamp.com<br>
          </div>
        </div>
