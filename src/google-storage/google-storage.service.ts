@@ -44,7 +44,12 @@ export class GoogleStorageService {
       // Determine the allowed origins
       const allowedOrigins = isDevelopment
         ? ['*', 'http://localhost:8081']
-        : ['https://tatugaschool.com', 'https://www.tatugaschool.com'];
+        : [
+            'https://tatugaschool.com',
+            'https://www.tatugaschool.com',
+            'https://app.tatugaschool.com',
+            'https://student.tatugaschool.com',
+          ];
       const corsConfiguration = [
         {
           maxAgeSeconds: 3600,

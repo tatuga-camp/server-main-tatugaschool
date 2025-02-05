@@ -9,7 +9,12 @@ async function bootstrap() {
   // Determine the allowed origins
   const allowedOrigins = isDevelopment
     ? '*'
-    : ['https://tatugaschool.com', 'https://www.tatugaschool.com'];
+    : [
+        'https://tatugaschool.com',
+        'https://www.tatugaschool.com',
+        'https://app.tatugaschool.com',
+        'https://student.tatugaschool.com',
+      ];
 
   app.enableCors({
     origin: allowedOrigins,
