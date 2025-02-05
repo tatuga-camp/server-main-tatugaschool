@@ -14,6 +14,7 @@ export class GoogleStorageController {
   UserGetSignURL(@Query() dto: GetSignURLDto, @GetUser() user: User) {
     return this.googleStorageService.GetSignURL({
       userId: user.id,
+      schoolId: dto.schoolId,
       fileName: dto.fileName,
       fileType: dto.fileType,
     });
@@ -26,7 +27,7 @@ export class GoogleStorageController {
     @GetStudent() student: Student,
   ) {
     return this.googleStorageService.GetSignURL({
-      studentId: student.id,
+      schoolId: dto.schoolId,
       fileName: dto.fileName,
       fileType: dto.fileType,
     });
