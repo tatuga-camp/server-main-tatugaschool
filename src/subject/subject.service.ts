@@ -1,18 +1,9 @@
-import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
-import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
-import { StudentRepository } from './../student/student.repository';
-import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
-import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
-import { SubjectRepository } from './subject.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import {
   Class,
   Student,
@@ -21,21 +12,25 @@ import {
   TeacherOnSubject,
   User,
 } from '@prisma/client';
-import { NotFoundError } from 'rxjs';
-import { Pagination } from '../interfaces';
+import * as crypto from 'crypto';
+import { AttendanceTableService } from '../attendance-table/attendance-table.service';
+import { ClassService } from '../class/class.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
+import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
+import { StudentRepository } from './../student/student.repository';
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
+import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import {
   CreateSubjectDto,
   DeleteSubjectDto,
   GetSubjectByIdDto,
-  GetSubjectByPageDto,
   ReorderSubjectsDto,
   UpdateSubjectDto,
 } from './dto';
-import * as crypto from 'crypto';
-import { ClassRepository } from '../class/class.repository';
-import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
-import { AttendanceTableService } from '../attendance-table/attendance-table.service';
-import { ClassService } from '../class/class.service';
+import { SubjectRepository } from './subject.repository';
 
 @Injectable()
 export class SubjectService {
@@ -339,31 +334,31 @@ export class SubjectService {
       const scoreOnSubjectTitlesDefault = [
         {
           title: 'Good Job',
-          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Good-job.svg',
+          icon: 'https://storage.cloud.google.com/public-tatugaschool/Good-job.svg',
           blurHash: 'UEO{GV?D05-m~9WDIqah0NWV08M~X_ows.ov',
           score: 1,
         },
         {
           title: 'Well Done',
-          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Well-Done.svg',
+          icon: 'https://storage.cloud.google.com/public-tatugaschool/Well-Done.svg',
           blurHash: 'UlMi|;xpE4n+IrWDs.bFIqahE5bY~QovIrjI',
           score: 1,
         },
         {
           title: 'Keep It Up',
-          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Keep-It-Up.svg',
+          icon: 'https://storage.cloud.google.com/public-tatugaschool/Keep-It-Up.svg',
           blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
           score: 1,
         },
         {
           title: 'Excellent',
-          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Excellent.svg',
+          icon: 'https://storage.cloud.google.com/public-tatugaschool/Excellent.svg',
           blurHash: 'UAP63q^z06?C^}WCM~a#05WC07Ir~jt5E4oe',
           score: 1,
         },
         {
           title: 'Needs Improvement',
-          icon: 'https://storage.googleapis.com/development-tatuga-school/public/Needs-Improvement.svg',
+          icon: 'https://storage.cloud.google.com/public-tatugaschool/Needs-Improvement.svg',
           blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
           score: -1,
         },

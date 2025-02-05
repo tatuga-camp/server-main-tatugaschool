@@ -1,9 +1,19 @@
-import { IsMongoId, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsMongoId,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class GetSignURLDto {
   @IsNotEmpty()
   @IsString()
   fileName: string;
+
+  @IsOptional()
+  @IsMongoId()
+  schoolId?: string;
 
   @IsNotEmpty()
   @IsString()

@@ -110,7 +110,7 @@ export class AuthService {
            </p>
            <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${resetUrl}">Click!</a>
          </div>
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.cloud.google.com/public-tatugaschool/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
          879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
@@ -176,7 +176,7 @@ export class AuthService {
            </p>
            <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${resetUrl}">Verify Email</a>
          </div>
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.cloud.google.com/public-tatugaschool/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
          879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
@@ -506,7 +506,7 @@ export class AuthService {
            </p>
            <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${resetUrl}">Verify Email</a>
          </div>
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/development-tatuga-school/public/branner.png" />
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.cloud.google.com/public-tatugaschool/branner.png" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
          879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
