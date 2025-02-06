@@ -154,17 +154,8 @@ export class AuthService {
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
 
-      res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60 * 60,
-        secure: true,
-        sameSite: 'none',
-      });
-
-      res.cookie('refresh_token', refreshToken, {
-        maxAge: 1000 * 60 * 60 * 24 * 3,
-        secure: true,
-        sameSite: 'none',
-      });
+      this.setCookieAccessToken(res, accessToken);
+      this.setCookieRefreshToken(res, refreshToken);
 
       return res.json({
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
@@ -242,17 +233,8 @@ export class AuthService {
         email: user.email,
       });
 
-      res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60 * 60,
-        secure: true,
-        sameSite: 'none',
-      });
-
-      res.cookie('refresh_token', refreshToken, {
-        maxAge: 1000 * 60 * 60 * 24 * 3,
-        secure: true,
-        sameSite: 'none',
-      });
+      this.setCookieAccessToken(res, accessToken);
+      this.setCookieRefreshToken(res, refreshToken);
 
       if (!user.isVerifyEmail) {
         return res.json({
@@ -314,11 +296,7 @@ export class AuthService {
         throw new BadRequestException('Refresh token is invalid');
       }
       const accessToken = await this.GenerateAccessToken(user);
-      res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60 * 60,
-        secure: true,
-        sameSite: 'none',
-      });
+      this.setCookieAccessToken(res, accessToken);
       return res.json({ accessToken: accessToken });
     } catch (error) {
       this.logger.error(error);
@@ -368,17 +346,8 @@ export class AuthService {
         const accessToken = await this.GenerateAccessToken(user);
         const refreshToken = await this.GenerateRefreshToken(user);
 
-        res.cookie('access_token', accessToken, {
-          maxAge: 1000 * 60 * 60,
-          secure: true,
-          sameSite: 'none',
-        });
-
-        res.cookie('refresh_token', refreshToken, {
-          maxAge: 1000 * 60 * 60 * 24 * 3,
-          secure: true,
-          sameSite: 'none',
-        });
+        this.setCookieAccessToken(res, accessToken);
+        this.setCookieRefreshToken(res, refreshToken);
 
         if (!user.isVerifyEmail) {
           return res.redirect(
@@ -403,17 +372,8 @@ export class AuthService {
       await this.sendVerifyEmail(user);
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
-      res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60 * 60,
-        secure: true,
-        sameSite: 'none',
-      });
-
-      res.cookie('refresh_token', refreshToken, {
-        maxAge: 1000 * 60 * 60 * 24 * 3,
-        secure: true,
-        sameSite: 'none',
-      });
+      this.setCookieAccessToken(res, accessToken);
+      this.setCookieRefreshToken(res, refreshToken);
 
       return res.redirect(`${process.env.CLIENT_URL}/auth/wait-verify-email`);
     } catch (error) {
@@ -555,6 +515,28 @@ export class AuthService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  setCookieAccessToken(res: Response, accessToken: string) {
+    res.cookie('access_token', accessToken, {
+      maxAge: 1000 * 60 * 60,
+      secure: true,
+      sameSite: 'none',
+      ...(process.env.NODE_ENV === 'production' && {
+        domain: 'tatugaschool.com',
+      }),
+    });
+  }
+
+  setCookieRefreshToken(res: Response, refreshToken: string) {
+    res.cookie('refresh_token', refreshToken, {
+      maxAge: 1000 * 60 * 60 * 24 * 3,
+      secure: true,
+      sameSite: 'none',
+      ...(process.env.NODE_ENV === 'production' && {
+        domain: 'tatugaschool.com',
+      }),
+    });
   }
 
   async GenerateStudentRefreshToken(student: Student): Promise<string> {
