@@ -157,11 +157,13 @@ export class AuthService {
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
       });
 
       return res.json({
@@ -233,11 +235,13 @@ export class AuthService {
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
       });
 
       if (!user.isVerifyEmail) {
@@ -364,11 +368,13 @@ export class AuthService {
         res.cookie('access_token', accessToken, {
           maxAge: 1000 * 60,
           secure: process.env.NODE_ENV === 'production',
+          sameSite: 'none',
         });
 
         res.cookie('refresh_token', refreshToken, {
           maxAge: 1000 * 60 * 60 * 24 * 3,
           secure: process.env.NODE_ENV === 'production',
+          sameSite: 'none',
         });
 
         if (!user.isVerifyEmail) {
@@ -397,11 +403,13 @@ export class AuthService {
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
         secure: process.env.NODE_ENV === 'production',
+        sameSite: 'none',
       });
 
       return res.redirect(`${process.env.CLIENT_URL}/auth/wait-verify-email`);
