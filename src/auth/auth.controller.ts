@@ -34,8 +34,9 @@ export class AuthController {
   signup(
     @Body()
     dto: SignUpDto,
-  ): Promise<User> {
-    return this.authService.signup(dto);
+    @Res() res: Response,
+  ) {
+    return this.authService.signup(dto, res);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -58,10 +59,8 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('sign-in')
-  async signIn(
-    @Body() dto: SignInDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    return await this.authService.signIn(dto);
+  async signIn(@Body() dto: SignInDto, @Res() res: Response) {
+    return await this.authService.signIn(dto, res);
   }
 
   @HttpCode(HttpStatus.OK)

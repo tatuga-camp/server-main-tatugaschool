@@ -7,7 +7,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
-export class UserGuard extends AuthGuard('user-jwt') {
+export class NoVerifyUserGuard extends AuthGuard('user-jwt') {
   canActivate(context: ExecutionContext) {
     return super.canActivate(context);
   }
@@ -15,8 +15,6 @@ export class UserGuard extends AuthGuard('user-jwt') {
   handleRequest(err, user, info) {
     if (err || !user) {
       throw new UnauthorizedException('Access denied');
-    } else if (user.isVerifyEmail === false) {
-      throw new ForbiddenException('Email not verified');
     } else {
       return user;
     }

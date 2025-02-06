@@ -24,7 +24,7 @@ import {
   MemberOnSchoolRepositoryType,
 } from './member-on-school.repository';
 import { PrismaService } from '../prisma/prisma.service';
-import { UserRepository, UserRepositoryType } from '../users/users.repository';
+import { UserRepository } from '../users/users.repository';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
 import { PushService } from 'src/web-push/push.service';
 import { PushSubscription } from '../web-push/interfaces';
@@ -33,7 +33,7 @@ import { PushSubscription } from '../web-push/interfaces';
 export class MemberOnSchoolService {
   private logger: Logger = new Logger(MemberOnSchoolService.name);
   memberOnSchoolRepository: MemberOnSchoolRepositoryType;
-  private userRepository: UserRepositoryType;
+  private userRepository: UserRepository;
   private schoolRepository: SchoolRepositoryType;
   constructor(
     private prisma: PrismaService,

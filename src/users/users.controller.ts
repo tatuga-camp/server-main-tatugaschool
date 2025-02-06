@@ -1,8 +1,16 @@
 import { UsersService } from './users.service';
-import { Body, Controller, Get, Patch, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
-import { UserGuard } from '../auth/guard';
+import { NoVerifyUserGuard, UserGuard } from '../auth/guard';
 import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
 
 @Controller('v1/users')
@@ -12,6 +20,18 @@ export class UsersController {
   @UseGuards(UserGuard)
   @Get('me')
   GetUser(@GetUser() user: User) {
+    return this.usersService.GetUser(user);
+  }
+
+  @UseGuards(NoVerifyUserGuard)
+  @Post('resend-verify-email')
+  ResendVerifyEmail(@GetUser() user: User) {
+    return this.usersService.ResendVerifyEmail(user);
+  }
+
+  @UseGuards(NoVerifyUserGuard)
+  @Get('noverify-user')
+  GetUserNoVerify(@GetUser() user: User) {
     return this.usersService.GetUser(user);
   }
 
@@ -27,7 +47,7 @@ export class UsersController {
     return this.usersService.updatePassword(dto, user);
   }
 
-  @UseGuards(UserGuard)
+  @UseGuards(NoVerifyUserGuard)
   @Patch()
   UpdateUser(@Body() dto: UpdateUserDto, @GetUser() user: User) {
     return this.usersService.updateUser(dto, user);

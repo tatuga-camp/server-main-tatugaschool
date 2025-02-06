@@ -24,8 +24,6 @@ export type RequestCreateUser = {
   provider: Provider;
   providerId?: string;
   photo: string;
-  verifyEmailToken: string;
-  verifyEmailTokenExpiresAt: string;
 };
 export type RequestUpdateUser = {
   query: {

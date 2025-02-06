@@ -130,7 +130,7 @@ export class AuthService {
     }
   }
 
-  async signup(dto: SignUpDto): Promise<User> {
+  async signup(dto: SignUpDto, res: Response) {
     try {
       const existingUser = await this.usersRepository.findByEmail({
         email: dto.email,
@@ -138,10 +138,6 @@ export class AuthService {
       if (existingUser) {
         throw new ConflictException('Email already exists');
       }
-
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiration = new Date();
-      expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
 
       const hashedPassword = await bcrypt.hash(dto.password, 10);
 
@@ -152,45 +148,27 @@ export class AuthService {
       const user = await this.usersRepository.createUser({
         ...dto,
         photo,
-        verifyEmailToken: token,
-        verifyEmailTokenExpiresAt: expiration.toISOString(),
         password: hashedPassword,
       });
-      const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
 
-      const emailHTML = `
-         <body style="background-color: #f8f9fa;">
-       <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/development-tatuga-school/public/logo.avif" />
-         <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-           <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
-          Verify your email to login on Tatuga School
-           </h1>
-           <p style="margin: 0 0 16px;">
-           Hello ${user.firstName},<br>
-           Thank you for signing up! Click button below to verify your e-mail
-           </p>
-            <p style="margin: 0 0 16px; color: #6c757d">
-            Do not reply to this email, this email is automatically generated.
-            If you have any questions, please contact this email permlap@tatugacamp.com or the address below
-           </p>
-           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${resetUrl}">Verify Email</a>
-         </div>
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.cloud.google.com/public-tatugaschool/branner.png" />
-         <div style="color: #6c757d; text-align: center; margin: 24px 0;">
-         Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
-         879 หมู่3 ตำบลโพธิ์กลาง อำเภอเมืองนครราชสีมา จ.นครราชสีมา 30000<br>
-         โทร 0610277960 Email: permlap@tatugacamp.com<br>
-         </div>
-       </div>
-     </body>
-     `;
-      this.emailService.sendMail({
-        to: user.email,
-        subject: 'Verify your email to login on Tatuga School',
-        html: emailHTML,
+      const accessToken = await this.GenerateAccessToken(user);
+      const refreshToken = await this.GenerateRefreshToken(user);
+
+      res.cookie('access_token', accessToken, {
+        maxAge: 1000 * 60,
+        sameSite: true,
+        secure: process.env.NODE_ENV === 'production',
       });
-      return user;
+
+      res.cookie('refresh_token', refreshToken, {
+        maxAge: 1000 * 60 * 60 * 24 * 3,
+        sameSite: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+
+      return res.json({
+        redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -241,9 +219,7 @@ export class AuthService {
     }
   }
 
-  async signIn(
-    dto: SignInDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  async signIn(dto: SignInDto, res: Response) {
     try {
       const user = await this.usersRepository.findByEmail({
         email: dto.email,
@@ -251,14 +227,27 @@ export class AuthService {
       if (!user) {
         throw new NotFoundException('No user found with this email');
       }
-
-      if (!user.isVerifyEmail) {
-        throw new ForbiddenException(
-          "Email isn't verified yet, Please check your email",
-        );
-      }
       if (user.provider !== 'LOCAL') {
         throw new BadRequestException('Please sign in with google');
+      }
+      const accessToken = await this.GenerateAccessToken(user);
+      const refreshToken = await this.GenerateRefreshToken(user);
+      res.cookie('access_token', accessToken, {
+        maxAge: 1000 * 60,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: true,
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        maxAge: 1000 * 60 * 60 * 24 * 3,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: true,
+      });
+
+      if (!user.isVerifyEmail) {
+        return res.json({
+          redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+        });
       }
 
       const isMatch = await bcrypt.compare(dto.password, user.password);
@@ -269,27 +258,8 @@ export class AuthService {
       await this.usersRepository.updateLastActiveAt({
         email: user.email,
       });
-      delete user.password;
-      delete user.email;
-      delete user.phone;
-      delete user.blurHash;
-      delete user.firstName;
-      delete user.lastName;
-      delete user.verifyEmailToken;
-      delete user.verifyEmailTokenExpiresAt;
-      delete user.resetPasswordToken;
-      delete user.resetPasswordTokenExpiresAt;
-      delete user.photo;
-      return {
-        accessToken: await this.jwtService.signAsync(user, {
-          secret: this.config.get('JWT_ACCESS_SECRET'),
-          expiresIn: '40s',
-        }),
-        refreshToken: await this.jwtService.signAsync(user, {
-          secret: this.config.get('JWT_REFRESH_SECRET'),
-          expiresIn: '3d',
-        }),
-      };
+
+      return res.json({ redirectUrl: process.env.CLIENT_URL });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -315,23 +285,10 @@ export class AuthService {
           throw new BadRequestException("Password isn't correct");
         }
       }
-      delete student.password;
-      delete student.photo;
-      delete student.blurHash;
-      delete student.title;
-      delete student.firstName;
-      delete student.lastName;
-      delete student.number;
 
       return {
-        accessToken: await this.jwtService.signAsync(student, {
-          secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
-          expiresIn: '40s',
-        }),
-        refreshToken: await this.jwtService.signAsync(student, {
-          secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
-          expiresIn: '3d',
-        }),
+        accessToken: await this.GenerateStudentAccessToken(student),
+        refreshToken: await this.GenerateStudentRefreshToken(student),
       };
     } catch (error) {
       this.logger.error(error);
@@ -357,22 +314,9 @@ export class AuthService {
       if (!user) {
         throw new BadRequestException('Refresh token is invalid');
       }
-      delete user.password;
-      delete user.email;
-      delete user.phone;
-      delete user.blurHash;
-      delete user.firstName;
-      delete user.lastName;
-      delete user.verifyEmailToken;
-      delete user.verifyEmailTokenExpiresAt;
-      delete user.resetPasswordToken;
-      delete user.resetPasswordTokenExpiresAt;
-      delete user.photo;
+
       return {
-        accessToken: await this.jwtService.signAsync(user, {
-          secret: this.config.get('JWT_ACCESS_SECRET'),
-          expiresIn: '40s',
-        }),
+        accessToken: await this.GenerateAccessToken(user),
       };
     } catch (error) {
       this.logger.error(error);
@@ -398,19 +342,9 @@ export class AuthService {
       if (!student) {
         throw new BadRequestException('Refresh token is invalid');
       }
-      delete student.password;
-      delete student.photo;
-      delete student.blurHash;
-      delete student.title;
-      delete student.firstName;
-      delete student.lastName;
-      delete student.number;
 
       return {
-        accessToken: await this.jwtService.signAsync(student, {
-          secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
-          expiresIn: '40s',
-        }),
+        accessToken: await this.GenerateStudentAccessToken(student),
       };
     } catch (error) {
       this.logger.error(error);
@@ -424,68 +358,79 @@ export class AuthService {
       }
       const data = req.user as GoogleProfile;
 
-      const user = await this.usersRepository.findByEmail({
+      let user = await this.usersRepository.findByEmail({
         email: data.email,
       });
 
       if (user) {
-        if (!user.isVerifyEmail) {
-          throw new ForbiddenException('ยังไม่ได้ยืนยันอีเมล');
-        }
-
-        await this.usersRepository.updateLastActiveAt({ email: user.email });
-        delete user.password;
-        delete user.email;
-        delete user.phone;
-        delete user.blurHash;
-        delete user.firstName;
-        delete user.lastName;
-        delete user.verifyEmailToken;
-        delete user.verifyEmailTokenExpiresAt;
-        delete user.resetPasswordToken;
-        delete user.resetPasswordTokenExpiresAt;
-        delete user.photo;
-        const accessToken = await this.jwtService.signAsync(user, {
-          secret: this.config.get('JWT_ACCESS_SECRET'),
-          expiresIn: '40s',
-        });
-        const refreshToken = await this.jwtService.signAsync(user, {
-          secret: this.config.get('JWT_REFRESH_SECRET'),
-          expiresIn: '3d',
-        });
+        const accessToken = await this.GenerateAccessToken(user);
+        const refreshToken = await this.GenerateRefreshToken(user);
         res.cookie('access_token', accessToken, {
-          maxAge: 2592000000,
+          maxAge: 1000 * 60,
           sameSite: true,
-          httpOnly: true,
-          secure: true,
-        });
-        res.cookie('refresh_token', refreshToken, {
-          maxAge: 2592000000,
-          sameSite: true,
-          httpOnly: true,
-          secure: true,
         });
 
-        return res.redirect(`${process.env.CLIENT_URL}/auth/sign-in`);
+        res.cookie('refresh_token', refreshToken, {
+          maxAge: 1000 * 60 * 60 * 24 * 3,
+          sameSite: true,
+        });
+
+        if (!user.isVerifyEmail) {
+          return res.redirect(
+            `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+          );
+        }
+        await this.usersRepository.updateLastActiveAt({ email: user.email });
+        return res.redirect(`${process.env.CLIENT_URL}`);
       }
 
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiration = new Date();
-      expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
-
-      await this.usersRepository.createUser({
+      user = await this.usersRepository.createUser({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         phone: data.phone,
         password: null, // google login no need password
         role: 'USER',
-        provider: data.provider,
+        provider: 'GOOGLE',
         providerId: data.providerId,
         photo: data.photo,
-        verifyEmailToken: token,
-        verifyEmailTokenExpiresAt: expiration.toISOString(),
       });
+      await this.sendVerifyEmail(user);
+      const accessToken = await this.GenerateAccessToken(user);
+      const refreshToken = await this.GenerateRefreshToken(user);
+      res.cookie('access_token', accessToken, {
+        maxAge: 1000 * 60,
+        sameSite: true,
+      });
+
+      res.cookie('refresh_token', refreshToken, {
+        maxAge: 1000 * 60 * 60 * 24 * 3,
+        sameSite: true,
+      });
+
+      return res.redirect(`${process.env.CLIENT_URL}/auth/wait-verify-email`);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async sendVerifyEmail(user: User) {
+    try {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiration = new Date();
+      expiration.setHours(expiration.getDate() + 1 * 30 * 12); // Token valid for 12 months
+
+      const update = await this.usersRepository.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          verifyEmailToken: token,
+          verifyEmailTokenExpiresAt: expiration.toISOString(),
+        },
+      });
+
       const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
 
       const emailHTML = `
@@ -497,7 +442,7 @@ export class AuthService {
           Verify your email to login on Tatuga School
            </h1>
            <p style="margin: 0 0 16px;">
-           Hello ${data.firstName},<br>
+           Hello ${update.firstName},<br>
            Thank you for signing up! Click button below to verify your e-mail
            </p>
             <p style="margin: 0 0 16px; color: #6c757d">
@@ -516,12 +461,10 @@ export class AuthService {
      </body>
      `;
       this.emailService.sendMail({
-        to: data.email,
+        to: update.email,
         subject: 'Verify your email to login on Tatuga School',
         html: emailHTML,
       });
-
-      return res.redirect(`${process.env.CLIENT_URL}/auth/verify-email`);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -551,6 +494,72 @@ export class AuthService {
       const client = await this.oauth2Client.getClient();
       const accessToken = await client.getAccessToken();
       return accessToken.token;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async GenerateAccessToken(user: User): Promise<string> {
+    try {
+      const payload = {
+        id: user.id,
+        email: user.email,
+      };
+
+      return await this.jwtService.signAsync(payload, {
+        secret: this.config.get('JWT_ACCESS_SECRET'),
+        expiresIn: '40s',
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async GenerateStudentAccessToken(student: Student): Promise<string> {
+    try {
+      const payload = {
+        id: student.id,
+        schoolId: student.schoolId,
+      };
+
+      return await this.jwtService.signAsync(payload, {
+        secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
+        expiresIn: '40s',
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async GenerateRefreshToken(user: User): Promise<string> {
+    try {
+      const payload = {
+        id: user.id,
+        email: user.email,
+      };
+      return await this.jwtService.signAsync(payload, {
+        secret: this.config.get('JWT_REFRESH_SECRET'),
+        expiresIn: '3d',
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async GenerateStudentRefreshToken(student: Student): Promise<string> {
+    try {
+      const payload = {
+        id: student.id,
+        schoolId: student.schoolId,
+      };
+      return await this.jwtService.signAsync(payload, {
+        secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
+        expiresIn: '3d',
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -8,7 +8,7 @@ async function bootstrap() {
 
   // Determine the allowed origins
   const allowedOrigins = isDevelopment
-    ? '*'
+    ? ['*', 'http://localhost:8181']
     : [
         'https://tatugaschool.com',
         'https://www.tatugaschool.com',
