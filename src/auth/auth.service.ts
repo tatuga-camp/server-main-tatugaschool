@@ -522,7 +522,7 @@ export class AuthService {
       maxAge: 1000 * 60 * 60,
       secure: true,
       sameSite: 'none',
-      ...(process.env.NODE_ENV === 'production' && {
+      ...(this.config.get('NODE_ENV') === 'production' && {
         domain: 'tatugaschool.com',
       }),
     });
@@ -533,7 +533,7 @@ export class AuthService {
       maxAge: 1000 * 60 * 60 * 24 * 3,
       secure: true,
       sameSite: 'none',
-      ...(process.env.NODE_ENV === 'production' && {
+      ...(this.config.get('NODE_ENV') === 'production' && {
         domain: 'tatugaschool.com',
       }),
     });
