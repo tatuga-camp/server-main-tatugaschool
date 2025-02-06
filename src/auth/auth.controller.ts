@@ -73,10 +73,8 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
-  async refreshToken(
-    @Body() dto: RefreshTokenDto,
-  ): Promise<{ accessToken: string }> {
-    return await this.authService.UserRefreshToken(dto);
+  async refreshToken(@Body() dto: RefreshTokenDto, @Res() res: Response) {
+    return await this.authService.UserRefreshToken(dto, res);
   }
 
   @HttpCode(HttpStatus.OK)
