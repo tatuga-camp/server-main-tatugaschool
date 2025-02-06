@@ -368,11 +368,13 @@ export class AuthService {
         res.cookie('access_token', accessToken, {
           maxAge: 1000 * 60,
           sameSite: true,
+          secure: process.env.NODE_ENV === 'production',
         });
 
         res.cookie('refresh_token', refreshToken, {
           maxAge: 1000 * 60 * 60 * 24 * 3,
           sameSite: true,
+          secure: process.env.NODE_ENV === 'production',
         });
 
         if (!user.isVerifyEmail) {
@@ -401,11 +403,13 @@ export class AuthService {
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
         sameSite: true,
+        secure: process.env.NODE_ENV === 'production',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
         sameSite: true,
+        secure: process.env.NODE_ENV === 'production',
       });
 
       return res.redirect(`${process.env.CLIENT_URL}/auth/wait-verify-email`);
