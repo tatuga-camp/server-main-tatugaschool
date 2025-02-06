@@ -156,16 +156,12 @@ export class AuthService {
 
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
-        sameSite: 'none',
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: process.env.NODE_ENV === 'production',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
-        sameSite: 'none',
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: process.env.NODE_ENV === 'production',
       });
 
       return res.json({
@@ -237,15 +233,11 @@ export class AuthService {
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: process.env.NODE_ENV === 'production',
-        sameSite: 'none',
       });
 
       if (!user.isVerifyEmail) {
@@ -371,16 +363,12 @@ export class AuthService {
         const refreshToken = await this.GenerateRefreshToken(user);
         res.cookie('access_token', accessToken, {
           maxAge: 1000 * 60,
-          sameSite: 'none',
           secure: process.env.NODE_ENV === 'production',
-          httpOnly: process.env.NODE_ENV === 'production',
         });
 
         res.cookie('refresh_token', refreshToken, {
           maxAge: 1000 * 60 * 60 * 24 * 3,
-          sameSite: 'none',
           secure: process.env.NODE_ENV === 'production',
-          httpOnly: process.env.NODE_ENV === 'production',
         });
 
         if (!user.isVerifyEmail) {
@@ -408,16 +396,12 @@ export class AuthService {
       const refreshToken = await this.GenerateRefreshToken(user);
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
-        sameSite: 'none',
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: process.env.NODE_ENV === 'production',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
-        sameSite: 'none',
         secure: process.env.NODE_ENV === 'production',
-        httpOnly: process.env.NODE_ENV === 'production',
       });
 
       return res.redirect(`${process.env.CLIENT_URL}/auth/wait-verify-email`);
