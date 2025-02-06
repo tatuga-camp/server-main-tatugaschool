@@ -523,7 +523,7 @@ export class AuthService {
       secure: true,
       sameSite: 'none',
       ...(this.config.get('NODE_ENV') === 'production' && {
-        domain: 'tatugaschool.com',
+        domain: '.tatugaschool.com',
       }),
     });
   }
@@ -534,7 +534,7 @@ export class AuthService {
       secure: true,
       sameSite: 'none',
       ...(this.config.get('NODE_ENV') === 'production' && {
-        domain: 'tatugaschool.com',
+        domain: '.tatugaschool.com',
       }),
     });
   }
