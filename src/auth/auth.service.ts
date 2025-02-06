@@ -156,13 +156,13 @@ export class AuthService {
 
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none',
       });
 
@@ -234,13 +234,13 @@ export class AuthService {
       const refreshToken = await this.GenerateRefreshToken(user);
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none',
       });
 
@@ -365,15 +365,16 @@ export class AuthService {
       if (user) {
         const accessToken = await this.GenerateAccessToken(user);
         const refreshToken = await this.GenerateRefreshToken(user);
+
         res.cookie('access_token', accessToken, {
           maxAge: 1000 * 60,
-          secure: process.env.NODE_ENV === 'production',
+          secure: true,
           sameSite: 'none',
         });
 
         res.cookie('refresh_token', refreshToken, {
           maxAge: 1000 * 60 * 60 * 24 * 3,
-          secure: process.env.NODE_ENV === 'production',
+          secure: true,
           sameSite: 'none',
         });
 
@@ -402,13 +403,13 @@ export class AuthService {
       const refreshToken = await this.GenerateRefreshToken(user);
       res.cookie('access_token', accessToken, {
         maxAge: 1000 * 60,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none',
       });
 
       res.cookie('refresh_token', refreshToken, {
         maxAge: 1000 * 60 * 60 * 24 * 3,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none',
       });
 
