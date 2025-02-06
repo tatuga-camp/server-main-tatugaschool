@@ -1,3 +1,4 @@
+import { AuthService } from './../auth/auth.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -13,11 +14,31 @@ import * as bcrypt from 'bcrypt';
 export class UsersService {
   logger: Logger = new Logger(UsersService.name);
   userRepository: UserRepository = new UserRepository(this.prisma);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private authService: AuthService,
+  ) {}
 
   async GetUser(user: User): Promise<User> {
     try {
       return user;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async ResendVerifyEmail(user: User): Promise<void> {
+    try {
+      const lastUpdate = new Date(user.updateAt).getTime();
+
+      if (new Date().getTime() - lastUpdate < 60000) {
+        throw new BadRequestException(
+          'Please wait 1 minute before trying again',
+        );
+      }
+
+      await this.authService.sendVerifyEmail(user);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -57,12 +78,24 @@ export class UsersService {
           'blurHash is required when photo is provided',
         );
       }
-      return await this.userRepository.update({
+      if (dto.email && dto.email === user.email) {
+        throw new BadRequestException("Can't update email to the same email");
+      }
+      const update = await this.userRepository.update({
         where: {
           id: user.id,
         },
-        data: dto,
+        data: {
+          ...(dto.email && { isVerifyEmail: false, verifyEmailToken: null }),
+          ...dto,
+        },
       });
+
+      if (dto.email) {
+        await this.authService.sendVerifyEmail(update);
+      }
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -19,7 +20,7 @@ import {
 } from './interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type UserRepositoryType = {
+type Repository = {
   findMany(request: Prisma.UserFindManyArgs): Promise<User[]>;
   findById(request: RequestFindById): Promise<User>;
   findByEmail(request: RequestFindByEmail): Promise<User>;
@@ -34,7 +35,7 @@ export type UserRepositoryType = {
 };
 
 @Injectable()
-export class UserRepository implements UserRepositoryType {
+export class UserRepository implements Repository {
   logger: Logger = new Logger(UserRepository.name);
   constructor(private prisma: PrismaService) {}
 
@@ -137,6 +138,12 @@ export class UserRepository implements UserRepositoryType {
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
+        if (
+          error.code === 'P2002' &&
+          (error.meta?.target as string)?.includes('email')
+        ) {
+          throw new BadRequestException('Email is already taken');
+        }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
         );
