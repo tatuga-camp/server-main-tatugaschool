@@ -297,9 +297,7 @@ export class AuthService {
     }
   }
 
-  async UserRefreshToken(
-    dto: RefreshTokenDto,
-  ): Promise<{ accessToken: string }> {
+  async UserRefreshToken(dto: RefreshTokenDto, res: Response) {
     try {
       const verify = await this.jwtService
         .verifyAsync<User>(dto.refreshToken, {
@@ -315,10 +313,13 @@ export class AuthService {
       if (!user) {
         throw new BadRequestException('Refresh token is invalid');
       }
-
-      return {
-        accessToken: await this.GenerateAccessToken(user),
-      };
+      const accessToken = await this.GenerateAccessToken(user);
+      res.cookie('access_token', accessToken, {
+        maxAge: 1000 * 60 * 60,
+        secure: true,
+        sameSite: 'none',
+      });
+      return res.json({ accessToken: accessToken });
     } catch (error) {
       this.logger.error(error);
       throw error;
