@@ -155,7 +155,7 @@ export class AuthService {
       const refreshToken = await this.GenerateRefreshToken(user);
 
       res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60,
+        maxAge: 1000 * 60 * 60,
         secure: true,
         sameSite: 'none',
       });
@@ -232,8 +232,18 @@ export class AuthService {
       }
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
+
+      const isMatch = await bcrypt.compare(dto.password, user.password);
+      if (!isMatch) {
+        throw new BadRequestException('Password is NOT Correct');
+      }
+
+      await this.usersRepository.updateLastActiveAt({
+        email: user.email,
+      });
+
       res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60,
+        maxAge: 1000 * 60 * 60,
         secure: true,
         sameSite: 'none',
       });
@@ -249,15 +259,6 @@ export class AuthService {
           redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         });
       }
-
-      const isMatch = await bcrypt.compare(dto.password, user.password);
-      if (!isMatch) {
-        throw new BadRequestException('Password is NOT Correct');
-      }
-
-      await this.usersRepository.updateLastActiveAt({
-        email: user.email,
-      });
 
       return res.json({ redirectUrl: process.env.CLIENT_URL });
     } catch (error) {
@@ -367,7 +368,7 @@ export class AuthService {
         const refreshToken = await this.GenerateRefreshToken(user);
 
         res.cookie('access_token', accessToken, {
-          maxAge: 1000 * 60,
+          maxAge: 1000 * 60 * 60,
           secure: true,
           sameSite: 'none',
         });
@@ -402,7 +403,7 @@ export class AuthService {
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
       res.cookie('access_token', accessToken, {
-        maxAge: 1000 * 60,
+        maxAge: 1000 * 60 * 60,
         secure: true,
         sameSite: 'none',
       });
