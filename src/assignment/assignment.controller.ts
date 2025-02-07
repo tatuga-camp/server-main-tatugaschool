@@ -77,6 +77,15 @@ export class AssignmentController {
   }
 
   @UseGuards(UserGuard)
+  @Patch('embeding/:assignmentId')
+  async updateEmbeding(
+    @Param() dto: GetAssignmentByIdDto,
+    @GetUser() user: User,
+  ) {
+    return await this.assignmentService.EmbedingAssignment(dto.assignmentId);
+  }
+
+  @UseGuards(UserGuard)
   @Get(':assignmentId')
   async getAssignmentById(
     @Param() dto: GetAssignmentByIdDto,

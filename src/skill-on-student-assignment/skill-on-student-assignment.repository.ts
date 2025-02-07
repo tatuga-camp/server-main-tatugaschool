@@ -9,7 +9,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 type Repository = {
-  findById(
+  findFirst(
+    request: Prisma.SkillOnStudentAssignmentFindFirstArgs,
+  ): Promise<SkillOnStudentAssignment | null>;
+  findUnique(
     request: Prisma.SkillOnStudentAssignmentFindUniqueArgs,
   ): Promise<SkillOnStudentAssignment>;
   create(
@@ -34,7 +37,23 @@ export class SkillOnStudentAssignmentRepository implements Repository {
   private logger: Logger = new Logger(SkillOnStudentAssignmentRepository.name);
   constructor(private prisma: PrismaService) {}
 
-  async findById(
+  async findFirst(
+    request: Prisma.SkillOnStudentAssignmentFindFirstArgs,
+  ): Promise<SkillOnStudentAssignment | null> {
+    try {
+      return await this.prisma.skillOnStudentAssignment.findFirst(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findUnique(
     request: Prisma.SkillOnStudentAssignmentFindUniqueArgs,
   ): Promise<SkillOnStudentAssignment> {
     try {

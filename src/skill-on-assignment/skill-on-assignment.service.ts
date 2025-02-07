@@ -1,3 +1,4 @@
+import { SkillRepository } from './../skill/skill.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
@@ -10,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetAssignmentByIdDto } from '../assignment/dto';
-import { SkillOnAssignment, User } from '@prisma/client';
+import { Skill, SkillOnAssignment, User } from '@prisma/client';
 import { CreateSkillOnAssignmentDto, DeleteSkillOnAssignmentDto } from './dto';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class SkillOnAssignmentService {
     new SkillOnAssignmentRepository(this.prisma);
   private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
+  private skillRepository: SkillRepository = new SkillRepository(this.prisma);
   private assignmentRepository: AssignmentRepository = new AssignmentRepository(
     this.prisma,
     this.googleStorageService,
@@ -32,7 +34,7 @@ export class SkillOnAssignmentService {
   async getByAssignmentId(
     dto: GetAssignmentByIdDto,
     user: User,
-  ): Promise<SkillOnAssignment[]> {
+  ): Promise<(SkillOnAssignment & { skill: Skill })[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
@@ -57,7 +59,25 @@ export class SkillOnAssignmentService {
           assignmentId: dto.assignmentId,
         });
 
-      return skillOnAssignment;
+      const skills = await this.skillRepository
+        .findMany({
+          where: {
+            OR: skillOnAssignment.map((skill) => ({ id: skill.skillId })),
+          },
+        })
+        .then((res) => {
+          return res.map((skill) => {
+            delete skill.vector;
+            return {
+              ...skill,
+            };
+          });
+        });
+
+      return skillOnAssignment.map((skill) => ({
+        ...skill,
+        skill: skills.find((s) => s.id === skill.skillId),
+      }));
     } catch (error) {
       this.logger.error(error);
       throw error;

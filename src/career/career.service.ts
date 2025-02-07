@@ -1,60 +1,40 @@
+import { SkillOnCareerRepository } from './../skill-on-career/skill-on-career.repository';
 import { CareerRepository } from './career.repository';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Pagination } from '../interfaces';
-import { Career } from '@prisma/client';
-import {
-  CreateCareerDto,
-  DeleteCareerDto,
-  GetCareerByPageDto,
-  UpdateCareerDto,
-} from './dto';
+import { Career, SkillOnCareer } from '@prisma/client';
+import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 import { VectorService } from '../vector/vector.service';
 
 @Injectable()
 export class CareerService {
   private logger: Logger = new Logger(CareerService.name);
   careerRepository: CareerRepository = new CareerRepository(this.prisma);
+  private skillOnCareerRepository: SkillOnCareerRepository =
+    new SkillOnCareerRepository(this.prisma);
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
   ) {}
 
-  async getCareerByPage(dto: GetCareerByPageDto): Promise<Pagination<Career>> {
+  async getOne(dto: {
+    careerId: string;
+  }): Promise<Career & { skills: SkillOnCareer[] }> {
     try {
-      const numbers = await this.careerRepository.counts({});
-      const totalPages = Math.ceil(numbers / dto.limit);
-
-      if (dto.page > totalPages) {
-        return {
-          data: [],
-          meta: {
-            total: 1,
-            lastPage: 1,
-            currentPage: 1,
-            prev: 1,
-            next: 1,
-          },
-        };
-      }
-
-      const skip = (dto.page - 1) * dto.limit;
-
-      const careers = await this.careerRepository.findMany({
-        skip,
-        take: dto.limit,
+      const career = await this.careerRepository.findUnique({
+        where: {
+          id: dto.careerId,
+        },
       });
 
-      return {
-        data: careers,
-        meta: {
-          total: totalPages,
-          lastPage: totalPages,
-          currentPage: dto.page,
-          prev: dto.page - 1 < 0 ? dto.page : dto.page - 1,
-          next: dto.page + 1 > totalPages ? dto.page : dto.page + 1,
+      const skilss = await this.skillOnCareerRepository.findMany({
+        where: {
+          careerId: dto.careerId,
         },
-      };
+      });
+
+      return { ...career, skills: skilss };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -63,16 +43,9 @@ export class CareerService {
 
   async create(dto: CreateCareerDto): Promise<Career> {
     try {
-      const text = `
-      title: ${dto.title} 
-      description: ${dto.description} 
-      keywords: ${dto.keywords}`;
-      const vector = await this.vectorService.embbedingText(text);
-
       return await this.careerRepository.create({
         data: {
           ...dto,
-          vector: vector.predictions[0].embeddings.values,
         },
       });
     } catch (error) {
@@ -95,7 +68,6 @@ export class CareerService {
         },
         data: {
           ...dto.body,
-          vector: vector.predictions[0].embeddings.values,
         },
       });
     } catch (error) {

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateCareerDto {
   @IsNotEmpty()
@@ -6,13 +6,13 @@ export class CreateCareerDto {
   @MaxLength(9999)
   title: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(9999)
-  description: string;
+  description?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(9999)
-  keywords: string;
+  keywords?: string;
 }

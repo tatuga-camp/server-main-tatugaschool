@@ -242,7 +242,10 @@ export class AuthService {
         });
       }
 
-      return res.json({ redirectUrl: process.env.CLIENT_URL });
+      return res.json({
+        redirectUrl: process.env.CLIENT_URL,
+        refreshToken: refreshToken,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

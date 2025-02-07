@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateSkillDto,
   DeleteSkillDto,
+  GetSkillByAssignmentDto,
   GetSkillDto,
   UpdateSkillDto,
 } from './dto';
@@ -34,7 +35,18 @@ export class SkillService {
     private googleStorageService: GoogleStorageService,
   ) {}
 
-  async findByVectorSearch(dto: GetSkillDto, user: User): Promise<Skill[]> {
+  async getOne(dto: { skillId: string }) {
+    try {
+      return await this.skillRepository.findById({
+        skillId: dto.skillId,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async findByVectorSearch(dto: GetSkillByAssignmentDto): Promise<Skill[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
@@ -42,16 +54,6 @@ export class SkillService {
 
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
-      }
-
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-
-      if (!teacherOnSubject) {
-        throw new ForbiddenException('You are not allowed to access this data');
       }
 
       return this.skillRepository.findByVectorSearch(assignment.vector);
