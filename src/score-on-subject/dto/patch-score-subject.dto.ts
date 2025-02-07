@@ -23,7 +23,6 @@ class UpdateScoreOnSubjectBody {
   @IsOptional()
   @IsNumber()
   @Transform(({ value }) => Number(value))
-  @Min(0)
   score?: number;
 
   @IsOptional()

@@ -343,6 +343,10 @@ export class AuthService {
       });
 
       if (user) {
+        if (user.provider !== 'GOOGLE') {
+          throw new BadRequestException('You are not registered with google');
+        }
+
         const accessToken = await this.GenerateAccessToken(user);
         const refreshToken = await this.GenerateRefreshToken(user);
 
