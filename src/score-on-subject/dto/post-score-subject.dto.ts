@@ -13,7 +13,6 @@ export class CreateScoreOnSubjectDto {
   @IsNotEmpty()
   @IsNumber()
   @Transform(({ value }) => Number(value))
-  @Min(0)
   score: number;
 
   @IsNotEmpty()
