@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { Skill } from '@prisma/client';
+import { Prisma, Skill } from '@prisma/client';
 import {
   RawSkill,
   RequestCreateSkill,
@@ -18,6 +18,7 @@ type SkillRepositoryType = {
   findById(request: RequestFindSkillById): Promise<Skill | null>;
   findByVectorSearch(vector: number[]): Promise<Skill[]>;
   findAll(): Promise<Skill[]>;
+  findMany(request: Prisma.SkillFindManyArgs): Promise<Skill[]>;
   create(request: RequestCreateSkill): Promise<Skill>;
   update(request: RequestUpdateSkill): Promise<Skill>;
   delete(request: RequestDeleteSkill): Promise<{ message: string }>;
@@ -27,6 +28,20 @@ export class SkillRepository implements SkillRepositoryType {
   logger: Logger = new Logger(SkillRepository.name);
 
   constructor(private prisma: PrismaService) {}
+
+  async findMany(request: Prisma.SkillFindManyArgs): Promise<Skill[]> {
+    try {
+      return await this.prisma.skill.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async findAll(): Promise<Skill[]> {
     try {

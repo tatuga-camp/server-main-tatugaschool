@@ -1,3 +1,4 @@
+import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
 import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
@@ -60,6 +61,7 @@ export class StudentOnAssignmentService {
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private pushService: PushService,
+    private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
   ) {}
 
   private async notifyTeachers({
@@ -329,7 +331,7 @@ export class StudentOnAssignmentService {
         });
       }
 
-      return await this.studentOnAssignmentRepository.update({
+      const update = await this.studentOnAssignmentRepository.update({
         where: { id: dto.query.studentOnAssignmentId },
         data: {
           ...dto.body,
@@ -343,6 +345,14 @@ export class StudentOnAssignmentService {
               : undefined,
         },
       });
+
+      if (dto.body.score) {
+        this.skillOnStudentAssignmentService.suggestCreate({
+          studentOnAssignmentId: studentOnAssignment.id,
+        });
+      }
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;

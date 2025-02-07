@@ -74,7 +74,6 @@ export class SkillOnStudentAssignmentService {
 
   async suggestCreate(
     dto: CreateBySuggestionDto,
-    user: User,
   ): Promise<SkillOnStudentAssignment[]> {
     try {
       const studentOnAssignment =
@@ -97,17 +96,12 @@ export class SkillOnStudentAssignmentService {
         throw new NotFoundException('Student not found');
       }
 
-      await this.memberOnSchoolService.validateAccess({
-        user,
-        schoolId: student.schoolId,
-      });
-
       const skillOnAssignments =
         await this.skillOnAssignmentRepository.getByAssignmentId({
           assignmentId: studentOnAssignment.assignmentId,
         });
       // Calculate weigth based on student score and max score of assignment
-      const weigth = studentOnAssignment.score / assignment.maxScore;
+      const weigth = (studentOnAssignment.score / assignment.maxScore) * 100;
 
       const skillOnStudentAssignments = skillOnAssignments.map(
         (skillOnAssignment) => {
@@ -120,21 +114,43 @@ export class SkillOnStudentAssignmentService {
         },
       );
 
-      const create = await Promise.all(
-        skillOnStudentAssignments.map((skill) =>
-          this.skillOnStudentAssignmentRepository.create({
-            data: {
-              skillId: skill.skillId,
-              studentId: student.id,
-              subjectId: skill.subjectId,
+      let skillOnStudentAssignmentsCreated: SkillOnStudentAssignment[] = [];
+      for (const skill of skillOnStudentAssignments) {
+        const skillOnStudentAssignment =
+          await this.skillOnStudentAssignmentRepository.findFirst({
+            where: {
               studentOnAssignmentId: studentOnAssignment.id,
-              weight: weigth,
+              skillId: skill.skillId,
             },
-          }),
-        ),
-      );
+          });
 
-      return create;
+        if (skillOnStudentAssignment) {
+          skillOnStudentAssignmentsCreated.push(
+            await this.skillOnStudentAssignmentRepository.update({
+              where: {
+                id: skillOnStudentAssignment.id,
+              },
+              data: {
+                weight: weigth,
+              },
+            }),
+          );
+        } else {
+          skillOnStudentAssignmentsCreated.push(
+            await this.skillOnStudentAssignmentRepository.create({
+              data: {
+                skillId: skill.skillId,
+                studentId: student.id,
+                subjectId: skill.subjectId,
+                studentOnAssignmentId: studentOnAssignment.id,
+                weight: weigth,
+              },
+            }),
+          );
+        }
+      }
+
+      return skillOnStudentAssignmentsCreated;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -182,7 +198,7 @@ export class SkillOnStudentAssignmentService {
   async delete(dto: DeleteDto, user: User): Promise<{ message: string }> {
     try {
       const skillOnStudentAssignment =
-        await this.skillOnStudentAssignmentRepository.findById({
+        await this.skillOnStudentAssignmentRepository.findUnique({
           where: {
             id: dto.id,
           },

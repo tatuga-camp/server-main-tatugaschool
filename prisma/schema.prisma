@@ -688,10 +688,9 @@ model Career {
   updateAt DateTime @updatedAt
 
   title       String
-  description String
-  keywords    String
+  description String?
+  keywords    String?
 
-  vector         Float[]
   skillOnCareers SkillOnCareer[]
 }
 

@@ -1,9 +1,3 @@
-import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
-import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
-import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { VectorService } from './../vector/vector.service';
-import { AssignmentRepository } from './assignment.repository';
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,15 +5,6 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import {
-  CreateAssignmentDto,
-  DeleteAssignmentDto,
-  GetAssignmentByIdDto,
-  GetAssignmentBySubjectIdDto,
-  ReorderAssignmentDto,
-  UpdateAssignmentDto,
-} from './dto';
 import {
   Assignment,
   FileOnAssignment,
@@ -28,9 +13,27 @@ import {
   StudentOnAssignment,
   User,
 } from '@prisma/client';
-import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
-import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import * as cheerio from 'cheerio';
 import { Workbook } from 'exceljs';
+import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
+import { PrismaService } from '../prisma/prisma.service';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { SkillOnAssignmentService } from './../skill-on-assignment/skill-on-assignment.service';
+import { SkillService } from './../skill/skill.service';
+import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
+import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
+import { VectorService } from './../vector/vector.service';
+import { AssignmentRepository } from './assignment.repository';
+import {
+  CreateAssignmentDto,
+  DeleteAssignmentDto,
+  GetAssignmentByIdDto,
+  GetAssignmentBySubjectIdDto,
+  ReorderAssignmentDto,
+  UpdateAssignmentDto,
+} from './dto';
 
 @Injectable()
 export class AssignmentService {
@@ -45,12 +48,15 @@ export class AssignmentService {
     new StudentOnAssignmentRepository(this.prisma);
   private studentOnSubjectRepository: StudentOnSubjectRepository =
     new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
+
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private studentOnSubjectService: StudentOnSubjectService,
+    private skillService: SkillService,
+    private skillOnAssignmentService: SkillOnAssignmentService,
   ) {}
 
   async getAssignmentById(
@@ -265,11 +271,33 @@ export class AssignmentService {
       await this.studentOnAssignmentRepository.createMany({
         data: createStudentOnAssignments,
       });
-
+      this.BackgroudEmbedingAssignment(assignment);
       return assignment;
     } catch (error) {
       this.logger.error(error);
       throw error;
+    }
+  }
+
+  async BackgroudEmbedingAssignment(assignment: Assignment) {
+    try {
+      await this.EmbedingAssignment(assignment.id);
+
+      const skills = await this.skillService.findByVectorSearch({
+        assignmentId: assignment.id,
+      });
+
+      await Promise.allSettled(
+        skills.map((skill) =>
+          this.skillOnAssignmentService.skillOnAssignmentRepository.create({
+            skillId: skill.id,
+            assignmentId: assignment.id,
+            subjectId: assignment.subjectId,
+          }),
+        ),
+      );
+    } catch (error) {
+      this.logger.error(error);
     }
   }
 
@@ -279,6 +307,12 @@ export class AssignmentService {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: assignmentId,
       });
+
+      text += assignment.title;
+
+      // extract text from html
+      const doc = cheerio.load(assignment.description);
+      text += doc('body').text();
       const files = await this.fileAssignmentRepository.getByAssignmentId({
         assignmentId: assignment.id,
       });
@@ -287,18 +321,13 @@ export class AssignmentService {
         // get text from file using AI to extract text and summarize
       }
 
-      if (assignment.title && assignment.description) {
-        // if title and description is not English then translate to English
-      }
-
-      if (assignment.description) {
-        // if description contain of url then read the content of the url and summarize by AI
-      }
-
       const vectors = await this.vectorService.embbedingText(text);
       return await this.assignmentRepository.update({
         where: { id: assignmentId },
-        data: { vector: vectors.predictions[0].embeddings.values },
+        data: {
+          vector: vectors.predictions[0].embeddings.values,
+          vectorResouce: text,
+        },
       });
     } catch (error) {
       this.logger.error(error);

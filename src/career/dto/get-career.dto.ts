@@ -1,14 +1,8 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsNumber } from 'class-validator';
+import { IsMongoId, IsNotEmpty, IsNumber } from 'class-validator';
 
-export class GetCareerByPageDto {
+export class GetCarrerById {
   @IsNotEmpty()
-  @IsNumber()
-  @Transform(({ value }) => Number(value))
-  page: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  @Transform(({ value }) => Number(value))
-  limit: number;
+  @IsMongoId()
+  careerId: string;
 }

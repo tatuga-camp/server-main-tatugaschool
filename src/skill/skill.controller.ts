@@ -13,6 +13,7 @@ import { SkillService } from './skill.service';
 import {
   CreateSkillDto,
   DeleteSkillDto,
+  GetSkillByAssignmentDto,
   GetSkillDto,
   UpdateSkillDto,
 } from './dto';
@@ -24,9 +25,17 @@ export class SkillController {
   constructor(private readonly skillService: SkillService) {}
 
   @UseGuards(UserGuard)
+  @Get(':skillId')
+  async findById(@Param() dto: GetSkillDto) {
+    return this.skillService.getOne(dto);
+  }
+  @UseGuards(UserGuard)
   @Get('assignment/:assignmentId')
-  async findByAssignment(@Param() dto: GetSkillDto, @GetUser() user: User) {
-    return this.skillService.findByVectorSearch(dto, user);
+  async findByAssignment(
+    @Param() dto: GetSkillByAssignmentDto,
+    @GetUser() user: User,
+  ) {
+    return this.skillService.findByVectorSearch(dto);
   }
 
   @UseGuards(AdminGuard)

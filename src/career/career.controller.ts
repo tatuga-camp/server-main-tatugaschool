@@ -12,31 +12,35 @@ import {
 import {
   CreateCareerDto,
   DeleteCareerDto,
-  GetCareerByPageDto,
+  GetCarrerById,
   UpdateCareerDto,
 } from './dto';
-import { AdminGuard } from '../auth/guard';
+import { AdminGuard, UserGuard } from '../auth/guard';
 import { CareerService } from './career.service';
 
-@UseGuards(AdminGuard)
 @Controller('v1/careers')
 export class CareerController {
   constructor(private careerService: CareerService) {}
-  @Get()
-  getByPage(@Query() dto: GetCareerByPageDto) {
-    return this.careerService.getCareerByPage(dto);
+
+  @UseGuards(UserGuard)
+  @Get(':careerId')
+  getByPage(@Param() dto: GetCarrerById) {
+    return this.careerService.getOne(dto);
   }
 
+  @UseGuards(AdminGuard)
   @Post()
   create(@Body() dto: CreateCareerDto) {
     return this.careerService.create(dto);
   }
 
+  @UseGuards(AdminGuard)
   @Patch()
   update(@Body() dto: UpdateCareerDto) {
     return this.careerService.update(dto);
   }
 
+  @UseGuards(AdminGuard)
   @Delete(':id')
   delete(@Param() dto: DeleteCareerDto) {
     return this.careerService.delete(dto);

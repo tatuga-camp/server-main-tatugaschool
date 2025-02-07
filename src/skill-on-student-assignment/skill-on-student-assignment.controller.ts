@@ -20,7 +20,7 @@ export class SkillOnStudentAssignmentController {
   ) {}
 
   @UseGuards(UserGuard)
-  @Get('studnet/:studentId')
+  @Get('student/:studentId')
   async getByStudentId(@Param() dto: GetByStudentIdDto, @GetUser() user: User) {
     return this.skillOnStudentAssignmentService.getByStudentId(dto, user);
   }
