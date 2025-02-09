@@ -95,6 +95,18 @@ export class AssignmentController {
   }
 
   @UseGuards(UserGuard)
+  @Patch('update-skills/:assignmentId')
+  async updateSkills(
+    @Param() dto: GetAssignmentByIdDto,
+    @GetUser() user: User,
+  ) {
+    return await this.assignmentService.BackgroudEmbedingAssignment(
+      dto.assignmentId,
+      user,
+    );
+  }
+
+  @UseGuards(UserGuard)
   @Patch()
   async updateAssignment(
     @Body() dto: UpdateAssignmentDto,

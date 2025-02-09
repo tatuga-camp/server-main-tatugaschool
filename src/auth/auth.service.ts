@@ -347,7 +347,9 @@ export class AuthService {
 
       if (user) {
         if (user.provider !== 'GOOGLE') {
-          throw new BadRequestException('You are not registered with google');
+          return res.redirect(
+            `${process.env.CLIENT_URL}/auth/sign-in?error=Please sign in with email and password`,
+          );
         }
 
         const accessToken = await this.GenerateAccessToken(user);

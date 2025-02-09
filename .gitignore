@@ -39,5 +39,5 @@ lerna-debug.log*
 .env.production
 .env.test
 
-bun.lockb
+bun.lock
 pnpm-lock.yaml
