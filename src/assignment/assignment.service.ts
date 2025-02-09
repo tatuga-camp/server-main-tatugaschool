@@ -9,6 +9,7 @@ import {
   Assignment,
   FileOnAssignment,
   Prisma,
+  Skill,
   Student,
   StudentOnAssignment,
   User,
@@ -62,7 +63,7 @@ export class AssignmentService {
   async getAssignmentById(
     dto: GetAssignmentByIdDto,
     user: User,
-  ): Promise<Assignment & { files: FileOnAssignment[] }> {
+  ): Promise<Assignment & { files: FileOnAssignment[]; skills: Skill[] }> {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
@@ -81,7 +82,13 @@ export class AssignmentService {
         assignmentId: assignment.id,
       });
 
-      return { ...assignment, files };
+      const skills = await this.skillOnAssignmentService.getByAssignmentId(
+        {
+          assignmentId: assignment.id,
+        },
+        user,
+      );
+      return { ...assignment, files, skills: skills.map((s) => s.skill) };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -271,7 +278,7 @@ export class AssignmentService {
       await this.studentOnAssignmentRepository.createMany({
         data: createStudentOnAssignments,
       });
-      this.BackgroudEmbedingAssignment(assignment);
+      this.BackgroudEmbedingAssignment(assignment.id, user);
       return assignment;
     } catch (error) {
       this.logger.error(error);
@@ -279,16 +286,35 @@ export class AssignmentService {
     }
   }
 
-  async BackgroudEmbedingAssignment(assignment: Assignment) {
+  async BackgroudEmbedingAssignment(assignmentId: string, user: User) {
     try {
+      const assignment = await this.assignmentRepository.getById({
+        assignmentId: assignmentId,
+      });
       await this.EmbedingAssignment(assignment.id);
 
       const skills = await this.skillService.findByVectorSearch({
         assignmentId: assignment.id,
       });
 
+      const exsitingSkills =
+        await this.skillOnAssignmentService.getByAssignmentId(
+          {
+            assignmentId: assignment.id,
+          },
+          user,
+        );
+
+      const newSkills = skills.filter(
+        (skill) => !exsitingSkills.some((s) => s.skillId === skill.id),
+      );
+
+      const exsitingSkillNotInNewSkills = exsitingSkills.filter(
+        (skill) => !skills.some((s) => s.id === skill.skillId),
+      );
+
       await Promise.allSettled(
-        skills.map((skill) =>
+        newSkills.map((skill) =>
           this.skillOnAssignmentService.skillOnAssignmentRepository.create({
             skillId: skill.id,
             assignmentId: assignment.id,
@@ -296,6 +322,18 @@ export class AssignmentService {
           }),
         ),
       );
+
+      await Promise.allSettled(
+        exsitingSkillNotInNewSkills.map((skill) =>
+          this.skillOnAssignmentService.delete(
+            {
+              skillOnAssignmentId: skill.id,
+            },
+            user,
+          ),
+        ),
+      );
+      return;
     } catch (error) {
       this.logger.error(error);
     }
