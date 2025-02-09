@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -35,6 +37,12 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
+import { firstValueFrom } from 'rxjs';
+import { TeacherOnSubjectRepository } from 'src/teacher-on-subject/teacher-on-subject.repository';
+import { MemberOnSchoolRepository } from 'src/member-on-school/member-on-school.repository';
+import { HttpService } from '@nestjs/axios';
+import { AuthService } from 'src/auth/auth.service';
+import { log } from 'console';
 
 @Injectable()
 export class AssignmentService {
@@ -43,12 +51,19 @@ export class AssignmentService {
     this.prisma,
     this.googleStorageService,
   );
+  teacherOnSubjectRepository: TeacherOnSubjectRepository =
+    new TeacherOnSubjectRepository(this.prisma);
+  memberOnSchoolRepository: MemberOnSchoolRepository =
+    new MemberOnSchoolRepository(this.prisma);
   private fileAssignmentRepository: FileAssignmentRepository =
     new FileAssignmentRepository(this.prisma, this.googleStorageService);
   private studentOnAssignmentRepository: StudentOnAssignmentRepository =
     new StudentOnAssignmentRepository(this.prisma);
   private studentOnSubjectRepository: StudentOnSubjectRepository =
     new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
+
+  GOOGLE_TRANSLATION_ENDPOINT = 'https://translation.googleapis.com';
+  PROJECT_ID = 'tatuga-425319';
 
   constructor(
     private prisma: PrismaService,
@@ -58,6 +73,8 @@ export class AssignmentService {
     private studentOnSubjectService: StudentOnSubjectService,
     private skillService: SkillService,
     private skillOnAssignmentService: SkillOnAssignmentService,
+    private httpService: HttpService,
+    private authService: AuthService,
   ) {}
 
   async getAssignmentById(
@@ -355,6 +372,16 @@ export class AssignmentService {
         assignmentId: assignment.id,
       });
 
+      const accessToken = await this.authService.getGoogleAccessToken();
+
+      // 1. Detect the language of the combined text.
+      const detectedLanguage = await this.detectLanguage(text, accessToken);
+
+      // 2. If the language is not English, translate it to English.
+      if (detectedLanguage !== 'en') {
+        text = await this.translateText(text, 'en', accessToken);
+      }
+
       if (files.length > 0) {
         // get text from file using AI to extract text and summarize
       }
@@ -570,5 +597,63 @@ export class AssignmentService {
     const base64 = Buffer.from(buffer).toString('base64');
 
     return `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
+  }
+
+  private stripHtml(html: string): string {
+    return html.replace(/<[^>]*>?/gm, '');
+  }
+
+  async detectLanguage(text: string, accessToken: string): Promise<string> {
+    const url =
+      'https://translation.googleapis.com/language/translate/v2/detect';
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+    };
+    const data = { q: text };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(url, data, { headers }),
+      );
+
+      const detections = response?.data?.data?.detections;
+      const detectedLanguage = detections[0][0].language;
+      return detectedLanguage;
+    } catch (error) {
+      throw new HttpException(
+        'Failed to detect language',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async translateText(
+    text: string,
+    targetLang: string,
+    accessToken: string,
+  ): Promise<string> {
+    const url = 'https://translation.googleapis.com/language/translate/v2';
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+    };
+    const data = {
+      q: text,
+      target: targetLang,
+      format: 'text',
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post(url, data, { headers }),
+      );
+
+      const translations = response.data.data.translations[0].translatedText;
+      return translations;
+    } catch (error) {
+      throw new HttpException(
+        'Failed to translate text',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }
