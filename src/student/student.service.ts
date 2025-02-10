@@ -219,10 +219,6 @@ export class StudentService {
       }
 
       let hash: string | null = student.password;
-      await this.memberOnSchoolService.validateAccess({
-        user: user,
-        schoolId: student.schoolId,
-      });
 
       if (dto.body.password) {
         hash = await bcrypt.hash(dto.body.password, 10);
