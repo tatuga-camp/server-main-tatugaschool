@@ -528,7 +528,7 @@ export class AuthService {
 
   setCookieAccessToken(res: Response, accessToken: string) {
     res.cookie('access_token', accessToken, {
-      maxAge: 1000 * 60 * 60,
+      maxAge: 1000 * 60 * 60 * 24 * 3,
       secure: true,
       sameSite: 'none',
       ...(this.config.get('NODE_ENV') === 'production' && {
