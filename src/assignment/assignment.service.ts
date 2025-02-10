@@ -376,7 +376,6 @@ export class AssignmentService {
 
       // 1. Detect the language of the combined text.
       const detectedLanguage = await this.detectLanguage(text, accessToken);
-
       // 2. If the language is not English, translate it to English.
       if (detectedLanguage !== 'en') {
         text = await this.translateText(text, 'en', accessToken);
@@ -597,10 +596,6 @@ export class AssignmentService {
     const base64 = Buffer.from(buffer).toString('base64');
 
     return `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
-  }
-
-  private stripHtml(html: string): string {
-    return html.replace(/<[^>]*>?/gm, '');
   }
 
   async detectLanguage(text: string, accessToken: string): Promise<string> {
