@@ -1,3 +1,4 @@
+import { SchoolService } from './../school/school.service';
 import {
   ForbiddenException,
   Injectable,
@@ -54,6 +55,7 @@ export class SubjectService {
     private teacherOnSubjectService: TeacherOnSubjectService,
     private classroomService: ClassService,
     private memberOnSchoolService: MemberOnSchoolService,
+    private SchoolService: SchoolService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
   }
@@ -242,8 +244,27 @@ export class SubjectService {
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
     let subjectId: string;
     try {
+      const school = await this.SchoolService.schoolRepository.getById({
+        schoolId: dto.schoolId,
+      });
+
+      if (!school) {
+        throw new NotFoundException('School not found');
+      }
       const educationYear = dto.educationYear;
       delete dto.educationYear;
+
+      const exsitingSubjects = await this.subjectRepository.findMany({
+        where: {
+          schoolId: school.id,
+        },
+      });
+
+      await this.SchoolService.ValidateLimit(
+        school,
+        'subjects',
+        exsitingSubjects.length + 1,
+      );
       const [memberOnSchool, classroom] = await Promise.all([
         this.prisma.memberOnSchool.findFirst({
           where: {

@@ -4,6 +4,7 @@ import { StudentOnAssignmentController } from './student-on-assignment.controlle
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { SchoolService } from '../school/school.service';
 
 @Module({
   providers: [
@@ -11,6 +12,7 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
     TeacherOnSubjectService,
     SkillOnStudentAssignmentService,
     MemberOnSchoolService,
+    SchoolService,
   ],
   controllers: [StudentOnAssignmentController],
 })

@@ -1,25 +1,29 @@
-import { Express } from 'express';
+import { Bucket, GetSignedUrlConfig, Storage } from '@google-cloud/storage';
 import {
-  Injectable,
-  Inject,
   BadGatewayException,
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { Storage, Bucket, GetSignedUrlConfig } from '@google-cloud/storage';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { PrismaService } from './../prisma/prisma.service';
 // This is a hack to make Multer available in the Express namespace
+import { MemberOnSchool, Student, User } from '@prisma/client';
 import { InputDeleteFileOnStorage } from './interfaces';
+import { SchoolService } from '../school/school.service';
 
 @Injectable()
 export class GoogleStorageService {
   private bucket: Bucket;
   logger: Logger;
-  constructor(private configService: ConfigService) {
-    const isTest = process.env.NODE_ENV === 'test';
-    if (isTest == false) {
-      this.initializeCloudStorage();
-    }
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService,
+  ) {
+    this.initializeCloudStorage();
     this.logger = new Logger(GoogleStorageService.name);
   }
 
@@ -89,18 +93,94 @@ export class GoogleStorageService {
     return this.bucket;
   }
 
-  async GetSignURL({
-    fileName,
-    fileType,
-    userId,
+  async validateAccess({
+    user,
     schoolId,
   }: {
-    fileName: string;
-    fileType: string;
-    userId?: string;
-    schoolId?: string;
-  }) {
+    user: User;
+    schoolId: string;
+  }): Promise<MemberOnSchool> {
     try {
+      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
+        where: {
+          userId: user.id,
+          schoolId: schoolId,
+        },
+      });
+
+      if (!memberOnSchool || memberOnSchool.status !== 'ACCEPT') {
+        throw new ForbiddenException(
+          'Access denied: User is not a member of the school',
+        );
+      }
+
+      return memberOnSchool;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async GetSignURL(
+    {
+      fileName,
+      fileType,
+      userId,
+      schoolId,
+      fileSize,
+    }: {
+      fileName: string;
+      fileSize: number;
+      fileType: string;
+      userId?: string;
+      schoolId?: string;
+    },
+    user?: User,
+    student?: Student,
+  ) {
+    try {
+      if (schoolId && user) {
+        const school = await this.prisma.school.findUnique({
+          where: {
+            id: schoolId,
+          },
+        });
+        if (!school) {
+          throw new NotFoundException('No School Found');
+        }
+
+        await this.validateAccess({
+          user,
+          schoolId: school.id,
+        });
+
+        if (school.totalStorage + fileSize > school.limitTotalStorage) {
+          throw new BadRequestException(
+            'You have exceeded size limit on the school please upgrade a plan',
+          );
+        }
+      } else if (schoolId && student) {
+        const school = await this.prisma.school.findUnique({
+          where: {
+            id: schoolId,
+          },
+        });
+
+        if (!school) {
+          throw new NotFoundException('No School Found');
+        }
+
+        if (school.id !== student.schoolId) {
+          throw new ForbiddenException('Access Denied');
+        }
+
+        if (school.totalStorage + fileSize > school.limitTotalStorage) {
+          throw new BadRequestException(
+            'You have exceeded size limit on the school please upgrade a plan',
+          );
+        }
+      }
+
       const bucket = this.getBucket();
       const options: GetSignedUrlConfig = {
         version: 'v4',

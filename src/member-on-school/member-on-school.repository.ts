@@ -15,7 +15,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-export type MemberOnSchoolRepositoryType = {
+type Repository = {
   create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool>;
   findFirst(
     request: Prisma.MemberOnSchoolFindFirstArgs,
@@ -47,7 +47,7 @@ export type MemberOnSchoolRepositoryType = {
 };
 
 @Injectable()
-export class MemberOnSchoolRepository implements MemberOnSchoolRepositoryType {
+export class MemberOnSchoolRepository implements Repository {
   private logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(MemberOnSchoolRepository.name);

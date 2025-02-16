@@ -1,6 +1,8 @@
+import { Transform } from 'class-transformer';
 import {
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -18,4 +20,9 @@ export class GetSignURLDto {
   @IsNotEmpty()
   @IsString()
   fileType: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Transform(({ value }) => Number(value))
+  fileSize: number;
 }

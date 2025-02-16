@@ -82,6 +82,11 @@ model School {
 
   totalStorage Float @default(0)
 
+  limitSchoolMember  Int   @default(2)
+  limitClassNumber   Int   @default(3)
+  limitSubjectNumber Int   @default(3)
+  limitTotalStorage  Float @default(16106127360)
+
   stripe_customer_id           String    @unique
   stripe_price_id              String?
   stripe_subscription_id       String?

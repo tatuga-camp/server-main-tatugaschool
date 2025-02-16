@@ -148,8 +148,8 @@ export class FileOnStudentAssignmentService {
       });
 
       await this.schoolRepository.update({
-        query: { schoolId: studnetOnAssignment.schoolId },
-        body: {
+        where: { id: studnetOnAssignment.schoolId },
+        data: {
           totalStorage: school.totalStorage + create.size,
         },
       });
@@ -252,8 +252,8 @@ export class FileOnStudentAssignmentService {
       });
 
       await this.schoolRepository.update({
-        query: { schoolId: fileOnStudentAssignment.schoolId },
-        body: {
+        where: { id: fileOnStudentAssignment.schoolId },
+        data: {
           totalStorage: school.totalStorage - fileOnStudentAssignment.size,
         },
       });
@@ -298,8 +298,8 @@ export class FileOnStudentAssignmentService {
       });
 
       await this.schoolRepository.update({
-        query: { schoolId: fileOnStudentAssignment.schoolId },
-        body: {
+        where: { id: fileOnStudentAssignment.schoolId },
+        data: {
           totalStorage: school.totalStorage - fileOnStudentAssignment.size,
         },
       });

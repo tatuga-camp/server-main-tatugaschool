@@ -23,6 +23,7 @@ import { PushSubscription } from '../web-push/interfaces';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
 import { SubjectRepository } from '../subject/subject.repository';
 import { AssignmentRepository } from '../assignment/assignment.repository';
+import { SchoolService } from '../school/school.service';
 
 @Injectable()
 export class ClassService {
@@ -39,6 +40,7 @@ export class ClassService {
     private emailService: EmailService,
     private pushService: PushService,
     private googleStorageService: GoogleStorageService,
+    private schoolService: SchoolService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
@@ -115,10 +117,25 @@ export class ClassService {
 
   async createClass(createClassDto: CreateClassDto, user: User) {
     try {
+      const school = await this.schoolService.schoolRepository.getById({
+        schoolId: createClassDto.schoolId,
+      });
       const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: createClassDto.schoolId,
       });
+
+      const exsitingClasses = await this.classRepository.findMany({
+        where: {
+          schoolId: createClassDto.schoolId,
+        },
+      });
+
+      await this.schoolService.ValidateLimit(
+        school,
+        'classes',
+        exsitingClasses.length + 1,
+      );
 
       if (member.role !== 'ADMIN') {
         throw new ForbiddenException("You're not allowed to create class");

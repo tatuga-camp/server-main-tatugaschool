@@ -4,7 +4,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Prisma, School } from '@prisma/client';
-import { RequestCreateSchool, RequestUpdateSchool } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
@@ -13,7 +12,7 @@ export type SchoolRepositoryType = {
   findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]>;
   getById(request: { schoolId: string }): Promise<School>;
   create(request: Prisma.SchoolCreateArgs): Promise<School>;
-  update(request: RequestUpdateSchool): Promise<School>;
+  update(request: Prisma.SchoolUpdateArgs): Promise<School>;
   delete(request: { schoolId: string }): Promise<{ message: string }>;
   getSchoolById(request: { schoolId: string }): Promise<School>;
 };
@@ -74,16 +73,9 @@ export class SchoolRepository implements SchoolRepositoryType {
     }
   }
 
-  async update(request: RequestUpdateSchool): Promise<School> {
+  async update(request: Prisma.SchoolUpdateArgs): Promise<School> {
     try {
-      return await this.prisma.school.update({
-        where: {
-          id: request.query.schoolId,
-        },
-        data: {
-          ...request.body,
-        },
-      });
+      return await this.prisma.school.update(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
