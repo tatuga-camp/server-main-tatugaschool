@@ -1,19 +1,15 @@
-import { google } from 'googleapis';
-import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  MemberOnSchool,
-  MemberRole,
-  School,
-  Status,
-  User,
-} from '@prisma/client';
+import { MemberRole, School, Status, User } from '@prisma/client';
+import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
 import {
   CreateSchoolDto,
   DeleteSchoolDto,
@@ -21,67 +17,37 @@ import {
   UpdateSchoolDto,
 } from './dto';
 import { SchoolRepository } from './school.repository';
-
-import { StripeService } from '../stripe/stripe.service';
-import {
-  MemberOnSchoolRepository,
-  MemberOnSchoolRepositoryType,
-} from '../member-on-school/member-on-school.repository';
 import { PrismaService } from '../prisma/prisma.service';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StripeService } from '../stripe/stripe.service';
 
 @Injectable()
 export class SchoolService {
-  logger: Logger;
+  private logger: Logger;
   schoolRepository: SchoolRepository;
-  memberOnSchoolRepository: MemberOnSchoolRepositoryType;
+
   constructor(
     private prisma: PrismaService,
     private stripe: StripeService,
+    @Inject(forwardRef(() => MemberOnSchoolService))
+    private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
   ) {
     this.logger = new Logger(SchoolService.name);
-    this.schoolRepository = new SchoolRepository(prisma, googleStorageService);
-    this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
-  }
-
-  async validateAccess({
-    user,
-    schoolId,
-  }: {
-    user: User;
-    schoolId: string;
-  }): Promise<MemberOnSchool> {
-    try {
-      const memberOnSchool = await this.memberOnSchoolRepository.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: schoolId,
-        },
-      });
-      if (!memberOnSchool) {
-        throw new ForbiddenException('Access denied');
-      }
-
-      if (memberOnSchool.status !== 'ACCEPT') {
-        throw new ForbiddenException('Access denied');
-      }
-
-      return memberOnSchool;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+    this.schoolRepository = new SchoolRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
 
   async getSchools(user: User): Promise<School[]> {
     try {
-      const memberOnSchools = await this.memberOnSchoolRepository.findMany({
-        where: {
-          userId: user.id,
-          status: 'ACCEPT',
-        },
-      });
+      const memberOnSchools =
+        await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
+          where: {
+            userId: user.id,
+            status: 'ACCEPT',
+          },
+        });
 
       const schoolIds = memberOnSchools.map((member) => member.schoolId);
 
@@ -101,8 +67,8 @@ export class SchoolService {
   async getSchoolById(dto: GetSchoolByIdDto, user: User): Promise<School> {
     try {
       const school = await this.schoolRepository.getSchoolById(dto);
-      await this.validateAccess({
-        user: user,
+      await this.memberOnSchoolService.validateAccess({
+        user,
         schoolId: school.id,
       });
       return school;
@@ -130,7 +96,7 @@ export class SchoolService {
         },
       });
 
-      await this.memberOnSchoolRepository.create({
+      await this.memberOnSchoolService.memberOnSchoolRepository.create({
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -149,13 +115,82 @@ export class SchoolService {
       throw error;
     }
   }
+
+  async ValidateLimit(
+    school: School,
+    checkList: 'totalStorage' | 'members' | 'subjects' | 'classes',
+    target: number,
+  ) {
+    try {
+      if (checkList === 'totalStorage' && school.limitTotalStorage < target) {
+        throw new ForbiddenException(
+          'Your storage size is reaching the limit, please upgrade a plamn',
+        );
+      }
+      if (checkList === 'classes' && school.limitClassNumber < target) {
+        throw new ForbiddenException('Class number has reached the limit');
+      }
+
+      if (checkList === 'members' && school.limitSchoolMember < target) {
+        throw new ForbiddenException('Members on school has reached limit');
+      }
+
+      if (checkList === 'subjects' && school.limitSubjectNumber < target) {
+        throw new ForbiddenException('Subject number has reached limit');
+      }
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async upgradePlanPremium(schoolId: string): Promise<School> {
+    try {
+      return await this.schoolRepository.update({
+        where: {
+          id: schoolId,
+        },
+        data: {
+          plan: 'FREE',
+          limitSchoolMember: 3,
+          limitClassNumber: 20,
+          limitSubjectNumber: 20,
+          limitTotalStorage: 107374182400,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async upgradePlanFree(schoolId: string): Promise<School> {
+    try {
+      return await this.schoolRepository.update({
+        where: {
+          id: schoolId,
+        },
+        data: {
+          plan: 'PREMIUM',
+          limitSchoolMember: 2,
+          limitClassNumber: 3,
+          limitSubjectNumber: 3,
+          limitTotalStorage: 16106127360,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async updateSchool(dto: UpdateSchoolDto, user: User): Promise<School> {
     try {
       const school = await this.schoolRepository.getSchoolById({
         schoolId: dto.query.schoolId,
       });
 
-      const member = await this.validateAccess({
+      const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: school.id,
       });
@@ -195,8 +230,8 @@ export class SchoolService {
       }
 
       return await this.schoolRepository.update({
-        query: { schoolId: dto.query.schoolId },
-        body: { ...dto.body },
+        where: { id: dto.query.schoolId },
+        data: { ...dto.body },
       });
     } catch (error) {
       this.logger.error(error);
@@ -209,7 +244,7 @@ export class SchoolService {
         schoolId: dto.schoolId,
       });
 
-      const member = await this.validateAccess({
+      const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: school.id,
       });

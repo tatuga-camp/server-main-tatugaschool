@@ -1,15 +1,21 @@
-import { EmailService } from './../email/email.service';
-import {
-  SchoolRepository,
-  SchoolRepositoryType,
-} from './../school/school.repository';
+import { SchoolService } from './../school/school.service';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { MemberOnSchool, MemberRole, School, User } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from '../users/users.repository';
+import { PushSubscription } from '../web-push/interfaces';
+import { PushService } from '../web-push/push.service';
+import { EmailService } from './../email/email.service';
+import { SchoolRepository } from './../school/school.repository';
 import {
   CreateMemberOnSchoolDto,
   DeleteMemberOnSchoolDto,
@@ -18,32 +24,24 @@ import {
   QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
-import { MemberOnSchool, MemberRole, School, User } from '@prisma/client';
-import {
-  MemberOnSchoolRepository,
-  MemberOnSchoolRepositoryType,
-} from './member-on-school.repository';
-import { PrismaService } from '../prisma/prisma.service';
-import { UserRepository } from '../users/users.repository';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
-import { PushService } from 'src/web-push/push.service';
-import { PushSubscription } from '../web-push/interfaces';
+import { MemberOnSchoolRepository } from './member-on-school.repository';
 
 @Injectable()
 export class MemberOnSchoolService {
   private logger: Logger = new Logger(MemberOnSchoolService.name);
-  memberOnSchoolRepository: MemberOnSchoolRepositoryType;
+  memberOnSchoolRepository: MemberOnSchoolRepository;
   private userRepository: UserRepository;
-  private schoolRepository: SchoolRepositoryType;
+  private schoolRepository: SchoolRepository;
+
   constructor(
     private prisma: PrismaService,
     private emailService: EmailService,
-    private googleStorageService: GoogleStorageService,
     private pushService: PushService,
+    @Inject(forwardRef(() => SchoolService))
+    private schoolService: SchoolService,
   ) {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
     this.userRepository = new UserRepository(prisma);
-    this.schoolRepository = new SchoolRepository(prisma, googleStorageService);
   }
 
   async validateAccess({
@@ -195,6 +193,18 @@ export class MemberOnSchoolService {
           'No School Found with this schoolId, Please check the schoolId again',
         );
       }
+
+      const totalMembers = await this.memberOnSchoolRepository.findMany({
+        where: {
+          schoolId: school.id,
+        },
+      });
+
+      await this.schoolService.ValidateLimit(
+        school,
+        'members',
+        totalMembers.length + 1,
+      );
 
       const member = await this.validateAccess({
         schoolId: dto.schoolId,

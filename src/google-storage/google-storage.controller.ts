@@ -12,12 +12,16 @@ export class GoogleStorageController {
   @UseGuards(UserGuard)
   @Get('get-signURL/teacher')
   UserGetSignURL(@Query() dto: GetSignURLDto, @GetUser() user: User) {
-    return this.googleStorageService.GetSignURL({
-      userId: user.id,
-      schoolId: dto.schoolId,
-      fileName: dto.fileName,
-      fileType: dto.fileType,
-    });
+    return this.googleStorageService.GetSignURL(
+      {
+        userId: user.id,
+        schoolId: dto.schoolId,
+        fileName: dto.fileName,
+        fileType: dto.fileType,
+        fileSize: dto.fileSize,
+      },
+      user,
+    );
   }
 
   @UseGuards(StudentGuard)
@@ -26,10 +30,15 @@ export class GoogleStorageController {
     @Query() dto: GetSignURLDto,
     @GetStudent() student: Student,
   ) {
-    return this.googleStorageService.GetSignURL({
-      schoolId: dto.schoolId,
-      fileName: dto.fileName,
-      fileType: dto.fileType,
-    });
+    return this.googleStorageService.GetSignURL(
+      {
+        schoolId: dto.schoolId,
+        fileName: dto.fileName,
+        fileType: dto.fileType,
+        fileSize: dto.fileSize,
+      },
+      null,
+      student,
+    );
   }
 }

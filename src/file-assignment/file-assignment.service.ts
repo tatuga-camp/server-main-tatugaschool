@@ -1,3 +1,4 @@
+import { SchoolService } from './../school/school.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { FileAssignmentRepository } from './file-assignment.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
@@ -114,10 +115,10 @@ export class FileAssignmentService {
       }
 
       await this.schoolRepository.update({
-        query: {
-          schoolId: school.id,
+        where: {
+          id: school.id,
         },
-        body: {
+        data: {
           totalStorage: school.totalStorage + create.size,
         },
       });
@@ -173,10 +174,10 @@ export class FileAssignmentService {
       }
 
       await this.schoolRepository.update({
-        query: {
-          schoolId: school.id,
+        where: {
+          id: school.id,
         },
-        body: {
+        data: {
           totalStorage: school.totalStorage - fileOnAssignment.size,
         },
       });
