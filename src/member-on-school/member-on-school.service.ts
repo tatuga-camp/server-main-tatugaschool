@@ -31,7 +31,6 @@ export class MemberOnSchoolService {
   private logger: Logger = new Logger(MemberOnSchoolService.name);
   memberOnSchoolRepository: MemberOnSchoolRepository;
   private userRepository: UserRepository;
-  private schoolRepository: SchoolRepository;
 
   constructor(
     private prisma: PrismaService,
@@ -114,7 +113,7 @@ export class MemberOnSchoolService {
       const memberOnSchools = await this.memberOnSchoolRepository.getByUserId({
         userId: user.id,
       });
-      const school = await this.schoolRepository.findMany({
+      const school = await this.schoolService.schoolRepository.findMany({
         where: {
           OR: memberOnSchools.map((m) => ({ id: m.schoolId })),
         },
@@ -184,7 +183,7 @@ export class MemberOnSchoolService {
     user: User,
   ): Promise<MemberOnSchool> {
     try {
-      const school = await this.schoolRepository.getSchoolById({
+      const school = await this.schoolService.schoolRepository.getSchoolById({
         schoolId: dto.schoolId,
       });
 

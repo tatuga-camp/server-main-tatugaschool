@@ -265,6 +265,7 @@ export class SubjectService {
         'subjects',
         exsitingSubjects.length + 1,
       );
+
       const [memberOnSchool, classroom] = await Promise.all([
         this.prisma.memberOnSchool.findFirst({
           where: {
@@ -422,9 +423,11 @@ export class SubjectService {
 
       return subject;
     } catch (error) {
-      await this.subjectRepository.deleteSubject({
-        subjectId: subjectId,
-      });
+      if (subjectId) {
+        await this.subjectRepository.deleteSubject({
+          subjectId: subjectId,
+        });
+      }
       this.logger.error(error);
       throw error;
     }
