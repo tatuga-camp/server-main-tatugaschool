@@ -38,6 +38,8 @@ import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { AttendanceStatusListModule } from './attendance-status-list/attendance-status-list.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { PushModule } from './web-push/push.module';
+import { WebhooksModule } from './webhooks/webhooks.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -85,6 +87,8 @@ import { PushModule } from './web-push/push.module';
     WheelOfNameModule,
     AttendanceStatusListModule,
     PushModule,
+    WebhooksModule,
+    SubscriptionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

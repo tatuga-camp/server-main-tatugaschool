@@ -9,13 +9,13 @@ type StripeServiceType = {
 };
 
 @Injectable()
-export class StripeService implements StripeServiceType {
-  stripe: Stripe;
+export class StripeService extends Stripe implements StripeServiceType {
   logger: Logger;
   constructor(private config: ConfigService) {
-    this.stripe = new Stripe(this.config.get('STRIPE_SECRET_KEY'), {
+    super(config.get<string>('STRIPE_SECRET_KEY'), {
       apiVersion: '2024-04-10',
     });
+
     this.logger = new Logger(StripeService.name);
   }
 
@@ -23,10 +23,10 @@ export class StripeService implements StripeServiceType {
     request: RequestCreateCustomer,
   ): Promise<Stripe.Customer> {
     try {
-      return await this.stripe.customers.create({
+      return await this.customers.create({
         email: request.email,
-        name: request.name,
-        description: `School Name: ${request.schoolTitle}`,
+        name: request.schoolTitle,
+        description: request.description,
       });
     } catch (error) {
       this.logger.error(error);
@@ -38,12 +38,9 @@ export class StripeService implements StripeServiceType {
     request: RequestUpdateCustomer,
   ): Promise<Stripe.Customer> {
     try {
-      return await this.stripe.customers.update(
-        request.query.stripeCustomerId,
-        {
-          ...request.body,
-        },
-      );
+      return await this.customers.update(request.query.stripeCustomerId, {
+        ...request.body,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
