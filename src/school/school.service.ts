@@ -64,14 +64,33 @@ export class SchoolService {
     }
   }
 
-  async getSchoolById(dto: GetSchoolByIdDto, user: User): Promise<School> {
+  async getSchoolById(
+    dto: GetSchoolByIdDto,
+    user: User,
+  ): Promise<School & { user: User }> {
     try {
-      const school = await this.schoolRepository.getSchoolById(dto);
+      let school = await this.schoolRepository.getSchoolById(dto);
+
+      if (school.stripe_subscription_id) {
+        const subscription = await this.stripe.subscriptions.retrieve(
+          school.stripe_subscription_id,
+        );
+
+        if (subscription && subscription.status !== 'active') {
+          school = await this.upgradePlanFree(school.id);
+        }
+      }
+
+      const billingManger = await this.prisma.user.findUnique({
+        where: {
+          id: school.billingManagerId,
+        },
+      });
       await this.memberOnSchoolService.validateAccess({
         user,
         schoolId: school.id,
       });
-      return school;
+      return { ...school, user: billingManger };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -83,8 +102,8 @@ export class SchoolService {
       //create stripe customer
       const customer = await this.stripe.CreateCustomer({
         email: user.email,
-        name: user.firstName + ' ' + user.lastName,
         schoolTitle: dto.title,
+        description: dto.description,
       });
 
       const school = await this.schoolRepository.create({
@@ -144,14 +163,22 @@ export class SchoolService {
     }
   }
 
-  async upgradePlanPremium(schoolId: string): Promise<School> {
+  async upgradePlanPremium(
+    schoolId: string,
+    stripe_subscription_expireAt: Date,
+    stripe_price_id: string,
+    stripe_subscription_id: string,
+  ): Promise<School> {
     try {
       return await this.schoolRepository.update({
         where: {
           id: schoolId,
         },
         data: {
-          plan: 'FREE',
+          stripe_subscription_expireAt: stripe_subscription_expireAt,
+          stripe_price_id: stripe_price_id,
+          stripe_subscription_id: stripe_subscription_id,
+          plan: 'PREMIUM',
           limitSchoolMember: 3,
           limitClassNumber: 20,
           limitSubjectNumber: 20,
@@ -171,7 +198,7 @@ export class SchoolService {
           id: schoolId,
         },
         data: {
-          plan: 'PREMIUM',
+          plan: 'FREE',
           limitSchoolMember: 2,
           limitClassNumber: 3,
           limitSubjectNumber: 3,

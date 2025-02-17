@@ -15,6 +15,8 @@ export type SchoolRepositoryType = {
   update(request: Prisma.SchoolUpdateArgs): Promise<School>;
   delete(request: { schoolId: string }): Promise<{ message: string }>;
   getSchoolById(request: { schoolId: string }): Promise<School>;
+  findUnique(request: Prisma.SchoolFindUniqueArgs): Promise<School>;
+  findFirst(request: Prisma.SchoolFindFirstArgs): Promise<School | null>;
 };
 
 @Injectable()
@@ -25,6 +27,34 @@ export class SchoolRepository implements SchoolRepositoryType {
     private googleStorageService: GoogleStorageService,
   ) {
     this.logger = new Logger(SchoolRepository.name);
+  }
+
+  async findFirst(request: Prisma.SchoolFindFirstArgs): Promise<School | null> {
+    try {
+      return await this.prisma.school.findFirst(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findUnique(request: Prisma.SchoolFindUniqueArgs): Promise<School> {
+    try {
+      return await this.prisma.school.findUnique(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]> {
