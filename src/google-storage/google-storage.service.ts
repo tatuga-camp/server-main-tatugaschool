@@ -10,10 +10,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { PrismaService } from './../prisma/prisma.service';
-// This is a hack to make Multer available in the Express namespace
 import { MemberOnSchool, Student, User } from '@prisma/client';
 import { InputDeleteFileOnStorage } from './interfaces';
-import { SchoolService } from '../school/school.service';
 
 @Injectable()
 export class GoogleStorageService {
@@ -204,28 +202,6 @@ export class GoogleStorageService {
         contentType: fileType,
         fileName: replacedString,
       };
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async UploadFileGoogleStroage(input: {
-    userId: string;
-    fileName: string;
-    cryptoId: string;
-    file: Express.Multer.File;
-  }): Promise<string> {
-    try {
-      const bucket = this.getBucket();
-      const gcsFileName = `userId:${input.userId}/ID:${input.cryptoId}/${input.fileName}`;
-      const blob = bucket.file(gcsFileName);
-      const blobStream = blob.createWriteStream();
-      blobStream.on('finish', async () => {});
-      blobStream.end(input.file.buffer);
-      return `https://storage.googleapis.com/${this.configService.get(
-        'STORAGE_MEDIA_BUCKET',
-      )}/${gcsFileName}`;
     } catch (error) {
       this.logger.error(error);
       throw error;

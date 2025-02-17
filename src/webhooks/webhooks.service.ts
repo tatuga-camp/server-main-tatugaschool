@@ -111,7 +111,7 @@ export class WebhooksService {
         }
         break;
       default:
-        break;
+        console.log(`Unhandled event type ${event.type}`);
     }
   }
 }
