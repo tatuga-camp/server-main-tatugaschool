@@ -792,6 +792,7 @@ enum MemberRole {
 enum Plan {
   FREE
   PREMIUM
+  ENTERPRISE
 }
 
 enum Provider {

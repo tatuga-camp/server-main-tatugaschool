@@ -60,7 +60,14 @@ export class WebhooksService {
             subscription.id,
           );
         }
-
+        if (product.name === 'Tatuga School Enterprise') {
+          school = await this.schoolService.upgradePlanEnterprise(
+            school.id,
+            date,
+            price.id,
+            subscription.id,
+          );
+        }
         const subscriptions = await this.stripe.subscriptions.list({
           customer: school.stripe_customer_id,
           status: 'all',
