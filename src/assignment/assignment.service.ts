@@ -41,6 +41,13 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
+import { firstValueFrom } from 'rxjs';
+import { TeacherOnSubjectRepository } from 'src/teacher-on-subject/teacher-on-subject.repository';
+import { MemberOnSchoolRepository } from 'src/member-on-school/member-on-school.repository';
+import { HttpService } from '@nestjs/axios';
+import { AuthService } from 'src/auth/auth.service';
+import { PredictionServiceClient } from '@google-cloud/aiplatform';
+import axios from 'axios';
 
 @Injectable()
 export class AssignmentService {
@@ -49,6 +56,12 @@ export class AssignmentService {
   private fileAssignmentRepository: FileAssignmentRepository;
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   private studentOnSubjectRepository: StudentOnSubjectRepository;
+
+  GOOGLE_TRANSLATION_ENDPOINT = 'https://translation.googleapis.com';
+  PROJECT_ID = 'tatuga-425319';
+
+  private predictionClient: PredictionServiceClient;
+  private endpoint: string;
 
   constructor(
     private prisma: PrismaService,
@@ -62,21 +75,12 @@ export class AssignmentService {
     private httpService: HttpService,
     private authService: AuthService,
   ) {
-    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
-      this.prisma,
-      this.googleStorageService,
-    );
-    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
-      this.prisma,
-    );
-    this.fileAssignmentRepository = new FileAssignmentRepository(
-      this.prisma,
-      this.googleStorageService,
-    );
-    this.assignmentRepository = new AssignmentRepository(
-      this.prisma,
-      this.googleStorageService,
-    );
+    this.predictionClient = new PredictionServiceClient();
+
+    const projectId = this.PROJECT_ID;
+    const location = 'us-central1';
+
+    this.endpoint = `projects/${projectId}/locations/${location}/publishers/google/models/text-bison@001`;
   }
 
   async getAssignmentById(
@@ -102,9 +106,7 @@ export class AssignmentService {
       });
 
       const skills = await this.skillOnAssignmentService.getByAssignmentId(
-        {
-          assignmentId: assignment.id,
-        },
+        { assignmentId: assignment.id },
         user,
       );
       return { ...assignment, files, skills: skills.map((s) => s.skill) };
@@ -139,10 +141,7 @@ export class AssignmentService {
       if (student) {
         const studentOnSubject =
           await this.studentOnSubjectRepository.findFirst({
-            where: {
-              studentId: student.id,
-              subjectId: dto.subjectId,
-            },
+            where: { studentId: student.id, subjectId: dto.subjectId },
           });
 
         studentsOnAssignments =
@@ -164,21 +163,15 @@ export class AssignmentService {
           where: {
             ...(student
               ? {
-                  id: {
-                    in: studentsOnAssignments.map((s) => s?.assignmentId),
-                  },
+                  id: { in: studentsOnAssignments.map((s) => s?.assignmentId) },
                 }
-              : {
-                  subjectId: dto.subjectId,
-                }),
+              : { subjectId: dto.subjectId }),
           },
         })
         .then((assignments) => {
           return assignments.map((assignment) => {
             delete assignment.vector;
-            return {
-              ...assignment,
-            };
+            return { ...assignment };
           });
         });
 
@@ -197,9 +190,7 @@ export class AssignmentService {
 
       const files = await this.fileAssignmentRepository.findMany({
         where: {
-          assignmentId: {
-            in: assignments.map((assignment) => assignment.id),
-          },
+          assignmentId: { in: assignments.map((assignment) => assignment.id) },
         },
       });
 
@@ -299,11 +290,7 @@ export class AssignmentService {
       }
 
       const assignment = await this.assignmentRepository.create({
-        data: {
-          ...dto,
-          schoolId: subject.schoolId,
-          userId: user.id,
-        },
+        data: { ...dto, schoolId: member.schoolId, userId: user.id },
       });
 
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
@@ -355,9 +342,7 @@ export class AssignmentService {
 
       const exsitingSkills =
         await this.skillOnAssignmentService.getByAssignmentId(
-          {
-            assignmentId: assignment.id,
-          },
+          { assignmentId: assignment.id },
           user,
         );
 
@@ -382,9 +367,7 @@ export class AssignmentService {
       await Promise.allSettled(
         exsitingSkillNotInNewSkills.map((skill) =>
           this.skillOnAssignmentService.delete(
-            {
-              skillOnAssignmentId: skill.id,
-            },
+            { skillOnAssignmentId: skill.id },
             user,
           ),
         ),
@@ -393,6 +376,36 @@ export class AssignmentService {
     } catch (error) {
       this.logger.error(error);
     }
+  }
+
+  private async readFileFromUrl(fileUrl: string): Promise<string> {
+    const response = await axios.get(fileUrl, { responseType: 'text' });
+    return response.data;
+  }
+
+  private async summarizeWithVertex(text: string): Promise<string> {
+    // Build prompt asking for a concise English summary
+    const prompt = `Summarize in English:\n\n${text}\n\nSummary:`;
+
+    const instances = [{ prompt }];
+    const parameters = {
+      temperature: 0.2,
+      maxOutputTokens: 512,
+      topP: 0.8,
+      topK: 40,
+    };
+
+    const [response] = await this.predictionClient.predict({
+      endpoint: this.endpoint,
+      instances,
+      parameters,
+    });
+
+    // text-bison@001 typically returns the summary in "predictions[0].content"
+    const predictions = response.predictions as any[];
+    const content = predictions?.[0]?.content ?? '';
+
+    return content.trim();
   }
 
   async EmbedingAssignment(assignmentId: string) {
@@ -420,9 +433,18 @@ export class AssignmentService {
         text = await this.translateText(text, 'en', accessToken);
       }
 
+      const summaries = [];
       if (files.length > 0) {
-        // get text from file using AI to extract text and summarize
+        for (const file of files) {
+          const fileContent = await this.readFileFromUrl(file.url);
+
+          // 3) Prepare and call the Vertex AI model to summarize
+          const summary = await this.summarizeWithVertex(fileContent);
+          summaries.push({ fileName: file.id, summary });
+        }
       }
+
+      text += summaries.map((s) => s.summary).join('\n');
 
       const vectors = await this.vectorService.embbedingText(text);
       return await this.assignmentRepository.update({
@@ -441,11 +463,7 @@ export class AssignmentService {
   async reorder(dto: ReorderAssignmentDto, user: User): Promise<Assignment[]> {
     try {
       const assignments = await this.assignmentRepository.findMany({
-        where: {
-          id: {
-            in: dto.assignmentIds,
-          },
-        },
+        where: { id: { in: dto.assignmentIds } },
       });
 
       if (assignments.length !== dto.assignmentIds.length) {
@@ -498,12 +516,8 @@ export class AssignmentService {
       });
 
       return await this.assignmentRepository.update({
-        where: {
-          id: dto.query.assignmentId,
-        },
-        data: {
-          ...dto.data,
-        },
+        where: { id: dto.query.assignmentId },
+        data: { ...dto.data },
       });
     } catch (error) {
       this.logger.error(error);
@@ -610,16 +624,10 @@ export class AssignmentService {
     const columB = worksheet.getColumn(2);
     columA.width = 10;
     columB.width = 35;
-    columA.alignment = {
-      vertical: 'middle',
-      horizontal: 'center',
-    };
+    columA.alignment = { vertical: 'middle', horizontal: 'center' };
 
     firstRow.font = { bold: true, size: 10 };
-    firstRow.alignment = {
-      vertical: 'middle',
-      horizontal: 'center',
-    };
+    firstRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
     for (let i = 3; i <= listAssignment.length + 3; i++) {
       const column = worksheet.getColumn(i);
@@ -640,9 +648,7 @@ export class AssignmentService {
   async detectLanguage(text: string, accessToken: string): Promise<string> {
     const url =
       'https://translation.googleapis.com/language/translate/v2/detect';
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-    };
+    const headers = { Authorization: `Bearer ${accessToken}` };
     const data = { q: text };
 
     try {
@@ -667,14 +673,8 @@ export class AssignmentService {
     accessToken: string,
   ): Promise<string> {
     const url = 'https://translation.googleapis.com/language/translate/v2';
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-    };
-    const data = {
-      q: text,
-      target: targetLang,
-      format: 'text',
-    };
+    const headers = { Authorization: `Bearer ${accessToken}` };
+    const data = { q: text, target: targetLang, format: 'text' };
 
     try {
       const response = await firstValueFrom(
