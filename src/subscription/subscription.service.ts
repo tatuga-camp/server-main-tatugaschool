@@ -20,6 +20,75 @@ export class SubscriptionService {
     this.logger = new Logger(SubscriptionService.name);
   }
 
+  async manageSubscription(
+    dto: { schoolId: string },
+    user: User,
+  ): Promise<{ url: string }> {
+    try {
+      const school = await this.schoolService.schoolRepository.findUnique({
+        where: {
+          id: dto.schoolId,
+        },
+      });
+
+      if (!school) {
+        throw new NotFoundException('School not found');
+      }
+      if (school.billingManagerId !== user.id) {
+        throw new ForbiddenException(
+          'You are not the billing manager of this school',
+        );
+      }
+      const billingPortal = await this.stripe.billingPortal.sessions.create({
+        customer: school.stripe_customer_id,
+        return_url: `${process.env.CLIENT_URL}/school/${school.id}`,
+      });
+
+      return { url: billingPortal.url };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async listAllSubscription(): Promise<
+    {
+      title: string;
+      priceId: string;
+      time: Stripe.Price.Recurring.Interval;
+    }[]
+  > {
+    try {
+      const products = await this.stripe.products.list();
+
+      const prices = await Promise.allSettled(
+        products.data.map((product) =>
+          this.stripe.prices.list({
+            product: product.id,
+          }),
+        ),
+      ).then((res) =>
+        res
+          .filter((r) => r.status === 'fulfilled')
+          .map((r) => r.value.data)
+          .flat(),
+      );
+
+      return prices.map((price) => {
+        return {
+          title: products.data.find(
+            (product) => product.id === price.product.toString(),
+          ).name,
+          priceId: price.id,
+          time: price.recurring.interval,
+        };
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async subscription(
     dto: { priceId: string; schoolId: string },
     user: User,
