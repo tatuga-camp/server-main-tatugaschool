@@ -504,13 +504,10 @@ export class SubjectService {
 
   async deleteSubject(dto: DeleteSubjectDto, user: User): Promise<Subject> {
     try {
-      const teacer = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
-      if (teacer.role !== 'ADMIN') {
-        throw new ForbiddenException('You do not have access to this subject');
-      }
 
       const remove = await this.subjectRepository.deleteSubject({
         subjectId: dto.subjectId,

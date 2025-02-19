@@ -70,7 +70,7 @@ export class AttendanceTableService {
         throw new NotFoundException('Subject not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -185,7 +185,7 @@ export class AttendanceTableService {
         throw new NotFoundException('Attendance table not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: table.subjectId,
       });
@@ -212,7 +212,7 @@ export class AttendanceTableService {
         throw new NotFoundException('Subject not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -289,7 +289,7 @@ export class AttendanceTableService {
         throw new NotFoundException('Attendance table not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: table.subjectId,
       });
@@ -316,7 +316,7 @@ export class AttendanceTableService {
         throw new NotFoundException('Attendance table not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: table.subjectId,
       });
