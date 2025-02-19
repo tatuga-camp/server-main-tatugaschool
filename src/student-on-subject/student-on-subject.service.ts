@@ -297,14 +297,10 @@ export class StudentOnSubjectService {
       if (!studentOnSubject) {
         throw new NotFoundException('Student on subject does not exist');
       }
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnSubject.subjectId,
       });
-
-      if (!member) {
-        throw new ForbiddenException('You are not a member of this subject');
-      }
 
       return await this.studentOnSubjectRepository.delete({
         studentOnSubjectId: dto.studentOnSubjectId,

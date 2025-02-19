@@ -59,6 +59,10 @@ export class TeacherOnSubjectService {
         throw new ForbiddenException("You're not a member of this school");
       }
 
+      if (memberOnSchool.role === 'ADMIN') {
+        return null;
+      }
+
       const memberOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
           teacherId: userId,
@@ -66,8 +70,9 @@ export class TeacherOnSubjectService {
         });
 
       if (
-        (!memberOnSubject || memberOnSubject?.status !== 'ACCEPT') &&
-        memberOnSchool.role !== 'ADMIN'
+        !memberOnSubject ||
+        memberOnSubject.status !== 'ACCEPT' ||
+        memberOnSubject.role !== 'ADMIN'
       ) {
         console.log(memberOnSubject);
         throw new ForbiddenException("You're not a teacher on this subject");

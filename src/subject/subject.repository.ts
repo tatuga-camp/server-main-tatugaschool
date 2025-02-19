@@ -146,12 +146,27 @@ export class SubjectRepository implements Repository {
           subjectId: subjectId,
         },
       });
+
+      // Delete related commentOnAssignments records
+      await this.prisma.commentOnAssignment.deleteMany({
+        where: {
+          subjectId: subjectId,
+        },
+      });
+
       const fileOnStudentAssignments =
         await this.prisma.fileOnStudentAssignment.findMany({
           where: {
             subjectId: subjectId,
           },
         });
+
+      await this.prisma.skillOnStudentAssignment.deleteMany({
+        where: {
+          subjectId: subjectId,
+        },
+      });
+
       // Delete related attendance records
       await this.prisma.attendance.deleteMany({
         where: {
@@ -192,6 +207,12 @@ export class SubjectRepository implements Repository {
         },
       });
 
+      await this.prisma.studentOnAssignment.deleteMany({
+        where: {
+          subjectId: subjectId,
+        },
+      });
+
       // Delete related studentOnSubjects records
       await this.prisma.studentOnSubject.deleteMany({
         where: {
@@ -224,20 +245,7 @@ export class SubjectRepository implements Repository {
         },
       });
 
-      await this.prisma.studentOnAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
       await this.prisma.assignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related commentOnAssignments records
-      await this.prisma.commentOnAssignment.deleteMany({
         where: {
           subjectId: subjectId,
         },

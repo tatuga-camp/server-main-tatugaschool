@@ -1,3 +1,4 @@
+import { SubjectService } from './../subject/subject.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -70,6 +71,7 @@ export class AssignmentService {
     private vectorService: VectorService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private subjectService: SubjectService,
     private studentOnSubjectService: StudentOnSubjectService,
     private skillService: SkillService,
     private skillOnAssignmentService: SkillOnAssignmentService,
@@ -90,7 +92,7 @@ export class AssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: assignment.subjectId,
       });
@@ -124,7 +126,7 @@ export class AssignmentService {
   > {
     try {
       if (user) {
-        const member = await this.teacherOnSubjectService.ValidateAccess({
+        await this.teacherOnSubjectService.ValidateAccess({
           userId: user.id,
           subjectId: dto.subjectId,
         });
@@ -214,7 +216,7 @@ export class AssignmentService {
     user: User,
   ): Promise<{ assignment: Assignment; students: StudentOnAssignment[] }[]> {
     try {
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -257,15 +259,25 @@ export class AssignmentService {
         delete dto?.dueDate;
         delete dto?.weight;
       }
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
 
+      const subject = await this.subjectService.subjectRepository.findUnique({
+        where: {
+          id: dto.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject Not Found');
+      }
+
       const assignment = await this.assignmentRepository.create({
         data: {
           ...dto,
-          schoolId: member.schoolId,
+          schoolId: subject.schoolId,
           userId: user.id,
         },
       });
@@ -413,7 +425,7 @@ export class AssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: assignments[0].subjectId,
       });
@@ -453,7 +465,7 @@ export class AssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: assignment.subjectId,
       });
@@ -484,7 +496,7 @@ export class AssignmentService {
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
       }
-      const member = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: assignment.subjectId,
       });
