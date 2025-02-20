@@ -69,11 +69,7 @@ export class TeacherOnSubjectService {
           subjectId,
         });
 
-      if (
-        !memberOnSubject ||
-        memberOnSubject.status !== 'ACCEPT' ||
-        memberOnSubject.role !== 'ADMIN'
-      ) {
+      if (!memberOnSubject || memberOnSubject.status !== 'ACCEPT') {
         console.log(memberOnSubject);
         throw new ForbiddenException("You're not a teacher on this subject");
       }
