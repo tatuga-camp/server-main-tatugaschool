@@ -101,7 +101,7 @@ export class WebhooksService {
             },
           });
         if (!school_subscription_delete) {
-          res.status(400).send('stripe_subscription_id not found on School');
+          res.status(200).send('stripe_subscription_id not found on School');
           break;
         }
 
