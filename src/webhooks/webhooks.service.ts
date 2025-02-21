@@ -116,6 +116,8 @@ export class WebhooksService {
         if (invoiceUpdate.status === 'uncollectible') {
           await this.stripe.invoices.voidInvoice(invoiceUpdate.id);
         }
+        res.status(200).send('Updated Invoice');
+
         break;
       default:
         console.log(`Unhandled event type ${event.type}`);
