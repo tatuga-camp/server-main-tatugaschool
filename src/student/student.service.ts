@@ -1,28 +1,25 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { ClassRepository } from './../class/class.repository';
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { StudentRepository } from './student.repository';
-import {
-  CreateManyStudentsDto,
-  CreateStudentDto,
-} from './dto/post-student.dto';
+import { Student, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
-import { UsersService } from '../users/users.service';
-import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
-import { MemberOnSchool, Student, User } from '@prisma/client';
-import { UpdateStudentDto } from './dto/patch-student.dto';
-import { DeleteStudentDto } from './dto/delete-student.dto';
-import { PrismaService } from '../prisma/prisma.service';
-import { EmailService } from '../email/email.service';
-import { PushService } from '../web-push/push.service';
 import { ClassService } from '../class/class.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { SchoolService } from './../school/school.service';
+import { DeleteStudentDto } from './dto/delete-student.dto';
+import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
+import { UpdateStudentDto } from './dto/patch-student.dto';
+import { CreateStudentDto } from './dto/post-student.dto';
+import { StudentRepository } from './student.repository';
 
 @Injectable()
 export class StudentService {
@@ -30,8 +27,11 @@ export class StudentService {
   studentRepository: StudentRepository;
 
   constructor(
+    // @Inject(forwardRef(() => SchoolService))
+    // private schoolService: SchoolService,
     private prisma: PrismaService,
-    private userService: UsersService,
+    // private userService: UsersService,
+    @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
     private classroomService: ClassService,

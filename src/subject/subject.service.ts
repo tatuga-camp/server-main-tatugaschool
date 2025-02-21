@@ -1,6 +1,8 @@
 import { SchoolService } from './../school/school.service';
 import {
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -54,7 +56,9 @@ export class SubjectService {
     private attendanceTableService: AttendanceTableService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private classroomService: ClassService,
+    @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
+    @Inject(forwardRef(() => SchoolService))
     private SchoolService: SchoolService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);

@@ -4,6 +4,8 @@ import { PushService } from './../web-push/push.service';
 import { EmailService } from './../email/email.service';
 import {
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -35,11 +37,13 @@ export class ClassService {
   classRepository: ClassRepository;
 
   constructor(
+    @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private prisma: PrismaService,
     private emailService: EmailService,
     private pushService: PushService,
     private googleStorageService: GoogleStorageService,
+    @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
   ) {
     this.studentRepository = new StudentRepository(
