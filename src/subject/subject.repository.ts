@@ -22,6 +22,7 @@ type Repository = {
   update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
   deleteSubject(request: RequestDeleteSubject): Promise<Subject>;
   reorderSubjects(request: RequestReorderSubjects): Promise<Subject[]>;
+  count(request: Prisma.SubjectCountArgs): Promise<number>;
 };
 @Injectable()
 export class SubjectRepository implements Repository {
@@ -30,6 +31,20 @@ export class SubjectRepository implements Repository {
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {}
+
+  async count(request: Prisma.SubjectCountArgs): Promise<number> {
+    try {
+      return this.prisma.subject.count(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]> {
     try {

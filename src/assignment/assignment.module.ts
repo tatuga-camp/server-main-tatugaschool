@@ -12,6 +12,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 import { ClassService } from '../class/class.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { SchoolService } from '../school/school.service';
+import { StudentService } from '../student/student.service';
 
 @Module({
   imports: [HttpModule],
@@ -27,6 +28,7 @@ import { SchoolService } from '../school/school.service';
     ClassService,
     MemberOnSchoolService,
     SchoolService,
+    StudentService,
   ],
   controllers: [AssignmentController],
 })

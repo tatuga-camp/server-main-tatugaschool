@@ -1,3 +1,5 @@
+import { SubjectService } from './../subject/subject.service';
+import { StudentService } from './../student/student.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   BadRequestException,
@@ -31,6 +33,9 @@ export class SchoolService {
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
+    @Inject(forwardRef(() => StudentService))
+    private studentService: StudentService,
+    private subjectService: SubjectService,
   ) {
     this.logger = new Logger(SchoolService.name);
     this.schoolRepository = new SchoolRepository(
@@ -67,10 +72,20 @@ export class SchoolService {
   async getSchoolById(
     dto: GetSchoolByIdDto,
     user: User,
-  ): Promise<School & { user: User }> {
+  ): Promise<
+    School & {
+      user: User;
+      totalStudent: number;
+      totalTeacher: number;
+      totalSubject: number;
+    }
+  > {
     try {
       let school = await this.schoolRepository.getSchoolById(dto);
-
+      await this.memberOnSchoolService.validateAccess({
+        user,
+        schoolId: school.id,
+      });
       if (school.stripe_subscription_id) {
         const subscription = await this.stripe.subscriptions.retrieve(
           school.stripe_subscription_id,
@@ -81,16 +96,37 @@ export class SchoolService {
         }
       }
 
-      const billingManger = await this.prisma.user.findUnique({
-        where: {
-          id: school.billingManagerId,
-        },
-      });
-      await this.memberOnSchoolService.validateAccess({
-        user,
-        schoolId: school.id,
-      });
-      return { ...school, user: billingManger };
+      const [billingManger, students, subjects, teachers] = await Promise.all([
+        this.prisma.user.findUnique({
+          where: {
+            id: school.billingManagerId,
+          },
+        }),
+        this.studentService.studentRepository.count({
+          where: {
+            schoolId: school.id,
+          },
+        }),
+        this.subjectService.subjectRepository.count({
+          where: {
+            schoolId: school.id,
+          },
+        }),
+        this.memberOnSchoolService.memberOnSchoolRepository.count({
+          where: {
+            schoolId: school.id,
+            status: 'ACCEPT',
+          },
+        }),
+      ]);
+
+      return {
+        ...school,
+        user: billingManger,
+        totalStudent: students,
+        totalSubject: subjects,
+        totalTeacher: teachers,
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;

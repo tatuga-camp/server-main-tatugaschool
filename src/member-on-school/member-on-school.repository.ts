@@ -44,6 +44,7 @@ type Repository = {
     email: string;
     schoolId: string;
   }): Promise<MemberOnSchool>;
+  count(request: Prisma.MemberOnSchoolCountArgs): Promise<number>;
 };
 
 @Injectable()
@@ -51,6 +52,20 @@ export class MemberOnSchoolRepository implements Repository {
   private logger: Logger;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(MemberOnSchoolRepository.name);
+  }
+
+  async count(request: Prisma.MemberOnSchoolCountArgs): Promise<number> {
+    try {
+      return this.prisma.memberOnSchool.count(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findFirst(
