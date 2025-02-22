@@ -1,3 +1,4 @@
+import { ClassService } from './../class/class.service';
 import { SubjectService } from './../subject/subject.service';
 import { StudentService } from './../student/student.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
@@ -36,11 +37,15 @@ export class SchoolService {
     @Inject(forwardRef(() => StudentService))
     private studentService: StudentService,
     private subjectService: SubjectService,
+    private classService: ClassService,
   ) {
     this.logger = new Logger(SchoolService.name);
     this.schoolRepository = new SchoolRepository(
       this.prisma,
       this.googleStorageService,
+      this.subjectService,
+      this.classService,
+      this.stripe
     );
   }
 
@@ -82,6 +87,10 @@ export class SchoolService {
   > {
     try {
       let school = await this.schoolRepository.getSchoolById(dto);
+
+      if (!school) {
+        throw new NotFoundException('School not found or It has been deleted');
+      }
       await this.memberOnSchoolService.validateAccess({
         user,
         schoolId: school.id,
@@ -334,7 +343,7 @@ export class SchoolService {
       throw error;
     }
   }
-  async deleteSchool(dto: DeleteSchoolDto, user: User): Promise<{ message }> {
+  async deleteSchool(dto: DeleteSchoolDto, user: User): Promise<School> {
     try {
       const school = await this.schoolRepository.getSchoolById({
         schoolId: dto.schoolId,
@@ -347,6 +356,20 @@ export class SchoolService {
 
       if (member.role !== 'ADMIN') {
         throw new ForbiddenException("You're not an admin");
+      }
+
+      const allMember =
+        await this.memberOnSchoolService.memberOnSchoolRepository.count({
+          where: {
+            schoolId: school.id,
+            status: 'ACCEPT',
+          },
+        });
+
+      if (allMember !== 1) {
+        throw new BadRequestException(
+          'You are not allow to delete school until you delete every members from the school first',
+        );
       }
 
       return await this.schoolRepository.delete(dto);
