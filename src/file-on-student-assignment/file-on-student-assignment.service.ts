@@ -1,3 +1,6 @@
+import { StripeService } from './../stripe/stripe.service';
+import { ClassService } from './../class/class.service';
+import { SubjectService } from './../subject/subject.service';
 import { SubjectRepository } from './../subject/subject.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { SchoolRepository } from './../school/school.repository';
@@ -32,10 +35,9 @@ export class FileOnStudentAssignmentService {
   private schoolRepository: SchoolRepository = new SchoolRepository(
     this.prisma,
     this.googleStorageService,
-  );
-  private subjectRepository: SubjectRepository = new SubjectRepository(
-    this.prisma,
-    this.googleStorageService,
+    this.subjectService,
+    this.classService,
+    this.stripe,
   );
   fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
     new FileOnStudentAssignmentRepository(
@@ -47,6 +49,9 @@ export class FileOnStudentAssignmentService {
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private subjectService: SubjectService,
+    private classService: ClassService,
+    private stripe: StripeService,
   ) {}
 
   async getFileByStudentOnAssignmentIdFromStudent(
@@ -234,9 +239,10 @@ export class FileOnStudentAssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const subject = await this.subjectRepository.getSubjectById({
-        subjectId: fileOnStudentAssignment.subjectId,
-      });
+      const subject =
+        await this.subjectService.subjectRepository.getSubjectById({
+          subjectId: fileOnStudentAssignment.subjectId,
+        });
 
       if (subject.allowStudentDeleteWork === false) {
         throw new ForbiddenException(

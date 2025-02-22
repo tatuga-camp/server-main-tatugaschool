@@ -1,3 +1,5 @@
+import { ClassService } from './../class/class.service';
+import { SubjectService } from './../subject/subject.service';
 import { SchoolService } from './../school/school.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { FileAssignmentRepository } from './file-assignment.repository';
@@ -17,6 +19,7 @@ import {
 import { FileOnAssignment, User } from '@prisma/client';
 import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
 import { SchoolRepository } from '../school/school.repository';
+import { StripeService } from '../stripe/stripe.service';
 
 @Injectable()
 export class FileAssignmentService {
@@ -30,12 +33,18 @@ export class FileAssignmentService {
   private schoolRepository: SchoolRepository = new SchoolRepository(
     this.prisma,
     this.googleStorageService,
+    this.subjectService,
+    this.classService,
+    this.stripe,
   );
   private teacherOnSubjectRepository: TeacherOnSubjectRepository =
     new TeacherOnSubjectRepository(this.prisma);
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private subjectService: SubjectService,
+    private classService: ClassService,
+    private stripe: StripeService,
   ) {}
 
   async getFilesByAssignmentId(

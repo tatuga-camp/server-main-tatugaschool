@@ -176,6 +176,40 @@ export class SubjectRepository implements Repository {
           },
         });
 
+      Promise.allSettled([
+        ...fileOnAssignments.map((file) =>
+          this.googleStorageService.DeleteFileOnStorage({
+            fileName: file.url,
+          }),
+        ),
+        ...fileOnStudentAssignments
+          .filter((f) => f.contentType === 'FILE')
+          .map((file) =>
+            this.googleStorageService.DeleteFileOnStorage({
+              fileName: file.body,
+            }),
+          ),
+
+        this.prisma.fileOnStudentAssignment.deleteMany({
+          where: {
+            OR: fileOnStudentAssignments.map((f) => {
+              return {
+                id: f.id,
+              };
+            }),
+          },
+        }),
+        this.prisma.fileOnAssignment.deleteMany({
+          where: {
+            OR: fileOnAssignments.map((f) => {
+              return {
+                id: f.id,
+              };
+            }),
+          },
+        }),
+      ]);
+
       await this.prisma.skillOnStudentAssignment.deleteMany({
         where: {
           subjectId: subjectId,
@@ -266,20 +300,6 @@ export class SubjectRepository implements Repository {
         },
       });
 
-      Promise.allSettled([
-        ...fileOnAssignments.map((file) =>
-          this.googleStorageService.DeleteFileOnStorage({
-            fileName: file.url,
-          }),
-        ),
-        ...fileOnStudentAssignments
-          .filter((f) => f.contentType === 'FILE')
-          .map((file) =>
-            this.googleStorageService.DeleteFileOnStorage({
-              fileName: file.body,
-            }),
-          ),
-      ]);
       // Delete the subject
       return await this.prisma.subject.delete({
         where: {

@@ -1,3 +1,5 @@
+import { ClassService } from './../class/class.service';
+import { SubjectService } from './../subject/subject.service';
 import {
   Injectable,
   InternalServerErrorException,
@@ -7,13 +9,14 @@ import { Prisma, School } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StripeService } from '../stripe/stripe.service';
 
 export type SchoolRepositoryType = {
   findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]>;
   getById(request: { schoolId: string }): Promise<School>;
   create(request: Prisma.SchoolCreateArgs): Promise<School>;
   update(request: Prisma.SchoolUpdateArgs): Promise<School>;
-  delete(request: { schoolId: string }): Promise<{ message: string }>;
+  delete(request: { schoolId: string }): Promise<School>;
   getSchoolById(request: { schoolId: string }): Promise<School>;
   findUnique(request: Prisma.SchoolFindUniqueArgs): Promise<School>;
   findFirst(request: Prisma.SchoolFindFirstArgs): Promise<School | null>;
@@ -25,6 +28,9 @@ export class SchoolRepository implements SchoolRepositoryType {
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private subjectService: SubjectService,
+    private classService: ClassService,
+    private stripe: StripeService,
   ) {
     this.logger = new Logger(SchoolRepository.name);
   }
@@ -117,161 +123,71 @@ export class SchoolRepository implements SchoolRepositoryType {
     }
   }
 
-  async delete(request: { schoolId: string }): Promise<{ message: string }> {
+  async delete(request: { schoolId: string }): Promise<School> {
     try {
       const { schoolId } = request;
       // Delete related records in reverse order of their dependencies
-      const fileOnAssignments = await this.prisma.fileOnAssignment.findMany({
+      const subjects = await this.subjectService.subjectRepository.findMany({
         where: {
           schoolId: schoolId,
         },
       });
 
-      const fileOnStudentAssignments =
-        await this.prisma.fileOnStudentAssignment.findMany({
-          where: {
-            schoolId: schoolId,
-          },
+      const classrooms = await this.classService.classRepository.findMany({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+
+      for (const subject of subjects) {
+        await this.subjectService.subjectRepository.deleteSubject({
+          subjectId: subject.id,
         });
+      }
 
-      Promise.allSettled([
-        ...fileOnAssignments.map((file) => {
-          this.googleStorageService.DeleteFileOnStorage({ fileName: file.url });
-        }),
-        ...fileOnStudentAssignments
-          .filter((f) => f.contentType === 'FILE')
-          .map((file) => {
-            this.googleStorageService.DeleteFileOnStorage({
-              fileName: file.body,
-            });
-          }),
-      ]);
+      for (const classroom of classrooms) {
+        await this.classService.classRepository.delete({
+          classId: classroom.id,
+        });
+      }
 
-      await Promise.all([
-        this.prisma.attendance.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.scoreOnStudent.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.commentOnAssignment.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.fileOnStudentAssignment.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.fileOnAssignment.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.memberOnTeam.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.task.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-      ]);
-
-      await Promise.all([
-        this.prisma.attendanceRow.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.scoreOnSubject.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.studentOnAssignment.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.teacherOnSubject.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.colum.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-      ]);
-
-      await Promise.all([
-        this.prisma.attendanceTable.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.assignment.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.studentOnSubject.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.board.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-      ]);
-
-      await Promise.all([
-        this.prisma.subject.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.student.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.team.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-        this.prisma.memberOnSchool.deleteMany({
-          where: {
-            schoolId: schoolId,
-          },
-        }),
-      ]);
-
-      await this.prisma.class.deleteMany({
+      await this.prisma.task.deleteMany({
         where: {
           schoolId: schoolId,
         },
       });
-      // Finally, delete the school record itself
-      await this.prisma.school.delete({
+
+      await this.prisma.colum.deleteMany({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+
+      await this.prisma.board.deleteMany({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+
+      await this.prisma.team.deleteMany({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+
+      await this.prisma.memberOnSchool.deleteMany({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+
+      const school = await this.prisma.school.delete({
         where: {
           id: schoolId,
         },
       });
-
-      return { message: 'School deleted successfully' };
+      await this.stripe.customers.del(school.stripe_customer_id);
+      return school;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
