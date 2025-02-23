@@ -139,12 +139,29 @@ export class AuthService {
         throw new ConflictException('Email already exists');
       }
 
-      const hashedPassword = await bcrypt.hash(dto.password, 10);
+      let hashedPassword = null;
+      if (
+        dto.provider === 'LOCAL' &&
+        (!dto.password || dto.password.length < 8)
+      ) {
+        throw new BadRequestException(
+          'Password is required and must be more than 7 long',
+        );
+      }
 
-      const photo = this.base64ImageService.generateBase64Image(
+      if (dto.provider === 'LOCAL') {
+        hashedPassword = await bcrypt.hash(dto.password, 10);
+      }
+
+      let photo = this.base64ImageService.generateBase64Image(
         dto.email.charAt(0).toUpperCase(),
       );
 
+      if (dto.photo) {
+        photo = dto.photo;
+      }
+
+      delete dto.password;
       const user = await this.usersRepository.createUser({
         ...dto,
         photo,
@@ -153,7 +170,7 @@ export class AuthService {
 
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
-
+      this.sendVerifyEmail(user);
       this.setCookieAccessToken(res, accessToken);
       this.setCookieRefreshToken(res, refreshToken);
 
@@ -367,24 +384,9 @@ export class AuthService {
         return res.redirect(`${process.env.CLIENT_URL}`);
       }
 
-      user = await this.usersRepository.createUser({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phone: data.phone,
-        password: null, // google login no need password
-        role: 'USER',
-        provider: 'GOOGLE',
-        providerId: data.providerId,
-        photo: data.photo,
-      });
-      await this.sendVerifyEmail(user);
-      const accessToken = await this.GenerateAccessToken(user);
-      const refreshToken = await this.GenerateRefreshToken(user);
-      this.setCookieAccessToken(res, accessToken);
-      this.setCookieRefreshToken(res, refreshToken);
-
-      return res.redirect(`${process.env.CLIENT_URL}/auth/wait-verify-email`);
+      return res.redirect(
+        `${process.env.CLIENT_URL}/auth/sign-up?email=${data.email}&firstName=${data.firstName}&lastName=${data.lastName}&provider=google&providerId=${data.providerId}&photo=${data.photo}`,
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;
