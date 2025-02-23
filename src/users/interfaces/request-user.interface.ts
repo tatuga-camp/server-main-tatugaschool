@@ -19,7 +19,7 @@ export type RequestCreateUser = {
   lastName: string;
   email: string;
   phone: string;
-  password: string;
+  password: string | null;
   role?: UserRole;
   provider: Provider;
   providerId?: string;
