@@ -16,15 +16,22 @@ export class SignUpDto {
   @IsNotEmpty()
   email: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @MaxLength(255)
-  @MinLength(8, { message: 'Password must be at least 8 characters' })
-  password: string;
+  password?: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(255)
   firstName: string;
+
+  @IsOptional()
+  @IsString()
+  providerId?: string;
+
+  @IsOptional()
+  @IsString()
+  photo?: string;
 
   @IsNotEmpty()
   @IsString()
