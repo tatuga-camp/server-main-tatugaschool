@@ -342,7 +342,9 @@ export class StudentOnAssignmentService {
           completedAt:
             dto.body.status === 'SUBMITTED'
               ? new Date().toISOString()
-              : undefined,
+              : dto.body.status === 'PENDDING'
+                ? null
+                : undefined,
         },
       });
 
