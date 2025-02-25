@@ -6,3 +6,9 @@ export class GetCarrerById {
   @IsMongoId()
   careerId: string;
 }
+
+export class GetSuggestDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  studentId: string;
+}

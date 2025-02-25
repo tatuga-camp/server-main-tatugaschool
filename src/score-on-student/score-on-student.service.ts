@@ -21,15 +21,19 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 @Injectable()
 export class ScoreOnStudentService {
   logger: Logger = new Logger(ScoreOnStudentService.name);
-  scoreOnStudentRepository: ScoreOnStudentRepository =
-    new ScoreOnStudentRepository(this.prisma);
-  studentOnSubjectRepository: StudentOnSubjectRepository =
-    new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
+  scoreOnStudentRepository: ScoreOnStudentRepository;
+  studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-  ) {}
+  ) {
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
+  }
 
   async getAllScoreOnStudentBySubjectId(
     dto: GetAllScoreOnStudentBySubjectIdDto,

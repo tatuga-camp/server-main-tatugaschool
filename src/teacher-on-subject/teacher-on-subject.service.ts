@@ -23,16 +23,19 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class TeacherOnSubjectService {
   logger: Logger = new Logger(TeacherOnSubjectService.name);
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
+  teacherOnSubjectRepository: TeacherOnSubjectRepository 
 
-  memberOnSchoolRepository: MemberOnSchoolRepository =
-    new MemberOnSchoolRepository(this.prisma);
+  memberOnSchoolRepository: MemberOnSchoolRepository
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
     private emailService: EmailService,
-  ) {}
+  ) {
+    this.memberOnSchoolRepository =
+    new MemberOnSchoolRepository(this.prisma);
+    this.teacherOnSubjectRepository =
+    new TeacherOnSubjectRepository(this.prisma);
+  }
 
   async ValidateAccess({
     userId,

@@ -7,12 +7,16 @@ import { ResponseCreate, ResponseGet, ResponseUpdate } from './interfaces';
 @Injectable()
 export class WheelOfNameService {
   private logger: Logger = new Logger(WheelOfNameService.name);
-  private wheelOfNameRepository: WheelOfNameRepository =
-    new WheelOfNameRepository(this.httpService, this.config);
+  private wheelOfNameRepository: WheelOfNameRepository;
   constructor(
     private httpService: HttpService,
     private config: ConfigService,
-  ) {}
+  ) {
+    this.wheelOfNameRepository = new WheelOfNameRepository(
+      this.httpService,
+      this.config,
+    );
+  }
 
   async get(dto: { path: string }): Promise<ResponseGet> {
     try {

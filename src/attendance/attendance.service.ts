@@ -26,10 +26,7 @@ import { Request, Response } from 'express';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
-  private subjectRepository: SubjectRepository = new SubjectRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
+  private subjectRepository: SubjectRepository;
   attendanceRepository: AttendanceRepository;
   private attendanceStatusListSRepository: AttendanceStatusListSRepository;
   private attendanceRowRepository: AttendanceRowRepository;
@@ -50,6 +47,10 @@ export class AttendanceService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       prisma,
       googleStorageService,
+    );
+    this.subjectRepository = new SubjectRepository(
+      this.prisma,
+      this.googleStorageService,
     );
   }
 

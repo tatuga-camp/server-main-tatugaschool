@@ -22,15 +22,19 @@ import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-sub
 @Injectable()
 export class CommentAssignmentService {
   logger: Logger = new Logger(CommentAssignmentService.name);
-  studentOnAssignmentRepository: StudentOnAssignmentRepository =
-    new StudentOnAssignmentRepository(this.prisma);
-  commentAssignmentRepository: CommentAssignmentRepository =
-    new CommentAssignmentRepository(this.prisma);
-
+  studentOnAssignmentRepository: StudentOnAssignmentRepository;
+  commentAssignmentRepository: CommentAssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-  ) {}
+  ) {
+    this.commentAssignmentRepository = new CommentAssignmentRepository(
+      this.prisma,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+  }
 
   async getByStudentOnAssignment(
     dto: GetCommentAssignmentByStudentOnAssignmentIdDto,

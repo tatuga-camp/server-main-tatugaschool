@@ -25,7 +25,7 @@ class UpdateAssignmentBody {
 
   @IsOptional()
   @IsString()
-  @MaxLength(3999)
+  @MaxLength(50000)
   description?: string;
 
   @IsOptional()

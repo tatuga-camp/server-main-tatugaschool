@@ -17,14 +17,18 @@ import { BoardRepository } from '../board/board.repository';
 @Injectable()
 export class ColumService {
   private readonly logger = new Logger(ColumService.name);
-  columRepository: ColumRepository = new ColumRepository(this.prisma);
-  private teamRepository: TeamRepository = new TeamRepository(this.prisma);
-  private boardRepository: BoardRepository = new BoardRepository(this.prisma);
+  columRepository: ColumRepository;
+  private teamRepository: TeamRepository;
+  private boardRepository: BoardRepository;
 
   constructor(
     private readonly usersService: UsersService,
     private prisma: PrismaService,
-  ) {}
+  ) {
+    this.boardRepository = new BoardRepository(this.prisma);
+    this.teamRepository = new TeamRepository(this.prisma);
+    this.columRepository = new ColumRepository(this.prisma);
+  }
 
   async createColum(createColumDto: CreateColumDto, user: User) {
     try {

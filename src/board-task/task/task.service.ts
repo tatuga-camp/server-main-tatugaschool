@@ -17,14 +17,18 @@ import { PrismaService } from '../../prisma/prisma.service';
 @Injectable()
 export class TaskService {
   private readonly logger = new Logger(TaskService.name);
-  taskRepository: TaskRepository = new TaskRepository(this.prisma);
-  private columRepository: ColumRepository = new ColumRepository(this.prisma);
-  userRepository: UserRepository = new UserRepository(this.prisma);
+  taskRepository: TaskRepository;
+  private columRepository: ColumRepository;
+  userRepository: UserRepository;
 
   constructor(
     private readonly usersService: UsersService,
     private prisma: PrismaService,
-  ) {}
+  ) {
+    this.userRepository = new UserRepository(this.prisma);
+    this.columRepository = new ColumRepository(this.prisma);
+    this.taskRepository = new TaskRepository(this.prisma);
+  }
 
   async createTask(dto: CreateTaskDto, user: User) {
     try {

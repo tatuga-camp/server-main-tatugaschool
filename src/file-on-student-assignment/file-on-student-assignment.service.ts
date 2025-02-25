@@ -26,33 +26,41 @@ import { FileOnStudentAssignment, Student, User } from '@prisma/client';
 @Injectable()
 export class FileOnStudentAssignmentService {
   private logger: Logger = new Logger(FileOnStudentAssignmentService.name);
-  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  private schoolRepository: SchoolRepository = new SchoolRepository(
-    this.prisma,
-    this.googleStorageService,
-    this.subjectService,
-    this.classService,
-    this.stripe,
-  );
-  fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
-    new FileOnStudentAssignmentRepository(
-      this.prisma,
-      this.googleStorageService,
-    );
-  private studentOnAssignmentRepository: StudentOnAssignmentRepository =
-    new StudentOnAssignmentRepository(this.prisma);
+  private assignmentRepository: AssignmentRepository;
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository;
+  private schoolRepository: SchoolRepository;
+  fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private subjectService: SubjectService,
     private classService: ClassService,
     private stripe: StripeService,
-  ) {}
+  ) {
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+    this.fileOnStudentAssignmentRepository =
+      new FileOnStudentAssignmentRepository(
+        this.prisma,
+        this.googleStorageService,
+      );
+    this.schoolRepository = new SchoolRepository(
+      this.prisma,
+      this.googleStorageService,
+      this.subjectService,
+      this.classService,
+      this.stripe,
+    );
+    this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
+      this.prisma,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+  }
 
   async getFileByStudentOnAssignmentIdFromStudent(
     dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
