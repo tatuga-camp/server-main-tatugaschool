@@ -38,17 +38,10 @@ import { SubjectRepository } from './subject.repository';
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
-  subjectRepository: SubjectRepository = new SubjectRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
+  subjectRepository: SubjectRepository;
   private scoreOnSubjectRepository: ScoreOnSubjectRepository;
-  private studentRepository: StudentRepository = new StudentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private studentOnSubjectRepository: StudentOnSubjectRepository =
-    new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
+  private studentRepository: StudentRepository;
+  private studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -62,6 +55,18 @@ export class SubjectService {
     private SchoolService: SchoolService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.subjectRepository = new SubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
 
   async getSubjectById(

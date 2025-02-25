@@ -24,28 +24,36 @@ import { StripeService } from '../stripe/stripe.service';
 @Injectable()
 export class FileAssignmentService {
   private logger: Logger = new Logger(FileAssignmentService.name);
-  fileAssignmentRepository: FileAssignmentRepository =
-    new FileAssignmentRepository(this.prisma, this.googleStorageService);
-  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private schoolRepository: SchoolRepository = new SchoolRepository(
-    this.prisma,
-    this.googleStorageService,
-    this.subjectService,
-    this.classService,
-    this.stripe,
-  );
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
+  fileAssignmentRepository: FileAssignmentRepository;
+  private assignmentRepository: AssignmentRepository;
+  private schoolRepository: SchoolRepository;
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private subjectService: SubjectService,
     private classService: ClassService,
     private stripe: StripeService,
-  ) {}
+  ) {
+    this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
+      this.prisma,
+    );
+    this.schoolRepository = new SchoolRepository(
+      this.prisma,
+      this.googleStorageService,
+      this.subjectService,
+      this.classService,
+      this.stripe,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.fileAssignmentRepository = new FileAssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+  }
 
   async getFilesByAssignmentId(
     dto: GetFileOnAssignmentByAssignmentIdDto,

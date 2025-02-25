@@ -35,34 +35,45 @@ import { PushSubscription } from '../web-push/interfaces';
 @Injectable()
 export class StudentOnAssignmentService {
   logger: Logger = new Logger(StudentOnAssignmentService.name);
-  private studentRepository: StudentRepository = new StudentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private studentOnSubjectRepository: StudentOnSubjectRepository =
-    new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
-  studentOnAssignmentRepository: StudentOnAssignmentRepository =
-    new StudentOnAssignmentRepository(this.prisma);
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  private memberOnSchoolRepository: MemberOnSchoolRepository =
-    new MemberOnSchoolRepository(this.prisma);
-  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
-    new FileOnStudentAssignmentRepository(
-      this.prisma,
-      this.googleStorageService,
-    );
+  private studentRepository: StudentRepository;
+  private studentOnSubjectRepository: StudentOnSubjectRepository;
+  studentOnAssignmentRepository: StudentOnAssignmentRepository;
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository;
+  private memberOnSchoolRepository: MemberOnSchoolRepository;
+  private assignmentRepository: AssignmentRepository;
+  private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private pushService: PushService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
-  ) {}
+  ) {
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+    this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
+      this.prisma,
+    );
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(this.prisma);
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.fileOnStudentAssignmentRepository =
+      new FileOnStudentAssignmentRepository(
+        this.prisma,
+        this.googleStorageService,
+      );
+  }
 
   private async notifyTeachers({
     user,

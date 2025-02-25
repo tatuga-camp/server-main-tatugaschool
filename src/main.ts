@@ -42,6 +42,7 @@ async function bootstrap() {
     logger.log(`Hello world listening on port : ${port}`);
     logger.log(`Allowed origins: ${allowedOrigins}`);
     logger.log(`Environment: ${process.env.NODE_ENV}`);
+    logger.log('Node.js Version:', process.version);
   });
 }
 

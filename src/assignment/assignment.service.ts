@@ -48,23 +48,10 @@ import { log } from 'console';
 @Injectable()
 export class AssignmentService {
   private logger: Logger = new Logger(AssignmentService.name);
-  assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  memberOnSchoolRepository: MemberOnSchoolRepository =
-    new MemberOnSchoolRepository(this.prisma);
-  private fileAssignmentRepository: FileAssignmentRepository =
-    new FileAssignmentRepository(this.prisma, this.googleStorageService);
-  private studentOnAssignmentRepository: StudentOnAssignmentRepository =
-    new StudentOnAssignmentRepository(this.prisma);
-  private studentOnSubjectRepository: StudentOnSubjectRepository =
-    new StudentOnSubjectRepository(this.prisma, this.googleStorageService);
-
-  GOOGLE_TRANSLATION_ENDPOINT = 'https://translation.googleapis.com';
-  PROJECT_ID = 'tatuga-425319';
+  assignmentRepository: AssignmentRepository;
+  private fileAssignmentRepository: FileAssignmentRepository;
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
+  private studentOnSubjectRepository: StudentOnSubjectRepository;
 
   constructor(
     private prisma: PrismaService,
@@ -77,7 +64,23 @@ export class AssignmentService {
     private skillOnAssignmentService: SkillOnAssignmentService,
     private httpService: HttpService,
     private authService: AuthService,
-  ) {}
+  ) {
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+    this.fileAssignmentRepository = new FileAssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+  }
 
   async getAssignmentById(
     dto: GetAssignmentByIdDto,

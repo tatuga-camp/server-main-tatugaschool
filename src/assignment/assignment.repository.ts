@@ -31,21 +31,30 @@ type AssignmentRepositoryType = {
 @Injectable()
 export class AssignmentRepository implements AssignmentRepositoryType {
   logger: Logger = new Logger(AssignmentRepository.name);
-  fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository =
-    new FileOnStudentAssignmentRepository(
-      this.prisma,
-      this.googleStorageService,
-    );
-  fileAssignmentRepository: FileAssignmentRepository =
-    new FileAssignmentRepository(this.prisma, this.googleStorageService);
-  studentOnAssignmentRepository: StudentOnAssignmentRepository =
-    new StudentOnAssignmentRepository(this.prisma);
-  skillOnAssignmentRepository: SkillOnAssignmentRepository =
-    new SkillOnAssignmentRepository(this.prisma);
+  fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
+  fileAssignmentRepository: FileAssignmentRepository;
+  studentOnAssignmentRepository: StudentOnAssignmentRepository;
+  skillOnAssignmentRepository: SkillOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
+      this.prisma,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+    this.fileAssignmentRepository = new FileAssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.fileOnStudentAssignmentRepository =
+      new FileOnStudentAssignmentRepository(
+        this.prisma,
+        this.googleStorageService,
+      );
+  }
 
   async getById(request: RequestGetAssignmentById): Promise<Assignment> {
     try {

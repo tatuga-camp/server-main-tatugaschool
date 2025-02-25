@@ -17,14 +17,15 @@ import { SkillOnCareerRepository } from './skill-on-career.repository';
 @Injectable()
 export class SkillOnCareerService {
   private logger: Logger = new Logger(SkillOnCareerService.name);
-  skillOnCareerRepository: SkillOnCareerRepository =
-    new SkillOnCareerRepository(this.prisma);
+  skillOnCareerRepository: SkillOnCareerRepository;
 
-  private skillRepository: SkillRepository = new SkillRepository(this.prisma);
-  private careerRepository: CareerRepository = new CareerRepository(
-    this.prisma,
-  );
-  constructor(private prisma: PrismaService) {}
+  private skillRepository: SkillRepository;
+  private careerRepository: CareerRepository;
+  constructor(private prisma: PrismaService) {
+    this.careerRepository = new CareerRepository(this.prisma);
+    this.skillRepository = new SkillRepository(this.prisma);
+    this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
+  }
 
   async getByCareerId(dto: GetByCarrerIdDto) {
     try {

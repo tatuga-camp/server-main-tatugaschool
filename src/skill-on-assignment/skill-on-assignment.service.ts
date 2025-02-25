@@ -17,19 +17,26 @@ import { CreateSkillOnAssignmentDto, DeleteSkillOnAssignmentDto } from './dto';
 @Injectable()
 export class SkillOnAssignmentService {
   logger: Logger = new Logger(SkillOnAssignmentService.name);
-  skillOnAssignmentRepository: SkillOnAssignmentRepository =
-    new SkillOnAssignmentRepository(this.prisma);
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  private skillRepository: SkillRepository = new SkillRepository(this.prisma);
-  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
+  skillOnAssignmentRepository: SkillOnAssignmentRepository;
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository;
+  private skillRepository: SkillRepository;
+  private assignmentRepository: AssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.skillRepository = new SkillRepository(this.prisma);
+    this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
+      this.prisma,
+    );
+    this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
+      this.prisma,
+    );
+  }
 
   async getByAssignmentId(
     dto: GetAssignmentByIdDto,

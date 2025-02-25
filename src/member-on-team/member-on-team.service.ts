@@ -19,15 +19,17 @@ import { MemberOnTeam, Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class MemberOnTeamService {
-  memberOnTeamRepository: MemberOnTeamRepository = new MemberOnTeamRepository(
-    this.prisma,
-  );
-  private teamRepository: TeamRepository = new TeamRepository(this.prisma);
+  memberOnTeamRepository: MemberOnTeamRepository;
+  private teamRepository: TeamRepository;
   private logger: Logger = new Logger(MemberOnTeamService.name);
-  private userRepository: UserRepository = new UserRepository(this.prisma);
-  private memberOnSchoolRepository: MemberOnSchoolRepository =
-    new MemberOnSchoolRepository(this.prisma);
-  constructor(private prisma: PrismaService) {}
+  private userRepository: UserRepository;
+  private memberOnSchoolRepository: MemberOnSchoolRepository;
+  constructor(private prisma: PrismaService) {
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma);
+    this.teamRepository = new TeamRepository(this.prisma);
+    this.memberOnTeamRepository = new MemberOnTeamRepository(this.prisma);
+  }
 
   async isMemberOnTeam({
     userId,

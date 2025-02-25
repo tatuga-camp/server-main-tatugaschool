@@ -20,29 +20,38 @@ import { StudentOnAssignmentRepository } from '../student-on-assignment/student-
 @Injectable()
 export class SkillOnStudentAssignmentService {
   private logger: Logger = new Logger(SkillOnStudentAssignmentService.name);
-  skillOnStudentAssignmentRepository: SkillOnStudentAssignmentRepository =
-    new SkillOnStudentAssignmentRepository(this.prisma);
-  private studentRepository: StudentRepository = new StudentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private skillOnAssignmentRepository: SkillOnAssignmentRepository =
-    new SkillOnAssignmentRepository(this.prisma);
+  skillOnStudentAssignmentRepository: SkillOnStudentAssignmentRepository;
+  private studentRepository: StudentRepository;
+  private skillOnAssignmentRepository: SkillOnAssignmentRepository;
 
-  private studentOnAssignmentRepository: StudentOnAssignmentRepository =
-    new StudentOnAssignmentRepository(this.prisma);
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
 
-  private assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  private skillRepository: SkillRepository = new SkillRepository(this.prisma);
+  private assignmentRepository: AssignmentRepository;
+  private skillRepository: SkillRepository;
 
   constructor(
     private prisma: PrismaService,
     private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.skillOnStudentAssignmentRepository =
+      new SkillOnStudentAssignmentRepository(this.prisma);
+    this.studentRepository = new StudentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
+      this.prisma,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+    this.skillRepository = new SkillRepository(this.prisma);
+  }
 
   async getByStudentId(
     dto: GetByStudentIdDto,

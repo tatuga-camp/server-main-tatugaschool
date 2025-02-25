@@ -22,18 +22,23 @@ import { GoogleStorageService } from '../google-storage/google-storage.service';
 @Injectable()
 export class SkillService {
   logger: Logger = new Logger(SkillService.name);
-  assignmentRepository: AssignmentRepository = new AssignmentRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
-  teacherOnSubjectRepository: TeacherOnSubjectRepository =
-    new TeacherOnSubjectRepository(this.prisma);
-  skillRepository: SkillRepository = new SkillRepository(this.prisma);
+  assignmentRepository: AssignmentRepository;
+  teacherOnSubjectRepository: TeacherOnSubjectRepository;
+  skillRepository: SkillRepository;
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.skillRepository = new SkillRepository(this.prisma);
+    this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
+      this.prisma,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+  }
 
   async getOne(dto: { skillId: string }) {
     try {

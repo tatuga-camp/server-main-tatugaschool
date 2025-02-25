@@ -1,23 +1,153 @@
+import { SkillService } from './../skill/skill.service';
+import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
 import { SkillOnCareerRepository } from './../skill-on-career/skill-on-career.repository';
 import { CareerRepository } from './career.repository';
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Pagination } from '../interfaces';
-import { Career, SkillOnCareer } from '@prisma/client';
+import { Career, Skill, SkillOnCareer } from '@prisma/client';
 import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 import { VectorService } from '../vector/vector.service';
 
 @Injectable()
 export class CareerService {
   private logger: Logger = new Logger(CareerService.name);
-  careerRepository: CareerRepository = new CareerRepository(this.prisma);
-  private skillOnCareerRepository: SkillOnCareerRepository =
-    new SkillOnCareerRepository(this.prisma);
+  careerRepository: CareerRepository;
+  private skillOnCareerRepository: SkillOnCareerRepository;
+
   constructor(
     private prisma: PrismaService,
     private vectorService: VectorService,
-  ) {}
+    private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
+    private skillService: SkillService,
+  ) {
+    this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
+    this.careerRepository = new CareerRepository(this.prisma);
+  }
 
+  async suggest(dto: { studentId: string }): Promise<{
+    careers: Career[];
+    skills: {
+      skill: Skill;
+      average: number;
+      skillOnStudents: {
+        id: string;
+        createAt: Date;
+        updateAt: Date;
+        weight: number;
+        subjectId: string;
+        skillId: string;
+        studentId: string;
+        studentOnAssignmentId: string;
+      }[];
+    }[];
+  }> {
+    try {
+      const skillOnStudents =
+        await this.skillOnStudentAssignmentService.skillOnStudentAssignmentRepository.findMany(
+          {
+            where: {
+              studentId: dto.studentId,
+            },
+          },
+        );
+
+      const groupsSkills = Object.groupBy(
+        skillOnStudents,
+        (skill) => skill.skillId,
+      );
+      const groupedArrayStudentSkills = Object.entries(groupsSkills).map(
+        ([skillId, skills]) => ({
+          skillId,
+          average:
+            skills.reduce((sum, skill) => sum + skill.weight, 0) /
+            skills.length, // average weight
+          skills,
+        }),
+      );
+
+      const skillOnCareers = await this.skillOnCareerRepository.findMany({});
+      let careers = (await this.careerRepository.findMany({})).map((s) => {
+        return {
+          point: 0,
+          ...s,
+        };
+      });
+      const groupSkillOnCareerBySkillId = Object.groupBy(
+        skillOnCareers,
+        (skill) => skill.skillId,
+      );
+      const groupArraySkillOnCareerBySkillId = Object.entries(
+        groupSkillOnCareerBySkillId,
+      ).map(([skillId, skillOnCareers]) => {
+        return {
+          skillId,
+          skillOnCareers,
+        };
+      });
+
+      if (
+        groupArraySkillOnCareerBySkillId.length !==
+        groupedArrayStudentSkills.length
+      ) {
+        throw new BadRequestException(
+          'Data is not enough to give a suggestion',
+        );
+      }
+
+      for (const skillOnCareer of groupArraySkillOnCareerBySkillId) {
+        const skillOnStudent = groupedArrayStudentSkills.find(
+          (s) => s.skillId === skillOnCareer.skillId,
+        );
+        const closestPoint = this.findClosestNumber(
+          skillOnStudent.average,
+          skillOnCareer.skillOnCareers.map((s) => s.weight),
+        );
+
+        const winCareer = skillOnCareer.skillOnCareers.find(
+          (s) => s.weight === closestPoint,
+        );
+
+        careers = careers.map((career) => {
+          if (winCareer.careerId === career.id) {
+            return {
+              point: (career.point += 1),
+              ...career,
+            };
+          } else {
+            return {
+              ...career,
+            };
+          }
+        });
+      }
+
+      const skills = await this.skillService.skillRepository.findMany({});
+
+      return {
+        skills: groupedArrayStudentSkills.map((s) => {
+          const skill = skills.find((skill) => skill.id === s.skillId);
+          delete skill?.vector;
+          delete s.skillId;
+          return {
+            skill: skill,
+            average: s.average,
+            skillOnStudents: s.skills,
+          };
+        }),
+        careers: careers.sort((a, b) => b.point - a.point).slice(0, 3),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  findClosestNumber(target: number, numbers: number[]): number {
+    return numbers.reduce((closest, num) =>
+      Math.abs(num - target) < Math.abs(closest - target) ? num : closest,
+    );
+  }
   async getOne(dto: {
     careerId: string;
   }): Promise<Career & { skills: SkillOnCareer[] }> {

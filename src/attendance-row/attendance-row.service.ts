@@ -26,14 +26,13 @@ import {
 export class AttendanceRowService {
   logger: Logger;
   attendanceRowRepository: AttendanceRowRepository;
-  private attendanceTableRepository: AttendanceTableRepository =
-    new AttendanceTableRepository(this.prisma);
-  private attendanceRepository: AttendanceRepository = new AttendanceRepository(
-    this.prisma,
-  );
+  private attendanceTableRepository: AttendanceTableRepository;
+  private attendanceRepository: AttendanceRepository;
   constructor(private prisma: PrismaService) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
+    this.attendanceRepository = new AttendanceRepository(this.prisma);
+    this.attendanceTableRepository = new AttendanceTableRepository(this.prisma);
   }
 
   async validateAccess({

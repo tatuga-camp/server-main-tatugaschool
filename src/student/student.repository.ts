@@ -27,14 +27,16 @@ type Repository = {
 @Injectable()
 export class StudentRepository implements Repository {
   private logger = new Logger(StudentRepository.name);
-  private studentOnSubjectRepository = new StudentOnSubjectRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
+  private studentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
+  }
 
   async update(request: RequestUpdateStudent): Promise<Student> {
     try {

@@ -13,11 +13,13 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService {
   logger: Logger = new Logger(UsersService.name);
-  userRepository: UserRepository = new UserRepository(this.prisma);
+  userRepository: UserRepository;
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
-  ) {}
+  ) {
+    this.userRepository = new UserRepository(this.prisma);
+  }
 
   async GetUser(user: User): Promise<User> {
     try {

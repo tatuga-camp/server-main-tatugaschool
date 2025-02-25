@@ -13,6 +13,7 @@ import {
   CreateCareerDto,
   DeleteCareerDto,
   GetCarrerById,
+  GetSuggestDto,
   UpdateCareerDto,
 } from './dto';
 import { AdminGuard, UserGuard } from '../auth/guard';
@@ -26,6 +27,11 @@ export class CareerController {
   @Get(':careerId')
   getByPage(@Param() dto: GetCarrerById) {
     return this.careerService.getOne(dto);
+  }
+
+  @Get('suggest/:studentId')
+  suggestCarrer(@Param() dto: GetSuggestDto) {
+    return this.careerService.suggest(dto);
   }
 
   @UseGuards(AdminGuard)

@@ -20,15 +20,16 @@ import { Pagination } from '../interfaces';
 @Injectable()
 export class TeamService {
   private logger: Logger = new Logger(TeamService.name);
-  private memberOnTeamRepository: MemberOnTeamRepository =
-    new MemberOnTeamRepository(this.prisma);
-  private memberOnSchoolRepository: MemberOnSchoolRepository =
-    new MemberOnSchoolRepository(this.prisma);
+  private memberOnTeamRepository: MemberOnTeamRepository;
+  private memberOnSchoolRepository: MemberOnSchoolRepository;
   constructor(
     private teamRepository: TeamRepository,
     private userService: UsersService,
     private prisma: PrismaService,
-  ) {}
+  ) {
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(this.prisma);
+    this.memberOnTeamRepository = new MemberOnTeamRepository(this.prisma);
+  }
 
   async createTeam(dto: CreateTeamDto, user: User): Promise<Team> {
     try {

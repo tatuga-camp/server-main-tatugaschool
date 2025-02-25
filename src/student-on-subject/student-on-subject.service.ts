@@ -33,10 +33,7 @@ export class StudentOnSubjectService {
   private logger: Logger = new Logger(StudentOnSubjectService.name);
   studentOnSubjectRepository: StudentOnSubjectRepositoryType;
   private scoreOnStudentRepository: ScoreOnStudentRepository;
-  private subjectRepository: SubjectRepository = new SubjectRepository(
-    this.prisma,
-    this.googleStorageService,
-  );
+  private subjectRepository: SubjectRepository;
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
@@ -51,6 +48,10 @@ export class StudentOnSubjectService {
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(prisma);
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       prisma,
+    );
+    this.subjectRepository = new SubjectRepository(
+      this.prisma,
+      this.googleStorageService,
     );
   }
 
