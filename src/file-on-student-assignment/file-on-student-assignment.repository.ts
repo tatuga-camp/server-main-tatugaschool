@@ -35,7 +35,7 @@ type FileOnStudentAssignmentRepositoryType = {
     request: Prisma.FileOnStudentAssignmentUpdateArgs,
   ): Promise<FileOnStudentAssignment>;
   deleteMany(
-    request: Prisma.FileOnStudentAssignmentDeleteManyArgs,
+    request: Prisma.FileOnStudentAssignmentFindManyArgs,
   ): Promise<void>;
 };
 @Injectable()
@@ -172,7 +172,7 @@ export class FileOnStudentAssignmentRepository
   }
 
   async deleteMany(
-    request: Prisma.FileOnStudentAssignmentDeleteManyArgs,
+    request: Prisma.FileOnStudentAssignmentFindManyArgs,
   ): Promise<void> {
     try {
       const fileOnStudentAssignments =
@@ -187,7 +187,16 @@ export class FileOnStudentAssignmentRepository
             });
           }),
       );
-      await this.prisma.fileOnStudentAssignment.deleteMany(request);
+
+      await Promise.all(
+        fileOnStudentAssignments.map((f) =>
+          this.prisma.fileOnStudentAssignment.delete({
+            where: {
+              id: f.id,
+            },
+          }),
+        ),
+      );
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
