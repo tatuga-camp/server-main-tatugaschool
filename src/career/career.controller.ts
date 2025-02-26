@@ -18,6 +18,8 @@ import {
 } from './dto';
 import { AdminGuard, UserGuard } from '../auth/guard';
 import { CareerService } from './career.service';
+import { GetUser } from '../auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('v1/careers')
 export class CareerController {
@@ -29,9 +31,10 @@ export class CareerController {
     return this.careerService.getOne(dto);
   }
 
+  @UseGuards(UseGuards)
   @Get('suggest/:studentId')
-  suggestCarrer(@Param() dto: GetSuggestDto) {
-    return this.careerService.suggest(dto);
+  suggestCarrer(@Param() dto: GetSuggestDto, @GetUser() user: User) {
+    return this.careerService.suggest(dto, user);
   }
 
   @UseGuards(AdminGuard)

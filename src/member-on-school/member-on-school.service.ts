@@ -28,7 +28,7 @@ import { MemberOnSchoolRepository } from './member-on-school.repository';
 
 @Injectable()
 export class MemberOnSchoolService {
-  private logger: Logger = new Logger(MemberOnSchoolService.name);
+  private logger: Logger;
   memberOnSchoolRepository: MemberOnSchoolRepository;
   private userRepository: UserRepository;
 
@@ -41,6 +41,7 @@ export class MemberOnSchoolService {
   ) {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
     this.userRepository = new UserRepository(prisma);
+    this.logger = new Logger(MemberOnSchoolService.name);
   }
 
   async validateAccess({

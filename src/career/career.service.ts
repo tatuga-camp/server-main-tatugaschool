@@ -1,3 +1,5 @@
+import { StudentService } from './../student/student.service';
+import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
 import { SkillService } from './../skill/skill.service';
 import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
 import { SkillOnCareerRepository } from './../skill-on-career/skill-on-career.repository';
@@ -5,7 +7,7 @@ import { CareerRepository } from './career.repository';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Pagination } from '../interfaces';
-import { Career, Skill, SkillOnCareer } from '@prisma/client';
+import { Career, Skill, SkillOnCareer, User } from '@prisma/client';
 import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 import { VectorService } from '../vector/vector.service';
 
@@ -20,12 +22,17 @@ export class CareerService {
     private vectorService: VectorService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
     private skillService: SkillService,
+    private memberOnSchoolService: MemberOnSchoolService,
+    private studentService: StudentService,
   ) {
     this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
     this.careerRepository = new CareerRepository(this.prisma);
   }
 
-  async suggest(dto: { studentId: string }): Promise<{
+  async suggest(
+    dto: { studentId: string },
+    user: User,
+  ): Promise<{
     careers: Career[];
     skills: {
       skill: Skill;
@@ -43,6 +50,19 @@ export class CareerService {
     }[];
   }> {
     try {
+      const student = await this.studentService.studentRepository.findById({
+        studentId: dto.studentId,
+      });
+
+      if (!student) {
+        throw new BadRequestException('Student not found');
+      }
+
+      await this.memberOnSchoolService.validateAccess({
+        user,
+        schoolId: student.schoolId,
+      });
+
       const skillOnStudents =
         await this.skillOnStudentAssignmentService.skillOnStudentAssignmentRepository.findMany(
           {
