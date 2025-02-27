@@ -1,4 +1,4 @@
-import { SubjectService } from './../subject/subject.service';
+import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
   ForbiddenException,
@@ -19,6 +19,8 @@ import {
 } from '@prisma/client';
 import * as cheerio from 'cheerio';
 import { Workbook } from 'exceljs';
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from 'src/auth/auth.service';
 import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 import { PrismaService } from '../prisma/prisma.service';
@@ -27,6 +29,7 @@ import { SkillOnAssignmentService } from './../skill-on-assignment/skill-on-assi
 import { SkillService } from './../skill/skill.service';
 import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
+import { SubjectService } from './../subject/subject.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { VectorService } from './../vector/vector.service';
 import { AssignmentRepository } from './assignment.repository';
@@ -38,12 +41,6 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { firstValueFrom } from 'rxjs';
-import { TeacherOnSubjectRepository } from 'src/teacher-on-subject/teacher-on-subject.repository';
-import { MemberOnSchoolRepository } from 'src/member-on-school/member-on-school.repository';
-import { HttpService } from '@nestjs/axios';
-import { AuthService } from 'src/auth/auth.service';
-import { log } from 'console';
 
 @Injectable()
 export class AssignmentService {

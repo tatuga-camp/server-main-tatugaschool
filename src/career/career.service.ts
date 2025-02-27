@@ -33,20 +33,10 @@ export class CareerService {
     dto: { studentId: string },
     user: User,
   ): Promise<{
-    careers: Career[];
+    careers: Career;
     skills: {
       skill: Skill;
       average: number;
-      skillOnStudents: {
-        id: string;
-        createAt: Date;
-        updateAt: Date;
-        weight: number;
-        subjectId: string;
-        skillId: string;
-        studentId: string;
-        studentOnAssignmentId: string;
-      }[];
     }[];
   }> {
     try {
@@ -152,10 +142,9 @@ export class CareerService {
           return {
             skill: skill,
             average: s.average,
-            skillOnStudents: s.skills,
           };
         }),
-        careers: careers.sort((a, b) => b.point - a.point).slice(0, 3),
+        careers: careers.sort((a, b) => b.point - a.point)[0],
       };
     } catch (error) {
       this.logger.error(error);

@@ -31,7 +31,7 @@ export class CareerController {
     return this.careerService.getOne(dto);
   }
 
-  @UseGuards(UseGuards)
+  @UseGuards(UserGuard)
   @Get('suggest/:studentId')
   suggestCarrer(@Param() dto: GetSuggestDto, @GetUser() user: User) {
     return this.careerService.suggest(dto, user);
