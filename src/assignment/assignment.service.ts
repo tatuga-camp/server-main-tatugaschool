@@ -121,6 +121,10 @@ export class AssignmentService {
   ): Promise<
     (Assignment & {
       files: FileOnAssignment[];
+      studentAssign: number;
+      reviewNumber: number;
+      summitNumber: number;
+      penddingNumber: number;
       studentOnAssignment?: StudentOnAssignment;
     })[]
   > {
@@ -184,6 +188,13 @@ export class AssignmentService {
         );
       }
 
+      const allStudentOnAssignments =
+        await this.studentOnAssignmentRepository.findMany({
+          where: {
+            subjectId: dto.subjectId,
+          },
+        });
+
       const files = await this.fileAssignmentRepository.findMany({
         where: {
           assignmentId: {
@@ -193,8 +204,21 @@ export class AssignmentService {
       });
 
       return assignments.map((assignment) => {
+        const studentOnAssignments = allStudentOnAssignments.filter(
+          (s) => s.assignmentId === assignment.id,
+        );
         return {
           ...assignment,
+          studentAssign: studentOnAssignments.length,
+          summitNumber: studentOnAssignments.filter(
+            (s) => s.status === 'SUBMITTED',
+          ).length,
+          penddingNumber: studentOnAssignments.filter(
+            (s) => s.status === 'PENDDING',
+          ).length,
+          reviewNumber: studentOnAssignments.filter(
+            (s) => s.status === 'REVIEWD',
+          ).length,
           files: files.filter((file) => file.assignmentId === assignment.id),
           //if request come from student attrach studentOnAssignment
           studentOnAssignment:
@@ -307,7 +331,10 @@ export class AssignmentService {
       await this.studentOnAssignmentRepository.createMany({
         data: createStudentOnAssignments,
       });
-      this.BackgroudEmbedingAssignment(assignment.id, user);
+      if (assignment.type === 'Assignment') {
+        this.BackgroudEmbedingAssignment(assignment.id, user);
+      }
+
       return assignment;
     } catch (error) {
       this.logger.error(error);
