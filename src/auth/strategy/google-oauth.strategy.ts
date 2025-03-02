@@ -40,8 +40,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       provider: Provider.GOOGLE,
       providerId: id,
       email: emails[0].value,
-      firstName: name.givenName,
-      lastName: name.familyName,
+      firstName: name.givenName ?? '',
+      lastName: name.familyName ?? '',
       photo: photos[0].value,
       phone: '',
     };
