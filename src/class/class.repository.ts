@@ -1,24 +1,19 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import { Class, Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaService } from '../prisma/prisma.service';
+import { StudentRepository } from '../student/student.repository';
+import { SubjectRepository } from '../subject/subject.repository';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   RequestCreateClass,
   RequestDeleteClass,
   RequestGetClass,
-  RequestGetClassByPage,
-  RequestUpdateClass,
 } from './interfaces/class.interface';
-import { Pagination } from '../interfaces';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { SubjectRepository } from '../subject/subject.repository';
-import { StudentRepository } from '../student/student.repository';
-import { EmailService } from '../email/email.service';
-import { PushService } from '../web-push/push.service';
 
 export type Repository = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -27,6 +22,7 @@ export type Repository = {
   findAll(): Promise<Class[]>;
   findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]>;
   delete(request: RequestDeleteClass): Promise<Class>;
+  count(request: Prisma.ClassCountArgs): Promise<number>;
 };
 
 @Injectable()
@@ -46,6 +42,20 @@ export class ClassRepository implements Repository {
       this.prisma,
       this.googleStorageService,
     );
+  }
+
+  async count(request: Prisma.ClassCountArgs): Promise<number> {
+    try {
+      return await this.prisma.class.count(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]> {
