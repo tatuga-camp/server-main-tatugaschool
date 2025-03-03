@@ -162,6 +162,8 @@ model Class {
   subjects          Subject[]
   students          Student[]
   studentOnSubjects StudentOnSubject[]
+
+  @@index([schoolId])
 }
 
 model Student {
@@ -188,6 +190,8 @@ model Student {
   attendances               Attendance[]
   fileOnStudentAssignments  FileOnStudentAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
+
+  @@index([schoolId, classId])
 }
 
 model Team {
@@ -278,6 +282,8 @@ model Subject {
   skillOnAssignments        SkillOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   attendanceStatusLists     AttendanceStatusList[]
+
+  @@index([educationYear, schoolId])
 }
 
 model TeacherOnSubject {
@@ -374,6 +380,8 @@ model Assignment {
   studentOnAssignments     StudentOnAssignment[]
   skillOnAssignments       SkillOnAssignment[]
   fileOnStudentAssignments FileOnStudentAssignment[]
+
+  @@index([subjectId])
 }
 
 enum AssignmentType {
@@ -402,6 +410,8 @@ model FileOnAssignment {
   school       School     @relation(fields: [schoolId], references: [id])
   assignmentId String     @db.ObjectId
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
+
+  @@index([assignmentId])
 }
 
 model StudentOnAssignment {
@@ -471,6 +481,8 @@ model FileOnStudentAssignment {
   student               Student             @relation(fields: [studentId], references: [id])
   studentOnAssignmentId String              @db.ObjectId
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+
+  @@index([studentOnAssignmentId])
 }
 
 enum StudentAssignmentContentType {
@@ -509,6 +521,8 @@ model CommentOnAssignment {
   teacherOnSubject      TeacherOnSubject?   @relation(fields: [teacherOnSubjectId], references: [id])
   userId                String?             @db.ObjectId
   user                  User?               @relation(fields: [userId], references: [id])
+
+  @@index([studentOnAssignmentId])
 }
 
 model ScoreOnSubject {
@@ -528,6 +542,8 @@ model ScoreOnSubject {
   subject   Subject @relation(fields: [subjectId], references: [id])
 
   scoreOnStudents ScoreOnStudent[]
+
+  @@index([subjectId])
 }
 
 model ScoreOnStudent {
@@ -550,6 +566,8 @@ model ScoreOnStudent {
   student            Student          @relation(fields: [studentId], references: [id])
   studentOnSubjectId String           @db.ObjectId
   studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
+
+  @@index([subjectId, studentOnSubjectId])
 }
 
 model AttendanceTable {
@@ -567,6 +585,8 @@ model AttendanceTable {
   attendances           Attendance[]
   attendanceRows        AttendanceRow[]
   attendanceStatusLists AttendanceStatusList[]
+
+  @@index([subjectId])
 }
 
 model AttendanceStatusList {
@@ -607,6 +627,8 @@ model AttendanceRow {
   schoolId    String       @db.ObjectId
   school      School       @relation(fields: [schoolId], references: [id])
   attendances Attendance[]
+
+  @@index([subjectId, attendanceTableId])
 }
 
 model Attendance {
@@ -635,6 +657,7 @@ model Attendance {
   subject   Subject @relation(fields: [subjectId], references: [id])
 
   @@unique([studentOnSubjectId, attendanceRowId])
+  @@index([attendanceTableId])
 }
 
 model Skill {
