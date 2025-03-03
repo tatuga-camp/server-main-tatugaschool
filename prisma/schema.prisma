@@ -619,6 +619,11 @@ model AttendanceRow {
   endDate   DateTime
   note      String?
 
+  expireAt            DateTime?
+  allowScanAt         DateTime?
+  isAllowScanManyTime Boolean?
+  type                AttendanceType @default(NORMAL)
+
   attendanceTableId String          @db.ObjectId
   attendanceTable   AttendanceTable @relation(fields: [attendanceTableId], references: [id])
   subjectId         String          @db.ObjectId
@@ -629,6 +634,11 @@ model AttendanceRow {
   attendances Attendance[]
 
   @@index([subjectId, attendanceTableId])
+}
+
+enum AttendanceType {
+  NORMAL
+  SCAN
 }
 
 model Attendance {

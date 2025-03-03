@@ -1,3 +1,4 @@
+import { StudentOnSubjectService } from './../student-on-subject/student-on-subject.service';
 import { AttendanceRepository } from './../attendance/attendance.repository';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { AttendanceRowRepository } from './attendance-row.repository';
@@ -7,9 +8,15 @@ import {
   Get,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Attendance, AttendanceRow, User } from '@prisma/client';
+import {
+  Attendance,
+  AttendanceRow,
+  StudentOnSubject,
+  User,
+} from '@prisma/client';
 import {
   CreateAttendanceRowDto,
   DeleteAttendanceRowDto,
@@ -28,7 +35,11 @@ export class AttendanceRowService {
   attendanceRowRepository: AttendanceRowRepository;
   private attendanceTableRepository: AttendanceTableRepository;
   private attendanceRepository: AttendanceRepository;
-  constructor(private prisma: PrismaService) {
+
+  constructor(
+    private prisma: PrismaService,
+    private studentOnSubjectService: StudentOnSubjectService,
+  ) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
     this.attendanceRepository = new AttendanceRepository(this.prisma);
@@ -136,6 +147,52 @@ export class AttendanceRowService {
     }
   }
 
+  async GetAttendanceQrCode(dto: { attendanceRowId: string }): Promise<{
+    students: (StudentOnSubject & { attendance: Attendance })[];
+    attendanceRow: AttendanceRow;
+  }> {
+    try {
+      const attendanceRow =
+        await this.attendanceRowRepository.getAttendanceRowById({
+          attendanceRowId: dto.attendanceRowId,
+        });
+
+      if (!attendanceRow) {
+        throw new NotFoundException('Attendance row not found');
+      }
+
+      const attendances = await this.attendanceRepository.findMany({
+        where: {
+          attendanceRowId: attendanceRow.id,
+        },
+      });
+
+      const studentOnSubjects =
+        await this.studentOnSubjectService.studentOnSubjectRepository.findMany({
+          where: {
+            subjectId: attendanceRow.subjectId,
+          },
+        });
+
+      return {
+        attendanceRow,
+        students: studentOnSubjects.map((studentOnSubject) => {
+          const attendance = attendances.find(
+            (attendance) => attendance.studentId === studentOnSubject.studentId,
+          );
+
+          return {
+            ...studentOnSubject,
+            attendance,
+          };
+        }),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async CreateAttendanceRow(
     dto: CreateAttendanceRowDto,
     user: User,
@@ -155,11 +212,19 @@ export class AttendanceRowService {
         subjectId: table.subjectId,
       });
 
+      if (
+        dto.type === 'SCAN' &&
+        (!dto.allowScanAt || !dto.expireAt || !dto.isAllowScanManyTime)
+      ) {
+        throw new BadRequestException(
+          'Attendance Type Scan require allowScanAt, expireAt, isAllowScanManyTime',
+        );
+      }
+
       const row = await this.attendanceRowRepository.createAttendanceRow({
-        ...dto,
-        schoolId: table.schoolId,
-        subjectId: table.subjectId,
+        data: { ...dto, schoolId: table.schoolId, subjectId: table.subjectId },
       });
+
       const attendances = await this.attendanceRepository.findMany({
         where: {
           attendanceRowId: row.id,
