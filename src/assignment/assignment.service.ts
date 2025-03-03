@@ -41,11 +41,6 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { firstValueFrom } from 'rxjs';
-import { TeacherOnSubjectRepository } from 'src/teacher-on-subject/teacher-on-subject.repository';
-import { MemberOnSchoolRepository } from 'src/member-on-school/member-on-school.repository';
-import { HttpService } from '@nestjs/axios';
-import { AuthService } from 'src/auth/auth.service';
 import { PredictionServiceClient, protos } from '@google-cloud/aiplatform';
 import axios from 'axios';
 import path from 'path';
@@ -281,7 +276,7 @@ export class AssignmentService {
         delete dto?.dueDate;
         delete dto?.weight;
       }
-      await this.teacherOnSubjectService.ValidateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -297,7 +292,7 @@ export class AssignmentService {
       }
 
       const assignment = await this.assignmentRepository.create({
-        data: { ...dto, schoolId: _member.schoolId, userId: user.id },
+        data: { ...dto, schoolId: member.schoolId, userId: user.id },
       });
 
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
