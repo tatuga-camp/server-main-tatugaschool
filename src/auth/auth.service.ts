@@ -73,9 +73,16 @@ export class AuthService {
       if (!user.isVerifyEmail) {
         throw new ForbiddenException('กรุณายืนยันอีเมลก่อน');
       }
+      const lastUpdate = new Date(user.updateAt).getTime();
 
-      if (user.resetPasswordToken) {
-        throw new ConflictException('การรีเซ็ตรหัสผ่านของคุณได้ถูกส่งไปแล้ว');
+      if (new Date().getTime() - lastUpdate < 60000) {
+        throw new BadRequestException(
+          'Please wait 1 minute before trying again',
+        );
+      }
+
+      if (user.provider !== 'LOCAL') {
+        throw new BadRequestException('รหัสผ่านของคุณถูกควบคุมโดย Google');
       }
 
       const token = crypto.randomBytes(32).toString('hex');
