@@ -45,7 +45,7 @@ export class SchoolService {
       this.googleStorageService,
       this.subjectService,
       this.classService,
-      this.stripe
+      this.stripe,
     );
   }
 
@@ -80,7 +80,7 @@ export class SchoolService {
   ): Promise<
     School & {
       user: User;
-      totalStudent: number;
+      totalClass: number;
       totalTeacher: number;
       totalSubject: number;
     }
@@ -105,13 +105,13 @@ export class SchoolService {
         }
       }
 
-      const [billingManger, students, subjects, teachers] = await Promise.all([
+      const [billingManger, classes, subjects, teachers] = await Promise.all([
         this.prisma.user.findUnique({
           where: {
             id: school.billingManagerId,
           },
         }),
-        this.studentService.studentRepository.count({
+        this.classService.classRepository.count({
           where: {
             schoolId: school.id,
           },
@@ -132,7 +132,7 @@ export class SchoolService {
       return {
         ...school,
         user: billingManger,
-        totalStudent: students,
+        totalClass: classes,
         totalSubject: subjects,
         totalTeacher: teachers,
       };
