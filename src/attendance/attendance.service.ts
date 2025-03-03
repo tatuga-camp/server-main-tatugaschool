@@ -4,6 +4,7 @@ import { GoogleStorageService } from './../google-storage/google-storage.service
 import { SubjectRepository } from './../subject/subject.repository';
 import { AttendanceRepository } from './attendance.repository';
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   Logger,
@@ -172,7 +173,10 @@ export class AttendanceService {
     }
   }
 
-  async update(dto: UpdateAttendanceDto, user: User): Promise<Attendance> {
+  async update(
+    dto: UpdateAttendanceDto,
+    user?: User | undefined,
+  ): Promise<Attendance> {
     try {
       const attendance = await this.attendanceRepository.getAttendanceById({
         attendanceId: dto.query.attendanceId,
@@ -180,6 +184,28 @@ export class AttendanceService {
       if (!attendance) {
         throw new NotFoundException('Attendance not found');
       }
+
+      if (user) {
+        await this.validateAccess({
+          userId: user.id,
+          subjectId: attendance.subjectId,
+        });
+      }
+
+      if (!user) {
+        const attendanceRow =
+          await this.attendanceRowRepository.getAttendanceRowById({
+            attendanceRowId: attendance.attendanceRowId,
+          });
+
+        const currentDate = new Date().getTime();
+        const expireAt = new Date(attendanceRow.expireAt).getTime();
+
+        if (currentDate > expireAt) {
+          throw new BadRequestException("Time's up! for update attendance");
+        }
+      }
+
       const status = await this.attendanceStatusListSRepository.findMany({
         where: {
           attendanceTableId: attendance.attendanceTableId,
@@ -190,10 +216,6 @@ export class AttendanceService {
         throw new ForbiddenException('Status not found');
       }
 
-      await this.validateAccess({
-        userId: user.id,
-        subjectId: attendance.subjectId,
-      });
       return await this.attendanceRepository.updateAttendanceById(dto);
     } catch (error) {
       this.logger.error(error);
