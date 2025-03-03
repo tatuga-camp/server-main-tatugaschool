@@ -46,7 +46,7 @@ import { TeacherOnSubjectRepository } from 'src/teacher-on-subject/teacher-on-su
 import { MemberOnSchoolRepository } from 'src/member-on-school/member-on-school.repository';
 import { HttpService } from '@nestjs/axios';
 import { AuthService } from 'src/auth/auth.service';
-import { PredictionServiceClient } from '@google-cloud/aiplatform';
+import { PredictionServiceClient, protos } from '@google-cloud/aiplatform';
 import axios from 'axios';
 import path from 'path';
 import { readFileSync, writeFileSync } from 'fs';
@@ -297,7 +297,7 @@ export class AssignmentService {
       }
 
       const assignment = await this.assignmentRepository.create({
-        data: { ...dto, schoolId: member.schoolId, userId: user.id },
+        data: { ...dto, schoolId: _member.schoolId, userId: user.id },
       });
 
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
@@ -386,7 +386,49 @@ export class AssignmentService {
   }
 
   private async summarizeWithVertex(text: string): Promise<string> {
-    return `Summary: ${text.slice(0, 100)}...`;
+    if (!text) {
+      return '';
+    }
+
+    try {
+      const request: protos.google.cloud.aiplatform.v1.IPredictRequest = {
+        endpoint: this.endpoint,
+        instances: [
+          {
+            structValue: {
+              fields: {
+                content: {
+                  stringValue: `Summarize the following text in a concise way: ${text.slice(0, 1000)}`, // Limit input size
+                },
+              },
+            },
+          },
+        ],
+        parameters: {
+          structValue: {
+            fields: {
+              temperature: { numberValue: 0.2 },
+              maxOutputTokens: { numberValue: 256 },
+              topK: { numberValue: 40 },
+              topP: { numberValue: 0.8 },
+            },
+          },
+        },
+      };
+
+      const [response] = await this.predictionClient.predict(request);
+      const summary =
+        response?.predictions?.[0]?.structValue?.fields?.content?.stringValue;
+
+      if (!summary) {
+        throw new Error('No summary generated');
+      }
+
+      return summary;
+    } catch (error) {
+      this.logger.error('Error in summarizeWithVertex:', error);
+      return `Summary: ${text.slice(0, 100)}...`;
+    }
   }
 
   async EmbedingAssignment(assignmentId: string) {
@@ -414,7 +456,7 @@ export class AssignmentService {
         text = await this.translateText(text, 'en', accessToken);
       }
 
-      // Summarize each file’s content in English
+      // Summarize each file's content in English
       const summaries = [];
       for (const file of files) {
         // Download and read text from file (อาจเป็น doc/pdf/image ฯลฯ)
@@ -448,36 +490,49 @@ export class AssignmentService {
    * ถ้าเป็นภาพ (.png, .jpg, .jpeg) ใช้ Vision API OCR -> ส่งคืนข้อความ
    */
   private async readAndConvertFile(fileUrl: string): Promise<string> {
-    // 1) Download file ไปยัง temp
-    const tempDir = '/tmp'; // หรือโฟลเดอร์ชั่วคราวที่ต้องการ
+    const tempDir = '/tmp';
     const fileName = path.basename(fileUrl);
     const filePath = path.join(tempDir, fileName);
 
-    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
-    writeFileSync(filePath, response.data);
+    try {
+      const response = await axios.get(fileUrl, {
+        responseType: 'arraybuffer',
+      });
+      writeFileSync(filePath, response.data);
 
-    // 2) ตรวจสอบนามสกุลไฟล์
-    const extension = path.extname(fileName).toLowerCase();
+      // Process file based on extension
+      const extension = path.extname(fileName).toLowerCase();
+      let result = '';
 
-    switch (extension) {
-      case '.pdf':
-        // PDF อยู่แล้ว -> parse เป็น text ได้เลย
-        return await this.parsePdf(filePath);
+      try {
+        switch (extension) {
+          case '.pdf':
+            result = await this.parsePdf(filePath);
+            break;
+          case '.txt':
+            result = response.data.toString();
+            break;
+          case '.png':
+          case '.jpg':
+          case '.jpeg':
+            result = await this.extractTextFromImage(filePath);
+            break;
+          default:
+            const pdfPath = await this.convertToPdf(filePath);
+            result = await this.parsePdf(pdfPath);
+            // Clean up converted PDF
+            exec(`rm ${pdfPath}`);
+            break;
+        }
+      } finally {
+        // Clean up temp file
+        exec(`rm ${filePath}`);
+      }
 
-      case '.txt':
-        // เป็นไฟล์ข้อความล้วน -> แปลง buffer to string
-        return response.data.toString();
-
-      // 3) รองรับไฟล์ภาพ: png, jpg, jpeg -> OCR ด้วย Vision API
-      case '.png':
-      case '.jpg':
-      case '.jpeg':
-        return await this.extractTextFromImage(filePath);
-
-      default:
-        // 4) กรณีอื่น (doc, docx, ppt ฯลฯ) -> แปลงเป็น PDF ก่อนด้วย LibreOffice -> parse PDF
-        const pdfPath = await this.convertToPdf(filePath);
-        return await this.parsePdf(pdfPath);
+      return result;
+    } catch (error) {
+      this.logger.error(`Error processing file ${fileUrl}:`, error);
+      throw error;
     }
   }
 
