@@ -442,6 +442,21 @@ export class AssignmentService {
         assignmentId: assignment.id,
       });
 
+      // extract URL <img> tags
+      const imageUrls: string[] = [];
+      doc('img').each((_, element) => {
+        const imgSrc = doc(element).attr('src');
+        if (imgSrc) {
+          imageUrls.push(imgSrc);
+        }
+      });
+
+      const imageTexts = await Promise.all(
+        imageUrls.map((url) => this.readAndConvertFile(url)),
+      );
+
+      text += '\n' + imageTexts.join('\n');
+
       const accessToken = await this.authService.getGoogleAccessToken();
 
       // 1. Detect the language of the combined text.
