@@ -1,22 +1,25 @@
-import { StudentOnSubjectService } from './../student-on-subject/student-on-subject.service';
-import { AttendanceRepository } from './../attendance/attendance.repository';
-import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
-import { AttendanceRowRepository } from './attendance-row.repository';
+import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
-  Get,
-  ForbiddenException,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import {
   Attendance,
   AttendanceRow,
+  AttendanceStatusList,
   StudentOnSubject,
+  Subject,
   User,
 } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
+import { AttendanceRepository } from './../attendance/attendance.repository';
+import { StudentOnSubjectService } from './../student-on-subject/student-on-subject.service';
+import { SubjectService } from './../subject/subject.service';
+import { AttendanceRowRepository } from './attendance-row.repository';
 import {
   CreateAttendanceRowDto,
   DeleteAttendanceRowDto,
@@ -24,10 +27,7 @@ import {
   GetAttendanceRowsDto,
   UpdateAttendanceRowDto,
 } from './dto';
-import {
-  RequestGetAttendanceRows,
-  ResponseGetAttendanceRowById,
-} from './interfaces';
+import { ResponseGetAttendanceRowById } from './interfaces';
 
 @Injectable()
 export class AttendanceRowService {
@@ -39,6 +39,8 @@ export class AttendanceRowService {
   constructor(
     private prisma: PrismaService,
     private studentOnSubjectService: StudentOnSubjectService,
+    private subjectService: SubjectService,
+    private attendanceStatusListService: AttendanceStatusListService,
   ) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
@@ -150,6 +152,8 @@ export class AttendanceRowService {
   async GetAttendanceQrCode(dto: { attendanceRowId: string }): Promise<{
     students: (StudentOnSubject & { attendance: Attendance })[];
     attendanceRow: AttendanceRow;
+    subject: Subject;
+    status: AttendanceStatusList[];
   }> {
     try {
       const attendanceRow =
@@ -161,18 +165,31 @@ export class AttendanceRowService {
         throw new NotFoundException('Attendance row not found');
       }
 
-      const attendances = await this.attendanceRepository.findMany({
-        where: {
-          attendanceRowId: attendanceRow.id,
-        },
-      });
-
-      const studentOnSubjects =
-        await this.studentOnSubjectService.studentOnSubjectRepository.findMany({
-          where: {
-            subjectId: attendanceRow.subjectId,
-          },
-        });
+      const [attendances, studentOnSubjects, subject, status] =
+        await Promise.all([
+          this.attendanceRepository.findMany({
+            where: {
+              attendanceRowId: attendanceRow.id,
+            },
+          }),
+          this.studentOnSubjectService.studentOnSubjectRepository.findMany({
+            where: {
+              subjectId: attendanceRow.subjectId,
+            },
+          }),
+          this.subjectService.subjectRepository.findUnique({
+            where: {
+              id: attendanceRow.subjectId,
+            },
+          }),
+          this.attendanceStatusListService.attendanceStatusListSRepository.findMany(
+            {
+              where: {
+                attendanceTableId: attendanceRow.attendanceTableId,
+              },
+            },
+          ),
+        ]);
 
       return {
         attendanceRow,
@@ -186,6 +203,8 @@ export class AttendanceRowService {
             attendance,
           };
         }),
+        subject: subject,
+        status: status,
       };
     } catch (error) {
       this.logger.error(error);
@@ -214,7 +233,9 @@ export class AttendanceRowService {
 
       if (
         dto.type === 'SCAN' &&
-        (!dto.allowScanAt || !dto.expireAt || !dto.isAllowScanManyTime)
+        (!dto.allowScanAt ||
+          !dto.expireAt ||
+          dto.isAllowScanManyTime === undefined)
       ) {
         throw new BadRequestException(
           'Attendance Type Scan require allowScanAt, expireAt, isAllowScanManyTime',
