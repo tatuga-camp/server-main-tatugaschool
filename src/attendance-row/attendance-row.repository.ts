@@ -4,7 +4,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import {
-  RequestCreateAttendanceRow,
   RequestDeleteAttendanceRow,
   RequestGetAttendanceRowById,
   RequestGetAttendanceRows,
@@ -24,7 +23,7 @@ export type Repository = {
     request: RequestGetAttendanceRowById,
   ): Promise<ResponseGetAttendanceRowById>;
   createAttendanceRow(
-    request: RequestCreateAttendanceRow,
+    request: Prisma.AttendanceRowCreateArgs,
   ): Promise<AttendanceRow>;
   updateAttendanceRow(
     request: RequestUpdateAttendanceRow,
@@ -108,18 +107,14 @@ export class AttendanceRowRepository implements Repository {
   }
 
   async createAttendanceRow(
-    request: RequestCreateAttendanceRow,
+    request: Prisma.AttendanceRowCreateArgs,
   ): Promise<AttendanceRow> {
     try {
-      const row = await this.prisma.attendanceRow.create({
-        data: {
-          ...request,
-        },
-      });
+      const row = await this.prisma.attendanceRow.create(request);
 
       const studentOnSubjects = await this.prisma.studentOnSubject.findMany({
         where: {
-          subjectId: request.subjectId,
+          subjectId: row.subjectId,
         },
       });
 

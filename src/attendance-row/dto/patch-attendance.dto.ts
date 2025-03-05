@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsMongoId,
   IsNotEmpty,
@@ -27,6 +28,18 @@ class UpdateAttendanceRowBody {
   @IsOptional()
   @IsString()
   note?: string;
+
+  @IsOptional()
+  @IsDateString()
+  expireAt?: string;
+
+  @IsOptional()
+  @IsDateString()
+  allowScanAt?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isAllowScanManyTime?: boolean;
 }
 
 export class UpdateAttendanceRowDto {
