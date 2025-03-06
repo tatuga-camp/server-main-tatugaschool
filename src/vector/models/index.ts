@@ -1,1 +1,1 @@
-export * from './response-embedding.model';
+export * from './response-ai.model';

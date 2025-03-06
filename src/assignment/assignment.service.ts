@@ -2,8 +2,6 @@ import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
   ForbiddenException,
-  HttpException,
-  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -19,11 +17,11 @@ import {
 } from '@prisma/client';
 import * as cheerio from 'cheerio';
 import { Workbook } from 'exceljs';
-import { firstValueFrom } from 'rxjs';
 import { AuthService } from 'src/auth/auth.service';
 import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../vector/ai.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { SkillOnAssignmentService } from './../skill-on-assignment/skill-on-assignment.service';
 import { SkillService } from './../skill/skill.service';
@@ -31,7 +29,6 @@ import { StudentOnAssignmentRepository } from './../student-on-assignment/studen
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { SubjectService } from './../subject/subject.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { AiService } from '../vector/ai.service';
 import { AssignmentRepository } from './assignment.repository';
 import {
   CreateAssignmentDto,
@@ -102,9 +99,7 @@ export class AssignmentService {
       });
 
       const skills = await this.skillOnAssignmentService.getByAssignmentId(
-        {
-          assignmentId: assignment.id,
-        },
+        { assignmentId: assignment.id },
         user,
       );
       return { ...assignment, files, skills: skills.map((s) => s.skill) };
@@ -139,10 +134,7 @@ export class AssignmentService {
       if (student) {
         const studentOnSubject =
           await this.studentOnSubjectRepository.findFirst({
-            where: {
-              studentId: student.id,
-              subjectId: dto.subjectId,
-            },
+            where: { studentId: student.id, subjectId: dto.subjectId },
           });
 
         studentsOnAssignments =
@@ -164,21 +156,15 @@ export class AssignmentService {
           where: {
             ...(student
               ? {
-                  id: {
-                    in: studentsOnAssignments.map((s) => s?.assignmentId),
-                  },
+                  id: { in: studentsOnAssignments.map((s) => s?.assignmentId) },
                 }
-              : {
-                  subjectId: dto.subjectId,
-                }),
+              : { subjectId: dto.subjectId }),
           },
         })
         .then((assignments) => {
           return assignments.map((assignment) => {
             delete assignment.vector;
-            return {
-              ...assignment,
-            };
+            return { ...assignment };
           });
         });
 
@@ -197,9 +183,7 @@ export class AssignmentService {
 
       const files = await this.fileAssignmentRepository.findMany({
         where: {
-          assignmentId: {
-            in: assignments.map((assignment) => assignment.id),
-          },
+          assignmentId: { in: assignments.map((assignment) => assignment.id) },
         },
       });
 
@@ -283,7 +267,7 @@ export class AssignmentService {
         delete dto?.dueDate;
         delete dto?.weight;
       }
-      await this.teacherOnSubjectService.ValidateAccess({
+      const member = await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
@@ -299,11 +283,7 @@ export class AssignmentService {
       }
 
       const assignment = await this.assignmentRepository.create({
-        data: {
-          ...dto,
-          schoolId: subject.schoolId,
-          userId: user.id,
-        },
+        data: { ...dto, schoolId: member.schoolId, userId: user.id },
       });
 
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
@@ -355,9 +335,7 @@ export class AssignmentService {
 
       const exsitingSkills =
         await this.skillOnAssignmentService.getByAssignmentId(
-          {
-            assignmentId: assignment.id,
-          },
+          { assignmentId: assignment.id },
           user,
         );
 
@@ -382,9 +360,7 @@ export class AssignmentService {
       await Promise.allSettled(
         exsitingSkillNotInNewSkills.map((skill) =>
           this.skillOnAssignmentService.delete(
-            {
-              skillOnAssignmentId: skill.id,
-            },
+            { skillOnAssignmentId: skill.id },
             user,
           ),
         ),
@@ -411,20 +387,58 @@ export class AssignmentService {
         assignmentId: assignment.id,
       });
 
+      // extract URL <img> tags
+      const imageUrls: string[] = [];
+      doc('img').each((_, element) => {
+        const imgSrc = doc(element).attr('src');
+        if (imgSrc) {
+          imageUrls.push(imgSrc);
+        }
+      });
       const accessToken = await this.authService.getGoogleAccessToken();
 
-      // 1. Detect the language of the combined text.
-      const detectedLanguage = await this.detectLanguage(text, accessToken);
-      // 2. If the language is not English, translate it to English.
-      if (detectedLanguage !== 'en') {
-        text = await this.translateText(text, 'en', accessToken);
+      if (imageUrls.length > 0) {
+        const imageURLWithType = await Promise.all(
+          imageUrls.map(async (url) => {
+            const miniType = await this.getFileMiniType(url);
+            return { url, type: miniType };
+          }),
+        );
+        const imageTexts = await this.aiService.summarizeFile({
+          imageURLs: imageURLWithType,
+          accessToken,
+        });
+
+        text += '\n' + imageTexts.candidates[0].content.parts[0].text;
       }
+
+      const summaries = [];
 
       if (files.length > 0) {
-        // get text from file using AI to extract text and summarize
+        const fileTexts = await this.aiService.summarizeFile({
+          imageURLs: files.map((file) => {
+            return {
+              url: file.url,
+              type: file.type,
+            };
+          }),
+          accessToken,
+        });
+        text += '\n' + fileTexts.candidates[0].content.parts[0].text;
       }
 
-      const vectors = await this.aiService.embbedingText(text);
+      text += '\n' + summaries.map((s) => s.summary).join('\n');
+      // 1. Detect the language of the combined text.
+      const detectedLanguage = await this.aiService.detectLanguage(
+        text,
+        accessToken,
+      );
+      // 2. If the language is not English, translate it to English.
+      if (detectedLanguage !== 'en') {
+        text = await this.aiService.translateText(text, 'en', accessToken);
+      }
+
+      const vectors = await this.aiService.embbedingText(text, accessToken);
       return await this.assignmentRepository.update({
         where: { id: assignmentId },
         data: {
@@ -438,14 +452,20 @@ export class AssignmentService {
     }
   }
 
+  async getFileMiniType(url: string): Promise<string> {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.headers.get('content-type');
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async reorder(dto: ReorderAssignmentDto, user: User): Promise<Assignment[]> {
     try {
       const assignments = await this.assignmentRepository.findMany({
-        where: {
-          id: {
-            in: dto.assignmentIds,
-          },
-        },
+        where: { id: { in: dto.assignmentIds } },
       });
 
       if (assignments.length !== dto.assignmentIds.length) {
@@ -498,12 +518,8 @@ export class AssignmentService {
       });
 
       return await this.assignmentRepository.update({
-        where: {
-          id: dto.query.assignmentId,
-        },
-        data: {
-          ...dto.data,
-        },
+        where: { id: dto.query.assignmentId },
+        data: { ...dto.data },
       });
     } catch (error) {
       this.logger.error(error);
@@ -610,16 +626,10 @@ export class AssignmentService {
     const columB = worksheet.getColumn(2);
     columA.width = 10;
     columB.width = 35;
-    columA.alignment = {
-      vertical: 'middle',
-      horizontal: 'center',
-    };
+    columA.alignment = { vertical: 'middle', horizontal: 'center' };
 
     firstRow.font = { bold: true, size: 10 };
-    firstRow.alignment = {
-      vertical: 'middle',
-      horizontal: 'center',
-    };
+    firstRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
     for (let i = 3; i <= listAssignment.length + 3; i++) {
       const column = worksheet.getColumn(i);
@@ -635,59 +645,5 @@ export class AssignmentService {
     const base64 = Buffer.from(buffer).toString('base64');
 
     return `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`;
-  }
-
-  async detectLanguage(text: string, accessToken: string): Promise<string> {
-    const url =
-      'https://translation.googleapis.com/language/translate/v2/detect';
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-    };
-    const data = { q: text };
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(url, data, { headers }),
-      );
-
-      const detections = response?.data?.data?.detections;
-      const detectedLanguage = detections[0][0].language;
-      return detectedLanguage;
-    } catch (error) {
-      throw new HttpException(
-        'Failed to detect language',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  async translateText(
-    text: string,
-    targetLang: string,
-    accessToken: string,
-  ): Promise<string> {
-    const url = 'https://translation.googleapis.com/language/translate/v2';
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-    };
-    const data = {
-      q: text,
-      target: targetLang,
-      format: 'text',
-    };
-
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(url, data, { headers }),
-      );
-
-      const translations = response.data.data.translations[0].translatedText;
-      return translations;
-    } catch (error) {
-      throw new HttpException(
-        'Failed to translate text',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
   }
 }

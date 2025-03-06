@@ -10,6 +10,7 @@ import { Pagination } from '../interfaces';
 import { Career, Skill, SkillOnCareer, User } from '@prisma/client';
 import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 import { AiService } from '../vector/ai.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class CareerService {
@@ -24,6 +25,7 @@ export class CareerService {
     private skillService: SkillService,
     private memberOnSchoolService: MemberOnSchoolService,
     private studentService: StudentService,
+    private authService: AuthService,
   ) {
     this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
     this.careerRepository = new CareerRepository(this.prisma);
@@ -195,11 +197,14 @@ export class CareerService {
 
   async update(dto: UpdateCareerDto): Promise<Career> {
     try {
+      const accessToken = await this.authService.getGoogleAccessToken();
+
       const text = `
         title: ${dto.body.title} 
         description: ${dto.body.description} 
         keywords: ${dto.body.keywords}`;
-      const vector = await this.aiService.embbedingText(text);
+
+      await this.aiService.embbedingText(text, accessToken);
 
       return await this.careerRepository.update({
         where: {

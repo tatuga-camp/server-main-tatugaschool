@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "@google-cloud/storage": "^7.11.2",
-    "@google-cloud/vertexai": "^1.4.0",
     "@nestjs-modules/mailer": "^2.0.2",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^11.0.10",
@@ -45,6 +44,7 @@
     "@nestjs/platform-express": "^11.0.10",
     "@nestjs/throttler": "^6.4.0",
     "@prisma/client": "^6.2.1",
+    "axios": "^1.7.9",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.3",
     "canvas": "^3.1.0",
@@ -60,6 +60,7 @@
     "passport-google-oauth2": "^0.2.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "pdf-parse": "^1.1.1",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "stripe": "^15.10.0",
