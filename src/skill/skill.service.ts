@@ -18,6 +18,7 @@ import {
 import { Skill, User } from '@prisma/client';
 import { AiService } from '../vector/ai.service';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class SkillService {
@@ -29,6 +30,7 @@ export class SkillService {
     private prisma: PrismaService,
     private aiService: AiService,
     private googleStorageService: GoogleStorageService,
+    private authService: AuthService,
   ) {
     this.skillRepository = new SkillRepository(this.prisma);
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
@@ -70,8 +72,9 @@ export class SkillService {
 
   async create(dto: CreateSkillDto): Promise<Skill> {
     try {
+      const accessToken = await this.authService.getGoogleAccessToken();
       const text = `${dto.title} ${dto.description} ${dto.keywords}`;
-      const vectors = await this.aiService.embbedingText(text);
+      const vectors = await this.aiService.embbedingText(text, accessToken);
       const create = await this.skillRepository.create({
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
@@ -86,6 +89,8 @@ export class SkillService {
 
   async update(dto: UpdateSkillDto): Promise<Skill> {
     try {
+      const accessToken = await this.authService.getGoogleAccessToken();
+
       const skill = await this.skillRepository.findById({
         skillId: dto.query.skillId,
       });
@@ -115,7 +120,7 @@ export class SkillService {
 
       const text = arrayText.join(' ');
 
-      const vectors = await this.aiService.embbedingText(text);
+      const vectors = await this.aiService.embbedingText(text, accessToken);
       const update = await this.skillRepository.update({
         query: dto.query,
         data: { ...dto.body, vector: vectors.predictions[0].embeddings.values },
