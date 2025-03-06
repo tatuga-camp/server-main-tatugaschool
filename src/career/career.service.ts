@@ -9,7 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Pagination } from '../interfaces';
 import { Career, Skill, SkillOnCareer, User } from '@prisma/client';
 import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
-import { VectorService } from '../vector/vector.service';
+import { AiService } from '../vector/ai.service';
 
 @Injectable()
 export class CareerService {
@@ -19,7 +19,7 @@ export class CareerService {
 
   constructor(
     private prisma: PrismaService,
-    private vectorService: VectorService,
+    private aiService: AiService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
     private skillService: SkillService,
     private memberOnSchoolService: MemberOnSchoolService,
@@ -199,7 +199,7 @@ export class CareerService {
         title: ${dto.body.title} 
         description: ${dto.body.description} 
         keywords: ${dto.body.keywords}`;
-      const vector = await this.vectorService.embbedingText(text);
+      const vector = await this.aiService.embbedingText(text);
 
       return await this.careerRepository.update({
         where: {
