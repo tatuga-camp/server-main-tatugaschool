@@ -28,7 +28,6 @@ import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
 import { BoardModule } from './board-task/board/board.module';
 import { SkillModule } from './skill/skill.module';
-import { VectorModule } from './vector/vector.module';
 import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
 import { SkillOnStudentAssignmentModule } from './skill-on-student-assignment/skill-on-student-assignment.module';
 import { CareerModule } from './career/career.module';
@@ -40,6 +39,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PushModule } from './web-push/push.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { AiModule } from './vector/ai.module';
 
 @Module({
   imports: [
@@ -78,7 +78,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     FileOnStudentAssignmentModule,
     CommentAssignmentModule,
     SkillModule,
-    VectorModule,
+    AiModule,
     SkillOnAssignmentModule,
     SkillOnStudentAssignmentModule,
     CareerModule,

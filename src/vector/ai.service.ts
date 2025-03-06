@@ -1,22 +1,22 @@
-import { AuthService } from './../auth/auth.service';
+import { AuthService } from '../auth/auth.service';
 import { HttpException, Injectable, Logger } from '@nestjs/common';
 import { EmbeddingsResponse } from './models';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 
-type VectorType = {
+type AiType = {
   embbedingText(text: string): Promise<EmbeddingsResponse>;
 };
 @Injectable()
-export class VectorService implements VectorType {
+export class AiService implements AiType {
   logger: Logger;
   constructor(
     private config: ConfigService,
     private httpService: HttpService,
     private authService: AuthService,
   ) {
-    this.logger = new Logger(VectorService.name);
+    this.logger = new Logger(AiService.name);
   }
 
   async embbedingText(text: string): Promise<EmbeddingsResponse> {
@@ -25,7 +25,7 @@ export class VectorService implements VectorType {
 
       const response = this.httpService
         .post<EmbeddingsResponse>(
-          `https://us-central1-aiplatform.googleapis.com/v1/projects/${this.config.get('GOOGLE_CLOUD_PROJECT_ID')}/locations/us-central1/publishers/google/models/textembedding-gecko@003:predict`,
+          `https://us-central1-aiplatform.googleapis.com/v1/projects/${this.config.get('GOOGLE_CLOUD_PROJECT_ID')}/locations/asia-southeast1/publishers/google/models/text-embedding-005:predict`,
           {
             instances: [
               {
@@ -43,7 +43,8 @@ export class VectorService implements VectorType {
         )
         .pipe(
           catchError((e: any) => {
-            throw new HttpException(e.response.data, e.response.status);
+            this.logger.error(e.response);
+            throw new HttpException(e.response?.data, e.response?.status);
           }),
         );
       const checkResult = await lastValueFrom(response);

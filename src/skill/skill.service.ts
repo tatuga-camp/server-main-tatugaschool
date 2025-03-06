@@ -16,7 +16,7 @@ import {
   UpdateSkillDto,
 } from './dto';
 import { Skill, User } from '@prisma/client';
-import { VectorService } from '../vector/vector.service';
+import { AiService } from '../vector/ai.service';
 import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 @Injectable()
@@ -27,7 +27,7 @@ export class SkillService {
   skillRepository: SkillRepository;
   constructor(
     private prisma: PrismaService,
-    private vectorService: VectorService,
+    private aiService: AiService,
     private googleStorageService: GoogleStorageService,
   ) {
     this.skillRepository = new SkillRepository(this.prisma);
@@ -71,7 +71,7 @@ export class SkillService {
   async create(dto: CreateSkillDto): Promise<Skill> {
     try {
       const text = `${dto.title} ${dto.description} ${dto.keywords}`;
-      const vectors = await this.vectorService.embbedingText(text);
+      const vectors = await this.aiService.embbedingText(text);
       const create = await this.skillRepository.create({
         ...dto,
         vector: vectors.predictions[0].embeddings.values,
@@ -115,7 +115,7 @@ export class SkillService {
 
       const text = arrayText.join(' ');
 
-      const vectors = await this.vectorService.embbedingText(text);
+      const vectors = await this.aiService.embbedingText(text);
       const update = await this.skillRepository.update({
         query: dto.query,
         data: { ...dto.body, vector: vectors.predictions[0].embeddings.values },

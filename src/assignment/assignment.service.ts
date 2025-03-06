@@ -31,7 +31,7 @@ import { StudentOnAssignmentRepository } from './../student-on-assignment/studen
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { SubjectService } from './../subject/subject.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { VectorService } from './../vector/vector.service';
+import { AiService } from '../vector/ai.service';
 import { AssignmentRepository } from './assignment.repository';
 import {
   CreateAssignmentDto,
@@ -52,7 +52,7 @@ export class AssignmentService {
 
   constructor(
     private prisma: PrismaService,
-    private vectorService: VectorService,
+    private aiService: AiService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private subjectService: SubjectService,
@@ -424,7 +424,7 @@ export class AssignmentService {
         // get text from file using AI to extract text and summarize
       }
 
-      const vectors = await this.vectorService.embbedingText(text);
+      const vectors = await this.aiService.embbedingText(text);
       return await this.assignmentRepository.update({
         where: { id: assignmentId },
         data: {
