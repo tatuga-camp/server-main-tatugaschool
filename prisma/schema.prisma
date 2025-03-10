@@ -25,6 +25,8 @@ model User {
   verifyEmailToken          String?
   verifyEmailTokenExpiresAt DateTime?
 
+  language Language @default(en)
+
   lastActiveAt                DateTime
   isResetPassword             Boolean   @default(false)
   provider                    Provider
@@ -42,6 +44,11 @@ model User {
   assignments              Assignment[]
   commentOnAssignments     CommentOnAssignment[]
   SubscriptionNotification SubscriptionNotification[]
+}
+
+enum Language {
+  en
+  th
 }
 
 model SubscriptionNotification {
