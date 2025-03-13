@@ -78,12 +78,14 @@ export class StudentOnAssignmentService {
   private async notifyTeachers({
     user,
     subjectId,
+    assignmentId,
     title,
     body,
     url,
   }: {
     user: User;
     subjectId: string;
+    assignmentId: string;
     title: string;
     body: string;
     url: URL;
@@ -100,6 +102,7 @@ export class StudentOnAssignmentService {
             title,
             body,
             url,
+            assignmentId,
           },
         ),
       ),
@@ -334,6 +337,7 @@ export class StudentOnAssignmentService {
         await this.notifyTeachers({
           user: user,
           subjectId: studentOnAssignment.subjectId,
+          assignmentId: studentOnAssignment.assignmentId,
           title: 'New Assignment Submitted',
           body: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
           url: new URL(
