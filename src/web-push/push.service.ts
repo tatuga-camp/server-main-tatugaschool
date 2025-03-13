@@ -22,7 +22,7 @@ export class PushService {
 
   async sendNotification(
     subscription: PushSubscription | string,
-    payload: { title: string; body: string; url: URL },
+    payload: { title: string; body: string; url: URL; assignmentId?: string },
   ) {
     const { endpoint } = JSON.parse(subscription as string);
     try {
