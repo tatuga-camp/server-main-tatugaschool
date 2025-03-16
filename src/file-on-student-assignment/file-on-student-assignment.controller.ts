@@ -67,7 +67,7 @@ export class FileOnStudentAssignmentController {
     @Param() dto: DeleteFileOnStudentAssignmentDto,
     @GetStudent() student: Student,
   ) {
-    return this.fileOnStudentAssignmentService.delete(dto, student);
+    return this.fileOnStudentAssignmentService.delete(dto, null, student);
   }
 
   @UseGuards(StudentGuard)
@@ -93,9 +93,6 @@ export class FileOnStudentAssignmentController {
     @Param() dto: DeleteFileOnStudentAssignmentDto,
     @GetUser() user: User,
   ) {
-    return this.fileOnStudentAssignmentService.deleteFileOnStudentAssignmentFromTeacher(
-      dto,
-      user,
-    );
+    return this.fileOnStudentAssignmentService.delete(dto, user);
   }
 }

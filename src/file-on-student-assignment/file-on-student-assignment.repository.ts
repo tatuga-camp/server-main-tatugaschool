@@ -146,7 +146,10 @@ export class FileOnStudentAssignmentRepository
           },
         });
 
-      if (fileOnStudentAssignment.contentType === 'FILE') {
+      if (
+        fileOnStudentAssignment.contentType === 'FILE' &&
+        fileOnStudentAssignment.type !== 'link-url'
+      ) {
         await this.googleStorageService.DeleteFileOnStorage({
           fileName: fileOnStudentAssignment.body,
         });
