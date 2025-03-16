@@ -245,6 +245,7 @@ export class AuthService {
       if (user.provider !== 'LOCAL') {
         throw new BadRequestException('Please sign in with google');
       }
+
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
 

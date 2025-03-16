@@ -1,3 +1,4 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { StripeService } from './../stripe/stripe.service';
 import { ClassService } from './../class/class.service';
 import { SubjectService } from './../subject/subject.service';
@@ -36,6 +37,7 @@ export class FileOnStudentAssignmentService {
     private googleStorageService: GoogleStorageService,
     private subjectService: SubjectService,
     private classService: ClassService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
     private stripe: StripeService,
   ) {
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
@@ -224,7 +226,8 @@ export class FileOnStudentAssignmentService {
 
   async delete(
     dto: DeleteFileOnStudentAssignmentDto,
-    student: Student,
+    user?: User | null,
+    student?: Student,
   ): Promise<FileOnStudentAssignment> {
     try {
       const fileOnStudentAssignment =
@@ -236,9 +239,17 @@ export class FileOnStudentAssignmentService {
         throw new NotFoundException('File not found');
       }
 
-      if (fileOnStudentAssignment.studentId !== student.id) {
+      if (student && fileOnStudentAssignment.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
+
+      if (user) {
+        await this.teacherOnSubjectService.ValidateAccess({
+          userId: user.id,
+          subjectId: fileOnStudentAssignment.subjectId,
+        });
+      }
+
       const assignment = await this.assignmentRepository.getById({
         assignmentId: fileOnStudentAssignment.assignmentId,
       });
@@ -252,57 +263,11 @@ export class FileOnStudentAssignmentService {
           subjectId: fileOnStudentAssignment.subjectId,
         });
 
-      if (subject.allowStudentDeleteWork === false) {
+      if (student && subject.allowStudentDeleteWork === false) {
         throw new ForbiddenException(
           'This assignment is not allow to delete work',
         );
       }
-      const deleteFile = await this.fileOnStudentAssignmentRepository.delete({
-        fileOnStudentAssignmentId: dto.fileOnStudentAssignmentId,
-      });
-
-      const school = await this.schoolRepository.getById({
-        schoolId: fileOnStudentAssignment.schoolId,
-      });
-
-      await this.schoolRepository.update({
-        where: { id: fileOnStudentAssignment.schoolId },
-        data: {
-          totalStorage: school.totalStorage - fileOnStudentAssignment.size,
-        },
-      });
-
-      return deleteFile;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
-  async deleteFileOnStudentAssignmentFromTeacher(
-    dto: DeleteFileOnStudentAssignmentDto,
-    user: User,
-  ) {
-    try {
-      const fileOnStudentAssignment =
-        await this.fileOnStudentAssignmentRepository.getById({
-          fileOnStudentAssignmentId: dto.fileOnStudentAssignmentId,
-        });
-
-      if (!fileOnStudentAssignment) {
-        throw new NotFoundException('File not found');
-      }
-
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: fileOnStudentAssignment.subjectId,
-        });
-
-      if (!teacherOnSubject) {
-        throw new ForbiddenException("You don't have permission to access");
-      }
-
       const deleteFile = await this.fileOnStudentAssignmentRepository.delete({
         fileOnStudentAssignmentId: dto.fileOnStudentAssignmentId,
       });
