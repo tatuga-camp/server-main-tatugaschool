@@ -1,3 +1,4 @@
+import { TeacherOnSubjectService } from 'src/teacher-on-subject/teacher-on-subject.service';
 import { SkillRepository } from './../skill/skill.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
@@ -18,21 +19,18 @@ import { CreateSkillOnAssignmentDto, DeleteSkillOnAssignmentDto } from './dto';
 export class SkillOnAssignmentService {
   logger: Logger = new Logger(SkillOnAssignmentService.name);
   skillOnAssignmentRepository: SkillOnAssignmentRepository;
-  private teacherOnSubjectRepository: TeacherOnSubjectRepository;
   private skillRepository: SkillRepository;
   private assignmentRepository: AssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.googleStorageService,
     );
     this.skillRepository = new SkillRepository(this.prisma);
-    this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
-      this.prisma,
-    );
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
     );
@@ -51,15 +49,10 @@ export class SkillOnAssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-
-      if (!teacherOnSubject && user.role !== 'ADMIN') {
-        throw new ForbiddenException("You don't have permission");
-      }
+      await this.teacherOnSubjectService.ValidateAccess({
+        subjectId: assignment.subjectId,
+        userId: user.id,
+      });
 
       const skillOnAssignment =
         await this.skillOnAssignmentRepository.getByAssignmentId({
@@ -104,16 +97,10 @@ export class SkillOnAssignmentService {
         throw new NotFoundException('Assignment not found');
       }
 
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-
-      if (!teacherOnSubject && user.role !== 'ADMIN') {
-        throw new ForbiddenException("You don't have permission");
-      }
-
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: assignment.subjectId,
+      });
       const skillOnAssignment = await this.skillOnAssignmentRepository.create({
         ...dto,
         subjectId: assignment.subjectId,
@@ -138,15 +125,10 @@ export class SkillOnAssignmentService {
         throw new NotFoundException('item not found');
       }
 
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: skillOnAssingment.subjectId,
-        });
-
-      if (!teacherOnSubject && user.role !== 'ADMIN') {
-        throw new ForbiddenException("You don't have permission");
-      }
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: skillOnAssingment.subjectId,
+      });
 
       const remove = await this.skillOnAssignmentRepository.delete({
         id: dto.skillOnAssignmentId,
