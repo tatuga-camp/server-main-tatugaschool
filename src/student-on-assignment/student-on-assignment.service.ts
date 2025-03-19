@@ -81,12 +81,14 @@ export class StudentOnAssignmentService {
     title,
     body,
     url,
+    assignmentId,
   }: {
     user: User;
     subjectId: string;
     title: string;
     body: string;
     url: URL;
+    assignmentId: string;
   }): Promise<void> {
     const teachers = await this.teacherOnSubjectRepository.getManyBySubjectId({
       subjectId: subjectId,
@@ -100,6 +102,7 @@ export class StudentOnAssignmentService {
             title,
             body,
             url,
+            groupId: assignmentId,
           },
         ),
       ),
@@ -334,10 +337,11 @@ export class StudentOnAssignmentService {
         await this.notifyTeachers({
           user: user,
           subjectId: studentOnAssignment.subjectId,
+          assignmentId: studentOnAssignment.assignmentId,
           title: 'New Assignment Submitted',
           body: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
           url: new URL(
-            `${process.env.CLIENT_URL}/subject/${studentOnAssignment.subjectId}/assignment/${studentOnAssignment.assignmentId}`,
+            `${process.env.CLIENT_URL}/subject/${studentOnAssignment.subjectId}/assignment/${studentOnAssignment.assignmentId}?menu=studentwork`,
           ),
         });
       }
