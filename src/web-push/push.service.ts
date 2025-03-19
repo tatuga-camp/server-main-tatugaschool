@@ -22,7 +22,7 @@ export class PushService {
 
   async sendNotification(
     subscription: PushSubscription | string,
-    payload: { title: string; body: string; url: URL },
+    payload: { title: string; body: string; url: URL; groupId: string },
   ) {
     const { endpoint } = JSON.parse(subscription as string);
     try {
@@ -30,7 +30,7 @@ export class PushService {
         JSON.parse(subscription as string),
         JSON.stringify({
           ...payload,
-          icon: 'https://storage.googleapis.com/development-tatuga-school/public/logo.avif',
+          icon: 'https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png',
         }),
       );
       this.logger.log('Notification sent:', endpoint);
@@ -100,6 +100,7 @@ export class PushService {
         title: 'Thanks for allowing notification',
         body: "You'll receive notification from us",
         url: new URL(process.env.CLIENT_URL),
+        groupId: user.id,
       });
 
       return subscription;

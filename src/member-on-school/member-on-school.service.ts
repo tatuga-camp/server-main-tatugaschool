@@ -101,6 +101,7 @@ export class MemberOnSchoolService {
         title: title,
         body: body,
         url,
+        groupId: schoolId,
       }),
     );
 
@@ -251,7 +252,7 @@ export class MemberOnSchoolService {
       const emailHTML = `
          <body style="background-color: #f8f9fa;">
        <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/development-tatuga-school/public/logo.avif" />
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png" />
          <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
            <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
           You have been invited to join the school ${school.title} on Tatuga School
@@ -266,7 +267,7 @@ export class MemberOnSchoolService {
            </p>
            <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${process.env.CLIENT_URL}/account?menu=Invitations">Click</a>
          </div>
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.cloud.google.com/public-tatugaschool/branner.png" />
+         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/public-tatugaschool/banner-tatugaschool.jpg" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
          Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
          288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีีมา 30000<br>
