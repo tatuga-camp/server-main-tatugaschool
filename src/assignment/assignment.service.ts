@@ -1,3 +1,4 @@
+import { GradeService } from './../grade/grade.service';
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
@@ -9,6 +10,7 @@ import {
 import {
   Assignment,
   FileOnAssignment,
+  GradeRange,
   Prisma,
   Skill,
   Student,
@@ -58,6 +60,7 @@ export class AssignmentService {
     private skillOnAssignmentService: SkillOnAssignmentService,
     private httpService: HttpService,
     private authService: AuthService,
+    private gradeService: GradeService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -222,7 +225,10 @@ export class AssignmentService {
   async getOverviewScoreOnAssignment(
     dto: { subjectId: string },
     user: User,
-  ): Promise<{ assignment: Assignment; students: StudentOnAssignment[] }[]> {
+  ): Promise<{
+    grade: GradeRange | null;
+    assignments: { assignment: Assignment; students: StudentOnAssignment[] }[];
+  }> {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
@@ -238,14 +244,23 @@ export class AssignmentService {
           where: { subjectId: dto.subjectId },
         });
 
-      return assignments.map((assignment) => {
-        return {
-          assignment,
-          students: studentsOnSubjects.filter(
-            (student) => student.assignmentId === assignment.id,
-          ),
-        };
+      const grade = await this.gradeService.gradeRepository.findUnique({
+        where: {
+          subjectId: dto.subjectId,
+        },
       });
+
+      return {
+        grade: grade ?? null,
+        assignments: assignments.map((assignment) => {
+          return {
+            assignment,
+            students: studentsOnSubjects.filter(
+              (student) => student.assignmentId === assignment.id,
+            ),
+          };
+        }),
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -283,7 +298,7 @@ export class AssignmentService {
       }
 
       const assignment = await this.assignmentRepository.create({
-        data: { ...dto, schoolId: member.schoolId, userId: user.id },
+        data: { ...dto, schoolId: subject.schoolId, userId: user.id },
       });
 
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
@@ -567,7 +582,7 @@ export class AssignmentService {
       header: [
         'Number',
         'Student Name',
-        ...listAssignment.map((assignment) =>
+        ...listAssignment.assignments.map((assignment) =>
           assignment.assignment.weight
             ? `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points / ${assignment.assignment.weight}% `
             : `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points`,
@@ -580,7 +595,7 @@ export class AssignmentService {
             return [
               student.number,
               student.firstName + ' ' + student.lastName,
-              ...listAssignment.map((assignment) => {
+              ...listAssignment.assignments.map((assignment) => {
                 const studentOnAssignment = assignment.students.find(
                   (studentOnAssignment) =>
                     studentOnAssignment.studentOnSubjectId === student.id,
@@ -631,7 +646,7 @@ export class AssignmentService {
     firstRow.font = { bold: true, size: 10 };
     firstRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    for (let i = 3; i <= listAssignment.length + 3; i++) {
+    for (let i = 3; i <= listAssignment.assignments.length + 3; i++) {
       const column = worksheet.getColumn(i);
       column.alignment = {
         vertical: 'middle',

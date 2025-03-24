@@ -1,3 +1,4 @@
+import { GradeService } from './../grade/grade.service';
 import { SchoolService } from './../school/school.service';
 import {
   ForbiddenException,
@@ -53,6 +54,8 @@ export class SubjectService {
     private memberOnSchoolService: MemberOnSchoolService,
     @Inject(forwardRef(() => SchoolService))
     private SchoolService: SchoolService,
+    @Inject(forwardRef(() => GradeService))
+    private gradeService: GradeService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
@@ -338,30 +341,6 @@ export class SubjectService {
         });
       }
 
-      await this.wheelOfNameService
-        .create({
-          title: subject.title,
-          description: subject.description,
-          texts: students.map((student) => {
-            return {
-              text: `${student.title} ${student.firstName} ${student.lastName}`,
-            };
-          }),
-        })
-        .then(async (wheel) => {
-          subject = await this.subjectRepository.update({
-            where: {
-              id: subject.id,
-            },
-            data: {
-              wheelOfNamePath: wheel.data.path,
-            },
-          });
-        })
-        .catch((error) => {
-          this.logger.error(error);
-        });
-
       const scoreOnSubjectTitlesDefault = [
         {
           title: 'Good Job',
@@ -395,21 +374,94 @@ export class SubjectService {
         },
       ];
 
-      await this.prisma.teacherOnSubject.create({
-        data: {
-          userId: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          email: user.email,
-          role: 'ADMIN',
-          status: 'ACCEPT',
-          photo: user.photo,
-          subjectId: subject.id,
-          schoolId: dto.schoolId,
+      const gradeRule = [
+        {
+          min: 80,
+          max: 100,
+          grade: '4',
         },
-      });
+        {
+          min: 75,
+          max: 79,
+          grade: '3.5',
+        },
+        {
+          min: 70,
+          max: 74,
+          grade: '3',
+        },
+        {
+          min: 65,
+          max: 69,
+          grade: '2.5',
+        },
+        {
+          min: 60,
+          max: 64,
+          grade: '2',
+        },
+        {
+          min: 55,
+          max: 59,
+          grade: '1.5',
+        },
+        {
+          min: 50,
+          max: 54,
+          grade: '1',
+        },
+        {
+          min: 0,
+          max: 49,
+          grade: '0',
+        },
+      ];
+
       await Promise.all([
+        this.gradeService.gradeRepository.create({
+          data: {
+            subjectId: subject.id,
+            schoolId: subject.schoolId,
+            gradeRules: gradeRule,
+          },
+        }),
+        this.wheelOfNameService
+          .create({
+            title: subject.title,
+            description: subject.description,
+            texts: students.map((student) => {
+              return {
+                text: `${student.title} ${student.firstName} ${student.lastName}`,
+              };
+            }),
+          })
+          .then(async (wheel) => {
+            subject = await this.subjectRepository.update({
+              where: {
+                id: subject.id,
+              },
+              data: {
+                wheelOfNamePath: wheel.data.path,
+              },
+            });
+          })
+          .catch((error) => {
+            this.logger.error(error);
+          }),
+        this.prisma.teacherOnSubject.create({
+          data: {
+            userId: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            phone: user.phone,
+            email: user.email,
+            role: 'ADMIN',
+            status: 'ACCEPT',
+            photo: user.photo,
+            subjectId: subject.id,
+            schoolId: dto.schoolId,
+          },
+        }),
         this.attendanceTableService.createAttendanceTable(
           {
             title: 'Default',

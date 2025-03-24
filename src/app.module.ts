@@ -40,6 +40,7 @@ import { PushModule } from './web-push/push.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { AiModule } from './vector/ai.module';
+import { GradeModule } from './grade/grade.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { AiModule } from './vector/ai.module';
     PushModule,
     WebhooksModule,
     SubscriptionModule,
+    GradeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

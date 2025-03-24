@@ -13,6 +13,7 @@ import { ClassService } from '../class/class.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { SchoolService } from '../school/school.service';
 import { StudentService } from '../student/student.service';
+import { GradeService } from '../grade/grade.service';
 
 @Module({
   imports: [HttpModule],
@@ -29,6 +30,7 @@ import { StudentService } from '../student/student.service';
     MemberOnSchoolService,
     SchoolService,
     StudentService,
+    GradeService,
   ],
   controllers: [AssignmentController],
 })

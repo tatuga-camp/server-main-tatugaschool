@@ -124,6 +124,7 @@ model School {
   fileOnStudentAssignments FileOnStudentAssignment[]
   commentOnAssignments     CommentOnAssignment[]
   attendanceStatusLists    AttendanceStatusList[]
+  GradeRange               GradeRange[]
 }
 
 model MemberOnSchool {
@@ -266,12 +267,12 @@ model Subject {
   allowStudentViewGrade        Boolean @default(false)
   allowStudentViewAttendance   Boolean @default(true)
 
-  classId  String @db.ObjectId
-  userId   String @db.ObjectId
-  schoolId String @db.ObjectId
+  classId  String  @db.ObjectId
+  userId   String? @db.ObjectId
+  schoolId String  @db.ObjectId
 
   class  Class  @relation(fields: [classId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
 
   studentOnSubjects         StudentOnSubject[]
@@ -289,6 +290,7 @@ model Subject {
   skillOnAssignments        SkillOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   attendanceStatusLists     AttendanceStatusList[]
+  GradeRange                GradeRange[]
 
   @@index([educationYear, schoolId])
 }
@@ -380,8 +382,8 @@ model Assignment {
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
 
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
+  userId String? @db.ObjectId
+  user   User?   @relation(fields: [userId], references: [id])
 
   fileOnAssignments        FileOnAssignment[]
   studentOnAssignments     StudentOnAssignment[]
@@ -464,6 +466,18 @@ enum StudentAssignmentStatus {
   PENDDING
   SUBMITTED
   REVIEWD
+}
+
+model GradeRange {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  gradeRules Json // Store grading rules as JSON (e.g., [{ min: 70, max: 80, grade: "B" }])
+  subjectId  String  @unique @db.ObjectId
+  subject    Subject @relation(fields: [subjectId], references: [id])
+  schoolId   String  @db.ObjectId
+  school     School  @relation(fields: [schoolId], references: [id])
 }
 
 model FileOnStudentAssignment {
