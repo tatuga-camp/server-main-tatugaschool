@@ -251,7 +251,9 @@ export class AssignmentService {
       });
 
       return {
-        grade: grade ?? null,
+        grade: grade
+          ? { ...grade, gradeRules: JSON.parse(grade.gradeRules as string) }
+          : null,
         assignments: assignments.map((assignment) => {
           return {
             assignment,
