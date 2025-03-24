@@ -43,7 +43,7 @@ export class TeacherOnSubjectService {
   }: {
     userId: string;
     subjectId: string;
-  }): Promise<TeacherOnSubject | null> {
+  }): Promise<void> {
     try {
       const subject = await this.prisma.subject.findUnique({
         where: {
@@ -63,7 +63,7 @@ export class TeacherOnSubjectService {
       }
 
       if (memberOnSchool.role === 'ADMIN') {
-        return null;
+        return;
       }
 
       const memberOnSubject =
@@ -76,8 +76,7 @@ export class TeacherOnSubjectService {
         console.log(memberOnSubject);
         throw new ForbiddenException("You're not a teacher on this subject");
       }
-
-      return memberOnSubject;
+      return;
     } catch (error) {
       this.logger.error(error.message);
       throw error;
