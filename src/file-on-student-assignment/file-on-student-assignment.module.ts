@@ -10,6 +10,7 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
 import { SchoolService } from '../school/school.service';
 import { HttpModule } from '@nestjs/axios';
 import { StudentService } from '../student/student.service';
+import { GradeService } from '../grade/grade.service';
 
 @Module({
   imports: [HttpModule],
@@ -23,6 +24,7 @@ import { StudentService } from '../student/student.service';
     MemberOnSchoolService,
     SchoolService,
     StudentService,
+    GradeService,
   ],
   controllers: [FileOnStudentAssignmentController],
 })

@@ -12,6 +12,7 @@ import { HttpModule } from '@nestjs/axios';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { SkillService } from '../skill/skill.service';
+import { GradeService } from '../grade/grade.service';
 
 @Module({
   imports: [HttpModule],
@@ -27,6 +28,7 @@ import { SkillService } from '../skill/skill.service';
     AttendanceTableService,
     TeacherOnSubjectService,
     SkillService,
+    GradeService,
   ],
   controllers: [CareerController],
 })

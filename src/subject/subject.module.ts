@@ -9,12 +9,15 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { SubjectController } from './subject.controller';
 import { SubjectService } from './subject.service';
+import { GradeService } from '../grade/grade.service';
+import { GradeModule } from '../grade/grade.module';
 
 @Module({
   imports: [
     HttpModule,
     forwardRef(() => SchoolModule),
     forwardRef(() => MemberOnSchoolModule),
+    forwardRef(() => GradeModule),
   ],
   providers: [
     SubjectService,
@@ -23,6 +26,7 @@ import { SubjectService } from './subject.service';
     TeacherOnSubjectService,
     ClassService,
     StudentService,
+    GradeService,
   ],
   controllers: [SubjectController],
 })

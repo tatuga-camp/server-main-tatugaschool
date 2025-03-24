@@ -9,6 +9,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { ClassService } from '../class/class.service';
 import { HttpModule } from '@nestjs/axios';
+import { GradeService } from '../grade/grade.service';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { HttpModule } from '@nestjs/axios';
     AttendanceTableService,
     TeacherOnSubjectService,
     ClassService,
+    GradeService,
   ],
   controllers: [SchoolController],
   exports: [SchoolService],

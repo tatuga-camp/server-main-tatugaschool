@@ -1,7 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
+import { GradeService } from './grade.service';
+import { GradeController } from './grade.controller';
 import { SubjectService } from '../subject/subject.service';
-import { FileAssignmentController } from './file-assignment.controller';
-import { FileAssignmentService } from './file-assignment.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
@@ -10,13 +10,12 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
 import { SchoolService } from '../school/school.service';
 import { HttpModule } from '@nestjs/axios';
 import { StudentService } from '../student/student.service';
-import { GradeService } from '../grade/grade.service';
+import { SubjectModule } from '../subject/subject.module';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, forwardRef(() => SubjectModule)],
   providers: [
-    FileAssignmentService,
-    SubjectService,
+    GradeService,
     WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
@@ -24,8 +23,8 @@ import { GradeService } from '../grade/grade.service';
     MemberOnSchoolService,
     SchoolService,
     StudentService,
-    GradeService,
+    SubjectService,
   ],
-  controllers: [FileAssignmentController],
+  controllers: [GradeController],
 })
-export class FileAssignmentModule {}
+export class GradeModule {}
