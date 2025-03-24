@@ -90,13 +90,17 @@ export class GradeService {
 
       this.validateGradeRanges(dto.gradeRanges);
 
-      return await this.gradeRepository.create({
+      const grade = await this.gradeRepository.create({
         data: {
           schoolId: subject.schoolId,
           subjectId: subject.id,
           gradeRules: JSON.stringify(dto.gradeRanges),
         },
       });
+      return {
+        ...grade,
+        gradeRules: JSON.parse(grade.gradeRules as string),
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -126,14 +130,18 @@ export class GradeService {
         userId: user.id,
       });
       this.validateGradeRanges(dto.gradeRange);
-      return await this.gradeRepository.update({
+      const grade = await this.gradeRepository.update({
         where: {
           id: dto.gradeRangeId,
         },
         data: {
-          gradeRules: dto.gradeRange,
+          gradeRules: JSON.stringify(dto.gradeRange),
         },
       });
+      return {
+        ...grade,
+        gradeRules: JSON.parse(grade.gradeRules as string),
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;

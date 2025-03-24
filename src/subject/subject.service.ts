@@ -422,7 +422,7 @@ export class SubjectService {
           data: {
             subjectId: subject.id,
             schoolId: subject.schoolId,
-            gradeRules: gradeRule,
+            gradeRules: JSON.stringify(gradeRule),
           },
         }),
         this.wheelOfNameService
