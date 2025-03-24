@@ -102,15 +102,23 @@ export class CommentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
-      const teacher = await this.teacherOnSubjectService.ValidateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         subjectId: studentOnAssignment.subjectId,
         userId: user.id,
       });
 
-      if (!teacher) {
-        throw new ForbiddenException("You don't have permission to access");
+      const teacherOnSubject =
+        await this.teacherOnSubjectService.teacherOnSubjectRepository.getByTeacherIdAndSubjectId(
+          {
+            teacherId: user.id,
+            subjectId: studentOnAssignment.subjectId,
+          },
+        );
+      if (!teacherOnSubject) {
+        throw new ForbiddenException(
+          'Only teacher in this subject can leave the comment',
+        );
       }
-
       return await this.commentAssignmentRepository.create({
         ...dto,
         studentOnAssignmentId: studentOnAssignment.id,
@@ -119,11 +127,11 @@ export class CommentAssignmentService {
         lastName: user.lastName,
         photo: user.photo,
         userId: user.id,
-        teacherOnSubjectId: teacher.id,
-        role: teacher.role,
+        teacherOnSubjectId: teacherOnSubject.id,
+        role: teacherOnSubject.role,
         email: user.email,
         subjectId: studentOnAssignment.subjectId,
-        schoolId: teacher.schoolId,
+        schoolId: teacherOnSubject.schoolId,
       });
     } catch (error) {
       this.logger.error(error);
@@ -151,11 +159,11 @@ export class CommentAssignmentService {
       const commentAssignment = await this.commentAssignmentRepository.getById({
         commentOnAssignmentId: dto.query.commentOnAssignmentId,
       });
-      const teacherOnSubject =
-        await this.teacherOnSubjectService.ValidateAccess({
-          subjectId: commentAssignment.subjectId,
-          userId: user.id,
-        });
+
+      await this.teacherOnSubjectService.ValidateAccess({
+        subjectId: commentAssignment.subjectId,
+        userId: user.id,
+      });
       return await this.commentAssignmentRepository.update(dto);
     } catch (error) {
       this.logger.error(error);
