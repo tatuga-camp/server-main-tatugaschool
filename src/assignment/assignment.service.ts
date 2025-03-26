@@ -579,7 +579,11 @@ export class AssignmentService {
       { subjectId },
       user,
     );
-
+    const gradeRule = await this.gradeService.gradeRepository.findUnique({
+      where: {
+        subjectId: subjectId,
+      },
+    });
     const data = {
       header: [
         'Number',
@@ -589,11 +593,32 @@ export class AssignmentService {
             ? `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points / ${assignment.assignment.weight}% `
             : `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points`,
         ),
+        'Total Score',
+        'Grade',
       ],
       data: await Promise.all(
         listStudentOnSubject
           .sort((a, b) => Number(a.number) - Number(b.number))
-          .map((student) => {
+          .map(async (student) => {
+            const totalScore =
+              listAssignment?.assignments.reduce((prev, current) => {
+                let score =
+                  current.students.find(
+                    (s) => s.studentOnSubjectId === student.id,
+                  )?.score ?? 0;
+                if (current.assignment.weight !== null) {
+                  const originalScore = score / current.assignment.maxScore;
+                  score = originalScore * current.assignment.weight;
+                }
+
+                return prev + score;
+              }, 0) ?? 0;
+
+            const grade = await this.gradeService.assignGrade(
+              totalScore,
+              gradeRule,
+            );
+
             return [
               student.number,
               student.firstName + ' ' + student.lastName,
@@ -602,7 +627,6 @@ export class AssignmentService {
                   (studentOnAssignment) =>
                     studentOnAssignment.studentOnSubjectId === student.id,
                 );
-
                 if (!studentOnAssignment) {
                   return 'Student not assigned';
                 }
@@ -628,6 +652,8 @@ export class AssignmentService {
                 }
                 return score;
               }),
+              totalScore,
+              grade.grade,
             ];
           }),
       ),

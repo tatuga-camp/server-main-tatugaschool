@@ -34,25 +34,57 @@ export class GradeService {
 
   async assignGrade(
     totalScore: number,
-    subjectId: string,
+    gradeRange?: GradeRange,
   ): Promise<{ grade: string }> {
     try {
-      const gradeRange = await this.gradeRepository.findUnique({
-        where: {
-          subjectId: subjectId,
+      let gradingRules = [
+        {
+          min: 80,
+          max: 100,
+          grade: '4',
         },
-      });
+        {
+          min: 75,
+          max: 79,
+          grade: '3.5',
+        },
+        {
+          min: 70,
+          max: 74,
+          grade: '3',
+        },
+        {
+          min: 65,
+          max: 69,
+          grade: '2.5',
+        },
+        {
+          min: 60,
+          max: 64,
+          grade: '2',
+        },
+        {
+          min: 55,
+          max: 59,
+          grade: '1.5',
+        },
+        {
+          min: 50,
+          max: 54,
+          grade: '1',
+        },
+        {
+          min: 0,
+          max: 49,
+          grade: '0',
+        },
+      ];
 
-      if (!gradeRange) {
-        throw new NotFoundException(
-          'Grade Not Found on the subject , please create it first',
-        );
+      if (gradeRange) {
+        gradingRules = JSON.parse(
+          gradeRange.gradeRules as string,
+        ) as GradeRule[];
       }
-
-      const gradingRules = JSON.parse(
-        gradeRange.gradeRules as string,
-      ) as GradeRule[];
-
       const grade =
         gradingRules.find(
           (rule) => totalScore >= rule.min && totalScore <= rule.max,
