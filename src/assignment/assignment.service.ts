@@ -328,9 +328,6 @@ export class AssignmentService {
       await this.studentOnAssignmentRepository.createMany({
         data: createStudentOnAssignments,
       });
-      if (assignment.type === 'Assignment') {
-        this.BackgroudEmbedingAssignment(assignment.id, user);
-      }
 
       return assignment;
     } catch (error) {
