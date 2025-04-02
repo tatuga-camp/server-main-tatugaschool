@@ -270,6 +270,7 @@ export class AuthService {
       return res.json({
         redirectUrl: process.env.CLIENT_URL,
         refreshToken: refreshToken,
+        accessToken: accessToken,
       });
     } catch (error) {
       this.logger.error(error);
