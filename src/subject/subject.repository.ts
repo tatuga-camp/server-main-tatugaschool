@@ -182,6 +182,11 @@ export class SubjectRepository implements Repository {
             fileName: file.url,
           }),
         ),
+        this.prisma.gradeRange.delete({
+          where: {
+            subjectId: subjectId,
+          },
+        }),
         ...fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
           .map((file) =>
@@ -189,7 +194,6 @@ export class SubjectRepository implements Repository {
               fileName: file.body,
             }),
           ),
-
         this.prisma.fileOnStudentAssignment.deleteMany({
           where: {
             OR: fileOnStudentAssignments.map((f) => {
