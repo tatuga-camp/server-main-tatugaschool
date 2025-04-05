@@ -44,6 +44,7 @@ model User {
   assignments              Assignment[]
   commentOnAssignments     CommentOnAssignment[]
   SubscriptionNotification SubscriptionNotification[]
+  feedbacks                Feedback[]
 }
 
 enum Language {
@@ -858,4 +859,23 @@ enum Status {
   PENDDING
   ACCEPT
   REJECT
+}
+
+enum FeedbackTag {
+  COMPLIMENT
+  BUG
+  REQUEST_FEATURE
+}
+
+model Feedback {
+  id        String      @id @default(uuid()) @map("_id")
+  title     String
+  body      String
+  tag       FeedbackTag
+  userId    String      @db.ObjectId
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("feedbacks")
 }
