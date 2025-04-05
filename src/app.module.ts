@@ -41,6 +41,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { AiModule } from './vector/ai.module';
 import { GradeModule } from './grade/grade.module';
+import { FeedbackModule } from './feedback/feedback.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { GradeModule } from './grade/grade.module';
     WebhooksModule,
     SubscriptionModule,
     GradeModule,
+    FeedbackModule,
   ],
   controllers: [AppController],
   providers: [AppService],
