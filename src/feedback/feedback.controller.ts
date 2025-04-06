@@ -14,7 +14,7 @@ import { QueryFeedbackDto } from './dto/query-feedback.dto';
 import { AdminGuard, UserGuard } from 'src/auth/guard';
 import { GetUser } from 'src/auth/decorators';
 
-@Controller('feedback')
+@Controller('v1/feedbacks')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
