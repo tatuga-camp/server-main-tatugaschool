@@ -310,7 +310,7 @@ export class AttendanceService {
             .map((student) => {
               return [
                 student.number,
-                student.firstName + ' ' + student.lastName,
+                student.title + student.firstName + ' ' + student.lastName,
                 ...listAttendanceTableBySubjectId.map((row) => {
                   return row.attendances.find(
                     (att) => att.studentId === student.studentId,
