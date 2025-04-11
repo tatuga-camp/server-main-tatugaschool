@@ -618,7 +618,7 @@ export class AssignmentService {
 
             return [
               student.number,
-              student.firstName + ' ' + student.lastName,
+              student.title + student.firstName + ' ' + student.lastName,
               ...listAssignment.assignments.map((assignment) => {
                 const studentOnAssignment = assignment.students.find(
                   (studentOnAssignment) =>
