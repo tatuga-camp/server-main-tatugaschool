@@ -55,30 +55,33 @@ export class CareerService {
         schoolId: student.schoolId,
       });
 
-      const skillOnStudents =
-        await this.skillOnStudentAssignmentService.skillOnStudentAssignmentRepository.findMany(
+      const [skillOnCareers, skills, skillOnStudents] = await Promise.all([
+        this.skillOnCareerRepository.findMany({}),
+        this.skillService.skillRepository.findMany({}),
+        this.skillOnStudentAssignmentService.skillOnStudentAssignmentRepository.findMany(
           {
             where: {
               studentId: dto.studentId,
             },
           },
-        );
+        ),
+      ]);
 
       const groupsSkills = Object.groupBy(
         skillOnStudents,
         (skill) => skill.skillId,
       );
       const groupedArrayStudentSkills = Object.entries(groupsSkills).map(
-        ([skillId, skills]) => ({
+        ([skillId, skillOnAssignment]) => ({
+          title: skills.find((s) => s.id === skillId).title,
           skillId,
           average:
-            skills.reduce((sum, skill) => sum + skill.weight, 0) /
-            skills.length, // average weight
-          skills,
+            skillOnAssignment.reduce((sum, skill) => sum + skill.weight, 0) /
+            skillOnAssignment.length, // average weight
+          skillOnAssignment,
         }),
       );
 
-      const skillOnCareers = await this.skillOnCareerRepository.findMany({});
       let careers = (await this.careerRepository.findMany({})).map((s) => {
         return {
           point: 0,
@@ -93,11 +96,13 @@ export class CareerService {
         groupSkillOnCareerBySkillId,
       ).map(([skillId, skillOnCareers]) => {
         return {
+          title: skills.find((s) => s.id === skillId).title,
           skillId,
           skillOnCareers,
         };
       });
-
+      console.log(groupArraySkillOnCareerBySkillId);
+      console.log(groupedArrayStudentSkills);
       if (
         groupArraySkillOnCareerBySkillId.length !==
         groupedArrayStudentSkills.length
@@ -133,8 +138,6 @@ export class CareerService {
           }
         });
       }
-
-      const skills = await this.skillService.skillRepository.findMany({});
 
       return {
         skills: groupedArrayStudentSkills.map((s) => {
