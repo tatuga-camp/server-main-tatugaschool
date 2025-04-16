@@ -98,9 +98,6 @@ export class SkillService {
         throw new NotFoundException('Skill not found');
       }
 
-      if (!dto.body.title && !dto.body.description && !dto.body.keywords) {
-        return skill;
-      }
       let arrayText: string[] = [];
       if (dto.body.title) {
         arrayText.push(dto.body.title);
@@ -119,7 +116,7 @@ export class SkillService {
       }
 
       const text = arrayText.join(' ');
-
+      console.log(text);
       const vectors = await this.aiService.embbedingText(text, accessToken);
       const update = await this.skillRepository.update({
         query: dto.query,
