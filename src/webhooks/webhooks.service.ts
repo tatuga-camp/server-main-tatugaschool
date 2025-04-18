@@ -66,6 +66,7 @@ export class WebhooksService {
             date,
             price.id,
             subscription.id,
+            subscription.items.data[0].quantity,
           );
         }
         const subscriptions = await this.stripe.subscriptions.list({
@@ -104,7 +105,16 @@ export class WebhooksService {
           res.status(200).send('stripe_subscription_id not found on School');
           break;
         }
-
+        await this.schoolService.schoolRepository.update({
+          where: {
+            id: school_subscription_delete.id,
+          },
+          data: {
+            stripe_subscription_id: null,
+            stripe_subscription_expireAt: null,
+            stripe_price_id: null,
+          },
+        });
         school_subscription_delete = await this.schoolService.upgradePlanFree(
           school_subscription_delete.id,
         );
