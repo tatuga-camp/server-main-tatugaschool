@@ -231,7 +231,7 @@ export class SchoolService {
           plan: 'PREMIUM',
           limitSchoolMember: 3,
           limitClassNumber: 20,
-          limitSubjectNumber: 20,
+          limitSubjectNumber: 30,
           limitTotalStorage: 107374182400,
         },
       });
@@ -246,6 +246,7 @@ export class SchoolService {
     stripe_subscription_expireAt: Date,
     stripe_price_id: string,
     stripe_subscription_id: string,
+    members: number,
   ): Promise<School> {
     try {
       return await this.schoolRepository.update({
@@ -257,7 +258,7 @@ export class SchoolService {
           stripe_price_id: stripe_price_id,
           stripe_subscription_id: stripe_subscription_id,
           plan: 'ENTERPRISE',
-          limitSchoolMember: 20,
+          limitSchoolMember: members,
           limitClassNumber: 9999,
           limitSubjectNumber: 9999,
           limitTotalStorage: 10737418240000,
