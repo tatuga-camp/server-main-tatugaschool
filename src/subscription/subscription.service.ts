@@ -140,7 +140,9 @@ export class SubscriptionService {
           "You've already attemp to buy this plan, please paid the invoice",
         );
       }
-
+      if (latestInvoice.paid) {
+        return { paymentIntent: null, subscription, price: 0 };
+      }
       const invoice = await this.stripe.invoices.finalizeInvoice(
         latestInvoice.id,
       );
@@ -205,20 +207,23 @@ export class SubscriptionService {
         );
       }
 
-      if (school.stripe_subscription_id !== null) {
-        const subscription = await this.updateMember(
-          quantity,
-          school,
-          price.id,
-        );
-        return {
-          subscriptionId: subscription.subscription.id,
-          clientSecret: subscription.paymentIntent
-            ? subscription.paymentIntent.client_secret
-            : null,
-          price: subscription.price,
-        };
-      }
+      // if (
+      //   school.stripe_subscription_id !== null &&
+      //   product.name === 'Tatuga School Enterprise'
+      // ) {
+      //   const subscription = await this.updateMember(
+      //     quantity,
+      //     school,
+      //     price.id,
+      //   );
+      //   return {
+      //     subscriptionId: subscription.subscription.id,
+      //     clientSecret: subscription.paymentIntent
+      //       ? subscription.paymentIntent.client_secret
+      //       : null,
+      //     price: subscription.price,
+      //   };
+      // }
 
       const subscription = await this.create(
         school.stripe_customer_id,
