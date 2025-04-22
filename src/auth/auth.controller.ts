@@ -1,15 +1,18 @@
 import {
-  Controller,
-  Post,
   Body,
+  Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
-  Get,
-  UseGuards,
+  Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import {
   ForgotPasswordDto,
@@ -20,10 +23,6 @@ import {
   StudentSignInDto,
   VerifyEmailDto,
 } from './dto';
-import { AuthGuard } from '@nestjs/passport';
-import { Public } from './decorators';
-import { User } from '@prisma/client';
-import { Request, Response } from 'express';
 
 @Controller('v1/auth')
 export class AuthController {

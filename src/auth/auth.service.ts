@@ -177,12 +177,13 @@ export class AuthService {
 
       const accessToken = await this.GenerateAccessToken(user);
       const refreshToken = await this.GenerateRefreshToken(user);
-      this.sendVerifyEmail(user);
+      const token = await this.sendVerifyEmail(user);
       this.setCookieAccessToken(res, accessToken);
       this.setCookieRefreshToken(res, refreshToken);
 
       return res.json({
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+        token: token.token,
       });
     } catch (error) {
       this.logger.error(error);
@@ -402,7 +403,7 @@ export class AuthService {
     }
   }
 
-  async sendVerifyEmail(user: User) {
+  async sendVerifyEmail(user: User): Promise<{ token: string }> {
     try {
       const token = crypto.randomBytes(32).toString('hex');
       const expiration = new Date();
@@ -452,6 +453,7 @@ export class AuthService {
         subject: 'Verify your email to login on Tatuga School',
         html: emailHTML,
       });
+      return { token };
     } catch (error) {
       this.logger.error(error);
       throw error;
