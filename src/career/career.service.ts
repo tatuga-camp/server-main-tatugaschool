@@ -1,16 +1,15 @@
-import { StudentService } from './../student/student.service';
-import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
-import { SkillService } from './../skill/skill.service';
-import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
-import { SkillOnCareerRepository } from './../skill-on-career/skill-on-career.repository';
-import { CareerRepository } from './career.repository';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Pagination } from '../interfaces';
 import { Career, Skill, SkillOnCareer, User } from '@prisma/client';
-import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
-import { AiService } from '../vector/ai.service';
 import { AuthService } from '../auth/auth.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../vector/ai.service';
+import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
+import { SkillOnCareerRepository } from './../skill-on-career/skill-on-career.repository';
+import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
+import { SkillService } from './../skill/skill.service';
+import { StudentService } from './../student/student.service';
+import { CareerRepository } from './career.repository';
+import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 
 @Injectable()
 export class CareerService {
