@@ -6,9 +6,11 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
+import { User } from '@prisma/client';
+import { GetUser } from '../auth/decorators';
+import { UserGuard } from '../auth/guard';
 import {
   CreateSchoolDto,
   DeleteSchoolDto,
@@ -16,9 +18,6 @@ import {
   UpdateSchoolDto,
 } from './dto';
 import { SchoolService } from './school.service';
-import { GetUser } from '../auth/decorators';
-import { User } from '@prisma/client';
-import { UserGuard } from '../auth/guard';
 
 @UseGuards(UserGuard)
 @Controller('v1/schools')

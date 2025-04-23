@@ -317,6 +317,11 @@ export class StudentOnAssignmentService {
       }
 
       if (student) {
+        if (studentOnAssignment.isAssigned === false) {
+          throw new ForbiddenException(
+            'This student is not assigned in this assignment',
+          );
+        }
         if (student.id !== studentOnAssignment.studentId) {
           throw new ForbiddenException(
             'You are not allowed to access this resource',
