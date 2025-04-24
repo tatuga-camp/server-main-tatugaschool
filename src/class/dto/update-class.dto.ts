@@ -1,17 +1,15 @@
+import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsDateString,
-  IsOptional,
-  IsMongoId,
+  ArrayMinSize,
   IsArray,
+  IsBoolean,
+  IsMongoId,
   IsNotEmpty,
   IsObject,
+  IsOptional,
+  IsString,
   ValidateNested,
-  ArrayMinSize,
-  IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { IsEducationYear } from '../../custom-validate';
 
 export class ReorderClassDto {
   @IsArray()

@@ -20,6 +20,7 @@ import {
   GetClassByClassIdDto,
   GetClassByQueryDto,
   GetClassBySchoolIdDto,
+  GetOverviewScoreQuery,
 } from './dto';
 
 @UseGuards(UserGuard)
@@ -38,9 +39,13 @@ export class ClassController {
   @Get(':classId/grade-summary')
   async getGradeSummaryReport(
     @Param() dto: GetClassByClassIdDto,
+    @Query() query: GetOverviewScoreQuery,
     @GetUser() user: User,
   ) {
-    return await this.classService.getGradeSummaryReport(dto, user);
+    return await this.classService.getGradeSummaryReport(
+      { ...dto, ...query },
+      user,
+    );
   }
 
   @Get('school/:schoolId')

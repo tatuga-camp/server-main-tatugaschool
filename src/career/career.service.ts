@@ -100,8 +100,7 @@ export class CareerService {
           skillOnCareers,
         };
       });
-      console.log(groupArraySkillOnCareerBySkillId);
-      console.log(groupedArrayStudentSkills);
+
       if (
         groupArraySkillOnCareerBySkillId.length !==
         groupedArrayStudentSkills.length
