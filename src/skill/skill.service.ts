@@ -116,7 +116,6 @@ export class SkillService {
       }
 
       const text = arrayText.join(' ');
-      console.log(text);
       const vectors = await this.aiService.embbedingText(text, accessToken);
       const update = await this.skillRepository.update({
         query: dto.query,

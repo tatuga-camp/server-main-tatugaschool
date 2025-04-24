@@ -8,12 +8,19 @@ import {
   Min,
   IsBoolean,
 } from 'class-validator';
+import { IsEducationYear } from '../../custom-validate';
 
 export class GetClassByClassIdDto {
   @IsNotEmpty()
   @IsString()
   @IsMongoId()
   classId: string;
+}
+
+export class GetOverviewScoreQuery {
+  @IsNotEmpty()
+  @IsEducationYear()
+  educationYear: string;
 }
 
 export class GetClassBySchoolIdDto {

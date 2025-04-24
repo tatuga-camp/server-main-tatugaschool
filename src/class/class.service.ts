@@ -355,7 +355,7 @@ export class ClassService {
   }
 
   async getGradeSummaryReport(
-    dto: { classId: string },
+    dto: { classId: string; educationYear: string },
     user: User,
   ): Promise<
     (Subject & {
@@ -386,61 +386,66 @@ export class ClassService {
       const subjects = await this.subjectRepository.findMany({
         where: {
           classId: dto.classId,
+          educationYear: dto.educationYear,
         },
       });
 
       const [studentAssignments, assignments] = await Promise.all([
         this.studentOnAssignmentRepository.findMany({
           where: {
-            OR: subjects.map((s) => ({ subjectId: s.id })),
+            OR: subjects.map((s) => ({ subjectId: s.id, isAssigned: true })),
           },
         }),
         this.assignmentRepository.findMany({
           where: {
-            OR: subjects.map((s) => ({ subjectId: s.id })),
+            OR: subjects.map((s) => ({ subjectId: s.id, status: 'Published' })),
           },
         }),
       ]);
 
       const groups = subjects.map((subject) => {
-        const students = studentAssignments.reduce<
-          Record<
-            string,
-            {
-              id: string;
-              title: string;
-              firstName: string;
-              lastName: string;
-              totalScore: number;
-              assignmentId: string;
+        const students = studentAssignments
+          .filter(
+            (studentAssignment) => studentAssignment.subjectId === subject.id,
+          )
+          .reduce<
+            Record<
+              string,
+              {
+                id: string;
+                title: string;
+                firstName: string;
+                lastName: string;
+                totalScore: number;
+                assignmentId: string;
+              }
+            >
+          >((acc, studentAssignment) => {
+            const assignment = assignments.find(
+              (a) => a.id === studentAssignment.assignmentId,
+            );
+            let score = studentAssignment.score;
+
+            if (assignment.weight !== null) {
+              const originalScore =
+                studentAssignment.score / assignment.maxScore;
+              score = originalScore * assignment.weight;
             }
-          >
-        >((acc, studentAssignment) => {
-          const assignment = assignments.find(
-            (a) => a.id === studentAssignment.assignmentId,
-          );
-          let score = studentAssignment.score;
+            if (!acc[studentAssignment.studentId]) {
+              acc[studentAssignment.studentId] = {
+                id: studentAssignment.studentId,
+                title: studentAssignment.title,
+                firstName: studentAssignment.firstName,
+                lastName: studentAssignment.lastName,
+                totalScore: score,
+                assignmentId: studentAssignment.assignmentId,
+              };
+            } else {
+              acc[studentAssignment.studentId].totalScore += score;
+            }
 
-          const originalScore = studentAssignment.score / assignment.maxScore;
-
-          if (assignment.weight !== null) {
-            score = originalScore * assignment.weight;
-          }
-          if (!acc[studentAssignment.studentId]) {
-            acc[studentAssignment.studentId] = {
-              id: studentAssignment.studentId,
-              title: studentAssignment.title,
-              firstName: studentAssignment.firstName,
-              lastName: studentAssignment.lastName,
-              totalScore: score,
-              assignmentId: studentAssignment.assignmentId,
-            };
-          } else {
-            acc[studentAssignment.studentId].totalScore += score;
-          }
-
-          return acc;
-        }, {});
+            return acc;
+          }, {});
 
         return { ...subject, students: Object.values(students) };
       });
