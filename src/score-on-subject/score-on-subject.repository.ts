@@ -25,11 +25,31 @@ export type ScoreOnSubjectRepositoryType = {
   updateScoreOnSubject(
     request: RequestUpdateScoreOnSubject,
   ): Promise<ScoreOnSubject>;
+  findUnique(
+    request: Prisma.ScoreOnSubjectFindUniqueArgs,
+  ): Promise<ScoreOnSubject>;
+  delete(request: { scoreOnSubjectId: string }): Promise<ScoreOnSubject>;
 };
 @Injectable()
 export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
   logger: Logger = new Logger(ScoreOnSubjectRepository.name);
   constructor(private prisma: PrismaService) {}
+
+  async findUnique(
+    request: Prisma.ScoreOnSubjectFindUniqueArgs,
+  ): Promise<ScoreOnSubject> {
+    try {
+      return await this.prisma.scoreOnSubject.findUnique(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async findMany(
     request: Prisma.ScoreOnSubjectFindManyArgs,
@@ -98,6 +118,29 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
         },
         data: {
           ...request.body,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async delete(request: { scoreOnSubjectId: string }): Promise<ScoreOnSubject> {
+    try {
+      await this.prisma.scoreOnStudent.deleteMany({
+        where: {
+          scoreOnSubjectId: request.scoreOnSubjectId,
+        },
+      });
+      return await this.prisma.scoreOnSubject.delete({
+        where: {
+          id: request.scoreOnSubjectId,
         },
       });
     } catch (error) {

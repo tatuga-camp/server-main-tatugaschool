@@ -133,4 +133,27 @@ export class ScoreOnSubjectService {
       throw error;
     }
   }
+
+  async delete(dto: { scoreOnSubjectId: string }, user: User) {
+    try {
+      const scoreOnSubject = await this.scoreOnSubjectRepository.findUnique({
+        where: {
+          id: dto.scoreOnSubjectId,
+        },
+      });
+      if (!scoreOnSubject) {
+        throw new NotFoundException('ScoreOnSubject not foud');
+      }
+      await this.teacherOnSubjectService.ValidateAccess({
+        subjectId: scoreOnSubject.subjectId,
+        userId: user.id,
+      });
+      return await this.scoreOnSubjectRepository.delete({
+        scoreOnSubjectId: scoreOnSubject.id,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
 }

@@ -14,6 +14,8 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
 import { SchoolService } from '../school/school.service';
 import { StudentService } from '../student/student.service';
 import { GradeService } from '../grade/grade.service';
+import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
+import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
 
 @Module({
   imports: [HttpModule],
@@ -28,6 +30,8 @@ import { GradeService } from '../grade/grade.service';
     AttendanceTableService,
     ClassService,
     MemberOnSchoolService,
+    ScoreOnSubjectService,
+    ScoreOnStudentService,
     SchoolService,
     StudentService,
     GradeService,

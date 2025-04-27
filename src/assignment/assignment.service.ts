@@ -1,3 +1,4 @@
+import { ScoreOnStudentService } from './../score-on-student/score-on-student.service';
 import { GradeService } from './../grade/grade.service';
 import { HttpService } from '@nestjs/axios';
 import {
@@ -12,6 +13,8 @@ import {
   FileOnAssignment,
   GradeRange,
   Prisma,
+  ScoreOnStudent,
+  ScoreOnSubject,
   Skill,
   Student,
   StudentOnAssignment,
@@ -40,6 +43,7 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
+import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
 
 @Injectable()
 export class AssignmentService {
@@ -61,6 +65,8 @@ export class AssignmentService {
     private httpService: HttpService,
     private authService: AuthService,
     private gradeService: GradeService,
+    private scoreOnSubjectService: ScoreOnSubjectService,
+    private scoreOnStudentService: ScoreOnStudentService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -228,6 +234,10 @@ export class AssignmentService {
   ): Promise<{
     grade: GradeRange | null;
     assignments: { assignment: Assignment; students: StudentOnAssignment[] }[];
+    scoreOnSubjects: {
+      scoreOnSubject: ScoreOnSubject;
+      students: ScoreOnStudent[];
+    }[];
   }> {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
@@ -235,20 +245,35 @@ export class AssignmentService {
         subjectId: dto.subjectId,
       });
 
-      const assignments = await this.assignmentRepository.findMany({
-        where: { subjectId: dto.subjectId, status: 'Published' },
-      });
-
-      const studentsOnSubjects =
-        await this.studentOnAssignmentRepository.findMany({
+      const [
+        assignments,
+        studentsOnSubjects,
+        grade,
+        scoreOnSubjects,
+        scoreOnStudents,
+      ] = await Promise.all([
+        this.assignmentRepository.findMany({
+          where: { subjectId: dto.subjectId, status: 'Published' },
+        }),
+        this.studentOnAssignmentRepository.findMany({
           where: { subjectId: dto.subjectId },
-        });
-
-      const grade = await this.gradeService.gradeRepository.findUnique({
-        where: {
-          subjectId: dto.subjectId,
-        },
-      });
+        }),
+        this.gradeService.gradeRepository.findUnique({
+          where: {
+            subjectId: dto.subjectId,
+          },
+        }),
+        this.scoreOnSubjectService.scoreOnSubjectRepository.findMany({
+          where: {
+            subjectId: dto.subjectId,
+          },
+        }),
+        this.scoreOnStudentService.scoreOnStudentRepository.findMany({
+          where: {
+            subjectId: dto.subjectId,
+          },
+        }),
+      ]);
 
       return {
         grade: grade
@@ -259,6 +284,15 @@ export class AssignmentService {
             assignment,
             students: studentsOnSubjects.filter(
               (student) => student.assignmentId === assignment.id,
+            ),
+          };
+        }),
+        scoreOnSubjects: scoreOnSubjects.map((scoreOnSubject) => {
+          return {
+            scoreOnSubject: scoreOnSubject,
+            students: scoreOnStudents.filter(
+              (scoreOnStudent) =>
+                scoreOnStudent.scoreOnSubjectId === scoreOnSubject.id,
             ),
           };
         }),
@@ -590,6 +624,9 @@ export class AssignmentService {
             ? `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points / ${assignment.assignment.weight}% `
             : `${assignment.assignment.title} \n ${assignment.assignment.maxScore} points`,
         ),
+        ...listAssignment.scoreOnSubjects.map(
+          (scoreOnSubject) => scoreOnSubject.scoreOnSubject.title,
+        ),
         'Total Score',
         'Grade',
       ],
@@ -597,7 +634,7 @@ export class AssignmentService {
         listStudentOnSubject
           .sort((a, b) => Number(a.number) - Number(b.number))
           .map(async (student) => {
-            const totalScore =
+            let totalScore =
               listAssignment?.assignments.reduce((prev, current) => {
                 let score =
                   current.students.find(
@@ -610,6 +647,20 @@ export class AssignmentService {
 
                 return prev + score;
               }, 0) ?? 0;
+            totalScore =
+              listAssignment.scoreOnSubjects.reduce((prev, scoreOnSubject) => {
+                const summaryScore = scoreOnSubject.students.reduce(
+                  (prev, studentOnScore) => {
+                    if (studentOnScore.studentOnSubjectId === student.id) {
+                      return (prev += studentOnScore.score);
+                    }
+                    return prev;
+                  },
+                  0,
+                );
+
+                return (prev += summaryScore);
+              }, totalScore) ?? 0;
 
             const grade = await this.gradeService.assignGrade(
               totalScore,
@@ -648,6 +699,23 @@ export class AssignmentService {
                   ).toFixed(2);
                 }
                 return score;
+              }),
+              ...listAssignment.scoreOnSubjects.map((scoreOnSubject) => {
+                const scoreOnStudents = scoreOnSubject.students.filter(
+                  (s) => s.studentOnSubjectId === student.id,
+                );
+                if (scoreOnStudents.length === 0) {
+                  return 'NO DATA';
+                }
+
+                const totalScore = scoreOnStudents.reduce(
+                  (previousValue, current) => {
+                    return (previousValue += current.score);
+                  },
+                  0,
+                );
+
+                return totalScore;
               }),
               totalScore,
               grade.grade,
