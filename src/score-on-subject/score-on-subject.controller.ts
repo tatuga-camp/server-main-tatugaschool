@@ -2,6 +2,7 @@ import { ScoreOnSubjectService } from './score-on-subject.service';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common';
 import {
   CreateScoreOnSubjectDto,
+  DeleteScoreOnSubjectDto,
   GetAllScoreOnSubjectBySujectIdDto,
   UpdateScoreOnSubjectDto,
 } from './dto';
@@ -47,5 +49,10 @@ export class ScoreOnSubjectController {
     @GetUser() user: User,
   ) {
     return this.scoreOnSubjectService.updateScoreOnSubject(dto, user);
+  }
+
+  @Delete(':scoreOnSubjectId')
+  delete(@Param() dto: DeleteScoreOnSubjectDto, @GetUser() user: User) {
+    return this.scoreOnSubjectService.delete(dto, user);
   }
 }
