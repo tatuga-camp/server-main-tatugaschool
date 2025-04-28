@@ -609,7 +609,14 @@ export class AssignmentService {
     const listAssignment = await this.getOverviewScoreOnAssignment(
       { subjectId },
       user,
-    );
+    ).then((res) => {
+      return {
+        ...res,
+        assignments: res.assignments.filter(
+          (a) => a.assignment.type !== 'Material',
+        ),
+      };
+    });
     const gradeRule = await this.gradeService.gradeRepository.findUnique({
       where: {
         subjectId: subjectId,
