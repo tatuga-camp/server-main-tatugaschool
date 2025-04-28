@@ -27,10 +27,7 @@ export class StudentService {
   studentRepository: StudentRepository;
 
   constructor(
-    // @Inject(forwardRef(() => SchoolService))
-    // private schoolService: SchoolService,
     private prisma: PrismaService,
-    // private userService: UsersService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
@@ -41,7 +38,8 @@ export class StudentService {
       this.googleStorageService,
     );
   }
-  async createStudent(dto: CreateStudentDto, user: User) {
+
+  async createStudent(dto: CreateStudentDto, user: User): Promise<Student> {
     try {
       let photo = dto.photo;
       const classroom = await this.classroomService.classRepository.findById({
@@ -105,7 +103,7 @@ export class StudentService {
   async getStudentById(
     getStudentDto: GetStudentDto,
     user?: User | undefined,
-    studentUser?: Student | undefined,
+    student?: Student | undefined,
   ): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({
@@ -123,7 +121,7 @@ export class StudentService {
         });
       }
 
-      if (studentUser && student.id !== studentUser.id) {
+      if (student && student.id !== student.id) {
         throw new ForbiddenException('Forbidden access');
       }
 
@@ -134,7 +132,7 @@ export class StudentService {
     }
   }
 
-  async getAllStudents(dto: GetAllStudentsDto, user: User) {
+  async getAllStudents(dto: GetAllStudentsDto, user: User): Promise<Student[]> {
     try {
       const classroom = await this.classroomService.classRepository.findById({
         classId: dto.classId,
@@ -157,7 +155,10 @@ export class StudentService {
     }
   }
 
-  async resetStudnetPassword(dto: { studentId: string }, user: User) {
+  async resetStudnetPassword(
+    dto: { studentId: string },
+    user: User,
+  ): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({
         studentId: dto.studentId,
@@ -189,18 +190,22 @@ export class StudentService {
   async updateStudent(
     dto: UpdateStudentDto,
     user?: User | undefined,
-    studentUser?: Student | undefined,
+    student?: Student | undefined,
   ): Promise<Student> {
     try {
       if (dto.body.photo && !dto.body.blurHash) {
         throw new BadRequestException('BlurHash is required for photo');
       }
-      const student = await this.studentRepository.findById({
+      const getStudent = await this.studentRepository.findById({
         studentId: dto.query.studentId,
       });
 
-      if (!student) {
+      if (!getStudent) {
         throw new NotFoundException('Student not found');
+      }
+
+      if (!user && !student) {
+        throw new BadRequestException('User Or Student is required');
       }
 
       await this.classroomService.validateAccess({
@@ -214,7 +219,7 @@ export class StudentService {
         });
       }
 
-      if (studentUser && student.id !== studentUser.id) {
+      if (student && student.id !== student.id) {
         throw new ForbiddenException('Forbidden access');
       }
 
