@@ -1,16 +1,16 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
   Param,
-  Post,
-  Delete,
-  Body,
   Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
-import { StudentService } from './student.service';
-import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
+import { GetStudent, GetUser } from '../auth/decorators';
+import { StudentGuard, UserGuard } from '../auth/guard';
 import {
   CreateStudentDto,
   DeleteStudentDto,
@@ -18,8 +18,7 @@ import {
   GetStudentDto,
   UpdateStudentDto,
 } from './dto';
-import { StudentGuard, UserGuard } from '../auth/guard';
-import { use } from 'passport';
+import { StudentService } from './student.service';
 
 @Controller('v1/students')
 export class StudentController {
