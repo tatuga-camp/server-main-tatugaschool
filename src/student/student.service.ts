@@ -207,21 +207,21 @@ export class StudentService {
       }
 
       await this.classroomService.validateAccess({
-        classId: student.classId,
+        classId: getStudent.classId,
       });
 
       if (user) {
         await this.memberOnSchoolService.validateAccess({
           user: user,
-          schoolId: student.schoolId,
+          schoolId: getStudent.schoolId,
         });
       }
 
-      if (student && student.id !== student.id) {
+      if (student && student.id !== getStudent.id) {
         throw new ForbiddenException('Forbidden access');
       }
 
-      let hash: string | null = student.password;
+      let hash: string | null = getStudent.password;
 
       if (dto.body.password) {
         hash = await bcrypt.hash(dto.body.password, 10);
