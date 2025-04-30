@@ -253,7 +253,11 @@ export class AssignmentService {
         scoreOnStudents,
       ] = await Promise.all([
         this.assignmentRepository.findMany({
-          where: { subjectId: dto.subjectId, status: 'Published' },
+          where: {
+            subjectId: dto.subjectId,
+            status: 'Published',
+            type: 'Assignment',
+          },
         }),
         this.studentOnAssignmentRepository.findMany({
           where: { subjectId: dto.subjectId },
