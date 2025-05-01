@@ -42,6 +42,9 @@ import { SubscriptionModule } from './subscription/subscription.module';
 import { AiModule } from './vector/ai.module';
 import { GradeModule } from './grade/grade.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { GroupOnSubjectModule } from './group-on-subject/group-on-subject.module';
+import { UnitOnGroupModule } from './unit-on-group/unit-on-group.module';
+import { StudentOnGroupModule } from './student-on-group/student-on-group.module';
 
 @Module({
   imports: [
@@ -93,6 +96,9 @@ import { FeedbackModule } from './feedback/feedback.module';
     SubscriptionModule,
     GradeModule,
     FeedbackModule,
+    GroupOnSubjectModule,
+    UnitOnGroupModule,
+    StudentOnGroupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

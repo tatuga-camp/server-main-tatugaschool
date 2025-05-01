@@ -55,6 +55,7 @@ export class AttendanceTableController {
       student,
     );
   }
+
   @UseGuards(UserGuard)
   @Post()
   CreateAttendanceTable(

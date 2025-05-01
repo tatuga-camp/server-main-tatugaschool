@@ -125,7 +125,10 @@ model School {
   fileOnStudentAssignments FileOnStudentAssignment[]
   commentOnAssignments     CommentOnAssignment[]
   attendanceStatusLists    AttendanceStatusList[]
-  GradeRange               GradeRange[]
+  gradeRanges              GradeRange[]
+  groupOnSubjects          GroupOnSubject[]
+  unitOnGroups             UnitOnGroup[]
+  studentOnGroups          StudentOnGroup[]
 }
 
 model MemberOnSchool {
@@ -199,6 +202,7 @@ model Student {
   attendances               Attendance[]
   fileOnStudentAssignments  FileOnStudentAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
+  studentOnGroups           StudentOnGroup[]
 
   @@index([schoolId, classId])
 }
@@ -291,7 +295,10 @@ model Subject {
   skillOnAssignments        SkillOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   attendanceStatusLists     AttendanceStatusList[]
-  GradeRange                GradeRange[]
+  gradeRanges               GradeRange[]
+  groupOnSubjects           GroupOnSubject[]
+  unitOnGroups              UnitOnGroup[]
+  studentOnGroups           StudentOnGroup[]
 
   @@index([educationYear, schoolId])
 }
@@ -352,8 +359,75 @@ model StudentOnSubject {
   studentOnAssignments StudentOnAssignment[]
   scoreOnStudents      ScoreOnStudent[]
   attendances          Attendance[]
+  studentOnGroups      StudentOnGroup[]
 
   @@unique([studentId, subjectId])
+}
+
+model GroupOnSubject {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+
+  subjectId       String           @db.ObjectId
+  subject         Subject          @relation(fields: [subjectId], references: [id])
+  schoolId        String           @db.ObjectId
+  school          School           @relation(fields: [schoolId], references: [id])
+  unitOnGroups    UnitOnGroup[]
+  studentOnGroups StudentOnGroup[]
+}
+
+model UnitOnGroup {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  icon        String
+  title       String
+  description String?
+  totalScore  Float   @default(0)
+  order       Int?
+
+  groupOnSubjectId String           @db.ObjectId
+  groupOnSubject   GroupOnSubject   @relation(fields: [groupOnSubjectId], references: [id])
+  subjectId        String           @db.ObjectId
+  subject          Subject          @relation(fields: [subjectId], references: [id])
+  schoolId         String           @db.ObjectId
+  school           School           @relation(fields: [schoolId], references: [id])
+  studentOnGroups  StudentOnGroup[]
+}
+
+model StudentOnGroup {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title     String
+  firstName String
+  lastName  String
+  photo     String
+  blurHash  String?
+  number    String
+  order     Int?
+
+  unitOnGroupId      String           @db.ObjectId
+  unitOnGroup        UnitOnGroup      @relation(fields: [unitOnGroupId], references: [id])
+  studentId          String           @db.ObjectId
+  student            Student          @relation(fields: [studentId], references: [id])
+  studentOnSubjectId String           @db.ObjectId
+  studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
+  groupOnSubjectId   String           @db.ObjectId
+  groupOnSubject     GroupOnSubject   @relation(fields: [groupOnSubjectId], references: [id])
+  subjectId          String           @db.ObjectId
+  subject            Subject          @relation(fields: [subjectId], references: [id])
+  schoolId           String           @db.ObjectId
+  school             School           @relation(fields: [schoolId], references: [id])
+
+  @@unique([studentOnSubjectId, unitOnGroupId])
+  @@unique([studentOnSubjectId, groupOnSubjectId])
 }
 
 model Assignment {

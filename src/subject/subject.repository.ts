@@ -13,6 +13,7 @@ import {
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.repository';
 
 type Repository = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
@@ -26,11 +27,14 @@ type Repository = {
 };
 @Injectable()
 export class SubjectRepository implements Repository {
-  logger: Logger = new Logger(SubjectRepository.name);
+  private logger: Logger = new Logger(SubjectRepository.name);
+  private groupOnSubjectRepository: GroupOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
-  ) {}
+  ) {
+    this.groupOnSubjectRepository = new GroupOnSubjectRepository(this.prisma);
+  }
 
   async count(request: Prisma.SubjectCountArgs): Promise<number> {
     try {
@@ -161,6 +165,21 @@ export class SubjectRepository implements Repository {
           subjectId: subjectId,
         },
       });
+      const groupOnSubjects = await this.groupOnSubjectRepository.findMany({
+        where: {
+          subjectId: request.subjectId,
+        },
+      });
+
+      if (groupOnSubjects.length > 0) {
+        await Promise.allSettled(
+          groupOnSubjects.map((group) =>
+            this.groupOnSubjectRepository.delete({
+              groupOnSubjectId: group.id,
+            }),
+          ),
+        );
+      }
 
       // Delete related commentOnAssignments records
       await this.prisma.commentOnAssignment.deleteMany({
