@@ -44,6 +44,7 @@ export class StudentRepository implements Repository {
         where: { id: request.query.studentId },
         data: request.body,
       });
+
       const data = {
         title: student.title,
         firstName: student.firstName,
@@ -74,6 +75,12 @@ export class StudentRepository implements Repository {
           data: data,
         }),
         this.prisma.scoreOnStudent.updateMany({
+          where: {
+            studentId: student.id,
+          },
+          data: data,
+        }),
+        this.prisma.studentOnGroup.updateMany({
           where: {
             studentId: student.id,
           },

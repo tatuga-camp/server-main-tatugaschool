@@ -17,6 +17,7 @@ type Repository = {
   findMany(
     request: Prisma.StudentOnGroupFindManyArgs,
   ): Promise<StudentOnGroup[]>;
+  create(request: Prisma.StudentOnGroupCreateArgs): Promise<StudentOnGroup>;
   update(request: Prisma.StudentOnGroupUpdateArgs): Promise<StudentOnGroup>;
   delete(request: Prisma.StudentOnGroupDeleteArgs): Promise<StudentOnGroup>;
 };
@@ -61,6 +62,21 @@ export class StudentOnGroupRepository implements Repository {
   ): Promise<StudentOnGroup[]> {
     try {
       return await this.prisma.studentOnGroup.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+  async create(
+    request: Prisma.StudentOnGroupCreateArgs,
+  ): Promise<StudentOnGroup> {
+    try {
+      return await this.prisma.studentOnGroup.create(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
