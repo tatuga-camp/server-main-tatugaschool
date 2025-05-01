@@ -243,6 +243,12 @@ export class StudentOnSubjectRepository
           },
         });
 
+      await this.prisma.studentOnGroup.deleteMany({
+        where: {
+          studentOnSubjectId: studentOnSubjectId,
+        },
+      });
+
       // Delete related attendance records
       await this.prisma.attendance.deleteMany({
         where: { studentOnSubjectId },

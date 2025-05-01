@@ -27,7 +27,7 @@ type Repository = {
 @Injectable()
 export class StudentRepository implements Repository {
   private logger = new Logger(StudentRepository.name);
-  private studentOnSubjectRepository;
+  private studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
@@ -44,7 +44,6 @@ export class StudentRepository implements Repository {
         where: { id: request.query.studentId },
         data: request.body,
       });
-
       const data = {
         title: student.title,
         firstName: student.firstName,
