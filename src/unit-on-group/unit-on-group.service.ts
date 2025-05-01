@@ -105,7 +105,7 @@ export class UnitOnGroupService {
         subjectId: unitOnGroup.subjectId,
       });
 
-      const update = await Promise.all(
+      const update = await Promise.allSettled(
         dto.unitOnGroupIds.map((value, index) => {
           return this.unitOnGroupRepository.update({
             where: {
@@ -118,7 +118,7 @@ export class UnitOnGroupService {
         }),
       );
 
-      return update;
+      return update.filter((f) => f.status === 'fulfilled').map((f) => f.value);
     } catch (error) {
       this.logger.error(error);
       throw error;
