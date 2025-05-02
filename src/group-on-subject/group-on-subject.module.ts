@@ -11,6 +11,7 @@ import { SchoolService } from '../school/school.service';
 import { GradeService } from '../grade/grade.service';
 import { HttpModule } from '@nestjs/axios';
 import { StudentService } from '../student/student.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 
 @Module({
   imports: [HttpModule],
@@ -25,6 +26,7 @@ import { StudentService } from '../student/student.service';
     SchoolService,
     GradeService,
     StudentService,
+    StudentOnSubjectService,
   ],
   controllers: [GroupOnSubjectController],
 })

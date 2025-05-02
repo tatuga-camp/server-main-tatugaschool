@@ -12,6 +12,7 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
 import { SchoolService } from '../school/school.service';
 import { GradeService } from '../grade/grade.service';
 import { StudentService } from '../student/student.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 
 @Module({
   imports: [HttpModule],
@@ -27,6 +28,7 @@ import { StudentService } from '../student/student.service';
     GradeService,
     StudentService,
     UnitOnGroupService,
+    StudentOnSubjectService,
   ],
 
   controllers: [UnitOnGroupController],
