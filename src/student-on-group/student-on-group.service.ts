@@ -10,7 +10,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { StudentOnGroup, User } from '@prisma/client';
-import { ReorderStudentOnGroupDto } from './dto/patch-student.dto';
+import { ReorderStudentOnGroupDto } from './dto';
 
 @Injectable()
 export class StudentOnGroupService {

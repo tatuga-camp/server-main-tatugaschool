@@ -4,8 +4,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import { GroupOnSubject, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaService } from '../prisma/prisma.service';
 
 type Repository = {
   findFirst(
@@ -17,6 +17,7 @@ type Repository = {
   findUnique(
     request: Prisma.GroupOnSubjectFindUniqueArgs,
   ): Promise<GroupOnSubject>;
+  create(request: Prisma.GroupOnSubjectCreateArgs): Promise<GroupOnSubject>;
   update(request: Prisma.GroupOnSubjectUpdateArgs): Promise<GroupOnSubject>;
   delete(request: { groupOnSubjectId: string }): Promise<GroupOnSubject>;
 };
@@ -64,6 +65,22 @@ export class GroupOnSubjectRepository implements Repository {
   ): Promise<GroupOnSubject> {
     try {
       return await this.prisma.groupOnSubject.findUnique(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async create(
+    request: Prisma.GroupOnSubjectCreateArgs,
+  ): Promise<GroupOnSubject> {
+    try {
+      return await this.prisma.groupOnSubject.create(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
