@@ -158,6 +158,27 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         assignmentId: request.assignmentId,
       });
 
+      const studentOnAssignments =
+        await this.studentOnAssignmentRepository.findMany({
+          where: {
+            assignmentId: request.assignmentId,
+          },
+        });
+
+      await this.prisma.skillOnStudentAssignment.deleteMany({
+        where: {
+          OR: studentOnAssignments.map((s) => {
+            return {
+              studentOnAssignmentId: s.id,
+            };
+          }),
+        },
+      });
+
+      await this.skillOnAssignmentRepository.deleteByAssignmentId({
+        assignmentId: request.assignmentId,
+      });
+
       await this.studentOnAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
       });
@@ -166,10 +187,6 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         where: {
           assignmentId: request.assignmentId,
         },
-      });
-
-      await this.skillOnAssignmentRepository.deleteByAssignmentId({
-        assignmentId: request.assignmentId,
       });
 
       await this.prisma.assignment.delete({
