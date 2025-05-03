@@ -175,6 +175,16 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         },
       });
 
+      await this.prisma.commentOnAssignment.deleteMany({
+        where: {
+          OR: studentOnAssignments.map((s) => {
+            return {
+              studentOnAssignmentId: s.id,
+            };
+          }),
+        },
+      });
+
       await this.skillOnAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
       });
