@@ -185,18 +185,18 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         },
       });
 
+      await this.fileOnStudentAssignmentRepository.deleteMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
+      });
+
       await this.skillOnAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
       });
 
       await this.studentOnAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
-      });
-
-      await this.fileOnStudentAssignmentRepository.deleteMany({
-        where: {
-          assignmentId: request.assignmentId,
-        },
       });
 
       await this.prisma.assignment.delete({
