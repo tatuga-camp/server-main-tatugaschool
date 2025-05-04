@@ -12,10 +12,10 @@ export class CreateUnitOnGroupDto {
   @IsMongoId()
   groupOnSubjectId: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(599)
-  icon: string;
+  icon?: string;
 
   @IsNotEmpty()
   @IsString()

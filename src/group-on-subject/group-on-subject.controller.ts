@@ -41,14 +41,18 @@ export class GroupOnSubjectController {
 
   @Post()
   @UseGuards(UserGuard)
-  async create(@Body() dto: CreateGroupOnSubjectDto, @GetUser() user: User) {}
+  async create(@Body() dto: CreateGroupOnSubjectDto, @GetUser() user: User) {
+    return await this.groupOnSubjectService.create(dto, user);
+  }
 
   @Patch()
+  @UseGuards(UserGuard)
   async update(@Body() dto: UpdateGroupOnSubjectDto, @GetUser() user: User) {
     return await this.groupOnSubjectService.update(dto, user);
   }
 
   @Delete(':groupOnSubjectId')
+  @UseGuards(UserGuard)
   async delete(@Param() dto: DeleteGroupOnSubjectDto, @GetUser() user: User) {
     return await this.groupOnSubjectService.delete(dto, user);
   }

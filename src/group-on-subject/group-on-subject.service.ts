@@ -164,17 +164,19 @@ export class GroupOnSubjectService {
           const unit = await this.unitOnGroupRepository.create({
             data: {
               title: `Group ${index + 1}`,
-              description: '',
+              description: `this is group number ${index + 1} `,
               icon: '',
               schoolId: subject.schoolId,
               subjectId: subject.id,
+              order: index,
               groupOnSubjectId: groupOnSubject.id,
             },
           });
           const students = await Promise.all(
-            group.map((studentOnSubject) =>
+            group.map((studentOnSubject, index) =>
               this.studentOnGroupRepository.create({
                 data: {
+                  order: index,
                   studentOnSubjectId: studentOnSubject.id,
                   unitOnGroupId: unit.id,
                   title: studentOnSubject.title,
