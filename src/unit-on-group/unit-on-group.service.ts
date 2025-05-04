@@ -46,6 +46,7 @@ export class UnitOnGroupService {
       return await this.unitOnGroupRepository.create({
         data: {
           ...dto,
+          icon: dto.icon,
           schoolId: groupOnSubject.schoolId,
           subjectId: groupOnSubject.subjectId,
         },
