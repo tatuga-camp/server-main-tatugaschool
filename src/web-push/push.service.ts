@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import * as webPush from 'web-push';
 import { PushRepository } from './push.repository';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionNotification, User } from '@prisma/client';
 import { PushSubscription } from './interfaces';
 

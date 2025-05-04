@@ -137,7 +137,7 @@ export class AuthService {
     }
   }
 
-  async signup(dto: SignUpDto, res: Response) {
+  async signup(dto: SignUpDto, res: Response): Promise<Response> {
     try {
       const existingUser = await this.usersRepository.findByEmail({
         email: dto.email,

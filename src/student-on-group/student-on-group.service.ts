@@ -1,4 +1,4 @@
-import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { UnitOnGroupService } from './../unit-on-group/unit-on-group.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';

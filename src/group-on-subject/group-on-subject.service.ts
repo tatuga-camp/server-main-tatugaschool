@@ -1,4 +1,4 @@
-import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { StudentOnGroupRepository } from './../student-on-group/student-on-group.repository';
 import { UnitOnGroupRepository } from './../unit-on-group/unit-on-group.repository';
 import { SubjectService } from './../subject/subject.service';
