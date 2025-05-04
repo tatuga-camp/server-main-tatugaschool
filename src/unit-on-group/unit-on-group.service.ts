@@ -1,5 +1,5 @@
 import { GroupOnSubjectService } from './../group-on-subject/group-on-subject.service';
-import { TeacherOnSubjectService } from 'src/teacher-on-subject/teacher-on-subject.service';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UnitOnGroupRepository } from './unit-on-group.repository';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';

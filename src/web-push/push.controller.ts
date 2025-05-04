@@ -1,7 +1,7 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { PushService } from './push.service';
 import { UserGuard } from '../auth/guard';
-import { GetUser } from 'src/auth/decorators';
+import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { PushSubscription } from './interfaces';
 import { SubscribeNotificationDto } from './dto';

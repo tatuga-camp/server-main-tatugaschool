@@ -29,7 +29,7 @@ import {
 } from '@nestjs/common';
 import { StudentRepository } from '../student/student.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { PushService } from 'src/web-push/push.service';
+import { PushService } from '../web-push/push.service';
 import { PushSubscription } from '../web-push/interfaces';
 
 @Injectable()

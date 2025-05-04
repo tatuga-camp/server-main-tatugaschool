@@ -1,4 +1,4 @@
-import { TeacherOnSubjectService } from 'src/teacher-on-subject/teacher-on-subject.service';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { SkillRepository } from './../skill/skill.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';

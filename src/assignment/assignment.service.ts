@@ -22,8 +22,7 @@ import {
 } from '@prisma/client';
 import * as cheerio from 'cheerio';
 import { Workbook } from 'exceljs';
-import { AuthService } from 'src/auth/auth.service';
-import { StudentOnSubjectService } from 'src/student-on-subject/student-on-subject.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../vector/ai.service';
@@ -44,6 +43,7 @@ import {
   UpdateAssignmentDto,
 } from './dto';
 import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class AssignmentService {
