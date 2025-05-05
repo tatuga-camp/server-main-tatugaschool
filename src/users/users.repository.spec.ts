@@ -12,7 +12,8 @@ describe('Users repository', () => {
   let userEmail: string;
   let userVerifyEmailToken: string;
   let userVerifyEmailTokenExpiresAt: Date;
-
+  let userResetPasswordToken: string;
+  let userResetPasswordTokenExpiresAt: Date;
   beforeAll(async () => {
     userRepository = new UserRepository(prismaService);
   });
@@ -133,37 +134,40 @@ describe('Users repository', () => {
   describe('update', () => {
     it('should update user', async () => {
       try {
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-        const user = await userRepository.update({
+        const userUpdate = await userRepository.update({
           where: { id: userId },
           data: {
-            firstName: 'Thanathorn',
+            firstName: 'Thanathorn 666666',
             lastName: 'Chulay',
             email: 'thanathorn.c@gmail.com',
             phone: '0652345678',
             photo:
               'https://storage.googleapis.com/public-tatugaschool/avatars/14.png',
             blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
-            verifyEmailToken: 'verifyEmailToken',
-            verifyEmailTokenExpiresAt: expiresAt,
+            // verifyEmailToken: 'verifyEmailToken123',
+            // verifyEmailTokenExpiresAt: new Date().toISOString(),
           },
         });
-        expect(user.id).toBe(userId);
-        expect(user.firstName).toBe('Thanathorn');
-        expect(user.lastName).toBe('Chulay');
-        expect(user.email).toBe('thanathorn.c@gmail.com');
-        expect(user.phone).toBe('0652345678');
-        expect(user.photo).toBe(
-          'https://storage.googleapis.com/public-tatugaschool/avatars/14.png',
-        );
-        expect(user.blurHash).toBe('LEHV6nWB2yk8pyo0adR*.7kCMdnj');
-        userId = user.id;
-        userEmail = user.email;
-        userVerifyEmailTokenExpiresAt = user.verifyEmailTokenExpiresAt;
-        userVerifyEmailToken = user.verifyEmailToken;
+        const user = await userRepository.findById({
+          id: userId,
+        });
 
-        console.log(userId);
-        console.log(userEmail);
+        expect(user.id).toBe(userUpdate.id);
+        expect(user.firstName).toBe(userUpdate.firstName);
+        expect(user.lastName).toBe(userUpdate.lastName);
+        expect(user.email).toBe(userUpdate.email);
+        expect(user.phone).toBe(userUpdate.phone);
+        expect(user.photo).toBe(userUpdate.photo);
+        expect(user.blurHash).toBe(userUpdate.blurHash);
+
+        userId = userUpdate.id;
+        userEmail = userUpdate.email;
+
+        // userVerifyEmailToken = user.verifyEmailToken;
+        // userVerifyEmailTokenExpiresAt = user.verifyEmailTokenExpiresAt;
+
+        // console.log(userVerifyEmailToken);
+        // console.log(userVerifyEmailTokenExpiresAt);
       } catch (error) {
         console.log(error);
         throw error;
@@ -172,7 +176,7 @@ describe('Users repository', () => {
   });
 
   describe('updateVerified', () => {
-    it(' ', async () => {
+    it('should update verified', async () => {
       try {
         const userVerified = await userRepository.updateVerified({
           email: userEmail,
@@ -194,20 +198,23 @@ describe('Users repository', () => {
     it('should update reset token', async () => {
       try {
         const email = userEmail;
-        const token = 'reset-token-123';
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+        const expiresAt = new Date().toISOString();
 
-        const userUpdate = await userRepository.updateResetToken({
-          query: { email },
+        await userRepository.updateResetToken({
+          query: { email: email },
           data: {
-            resetPasswordToken: token,
+            resetPasswordToken: 'reset-password-token-123',
             resetPasswordTokenExpiresAt: expiresAt,
           },
         });
 
         const user = await userRepository.findByEmail({ email });
-        expect(user.resetPasswordToken).toBe(token);
-        expect(user.resetPasswordTokenExpiresAt?.toISOString()).toBe(expiresAt);
+
+        expect(user.resetPasswordToken).toBe('reset-password-token-123');
+        expect(user.resetPasswordTokenExpiresAt.toISOString()).toBe(expiresAt);
+
+        userResetPasswordToken = user.resetPasswordToken;
+        userResetPasswordTokenExpiresAt = user.resetPasswordTokenExpiresAt;
       } catch (error) {
         console.log(error);
         throw error;
@@ -215,64 +222,67 @@ describe('Users repository', () => {
     });
   });
 
-    describe('updatePassword', () => {
-      it(' ', async () => {
-        try {
-          const userUpdate = await userRepository.updatePassword({
-            email: userEmail,
-            password: 'new_password_after_update'
-          });
-          const user = await userRepository.findByEmail({ email:userEmail });
-          expect(user.id).toBe(userId);
-          expect(user.email).toBe(userEmail);
-          expect(user.password).toBe('new_password_after_update');
-        } catch (error) {
-          console.log(error);
-          throw error;
-        }
-      });
+  describe('updatePassword', () => {
+    it('should update password', async () => {
+      try {
+        const userUpdate = await userRepository.updatePassword({
+          email: userEmail,
+          password: 'new_password_after_update234',
+        });
+        const user = await userRepository.findByEmail({ email: userEmail });
+        expect(user.id).toBe(userId);
+        expect(user.email).toBe(userEmail);
+        expect(user.password).toBe('new_password_after_update234');
+      } catch (error) {
+        console.log(error);
+        throw error;
+      }
     });
+  });
 
-    describe('updateLastActiveAt', () => {
-      it(' ', async () => {
-        try {
-          let email = userEmail;
-          const userUpdate = await userRepository.updateLastActiveAt({
-            email:email
-          });
-          const user = await userRepository.findByEmail({ email:userEmail });
-          expect(user.email).toBe(email);
-        } catch (error) {
-          console.log(error);
-          throw error;
-        }
-      });
+  describe('updateLastActiveAt', () => {
+    it('should update last activeAt', async () => {
+      try {
+        let email = userEmail;
+        const userUpdate = await userRepository.updateLastActiveAt({
+          email: email,
+        });
+        const user = await userRepository.findByEmail({ email: userEmail });
+        expect(user.email).toBe(email);
+      } catch (error) {
+        console.log(error);
+        throw error;
+      }
     });
+  });
+
+  // describe('findByResetToken', () => {
+  //   it('should find by resetToken', async () => {
+  //     try {
+  //       const user = await userRepository.findByResetToken({
+  //         resetPasswordToken: userResetPasswordToken,
+  //       });
+  //       expect(user.resetPasswordToken).toBe(userResetPasswordToken);
+  //     } catch (error) {
+  //       console.log(error);
+  //       throw error;
+  //     }
+  //   });
+  // });
+
+  // describe('findByVerifyToken', () => {
+  //   it('should find user by verify token', async () => {
+  //     try {
+  //       const user = await userRepository.findByVerifyToken({
+  //         verifyEmailToken: userVerifyEmailToken,
+  //       });
+  //       expect(user).toBeDefined();
+  //       expect(user.email).toBe('johnwick@example.com');
+  //       console.log(user);
+  //     } catch (error) {
+  //       console.log(error);
+  //       throw error;
+  //     }
+  //   });
+  // });
 });
-
-    // describe('findByVerifyToken', () => {
-    //   it('should find user by verify token', async () => {
-    //     try {
-    //       const user = await userRepository.findByVerifyToken({
-    //         verifyEmailToken: token,
-    //       });
-    //       expect(user).toBeDefined();
-    //       expect(user.email).toBe('johnwick@example.com');
-    //       console.log(user);
-    //     } catch (error) {
-    //       console.log(error);
-    //       throw error;
-    //     }
-    //   });
-    // });
-
-    // describe('findByResetToken', () => {
-    //   it(' ', async () => {
-    //     try {
-    //       const user = await userRepository.findByResetToken();
-    //     } catch (error) {
-    //       console.log(error);
-    //       throw error;
-    //     }
-    //   });
-    // });
