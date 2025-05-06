@@ -22,7 +22,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 type Repository = {
   findMany(request: Prisma.UserFindManyArgs): Promise<User[]>;
-  findById(request: RequestFindById): Promise<User>;
+  findById(request: RequestFindById): Promise<User | null>;
   findByEmail(request: RequestFindByEmail): Promise<User>;
   update(request: Prisma.UserUpdateArgs): Promise<User>;
   updateResetToken(request: RequestUpdateResetToken): Promise<void>;
