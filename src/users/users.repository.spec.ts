@@ -1,8 +1,6 @@
-import { data } from 'cheerio/dist/commonjs/api/attributes';
+import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './users.repository';
-import { PrismaClient } from '@prisma/client';
-import { emit } from 'process';
 const prisma = new PrismaClient();
 
 describe('Users repository', () => {
@@ -10,10 +8,9 @@ describe('Users repository', () => {
   const prismaService = new PrismaService();
   let userId: string;
   let userEmail: string;
-  let userVerifyEmailToken: string;
-  let userVerifyEmailTokenExpiresAt: Date;
   let userResetPasswordToken: string;
   let userResetPasswordTokenExpiresAt: Date;
+
   beforeAll(async () => {
     userRepository = new UserRepository(prismaService);
   });
@@ -21,11 +18,7 @@ describe('Users repository', () => {
   describe('createUser', () => {
     beforeEach(async () => {
       await prisma.user.deleteMany({ where: { email: userEmail } });
-      console.log(
-        'run!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
-      );
     });
-
     it('should create user', async () => {
       try {
         const user = await userRepository.createUser({
@@ -144,8 +137,6 @@ describe('Users repository', () => {
             photo:
               'https://storage.googleapis.com/public-tatugaschool/avatars/14.png',
             blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
-            // verifyEmailToken: 'verifyEmailToken123',
-            // verifyEmailTokenExpiresAt: new Date().toISOString(),
           },
         });
         const user = await userRepository.findById({
@@ -162,12 +153,6 @@ describe('Users repository', () => {
 
         userId = userUpdate.id;
         userEmail = userUpdate.email;
-
-        // userVerifyEmailToken = user.verifyEmailToken;
-        // userVerifyEmailTokenExpiresAt = user.verifyEmailTokenExpiresAt;
-
-        // console.log(userVerifyEmailToken);
-        // console.log(userVerifyEmailTokenExpiresAt);
       } catch (error) {
         console.log(error);
         throw error;
@@ -255,34 +240,4 @@ describe('Users repository', () => {
       }
     });
   });
-
-  // describe('findByResetToken', () => {
-  //   it('should find by resetToken', async () => {
-  //     try {
-  //       const user = await userRepository.findByResetToken({
-  //         resetPasswordToken: userResetPasswordToken,
-  //       });
-  //       expect(user.resetPasswordToken).toBe(userResetPasswordToken);
-  //     } catch (error) {
-  //       console.log(error);
-  //       throw error;
-  //     }
-  //   });
-  // });
-
-  // describe('findByVerifyToken', () => {
-  //   it('should find user by verify token', async () => {
-  //     try {
-  //       const user = await userRepository.findByVerifyToken({
-  //         verifyEmailToken: userVerifyEmailToken,
-  //       });
-  //       expect(user).toBeDefined();
-  //       expect(user.email).toBe('johnwick@example.com');
-  //       console.log(user);
-  //     } catch (error) {
-  //       console.log(error);
-  //       throw error;
-  //     }
-  //   });
-  // });
 });
