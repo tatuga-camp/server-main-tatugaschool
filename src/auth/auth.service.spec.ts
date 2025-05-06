@@ -11,7 +11,7 @@ describe('AuthService', () => {
   let authService: AuthService;
   let mockResponse: MockResponse; // Declare the mock response object
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
       controllers: [AppController],
