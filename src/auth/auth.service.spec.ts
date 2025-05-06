@@ -30,18 +30,23 @@ describe('AuthService', () => {
 
   describe('sign-up', () => {
     it('should successfully sign up', async () => {
-      const ramdomEmail = `test${crypto.randomUUID()}@gmail.com`;
-      await authService.signup(
-        {
-          email: ramdomEmail,
-          provider: 'LOCAL',
-          password: '1234568910',
-          firstName: 'firstName',
-          lastName: 'lastName',
-          phone: '+66123456789',
-        },
-        mockResponse as Response,
-      );
+      try {
+        const ramdomEmail = `test${crypto.randomUUID()}@gmail.com`;
+        await authService.signup(
+          {
+            email: ramdomEmail,
+            provider: 'LOCAL',
+            password: '1234568910',
+            firstName: 'firstName',
+            lastName: 'lastName',
+            phone: '+66123456789',
+          },
+          mockResponse as Response,
+        );
+      } catch (error) {
+        console.log(error);
+        throw error;
+      }
     });
     it('should throw error on password too short ', async () => {
       try {
