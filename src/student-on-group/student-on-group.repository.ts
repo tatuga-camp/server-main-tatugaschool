@@ -20,6 +20,9 @@ type Repository = {
   create(request: Prisma.StudentOnGroupCreateArgs): Promise<StudentOnGroup>;
   update(request: Prisma.StudentOnGroupUpdateArgs): Promise<StudentOnGroup>;
   delete(request: Prisma.StudentOnGroupDeleteArgs): Promise<StudentOnGroup>;
+  deleteMany(
+    request: Prisma.StudentOnGroupDeleteManyArgs,
+  ): Promise<Prisma.BatchPayload>;
 };
 @Injectable()
 export class StudentOnGroupRepository implements Repository {
@@ -109,6 +112,22 @@ export class StudentOnGroupRepository implements Repository {
   ): Promise<StudentOnGroup> {
     try {
       return await this.prisma.studentOnGroup.delete(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteMany(
+    request: Prisma.StudentOnGroupDeleteManyArgs,
+  ): Promise<Prisma.BatchPayload> {
+    try {
+      return await this.prisma.studentOnGroup.deleteMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

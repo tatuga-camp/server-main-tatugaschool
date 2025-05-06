@@ -4,6 +4,7 @@ import {
   CreateStudentOnGroupDto,
   DeleteStudentOnGroupDto,
   ReorderStudentOnGroupDto,
+  UpdateStudentOnGroupDto,
 } from './dto';
 import { StudentOnGroupService } from './student-on-group.service';
 import {
@@ -31,6 +32,12 @@ export class StudentOnGroupController {
   @UseGuards(UserGuard)
   async reorder(@Body() dto: ReorderStudentOnGroupDto, @GetUser() user: User) {
     return await this.studentOnGroupService.reorder(dto, user);
+  }
+
+  @Patch()
+  @UseGuards(UserGuard)
+  async update(@Body() dto: UpdateStudentOnGroupDto, @GetUser() user: User) {
+    return await this.studentOnGroupService.update(dto, user);
   }
 
   @Delete(':studentOnGroupId')

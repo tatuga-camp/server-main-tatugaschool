@@ -120,6 +120,95 @@ export class GroupOnSubjectService {
     }
   }
 
+  async refetchGroup(
+    dto: { groupOnSubjectId: string },
+    user: User,
+  ): Promise<
+    GroupOnSubject & {
+      units: (UnitOnGroup & { students: StudentOnGroup[] })[];
+    }
+  > {
+    try {
+      const groupOnSubject = await this.groupOnSubjectRepository.findUnique({
+        where: {
+          id: dto.groupOnSubjectId,
+        },
+      });
+
+      if (!groupOnSubject) {
+        throw new BadRequestException('subjectId is invaild');
+      }
+
+      await this.teacherOnSubjectService.ValidateAccess({
+        subjectId: groupOnSubject.subjectId,
+        userId: user.id,
+      });
+      const [studentOnSubjects, deleteMany, units] = await Promise.all([
+        this.studentOnSubjectService.studentOnSubjectRepository.findMany({
+          where: {
+            subjectId: groupOnSubject.subjectId,
+            isActive: true,
+          },
+        }),
+        this.studentOnGroupRepository.deleteMany({
+          where: {
+            groupOnSubjectId: groupOnSubject.id,
+          },
+        }),
+        this.unitOnGroupRepository.findMany({
+          where: {
+            groupOnSubjectId: groupOnSubject.id,
+          },
+        }),
+      ]);
+      const groups = this.groupStudentsRandomly(
+        studentOnSubjects,
+        units.length,
+      );
+
+      const create = await Promise.all(
+        groups
+          .map((group, unitIndex) => {
+            return group
+              .map((studentOnSubject, studentIndex) => {
+                return this.studentOnGroupRepository.create({
+                  data: {
+                    order: studentIndex,
+                    studentOnSubjectId: studentOnSubject.id,
+                    unitOnGroupId: units[unitIndex].id,
+                    title: studentOnSubject.title,
+                    firstName: studentOnSubject.firstName,
+                    lastName: studentOnSubject.lastName,
+                    photo: studentOnSubject.photo,
+                    blurHash: studentOnSubject.blurHash,
+                    number: studentOnSubject.number,
+                    schoolId: studentOnSubject.schoolId,
+                    subjectId: studentOnSubject.subjectId,
+                    groupOnSubjectId: units[unitIndex].groupOnSubjectId,
+                    studentId: studentOnSubject.studentId,
+                  },
+                });
+              })
+              .flat();
+          })
+          .flat(),
+      );
+
+      return {
+        ...groupOnSubject,
+        units: units.map((u) => {
+          return {
+            ...u,
+            students: create.filter((s) => s.unitOnGroupId === u.id),
+          };
+        }),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async create(
     dto: CreateGroupOnSubjectDto,
     user: User,

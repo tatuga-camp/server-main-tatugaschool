@@ -10,7 +10,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { StudentOnGroup, User } from '@prisma/client';
-import { ReorderStudentOnGroupDto } from './dto';
+import { ReorderStudentOnGroupDto, UpdateStudentOnGroupDto } from './dto';
 
 @Injectable()
 export class StudentOnGroupService {
@@ -34,7 +34,7 @@ export class StudentOnGroupService {
       const [unit, studentOnSubject] = await Promise.all([
         this.unitOnGroupService.unitOnGroupRepository.findUnique({
           where: {
-            id: dto.studentOnSubjectId,
+            id: dto.unitOnGroupId,
           },
         }),
         this.studentOnSubjectService.studentOnSubjectRepository.getStudentOnSubjectById(
@@ -117,6 +117,37 @@ export class StudentOnGroupService {
     }
   }
 
+  async update(
+    dto: UpdateStudentOnGroupDto,
+    user: User,
+  ): Promise<StudentOnGroup> {
+    try {
+      const studentOnGroup = await this.studentOnGroupRepository.findUnique({
+        where: {
+          id: dto.query.studentOnGroupId,
+        },
+      });
+
+      if (!studentOnGroup) {
+        throw new NotFoundException('One of the unitOnGroupId is invaild');
+      }
+
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnGroup.subjectId,
+      });
+
+      return await this.studentOnGroupRepository.update({
+        where: {
+          id: dto.query.studentOnGroupId,
+        },
+        data: dto.body,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
   async delete(
     dto: { studentOnGroupId: string },
     user: User,
