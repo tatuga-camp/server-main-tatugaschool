@@ -34,7 +34,6 @@ jobs:
           INIT_WAIT_SEC: 3
         ports:
           - 27017:27017
-        options: --health-cmd "mongo admin --username root --password prisma --eval 'db.adminCommand({ping: 1})'" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
       - name: Checkout code
