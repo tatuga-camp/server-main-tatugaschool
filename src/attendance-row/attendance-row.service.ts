@@ -1,3 +1,4 @@
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import {
   BadRequestException,
@@ -41,45 +42,12 @@ export class AttendanceRowService {
     private studentOnSubjectService: StudentOnSubjectService,
     private subjectService: SubjectService,
     private attendanceStatusListService: AttendanceStatusListService,
+    private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
     this.attendanceRepository = new AttendanceRepository(this.prisma);
     this.attendanceTableRepository = new AttendanceTableRepository(this.prisma);
-  }
-
-  async validateAccess({
-    userId,
-    schoolId,
-    subjectId,
-  }: {
-    userId: string;
-    schoolId: string;
-    subjectId: string;
-  }) {
-    const [memberOnSchool, teacherOnSubject] = await Promise.all([
-      this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: userId,
-          schoolId: schoolId,
-        },
-      }),
-
-      this.prisma.teacherOnSubject.findFirst({
-        where: {
-          subjectId: subjectId,
-          userId: userId,
-        },
-      }),
-    ]);
-
-    if (!memberOnSchool) {
-      throw new ForbiddenException('Access denied');
-    }
-
-    if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
-      throw new ForbiddenException('Access denied');
-    }
   }
 
   async GetAttendanceRows(
@@ -95,9 +63,8 @@ export class AttendanceRowService {
 
       if (!table) throw new NotFoundException('Attendance table not found');
 
-      await this.validateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: table.schoolId,
         subjectId: table.subjectId,
       });
 
@@ -136,9 +103,8 @@ export class AttendanceRowService {
         attendanceRowId: dto.attendanceRowId,
       });
 
-      await this.validateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: row.schoolId,
         subjectId: row.subjectId,
       });
 
@@ -225,9 +191,8 @@ export class AttendanceRowService {
 
       if (!table) throw new NotFoundException('Attendance table not found');
 
-      await this.validateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: table.schoolId,
         subjectId: table.subjectId,
       });
 
@@ -274,9 +239,8 @@ export class AttendanceRowService {
         throw new NotFoundException('Attendance row not found');
       }
 
-      await this.validateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: row.schoolId,
         subjectId: row.subjectId,
       });
 
@@ -302,9 +266,8 @@ export class AttendanceRowService {
         throw new NotFoundException('Attendance row not found');
       }
 
-      await this.validateAccess({
+      await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        schoolId: row.schoolId,
         subjectId: row.subjectId,
       });
 

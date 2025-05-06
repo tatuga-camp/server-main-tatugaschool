@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   RequestDeleteAttendanceRow,
@@ -84,6 +85,10 @@ export class AttendanceRowRepository implements Repository {
           id: request.attendanceRowId,
         },
       });
+
+      if (!rows) {
+        throw new NotFoundException('attendancerowId is not found');
+      }
 
       const attendances = await this.prisma.attendance.findMany({
         where: {
