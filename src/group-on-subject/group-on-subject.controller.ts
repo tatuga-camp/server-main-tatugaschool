@@ -5,6 +5,7 @@ import {
   DeleteGroupOnSubjectDto,
   GetGroupOnSubjectDto,
   GetGroupOnSubjectsDto,
+  RefetchGroupOnSubjectDto,
   UpdateGroupOnSubjectDto,
 } from './dto';
 import { GroupOnSubjectService } from './group-on-subject.service';
@@ -49,6 +50,12 @@ export class GroupOnSubjectController {
   @UseGuards(UserGuard)
   async update(@Body() dto: UpdateGroupOnSubjectDto, @GetUser() user: User) {
     return await this.groupOnSubjectService.update(dto, user);
+  }
+
+  @Patch('refetch')
+  @UseGuards(UserGuard)
+  async refetch(@Body() dto: RefetchGroupOnSubjectDto, @GetUser() user: User) {
+    return await this.groupOnSubjectService.refetchGroup(dto, user);
   }
 
   @Delete(':groupOnSubjectId')

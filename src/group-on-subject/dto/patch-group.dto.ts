@@ -40,3 +40,9 @@ export class UpdateGroupOnSubjectDto {
   @ValidateNested()
   body: UpdateGroupOnSubjectBody;
 }
+
+export class RefetchGroupOnSubjectDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  groupOnSubjectId: string;
+}
