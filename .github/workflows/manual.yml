@@ -23,17 +23,6 @@ env:
 jobs:
   test: # Renamed from 'build' for clarity, though 'build' would also work
     runs-on: ubuntu-latest
-    services:
-      # Define the MongoDB service using your docker-compose.yml
-      database_TATUGA_SCHOOL:
-        image: prismagraphql/mongo-single-replica:4.4.3-bionic
-        environment:
-          MONGO_INITDB_ROOT_USERNAME: root
-          MONGO_INITDB_ROOT_PASSWORD: prisma
-          MONGO_REPLICA_HOST: host.docker.internal
-          INIT_WAIT_SEC: 3
-        ports:
-          - 27017:27017
 
     steps:
       - name: Checkout code
@@ -48,24 +37,8 @@ jobs:
         run: npm ci
 
       # Added the missing hyphen here
-      - name: Wait for MongoDB
-        run: |
-          # Install netcat if it's not already present (common on runners)
-          sudo apt-get update && sudo apt-get install -y netcat
-          for i in $(seq 1 10); do
-            nc -z localhost 27017 && echo "MongoDB is reachable" && exit 0
-            echo "Waiting for MongoDB..."
-            sleep 5
-          done
-          echo "MongoDB is not reachable after multiple attempts"
-          exit 1
-
-      # Assuming you need to run Prisma migrations and generate client here
-      # before running tests, based on your local workflow
-      - name: Run Prisma migrations and generate client
-        run: |
-          npm run prisma:dev:deploy
-          npm run prisma:generate
+      - name: Run Database
+        run: npm run db:dev:restart
 
       - name: Run tests
         run: npm run test
