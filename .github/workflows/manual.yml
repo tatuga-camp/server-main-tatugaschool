@@ -1,7 +1,7 @@
 name: Run Unit Tests
 on: pull_request
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DATABASE_URL: mongodb://root:prisma@database_TATUGA_SCHOOL:27017/test?authSource=admin&replicaSet=rs0
   CLIENT_URL: ${{ secrets.CLIENT_URL }}
   EMAIL_NAME_SERVICE: ${{ secrets.EMAIL_NAME_SERVICE }}
   EMAIL_PASSWORD_SERVICE: ${{ secrets.EMAIL_PASSWORD_SERVICE }}
@@ -23,9 +23,39 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      # Define the MongoDB service using your docker-compose.yml
+      database_TATUGA_SCHOOL:
+        image: prismagraphql/mongo-single-replica:4.4.3-bionic
+        environment:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: prisma
+          MONGO_REPLICA_HOST: host.docker.internal
+          INIT_WAIT_SEC: 3
+        ports:
+          - 27017:27017
+        options: --health-cmd "mongo admin --username root --password prisma --eval 'db.adminCommand({ping: 1})'" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-      - uses: actions/checkout@v3
-      - name: Install modules
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Or your preferred Node.js version
+
+      - name: Install dependencies
         run: npm ci
+
+        - name: Wait for MongoDB
+        run: |
+          for i in $(seq 1 10); do
+            nc -z localhost 27017 && echo "MongoDB is reachable" && exit 0
+            echo "Waiting for MongoDB..."
+            sleep 5
+          done
+          echo "MongoDB is not reachable after multiple attempts"
+          exit 1
+        
       - name: Run tests
         run: npm run test
