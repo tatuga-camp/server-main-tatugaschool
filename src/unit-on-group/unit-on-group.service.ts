@@ -69,16 +69,24 @@ export class UnitOnGroupService {
         throw new NotFoundException('goupOnSubjectId is invaild');
       }
 
+      let totalPoints = unitOnGroup.totalScore;
+
+      if (dto.body.score) {
+        totalPoints += dto.body.score;
+      }
+
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: unitOnGroup.subjectId,
       });
 
+      delete dto.body.score;
+
       return await this.unitOnGroupRepository.update({
         where: {
           id: dto.query.unitOnGroupId,
         },
-        data: dto.body,
+        data: { ...dto.body, totalScore: totalPoints },
       });
     } catch (error) {
       this.logger.error(error);

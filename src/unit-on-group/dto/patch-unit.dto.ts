@@ -33,6 +33,10 @@ class UpdateUnitOnGroupBody {
   @IsString()
   @MaxLength(599)
   description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  score?: number;
 }
 
 export class UpdateUnitOnGroupDto {
