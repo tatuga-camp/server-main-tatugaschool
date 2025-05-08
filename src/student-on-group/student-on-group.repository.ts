@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -27,7 +28,9 @@ type Repository = {
 @Injectable()
 export class StudentOnGroupRepository implements Repository {
   private logger: Logger;
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) {
+    this.logger = new Logger(StudentOnGroupRepository.name);
+  }
 
   async findFirst(
     request: Prisma.StudentOnGroupFindFirstArgs,
@@ -75,6 +78,7 @@ export class StudentOnGroupRepository implements Repository {
       throw error;
     }
   }
+
   async create(
     request: Prisma.StudentOnGroupCreateArgs,
   ): Promise<StudentOnGroup> {
@@ -83,6 +87,11 @@ export class StudentOnGroupRepository implements Repository {
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new BadRequestException(
+            'This student has already been in the group',
+          );
+        }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
         );
