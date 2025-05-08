@@ -2,6 +2,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   RequestCreateAttendanceTable,
@@ -14,6 +15,7 @@ import {
 import { AttendanceTable, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { NotFoundError } from 'rxjs';
 
 type Repository = {
   getAttendanceTables(
@@ -87,6 +89,10 @@ export class AttendanceTableRepository implements Repository {
           id: request.attendanceTableId,
         },
       });
+
+      if (!table) {
+        throw new NotFoundException('attendanceTableId not found');
+      }
 
       const [studentOnSubjects, rows] = await Promise.all([
         this.prisma.studentOnSubject.findMany({
