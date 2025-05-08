@@ -138,7 +138,6 @@ export class SchoolRepository implements SchoolRepositoryType {
           schoolId: schoolId,
         },
       });
-
       for (const subject of subjects) {
         await this.subjectService.subjectRepository.deleteSubject({
           subjectId: subject.id,
@@ -152,6 +151,12 @@ export class SchoolRepository implements SchoolRepositoryType {
       }
 
       await this.prisma.task.deleteMany({
+        where: {
+          schoolId: schoolId,
+        },
+      });
+
+      await this.prisma.memberOnTeam.deleteMany({
         where: {
           schoolId: schoolId,
         },

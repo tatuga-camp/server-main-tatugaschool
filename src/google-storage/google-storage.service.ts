@@ -212,7 +212,6 @@ export class GoogleStorageService {
     input: InputDeleteFileOnStorage,
   ): Promise<{ message: string }> {
     try {
-      console.log(input);
       if (!input.fileName.includes('storage.googleapis.com')) {
         return { message: 'URL file is not from google storage' };
       }
@@ -220,7 +219,6 @@ export class GoogleStorageService {
       const parts = input.fileName.split('/');
       const fileName = parts.slice(4).join('/');
 
-      console.log(fileName);
       bucket
         .file(fileName)
         .delete()

@@ -73,7 +73,6 @@ export class TeacherOnSubjectService {
         });
 
       if (!memberOnSubject || memberOnSubject.status !== 'ACCEPT') {
-        console.log(memberOnSubject);
         throw new ForbiddenException("You're not a teacher on this subject");
       }
       return;
