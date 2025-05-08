@@ -58,9 +58,10 @@ jobs:
           VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
           VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
           NODE_ENV: test
-        run: echo ${{ secrets.VAPID_PUBLIC_KEY }}  
-        run: echo ${{ secrets.EMAIL_NAME_SERVICE }}
-        run: npm run docker:build:run:test
+        run: |
+          echo $VAPID_PUBLIC_KEY  
+          echo $EMAIL_NAME_SERVICE
+          npm run docker:build:run:test
 
       # Run the POSTMAN Collection
       - name: Run Postman Collection
