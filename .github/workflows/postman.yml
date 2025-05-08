@@ -73,13 +73,3 @@ jobs:
           API_KEY: ${{secrets.POSTMAN_API_KEY}}
         run: |
           newman run https://api.getpostman.com/collections/$COLLECTION_UID?apikey=$API_KEY --environment https://api.getpostman.com/environments/$ENVIRONMENT_UID?apikey=$API_KEY –suppress-exit-code –reporters htmlextra –reporter-htmlextra-export testResults/htmlReport.html
-
-            # Upload the contents of Test Results directory to workspace
-      - name: Output the Result Details
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: RunReports
-          path: testResults
-
-      - name: Stop and remove Docker container
-        run: npm run docker:stop:test:ci
