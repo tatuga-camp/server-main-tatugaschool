@@ -1,5 +1,5 @@
 # Name of the GitHub Actions
-name: Automated API tests on Mock School Delete Case
+name: Automated API tests on Mock Basic User
 
 # Set the actions that triggers the workflow
 on:
@@ -68,7 +68,7 @@ jobs:
       # Run the POSTMAN Collection
       - name: Run Postman Collection
         env:
-          COLLECTION_UID: 37935730-554c9a4f-9c80-451d-a58e-bf21b9966c12
+          COLLECTION_UID: 37935730-d3db3012-849e-4a56-9787-33b317d4abaf
           ENVIRONMENT_UID: 19610448-7e19cd20-f24a-4726-a730-f51baa7003cc
           API_KEY: ${{secrets.POSTMAN_API_KEY}}
         run: |
