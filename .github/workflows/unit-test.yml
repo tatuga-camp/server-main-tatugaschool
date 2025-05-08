@@ -1,7 +1,7 @@
 name: Run Unit Tests
 on: pull_request
 env:
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DATABASE_URL: mongodb://root:prisma@localhost:27017/database_TATUGA_SCHOOL?authSource=admin&retryWrites=true&w=majority
   CLIENT_URL: ${{ secrets.CLIENT_URL }}
   EMAIL_NAME_SERVICE: ${{ secrets.EMAIL_NAME_SERVICE }}
   EMAIL_PASSWORD_SERVICE: ${{ secrets.EMAIL_PASSWORD_SERVICE }}
