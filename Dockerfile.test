@@ -9,7 +9,7 @@ COPY package*.json ./
 
 # Install app dependencies
 ENV NODE_ENV=development
-RUN npm ic
+RUN npm ci
 COPY prisma ./prisma/
 RUN npx prisma generate
 RUN npm install -g @nestjs/cli
