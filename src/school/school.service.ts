@@ -349,7 +349,9 @@ export class SchoolService {
       const school = await this.schoolRepository.getSchoolById({
         schoolId: dto.schoolId,
       });
-
+      if (!school) {
+        throw new NotFoundException('school not found');
+      }
       const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: school.id,
