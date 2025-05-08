@@ -54,8 +54,8 @@ jobs:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           WHEEL_OF_NAME_SECRET_KEY: ${{ secrets.WHEEL_OF_NAME_SECRET_KEY }}
-          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_PUBLIC_KEY: BGLXG3cbb9SjjKjOIwai-k51C1MlXFx8OPXGLtiS38EFWq921XTLWhkLLaQ269cK7ZJhACI9IXsDandcOKVWtB0
+          VAPID_PRIVATE_KEY: X4NYqE-cMShDcD-FO3iCFnOVIBFO1IM7M2vb_xC917g
           VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
           NODE_ENV: test
         run: |
