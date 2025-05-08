@@ -57,7 +57,7 @@ export class StudentOnGroupService {
         subjectId: unit.subjectId,
       });
 
-      return await this.studentOnGroupRepository.create({
+      const create = await this.studentOnGroupRepository.create({
         data: {
           ...dto,
           title: studentOnSubject.title,
@@ -72,6 +72,8 @@ export class StudentOnGroupService {
           studentId: studentOnSubject.studentId,
         },
       });
+
+      return create;
     } catch (error) {
       this.logger.error(error);
       throw error;
