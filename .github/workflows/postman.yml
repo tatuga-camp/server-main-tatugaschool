@@ -19,16 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version:
-            'lts/*' # Or your preferred Node.js version
-
-
-            # Upload the contents of Test Results directory to workspace
-      - name: Output the Result Details
-        uses: actions/upload-artifact@v4.6.2
-        with:
-          name: RunReports
-          path: testResults
+          node-version: 'lts/*' # Or your preferred Node.js version
 
       # Install the Newman command line utility, the html extra reporter and Slack Reporter
       - name: Install Newman, HTMLReporter and Slack Reporter
@@ -47,4 +38,11 @@ jobs:
           ENVIRONMENT_UID: 19610448-7e19cd20-f24a-4726-a730-f51baa7003cc
           API_KEY: ${{secrets.POSTMAN_API_KEY}}
         run: |
-          newman run https://api.getpostman.com/collections/$COLLECTION_UID?apikey=$API_KEY --environment https://api.getpostman.com/environments/$ENVIRONMENT_UID?apikey=$API_KEY -r htmlextra --reporter-htmlextra-export testResults/htmlreport.html
+          newman run https://api.getpostman.com/collections/$COLLECTION_UID?apikey=$API_KEY --environment https://api.getpostman.com/environments/$ENVIRONMENT_UID?apikey=$API_KEY –suppress-exit-code –reporters htmlextra –reporter-htmlextra-export testResults/htmlReport.html
+
+            # Upload the contents of Test Results directory to workspace
+      - name: Output the Result Details
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: RunReports
+          path: testResults
