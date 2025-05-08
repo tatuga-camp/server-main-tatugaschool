@@ -19,6 +19,11 @@ env:
   STUDENT_JWT_ACCESS_SECRET: ${{ secrets.STUDENT_JWT_ACCESS_SECRET }}
   STUDENT_JWT_REFRESH_SECRET: ${{ secrets.STUDENT_JWT_REFRESH_SECRET }}
   STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+  STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+  WHEEL_OF_NAME_SECRET_KEY: ${{ secrets.WHEEL_OF_NAME_SECRET_KEY }}
+  VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+  VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+  VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
   NODE_ENV: test
 jobs:
   test: # Renamed from 'build' for clarity, though 'build' would also work
