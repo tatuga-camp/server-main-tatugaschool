@@ -60,6 +60,11 @@ jobs:
           NODE_ENV: test
         run: npm run docker:build:run:test
 
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting 30 seconds for server to start..."
+          sleep 30
+
       # Run the POSTMAN Collection
       - name: Run Postman Collection
         env:
@@ -75,3 +80,6 @@ jobs:
         with:
           name: RunReports
           path: testResults
+
+      - name: Stop and remove Docker container
+        run: npm run docker:stop:test:ci
