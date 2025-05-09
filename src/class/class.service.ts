@@ -141,10 +141,6 @@ export class ClassService {
         exsitingClasses.length + 1,
       );
 
-      if (member.role !== 'ADMIN') {
-        throw new ForbiddenException("You're not allowed to create class");
-      }
-
       return await this.classRepository.create(createClassDto);
     } catch (error) {
       this.logger.error(error);
@@ -204,10 +200,6 @@ export class ClassService {
         schoolId: classroom.schoolId,
       });
 
-      if (member.role !== 'ADMIN') {
-        throw new ForbiddenException('You are not allowed to reorder class');
-      }
-
       const result = await Promise.allSettled(
         dto.classIds.map(async (classId, index) => {
           return await this.classRepository.update({
@@ -243,9 +235,6 @@ export class ClassService {
         schoolId: classroom.schoolId,
       });
 
-      if (member.role !== 'ADMIN') {
-        throw new ForbiddenException("You're not allowed to update class");
-      }
       return await this.classRepository.update({
         where: { id: dto.query.classId },
         data: dto.body,
@@ -270,10 +259,6 @@ export class ClassService {
         user: user,
         schoolId: classroom.schoolId,
       });
-
-      if (member.role !== 'ADMIN') {
-        throw new ForbiddenException('You are not allowed to delete class');
-      }
 
       await this.classRepository.delete({ classId: dto.classId });
       this.sendNotificationWhenClassDelete(classroom);
