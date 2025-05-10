@@ -141,7 +141,10 @@ export class ClassService {
         exsitingClasses.length + 1,
       );
 
-      return await this.classRepository.create(createClassDto);
+      return await this.classRepository.create({
+        ...createClassDto,
+        userId: user.id,
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -259,6 +262,16 @@ export class ClassService {
         user: user,
         schoolId: classroom.schoolId,
       });
+
+      if (
+        classroom.userId &&
+        member.role !== 'ADMIN' &&
+        member.userId !== user.id
+      ) {
+        throw new ForbiddenException(
+          'Only admin of this school and the creator of this classroom can delete',
+        );
+      }
 
       await this.classRepository.delete({ classId: dto.classId });
       this.sendNotificationWhenClassDelete(classroom);
