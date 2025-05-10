@@ -45,6 +45,7 @@ model User {
   commentOnAssignments     CommentOnAssignment[]
   SubscriptionNotification SubscriptionNotification[]
   feedbacks                Feedback[]
+  classes                  Class[]
 }
 
 enum Language {
@@ -170,6 +171,9 @@ model Class {
 
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
+
+  userId String? @db.ObjectId
+  user   User?   @relation(fields: [userId], references: [id])
 
   subjects          Subject[]
   students          Student[]

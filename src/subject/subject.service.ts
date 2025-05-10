@@ -565,11 +565,40 @@ export class SubjectService {
 
   async deleteSubject(dto: DeleteSubjectDto, user: User): Promise<Subject> {
     try {
+      const subject = await this.subjectRepository.getSubjectById({
+        subjectId: dto.subjectId,
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
 
+      const memberOnSchool =
+        await this.memberOnSchoolService.memberOnSchoolRepository.findFirst({
+          where: {
+            schoolId: subject.schoolId,
+            userId: user.id,
+            status: 'ACCEPT',
+          },
+        });
+
+      if (!memberOnSchool) {
+        throw new ForbiddenException('You are not member of this school');
+      }
+
+      if (
+        subject.userId &&
+        memberOnSchool.role !== 'ADMIN' &&
+        subject.userId !== user.id
+      ) {
+        throw new ForbiddenException(
+          'Only admin of this school and the creator of this subject can delete',
+        );
+      }
       const remove = await this.subjectRepository.deleteSubject({
         subjectId: dto.subjectId,
       });

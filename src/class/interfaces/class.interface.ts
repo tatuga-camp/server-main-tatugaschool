@@ -3,6 +3,7 @@ export interface RequestCreateClass {
   level: string;
   description?: string;
   schoolId: string;
+  userId: string;
 }
 
 export interface RequestUpdateClass {
