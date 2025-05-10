@@ -572,31 +572,18 @@ export class SubjectService {
       if (!subject) {
         throw new NotFoundException('Subject not found');
       }
-      await this.teacherOnSubjectService.ValidateAccess({
-        userId: user.id,
-        subjectId: dto.subjectId,
-      });
-
-      const memberOnSchool =
-        await this.memberOnSchoolService.memberOnSchoolRepository.findFirst({
-          where: {
-            schoolId: subject.schoolId,
-            userId: user.id,
-            status: 'ACCEPT',
-          },
+      const tracherOnSubject =
+        await this.teacherOnSubjectService.ValidateAccess({
+          userId: user.id,
+          subjectId: dto.subjectId,
         });
 
-      if (!memberOnSchool) {
-        throw new ForbiddenException('You are not member of this school');
-      }
-
       if (
-        subject.userId &&
-        memberOnSchool.role !== 'ADMIN' &&
-        subject.userId !== user.id
+        tracherOnSubject !== 'admin-school' &&
+        tracherOnSubject.role !== 'ADMIN'
       ) {
         throw new ForbiddenException(
-          'Only admin of this school and the creator of this subject can delete',
+          'Only admin of this school and admin of this subject can delete',
         );
       }
       const remove = await this.subjectRepository.deleteSubject({

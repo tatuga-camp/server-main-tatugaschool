@@ -43,7 +43,7 @@ export class TeacherOnSubjectService {
   }: {
     userId: string;
     subjectId: string;
-  }): Promise<void> {
+  }): Promise<TeacherOnSubject | 'admin-school'> {
     try {
       const subject = await this.prisma.subject.findUnique({
         where: {
@@ -63,7 +63,7 @@ export class TeacherOnSubjectService {
       }
 
       if (memberOnSchool.role === 'ADMIN') {
-        return;
+        return 'admin-school';
       }
 
       const memberOnSubject =
@@ -75,7 +75,7 @@ export class TeacherOnSubjectService {
       if (!memberOnSubject || memberOnSubject.status !== 'ACCEPT') {
         throw new ForbiddenException("You're not a teacher on this subject");
       }
-      return;
+      return memberOnSubject;
     } catch (error) {
       this.logger.error(error.message);
       throw error;
@@ -128,7 +128,7 @@ export class TeacherOnSubjectService {
     user: User,
   ) {
     try {
-      if (user.role !== 'ADMIN' && user.id !== dto.teacherId) {
+      if (user.id !== dto.teacherId) {
         throw new ForbiddenException("You're not allowed to view this data");
       }
       const teacherOnSubject =
@@ -193,7 +193,7 @@ export class TeacherOnSubjectService {
           subjectId: dto.subjectId,
         });
 
-      if (!memberOnSubject && user.role !== 'ADMIN') {
+      if (!memberOnSubject && memberOnSchool.role !== 'ADMIN') {
         throw new ForbiddenException(
           "You're not a teacher on this subject or you're not an admin",
         );
