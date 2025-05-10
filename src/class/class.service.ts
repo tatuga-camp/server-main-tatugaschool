@@ -266,13 +266,18 @@ export class ClassService {
       if (
         classroom.userId &&
         member.role !== 'ADMIN' &&
-        member.userId !== user.id
+        classroom.userId !== user.id
       ) {
         throw new ForbiddenException(
           'Only admin of this school and the creator of this classroom can delete',
         );
       }
 
+      if (!classroom.userId && member.role !== 'ADMIN') {
+        throw new ForbiddenException(
+          'Only admin of this school and the creator of this classroom can delete',
+        );
+      }
       await this.classRepository.delete({ classId: dto.classId });
       this.sendNotificationWhenClassDelete(classroom);
       return classroom;
