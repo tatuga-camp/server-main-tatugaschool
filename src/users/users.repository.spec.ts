@@ -14,7 +14,19 @@ describe('Users repository', () => {
   beforeAll(async () => {
     userRepository = new UserRepository(prismaService);
   });
-
+  afterAll(async () => {
+    try {
+      if (userEmail) {
+        await prisma.user.deleteMany({ 
+          where: { 
+            email: userEmail 
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Cleanup failed:', error);
+    }
+  });
   describe('createUser', () => {
     beforeEach(async () => {
       await prisma.user.deleteMany({ where: { email: userEmail } });
