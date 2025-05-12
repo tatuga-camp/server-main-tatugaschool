@@ -50,6 +50,9 @@ jobs:
       - name: Create Server
         run: npm run docker:build:run:test
 
+      - name: Sleep
+        run: sleep 10
+        
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
