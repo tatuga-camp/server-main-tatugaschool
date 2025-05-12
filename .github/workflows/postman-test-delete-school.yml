@@ -1,0 +1,92 @@
+name: Automated API tests using Postman CLI
+
+on: pull_request
+
+env:
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  CLIENT_URL: ${{ secrets.CLIENT_URL }}
+  EMAIL_NAME_SERVICE: ${{ secrets.EMAIL_NAME_SERVICE }}
+  EMAIL_PASSWORD_SERVICE: ${{ secrets.EMAIL_PASSWORD_SERVICE }}
+  GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+  GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+  GOOGLE_CALL_BACK: ${{ secrets.GOOGLE_CALL_BACK }}
+  GOOGLE_CLOUD_PROJECT_ID: ${{ secrets.GOOGLE_CLOUD_PROJECT_ID }}
+  GOOGLE_CLOUD_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_CLOUD_PRIVATE_KEY_ID }}
+  GOOGLE_CLOUD_PRIVATE_KEY_ENCODE: ${{ secrets.GOOGLE_CLOUD_PRIVATE_KEY_ENCODE }}
+  GOOGLE_CLOUD_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLOUD_CLIENT_EMAIL }}
+  GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET: ${{ secrets.GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET }}
+  GOOGLE_CLOUD_CLIENT_ID: ${{ secrets.GOOGLE_CLOUD_CLIENT_ID }}
+  JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+  JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+  STUDENT_JWT_ACCESS_SECRET: ${{ secrets.STUDENT_JWT_ACCESS_SECRET }}
+  STUDENT_JWT_REFRESH_SECRET: ${{ secrets.STUDENT_JWT_REFRESH_SECRET }}
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+  STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+  WHEEL_OF_NAME_SECRET_KEY: ${{ secrets.WHEEL_OF_NAME_SECRET_KEY }}
+  VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+  VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+  VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
+  NODE_ENV: test
+
+jobs:
+  automated-postman-test-delete-school:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Github Action
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Or your preferred Node.js version
+
+      - name: Check Node version
+        run: node --version
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Create Server
+        run: npm run docker:build:run:test
+
+      - name: Sleep
+        run: sleep 10
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+
+      - name: Run API tests
+        run: |
+          postman collection run "37935730-d3db3012-849e-4a56-9787-33b317d4abaf" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
+
+  automated-postman-user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Github Action
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Or your preferred Node.js version
+
+      - name: Check Node version
+        run: node --version
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Create Server
+        run: npm run docker:build:run:test
+
+      - name: Sleep
+        run: sleep 10
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+
+      - name: Run API tests
+        run: |
+          postman collection run "37935730-554c9a4f-9c80-451d-a58e-bf21b9966c12" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
