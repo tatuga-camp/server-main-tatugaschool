@@ -29,7 +29,7 @@ env:
   NODE_ENV: test
 
 jobs:
-  automated-api-tests:
+  automated-postman-test-delete-school:
     runs-on: ubuntu-latest
     steps:
       - name: Setup Github Action
@@ -52,10 +52,41 @@ jobs:
 
       - name: Sleep
         run: sleep 10
-        
+
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
       - name: Run API tests
         run: |
           postman collection run "37935730-d3db3012-849e-4a56-9787-33b317d4abaf" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
+
+  automated-postman-user:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Github Action
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Or your preferred Node.js version
+
+      - name: Check Node version
+        run: node --version
+
+      - name: Install Postman CLI
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      - name: Create Server
+        run: npm run docker:build:run:test
+
+      - name: Sleep
+        run: sleep 10
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+
+      - name: Run API tests
+        run: |
+          postman collection run "37935730-554c9a4f-9c80-451d-a58e-bf21b9966c12" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
