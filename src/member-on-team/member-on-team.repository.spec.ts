@@ -141,6 +141,7 @@ describe('MemberOnTeamRepository', () => {
           where: { id: memberOnTeamId },
         });
         expect(deleted.id).toBe(memberOnTeamId);
+        memberOnTeamId = ''; // ป้องกันลบซ้ำใน afterAll
       } catch (error) {
         console.error('Delete failed:', error);
         throw error;
