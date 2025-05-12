@@ -345,27 +345,29 @@ export class AssignmentService {
         where: { subjectId: assignment.subjectId },
       });
 
-      const createStudentOnAssignments = studentOnSubjects.map(
-        (student): Prisma.StudentOnAssignmentCreateManyInput => {
-          return {
-            title: student.title,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            number: student.number,
-            blurHash: student.blurHash,
-            photo: student.photo,
-            schoolId: student.schoolId,
-            assignmentId: assignment.id,
-            studentId: student.studentId,
-            studentOnSubjectId: student.id,
-            subjectId: student.subjectId,
-          };
-        },
-      );
+      if (studentOnSubjects.length > 0) {
+        const createStudentOnAssignments = studentOnSubjects.map(
+          (student): Prisma.StudentOnAssignmentCreateManyInput => {
+            return {
+              title: student.title,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              number: student.number,
+              blurHash: student.blurHash,
+              photo: student.photo,
+              schoolId: student.schoolId,
+              assignmentId: assignment.id,
+              studentId: student.studentId,
+              studentOnSubjectId: student.id,
+              subjectId: student.subjectId,
+            };
+          },
+        );
 
-      await this.studentOnAssignmentRepository.createMany({
-        data: createStudentOnAssignments,
-      });
+        await this.studentOnAssignmentRepository.createMany({
+          data: createStudentOnAssignments,
+        });
+      }
 
       return assignment;
     } catch (error) {
