@@ -16,6 +16,7 @@ import { StudentService } from '../student/student.service';
 import { GradeService } from '../grade/grade.service';
 import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
 import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -35,6 +36,7 @@ import { ScoreOnStudentService } from '../score-on-student/score-on-student.serv
     SchoolService,
     StudentService,
     GradeService,
+    UsersService,
   ],
   controllers: [AssignmentController],
 })
