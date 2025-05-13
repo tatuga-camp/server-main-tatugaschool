@@ -166,28 +166,6 @@ describe('MemberOnSchoolRepository', () => {
     });
   });
 
-  //   describe('getAllMemberOnSchoolsBySchoolId', () => {
-  //     it('should get all members with user info by schoolId', async () => {
-  //       try {
-  //         const result = await memberOnSchoolRepository.getAllMemberOnSchoolsBySchoolId({
-  //             schoolId: schoolId,
-  //         });
-
-  //         expect(Array.isArray(result)).toBe(true);
-  //         expect(result[0]).toHaveProperty('user');
-
-  //         let firstMember = result[0];
-  //         expect(firstMember).toHaveProperty('id');
-  //         expect(firstMember).toHaveProperty('email');
-  //         expect(firstMember).toHaveProperty('role');
-  //         expect(firstMember.schoolId).toBe(schoolId);
-  //       } catch (error) {
-  //         console.error(error);
-  //         throw error;
-  //       }
-  //     });
-  //   });
-
   describe('getAllMemberOnSchoolsBySchoolId', () => {
     it('should get all members (may or may not include user)', async () => {
       try {
@@ -220,8 +198,6 @@ describe('MemberOnSchoolRepository', () => {
       }
     });
   });
-  
-  
 
   describe('getByUserId', () => {
     it('should get members by userId', async () => {
