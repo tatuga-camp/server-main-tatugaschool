@@ -16,12 +16,17 @@ import { InputDeleteFileOnStorage } from './interfaces';
 @Injectable()
 export class GoogleStorageService {
   private bucket: Bucket;
-  logger: Logger;
+  private logger: Logger;
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {
-    this.initializeCloudStorage();
+    if (this.configService.get('NODE_ENV') !== 'test') {
+      this.initializeCloudStorage();
+    } else {
+      console.log('Initial Google Stroage will not work under testing');
+    }
+
     this.logger = new Logger(GoogleStorageService.name);
   }
 
