@@ -13,6 +13,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { SkillService } from '../skill/skill.service';
 import { GradeService } from '../grade/grade.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -29,6 +30,7 @@ import { GradeService } from '../grade/grade.service';
     TeacherOnSubjectService,
     SkillService,
     GradeService,
+    UsersService,
   ],
   controllers: [CareerController],
 })

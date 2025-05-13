@@ -12,6 +12,7 @@ import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StudentOnAssignmentController } from './student-on-assignment.controller';
 import { StudentOnAssignmentService } from './student-on-assignment.service';
 import { GradeService } from '../grade/grade.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -27,6 +28,7 @@ import { GradeService } from '../grade/grade.service';
     WheelOfNameService,
     AttendanceTableService,
     GradeService,
+    UsersService,
   ],
   controllers: [StudentOnAssignmentController],
 })

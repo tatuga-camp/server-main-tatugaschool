@@ -10,6 +10,7 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { ClassService } from '../class/class.service';
 import { HttpModule } from '@nestjs/axios';
 import { GradeService } from '../grade/grade.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { GradeService } from '../grade/grade.service';
     TeacherOnSubjectService,
     ClassService,
     GradeService,
+    UsersService,
   ],
   controllers: [SchoolController],
   exports: [SchoolService],

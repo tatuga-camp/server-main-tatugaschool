@@ -13,6 +13,7 @@ import { SchoolService } from '../school/school.service';
 import { GradeService } from '../grade/grade.service';
 import { StudentService } from '../student/student.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -29,6 +30,7 @@ import { StudentOnSubjectService } from '../student-on-subject/student-on-subjec
     StudentService,
     UnitOnGroupService,
     StudentOnSubjectService,
+    UsersService,
   ],
 
   controllers: [UnitOnGroupController],

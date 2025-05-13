@@ -11,6 +11,7 @@ import { SchoolService } from '../school/school.service';
 import { HttpModule } from '@nestjs/axios';
 import { StudentService } from '../student/student.service';
 import { SubjectModule } from '../subject/subject.module';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule, forwardRef(() => SubjectModule)],
@@ -24,6 +25,7 @@ import { SubjectModule } from '../subject/subject.module';
     SchoolService,
     StudentService,
     SubjectService,
+    UsersService,
   ],
   controllers: [GradeController],
 })
