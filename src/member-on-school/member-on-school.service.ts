@@ -85,27 +85,35 @@ export class MemberOnSchoolService {
     url: URL;
     members: MemberOnSchool[];
   }): Promise<void> {
-    const users = await this.userRepository.findMany({
-      where: {
-        OR: members.map((member) => ({ id: member.userId })),
-      },
-    });
+    try {
+      const users = await this.userRepository.findMany({
+        where: {
+          OR: members.map((member) => ({ id: member.userId })),
+        },
+      });
 
-    const notificaitons = await this.pushService.pushRepository.findMany({
-      where: {
-        OR: users.map((user) => ({ userId: user.id })),
-      },
-    });
-    const notifications = notificaitons.map((subscription) =>
-      this.pushService.sendNotification(subscription.data as PushSubscription, {
-        title: title,
-        body: body,
-        url,
-        groupId: schoolId,
-      }),
-    );
+      const notificaitons = await this.pushService.pushRepository.findMany({
+        where: {
+          OR: users.map((user) => ({ userId: user.id })),
+        },
+      });
+      const notifications = notificaitons.map((subscription) =>
+        this.pushService.sendNotification(
+          subscription.data as PushSubscription,
+          {
+            title: title,
+            body: body,
+            url,
+            groupId: schoolId,
+          },
+        ),
+      );
 
-    await Promise.all(notifications);
+      await Promise.all(notifications);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getMemberOnSchoolByUserId(
@@ -289,7 +297,7 @@ export class MemberOnSchoolService {
         title: `Your school ${school.title} has a new member`,
         body: `${newMember.firstName} ${newMember.lastName} has been invited to join the school`,
         url: new URL(`${process.env.CLIENT_URL}/account?menu=Invitations`),
-      });
+      }).catch((error) => console.log(error));
 
       return create;
     } catch (error) {

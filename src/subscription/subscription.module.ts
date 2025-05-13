@@ -11,6 +11,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { HttpModule } from '@nestjs/axios';
 import { GradeService } from '../grade/grade.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -25,6 +26,7 @@ import { GradeService } from '../grade/grade.service';
     AttendanceTableService,
     TeacherOnSubjectService,
     GradeService,
+    UsersService,
   ],
   controllers: [SubscriptionController],
 })

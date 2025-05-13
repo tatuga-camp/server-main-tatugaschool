@@ -26,6 +26,7 @@ import { GoogleStorageService } from '../google-storage/google-storage.service';
 import { SubjectRepository } from '../subject/subject.repository';
 import { AssignmentRepository } from '../assignment/assignment.repository';
 import { SchoolService } from '../school/school.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class ClassService {
@@ -43,6 +44,7 @@ export class ClassService {
     private emailService: EmailService,
     private pushService: PushService,
     private googleStorageService: GoogleStorageService,
+    private userService: UsersService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
   ) {
@@ -157,9 +159,9 @@ export class ClassService {
       isAchieved: boolean;
     },
     user: User,
-  ): Promise<(Class & { studentNumbers: number })[]> {
+  ): Promise<(Class & { studentNumbers: number; creator: User | null })[]> {
     try {
-      const member = await this.memberOnSchoolService.validateAccess({
+      await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: dto.schoolId,
       });
@@ -180,8 +182,22 @@ export class ClassService {
           return { ...c, studentNumbers };
         }),
       );
+      const creators = await Promise.all([
+        ...classes
+          .filter((c) => c.userId)
+          .map((c) =>
+            this.userService.userRepository.findById({
+              id: c.userId,
+            }),
+          ),
+      ]);
 
-      return classesWithStudetNumber;
+      return classesWithStudetNumber.map((c) => {
+        return {
+          ...c,
+          creator: creators.find((creator) => creator.id === c.userId) ?? null,
+        };
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

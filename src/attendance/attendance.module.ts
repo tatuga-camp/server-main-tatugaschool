@@ -14,6 +14,7 @@ import { SchoolService } from '../school/school.service';
 import { StudentService } from '../student/student.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { GradeService } from '../grade/grade.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -31,6 +32,7 @@ import { GradeService } from '../grade/grade.service';
     SchoolService,
     StudentService,
     GradeService,
+    UsersService,
   ],
   controllers: [AttendanceController],
 })
