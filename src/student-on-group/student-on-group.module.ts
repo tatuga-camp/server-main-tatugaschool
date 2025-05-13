@@ -14,6 +14,7 @@ import { GradeService } from '../grade/grade.service';
 import { StudentService } from '../student/student.service';
 import { UnitOnGroupService } from '../unit-on-group/unit-on-group.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [HttpModule],
@@ -31,6 +32,7 @@ import { StudentOnSubjectService } from '../student-on-subject/student-on-subjec
     StudentOnGroupService,
     UnitOnGroupService,
     StudentOnSubjectService,
+    UsersService,
   ],
   controllers: [StudentOnGroupController],
 })
