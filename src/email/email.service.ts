@@ -24,6 +24,12 @@ export class EmailService {
     html: string;
   }): Promise<void> {
     try {
+      if (this.config.get('NODE_ENV') !== 'production') {
+        this.logger.log(
+          `Email will not be sent to ${to} because you are not in production  env`,
+        );
+        return;
+      }
       const mailOptions: ISendMailOptions = {
         from: this.config.get('EMAIL_NAME_SERVICE'),
         to,
