@@ -1,17 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { google } from 'googleapis';
-import { ISendMailOptions, MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
-
+import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
 @Injectable()
 export class EmailService {
   private logger: Logger;
-
-  constructor(
-    private mailService: MailerService,
-    private config: ConfigService,
-  ) {
+  private mailerSend: MailerSend;
+  constructor(private config: ConfigService) {
     this.logger = new Logger(EmailService.name);
+    this.mailerSend = new MailerSend({
+      apiKey: this.config.get('EMAIL_API_KEY'),
+    });
   }
 
   async sendMail({
@@ -30,14 +28,17 @@ export class EmailService {
         );
         return;
       }
-      const mailOptions: ISendMailOptions = {
-        from: this.config.get('EMAIL_NAME_SERVICE'),
-        to,
-        subject,
-        html,
-      };
+      const recipients = [new Recipient(to, to.split('@')[0])];
+      const sender = new Sender('support@tatugaschool.com', 'support');
 
-      await this.mailService.sendMail(mailOptions);
+      const emailParams = new EmailParams()
+        .setFrom(sender)
+        .setTo(recipients)
+        .setSubject(subject)
+        .setHtml(html);
+
+      await this.mailerSend.email.send(emailParams);
+
       this.logger.log(`Email sent to ${to}`);
     } catch (error) {
       this.logger.error(error);
