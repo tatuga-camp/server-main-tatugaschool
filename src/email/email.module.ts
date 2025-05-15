@@ -11,8 +11,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
       imports: [ConfigModule],
       useFactory: async (config: ConfigService) => ({
         transport: {
-          host: 'smtp.gmail.com',
-          port: 465,
+          host: 'smtp.mailersend.net',
+          port: 587,
           auth: {
             user: config.get<string>('EMAIL_NAME_SERVICE'),
             pass: config.get<string>('EMAIL_PASSWORD_SERVICE'),
