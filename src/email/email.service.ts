@@ -28,7 +28,7 @@ export class EmailService {
         );
         return;
       }
-      const recipients = [new Recipient(to, to.split('@')[0])];
+      const recipients = [new Recipient(to)];
       const sender = new Sender('support@tatugaschool.com', 'support');
 
       const emailParams = new EmailParams()
