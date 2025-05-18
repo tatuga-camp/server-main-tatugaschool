@@ -29,7 +29,7 @@ export class EmailService {
         return;
       }
       const recipients = [new Recipient(to)];
-      const sender = new Sender('support@tatugaschool.com', 'support');
+      const sender = new Sender('support@tatugaschool.com', 'Tatuga School');
 
       const emailParams = new EmailParams()
         .setFrom(sender)
