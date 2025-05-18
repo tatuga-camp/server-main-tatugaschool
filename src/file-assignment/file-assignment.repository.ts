@@ -149,25 +149,30 @@ export class FileAssignmentRepository implements Repository {
     assignmentId: string;
   }): Promise<{ message: string }> {
     try {
-      const filesOnAssignment = await this.prisma.fileOnAssignment.findMany({
+      const filesOnAssignments = await this.prisma.fileOnAssignment.findMany({
         where: {
           assignmentId: request.assignmentId,
         },
       });
+
+      for (const file of filesOnAssignments) {
+        const checkExsit = await this.prisma.fileOnAssignment.findMany({
+          where: {
+            url: file.url,
+          },
+        });
+        if (checkExsit.length === 1) {
+          await this.googleStorageService.DeleteFileOnStorage({
+            fileName: file.url,
+          });
+        }
+      }
 
       await this.prisma.fileOnAssignment.deleteMany({
         where: {
           assignmentId: request.assignmentId,
         },
       });
-
-      await Promise.all(
-        filesOnAssignment.map(async (file) => {
-          await this.googleStorageService.DeleteFileOnStorage({
-            fileName: file.url,
-          });
-        }),
-      );
 
       return { message: 'Files deleted' };
     } catch (error) {
