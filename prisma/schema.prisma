@@ -499,7 +499,7 @@ model FileOnAssignment {
   assignmentId String     @db.ObjectId
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
 
-  @@index([assignmentId])
+  @@index([assignmentId, url])
 }
 
 model StudentOnAssignment {
