@@ -544,6 +544,7 @@ model StudentOnAssignment {
 enum StudentAssignmentStatus {
   PENDDING
   SUBMITTED
+  IMPROVED
   REVIEWD
 }
 
