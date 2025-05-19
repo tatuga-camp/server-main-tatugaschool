@@ -322,6 +322,7 @@ export class AssignmentService {
         delete dto?.dueDate;
         delete dto?.weight;
       }
+
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,

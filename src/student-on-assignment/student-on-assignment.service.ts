@@ -76,14 +76,12 @@ export class StudentOnAssignmentService {
   }
 
   private async notifyTeachers({
-    user,
     subjectId,
     title,
     body,
     url,
     assignmentId,
   }: {
-    user: User;
     subjectId: string;
     title: string;
     body: string;
@@ -340,7 +338,6 @@ export class StudentOnAssignmentService {
 
       if (dto.body.status === 'SUBMITTED') {
         await this.notifyTeachers({
-          user: user,
           subjectId: studentOnAssignment.subjectId,
           assignmentId: studentOnAssignment.assignmentId,
           title: 'New Assignment Submitted',
@@ -351,20 +348,24 @@ export class StudentOnAssignmentService {
         });
       }
 
+      let reviewdAt: string | null;
+      let completedAt: string | null;
+      if (dto.body.status === 'REVIEWD') {
+        reviewdAt = new Date().toISOString();
+      }
+      if (dto.body.status === 'SUBMITTED') {
+        completedAt = new Date().toISOString();
+      }
+      if (dto.body.status === 'PENDDING') {
+        reviewdAt = null;
+        completedAt = null;
+      }
       const update = await this.studentOnAssignmentRepository.update({
         where: { id: dto.query.studentOnAssignmentId },
         data: {
           ...dto.body,
-          reviewdAt:
-            dto.body.status === 'REVIEWD'
-              ? new Date().toISOString()
-              : undefined,
-          completedAt:
-            dto.body.status === 'SUBMITTED'
-              ? new Date().toISOString()
-              : dto.body.status === 'PENDDING'
-                ? null
-                : undefined,
+          reviewdAt: reviewdAt,
+          completedAt: completedAt,
         },
       });
 
