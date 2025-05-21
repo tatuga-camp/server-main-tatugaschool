@@ -290,6 +290,16 @@ export class StudentOnSubjectRepository
           ),
       );
 
+      await this.prisma.skillOnStudentAssignment.deleteMany({
+        where: {
+          OR: studentOnAssignments.map((s) => {
+            return {
+              studentOnAssignmentId: s.id,
+            };
+          }),
+        },
+      });
+
       // Delete related studentOnAssignments records
       await this.prisma.studentOnAssignment.deleteMany({
         where: { studentOnSubjectId },
