@@ -771,34 +771,38 @@ describe('School Service', () => {
     let school: School;
 
     beforeAll(async () => {
-      // สร้างโรงเรียนและเพิ่ม user เป็นแอดมิน
-      school = await schoolService.schoolRepository.create({
-        data: {
-          title: 'Initial Title',
-          description: 'Initial Desc',
-          country: 'Thailand',
-          city: 'Bangkok',
-          address: '1 Road',
-          zipCode: '10000',
-          logo: 'logo.png',
-          phoneNumber: '0811111111',
-          plan: 'FREE',
-          billingManagerId: mockUser.id,
-          stripe_customer_id: 'cus_update_test_0001',
-        },
-      });
+      try {
+        // สร้างโรงเรียนและเพิ่ม user เป็นแอดมิน
+        school = await schoolService.schoolRepository.create({
+          data: {
+            title: 'Initial Title',
+            description: 'Initial Desc',
+            country: 'Thailand',
+            city: 'Bangkok',
+            address: '1 Road',
+            zipCode: '10000',
+            logo: 'logo.png',
+            phoneNumber: '0811111111',
+            plan: 'FREE',
+            billingManagerId: mockUser.id,
+            stripe_customer_id: 'cus_update_test_0001',
+          },
+        });
 
-      await memberOnSchoolService.memberOnSchoolRepository.create({
-        userId: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        photo: mockUser.photo,
-        phone: mockUser.phone,
-        schoolId: school.id,
-        role: 'ADMIN',
-        status: 'ACCEPT',
-      });
+        await memberOnSchoolService.memberOnSchoolRepository.create({
+          userId: mockUser.id,
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          photo: mockUser.photo,
+          phone: mockUser.phone,
+          schoolId: school.id,
+          role: 'ADMIN',
+          status: 'ACCEPT',
+        });
+      } catch (error) {
+        throw error;
+      }
     });
 
     it('should update school details successfully', async () => {
@@ -935,43 +939,47 @@ describe('School Service', () => {
 
   describe('deleteSchool', () => {
     it('should delete school successfully if user is admin and only member', async () => {
-      // Mock Stripe del
-      stripeService.customers = {
-        del: jest.fn().mockResolvedValue({ id: 'cus_mocked', deleted: true }),
-      } as any;
+      try {
+        // Mock Stripe del
+        stripeService.customers = {
+          del: jest.fn().mockResolvedValue({ id: 'cus_mocked', deleted: true }),
+        } as any;
 
-      const school = await schoolService.schoolRepository.create({
-        data: {
-          title: 'โรงเรียนทดสอบ',
-          description: 'รายละเอียดโรงเรียนทดสอบ',
-          country: 'Thailand',
-          city: 'Khon Kaen',
-          address: '123 ถนนหลัก ตำบลในเมือง อำเภอเมือง',
-          zipCode: '40000',
-          logo: 'https://example.com/logo.png',
-          blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
-          phoneNumber: '0891234567',
-          stripe_customer_id: 'cus_mocked', // ใช้ค่าเดียวกับ mock
-        },
-      });
+        const school = await schoolService.schoolRepository.create({
+          data: {
+            title: 'โรงเรียนทดสอบ',
+            description: 'รายละเอียดโรงเรียนทดสอบ',
+            country: 'Thailand',
+            city: 'Khon Kaen',
+            address: '123 ถนนหลัก ตำบลในเมือง อำเภอเมือง',
+            zipCode: '40000',
+            logo: 'https://example.com/logo.png',
+            blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
+            phoneNumber: '0891234567',
+            stripe_customer_id: 'cus_mocked', // ใช้ค่าเดียวกับ mock
+          },
+        });
 
-      await memberOnSchoolService.memberOnSchoolRepository.create({
-        userId: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        phone: mockUser.phone,
-        photo: mockUser.photo,
-        schoolId: school.id,
-        role: 'ADMIN',
-        status: 'ACCEPT',
-      });
+        await memberOnSchoolService.memberOnSchoolRepository.create({
+          userId: mockUser.id,
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          phone: mockUser.phone,
+          photo: mockUser.photo,
+          schoolId: school.id,
+          role: 'ADMIN',
+          status: 'ACCEPT',
+        });
 
-      const dto = { schoolId: school.id };
+        const dto = { schoolId: school.id };
 
-      const result = await schoolService.deleteSchool(dto, mockUser);
-      expect(result).toBeDefined();
-      expect(result.id).toBe(school.id);
+        const result = await schoolService.deleteSchool(dto, mockUser);
+        expect(result).toBeDefined();
+        expect(result.id).toBe(school.id);
+      } catch (error) {
+        throw error;
+      }
     });
 
     it('should throw NotFoundException if school does not exist', async () => {

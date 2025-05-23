@@ -2351,99 +2351,103 @@ describe('Assignment Service', () => {
 
     // กรณีสำเร็จ
     it('should reorder assignments successfully', async () => {
-      const school = await schoolService.schoolRepository.create({
-        data: {
-          title: 'Reorder School',
-          description: 'Success reorder',
-          plan: 'FREE',
-          country: 'Thailand',
-          logo: 'logo.png',
-          city: 'Chiang Mai',
-          address: 'Success Rd',
-          zipCode: '50000',
-          phoneNumber: '0888888888',
-          stripe_customer_id: 'cus_success_reorder',
-        },
-      });
+      try {
+        const school = await schoolService.schoolRepository.create({
+          data: {
+            title: 'Reorder School',
+            description: 'Success reorder',
+            plan: 'FREE',
+            country: 'Thailand',
+            logo: 'logo.png',
+            city: 'Chiang Mai',
+            address: 'Success Rd',
+            zipCode: '50000',
+            phoneNumber: '0888888888',
+            stripe_customer_id: 'cus_success_reorder',
+          },
+        });
 
-      await memberOnSchoolService.memberOnSchoolRepository.create({
-        userId: mockUser.id,
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        phone: mockUser.phone,
-        photo: mockUser.photo,
-        schoolId: school.id,
-        role: 'TEACHER',
-        status: 'ACCEPT',
-      });
+        await memberOnSchoolService.memberOnSchoolRepository.create({
+          userId: mockUser.id,
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          phone: mockUser.phone,
+          photo: mockUser.photo,
+          schoolId: school.id,
+          role: 'TEACHER',
+          status: 'ACCEPT',
+        });
 
-      const classroom = await classroomService.classRepository.create({
-        title: 'Reorder Class',
-        level: 'UG',
-        schoolId: school.id,
-        userId: mockUser.id,
-      });
+        const classroom = await classroomService.classRepository.create({
+          title: 'Reorder Class',
+          level: 'UG',
+          schoolId: school.id,
+          userId: mockUser.id,
+        });
 
-      const subject = await subjectService.subjectRepository.createSubject({
-        title: 'Reorder Subject',
-        educationYear: '2024',
-        classId: classroom.id,
-        userId: mockUser.id,
-        schoolId: school.id,
-        code: 'REORD002',
-        description: 'For reorder test',
-      });
+        const subject = await subjectService.subjectRepository.createSubject({
+          title: 'Reorder Subject',
+          educationYear: '2024',
+          classId: classroom.id,
+          userId: mockUser.id,
+          schoolId: school.id,
+          code: 'REORD002',
+          description: 'For reorder test',
+        });
 
-      await teacherOnSubjectService.teacherOnSubjectRepository.create({
-        userId: mockUser.id,
-        subjectId: subject.id,
-        schoolId: school.id,
-        status: 'ACCEPT',
-        role: 'TEACHER',
-        email: mockUser.email,
-        firstName: mockUser.firstName,
-        lastName: mockUser.lastName,
-        photo: mockUser.photo,
-        phone: mockUser.phone,
-        blurHash: 'xyz',
-      });
-
-      const a1 = await assignmentService.assignmentRepository.create({
-        data: {
-          title: 'Assignment 1',
-          description: 'First one',
+        await teacherOnSubjectService.teacherOnSubjectRepository.create({
+          userId: mockUser.id,
           subjectId: subject.id,
           schoolId: school.id,
-          type: 'Assignment',
-          beginDate: new Date(),
-          status: 'Published',
-          order: 1,
-        },
-      });
+          status: 'ACCEPT',
+          role: 'TEACHER',
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          photo: mockUser.photo,
+          phone: mockUser.phone,
+          blurHash: 'xyz',
+        });
 
-      const a2 = await assignmentService.assignmentRepository.create({
-        data: {
-          title: 'Assignment 2',
-          description: 'Second one',
-          subjectId: subject.id,
-          schoolId: school.id,
-          type: 'Assignment',
-          beginDate: new Date(),
-          status: 'Published',
-          order: 2,
-        },
-      });
+        const a1 = await assignmentService.assignmentRepository.create({
+          data: {
+            title: 'Assignment 1',
+            description: 'First one',
+            subjectId: subject.id,
+            schoolId: school.id,
+            type: 'Assignment',
+            beginDate: new Date(),
+            status: 'Published',
+            order: 1,
+          },
+        });
 
-      const dto = { assignmentIds: [a2.id, a1.id] };
-      const reordered = await assignmentService.reorder(dto, mockUser);
+        const a2 = await assignmentService.assignmentRepository.create({
+          data: {
+            title: 'Assignment 2',
+            description: 'Second one',
+            subjectId: subject.id,
+            schoolId: school.id,
+            type: 'Assignment',
+            beginDate: new Date(),
+            status: 'Published',
+            order: 2,
+          },
+        });
 
-      expect(reordered).toBeDefined();
-      expect(reordered.length).toBe(2);
-      expect(reordered[0].id).toBe(a2.id);
-      expect(reordered[0].order).toBe(1);
-      expect(reordered[1].id).toBe(a1.id);
-      expect(reordered[1].order).toBe(2);
+        const dto = { assignmentIds: [a2.id, a1.id] };
+        const reordered = await assignmentService.reorder(dto, mockUser);
+
+        expect(reordered).toBeDefined();
+        expect(reordered.length).toBe(2);
+        expect(reordered[0].id).toBe(a2.id);
+        expect(reordered[0].order).toBe(1);
+        expect(reordered[1].id).toBe(a1.id);
+        expect(reordered[1].order).toBe(2);
+      } catch (error) {
+        throw error;
+      }
     });
   });
 
