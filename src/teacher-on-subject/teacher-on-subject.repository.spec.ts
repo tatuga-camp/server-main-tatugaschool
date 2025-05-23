@@ -15,20 +15,6 @@ describe('TeacherOnSubjectRepository', () => {
     teacherOnSubjectRepository = new TeacherOnSubjectRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (teacherOnSubjectId) {
-        await teacherOnSubjectRepository.delete({
-          teacherOnSubjectId: teacherOnSubjectId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a teacher-on-subject record', async () => {
       try {

@@ -26,18 +26,6 @@ describe('FileOnStudentAssignmentRepository', () => {
     );
   });
 
-  afterAll(async () => {
-    try {
-      if (fileId) {
-        await fileOnStudentAssignmentRepository.delete({
-          fileOnStudentAssignmentId: fileId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create file on student assignment', async () => {
       try {

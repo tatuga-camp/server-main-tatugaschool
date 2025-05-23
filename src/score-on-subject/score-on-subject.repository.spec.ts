@@ -14,20 +14,6 @@ describe('ScoreOnSubjectRepository', () => {
     scoreOnSubjectRepository = new ScoreOnSubjectRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (scoreOnSubjectId) {
-        await scoreOnSubjectRepository.delete({
-          scoreOnSubjectId: scoreOnSubjectId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('createScoreOnSubject', () => {
     it('should create a score-on-subject record', async () => {
       try {

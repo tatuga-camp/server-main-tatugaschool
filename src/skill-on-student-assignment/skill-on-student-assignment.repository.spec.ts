@@ -18,22 +18,6 @@ describe('SkillOnStudentAssignmentRepository', () => {
     );
   });
 
-  afterAll(async () => {
-    try {
-      if (skillOnStudentAssignmentId) {
-        await skillOnStudentAssignmentRepository.delete({
-          where: {
-            id: skillOnStudentAssignmentId,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a skill-on-student-assignment record', async () => {
       try {

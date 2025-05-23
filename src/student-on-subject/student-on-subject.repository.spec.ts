@@ -25,35 +25,13 @@ describe('StudentOnSubjectRepository', () => {
     );
   });
 
-  beforeEach(async () => {
-    await prismaService.studentOnSubject.deleteMany({
-      where: {
-        subjectId: subjectId1,
-      },
-    });
-  });
-
-  afterAll(async () => {
-    try {
-      if (studentOnSubjectId) {
-        await studentOnSubjectRepository.delete({
-          studentOnSubjectId: studentOnSubjectId,
-        });
-      }
-      await prismaService.studentOnSubject.deleteMany({
-        where: {
-          subjectId: subjectId,
-          studentId: {
-            in: ['66520ff9016313d8fc1db112', '66520ff9016313d8fc1db113'],
-          },
-        },
-      });
-    } catch (error) {
-      console.error('cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
+  // beforeEach(async () => {
+  //   await prismaService.studentOnSubject.deleteMany({
+  //     where: {
+  //       subjectId: subjectId1,
+  //     },
+  //   });
+  // });
 
   describe('createStudentOnSubject', () => {
     it('should create a new studentOnSubject with full profile', async () => {

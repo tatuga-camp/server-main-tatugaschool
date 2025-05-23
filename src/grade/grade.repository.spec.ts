@@ -13,19 +13,6 @@ describe('GradeRepository', () => {
     gradeRepository = new GradeRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (gradeRangeId) {
-        await gradeRepository.delete({
-          where: {
-            id: gradeRangeId,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
   describe('create', () => {
     it('should create grade range from A to F', async () => {
       try {

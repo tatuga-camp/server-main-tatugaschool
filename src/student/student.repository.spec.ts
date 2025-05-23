@@ -15,20 +15,6 @@ describe('StudentRepository', () => {
     } as any); // mock GoogleStorageService
   });
 
-  afterAll(async () => {
-    try {
-      if (studentId) {
-        await studentRepository.delete({
-          studentId: studentId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create student and related records', async () => {
       try {
