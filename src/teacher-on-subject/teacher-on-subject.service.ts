@@ -51,6 +51,10 @@ export class TeacherOnSubjectService {
         },
       });
 
+      if (!subject) {
+        throw new NotFoundException('Subject Not Found');
+      }
+
       const memberOnSchool = await this.memberOnSchoolRepository.findFirst({
         where: {
           schoolId: subject.schoolId,

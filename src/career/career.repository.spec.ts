@@ -12,17 +12,6 @@ describe('CareerRepository', () => {
     careerRepository = new CareerRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (careerId) {
-        await prismaService.skillOnCareer.deleteMany({ where: { careerId } });
-        await prismaService.career.delete({ where: { id: careerId } });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create a career', async () => {
       try {

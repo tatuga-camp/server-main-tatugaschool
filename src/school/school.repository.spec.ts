@@ -32,20 +32,6 @@ describe('SchoolRepository', () => {
     );
   });
 
-  afterAll(async () => {
-    try {
-      if (schoolId) {
-        await schoolRepository.delete({
-          schoolId: schoolId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a school', async () => {
       try {

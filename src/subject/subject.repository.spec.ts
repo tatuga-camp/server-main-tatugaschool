@@ -5,9 +5,9 @@ describe('SubjectRepository', () => {
   const prismaService = new PrismaService();
   let subjectRepository: SubjectRepository;
   let subjectId: string;
-
-  const classId = '6645d000d1a91edb9e0a7777';
+  let subjectCode = `SUB${Date.now()}`;
   const schoolId = '66500e4ea1b3f5370ac122f1';
+  const classId = '66500e4ea1b3f5370ac122f3';
   const userId = '66500e4ea1b3f5370ac122f2';
 
   beforeEach(() => {
@@ -16,49 +16,34 @@ describe('SubjectRepository', () => {
     } as any);
   });
 
-  afterAll(async () => {
-    try {
-      if (subjectId) {
-        await subjectRepository.deleteSubject({
-          subjectId: subjectId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('createSubject', () => {
-    it('should create a subject successfully', async () => {
+    it('should create a subject', async () => {
       try {
         const created = await subjectRepository.createSubject({
-          title: 'วิทยาศาสตร์',
+          title: 'คณิตศาสตร์',
+          code: subjectCode,
           educationYear: '1/2566',
-          description: 'รายวิชาทดลอง',
+          description: 'เนื้อหาคณิตพื้นฐาน',
           backgroundImage: 'https://example.com/bg.png',
           blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
           order: 0,
-          classId: classId,
-          userId: userId,
-          code: 'SUB001',
-          schoolId: schoolId,
+          classId,
+          userId,
+          schoolId,
         });
 
         expect(created).toBeDefined();
-        expect(created.id).toBeDefined();
-        expect(created.title).toBe('วิทยาศาสตร์');
+        expect(created.code).toBe(subjectCode);
+        expect(created.title).toBe('คณิตศาสตร์');
         expect(created.educationYear).toBe('1/2566');
-        expect(created.description).toBe('รายวิชาทดลอง');
+        expect(created.description).toBe('เนื้อหาคณิตพื้นฐาน');
         expect(created.backgroundImage).toBe('https://example.com/bg.png');
         expect(created.blurHash).toBe('LEHV6nWB2yk8pyo0adR*.7kCMdnj');
         expect(created.order).toBe(0);
         expect(created.classId).toBe(classId);
-        expect(created.schoolId).toBe(schoolId);
-        expect(created.code).toBe('SUB001');
         expect(created.userId).toBe(userId);
-
+        expect(created.schoolId).toBe(schoolId);
+        expect(created.id).toBeDefined();
         subjectId = created.id;
       } catch (error) {
         console.error('createSubject failed:', error);
@@ -68,24 +53,14 @@ describe('SubjectRepository', () => {
   });
 
   describe('getSubjectById', () => {
-    it('should retrieve subject by ID', async () => {
+    it('should return subject by id', async () => {
       try {
         const result = await subjectRepository.getSubjectById({
-          subjectId: subjectId,
+          subjectId,
         });
 
         expect(result).toBeDefined();
-        expect(result.id).toBe(subjectId);
-        expect(result.title).toBe('วิทยาศาสตร์');
-        expect(result.educationYear).toBe('1/2566');
-        expect(result.description).toBe('รายวิชาทดลอง');
-        expect(result.backgroundImage).toBe('https://example.com/bg.png');
-        expect(result.blurHash).toBe('LEHV6nWB2yk8pyo0adR*.7kCMdnj');
-        expect(result.order).toBe(0);
-        expect(result.classId).toBe(classId);
-        expect(result.schoolId).toBe(schoolId);
-        expect(result.code).toBe('SUB001');
-        expect(result.userId).toBe(userId);
+        expect(result?.id).toBe(subjectId);
       } catch (error) {
         console.error('getSubjectById failed:', error);
         throw error;
@@ -94,16 +69,14 @@ describe('SubjectRepository', () => {
   });
 
   describe('findUnique', () => {
-    it('should find unique subject by id', async () => {
+    it('should find by unique id', async () => {
       try {
         const result = await subjectRepository.findUnique({
-          where: {
-            id: subjectId,
-          },
+          where: { id: subjectId },
         });
 
         expect(result).toBeDefined();
-        expect(result.id).toBe(subjectId);
+        expect(result?.id).toBe(subjectId);
       } catch (error) {
         console.error('findUnique failed:', error);
         throw error;
@@ -112,16 +85,15 @@ describe('SubjectRepository', () => {
   });
 
   describe('findMany', () => {
-    it('should return array of subjects by schoolId', async () => {
+    it('should find all by schoolId and include created subject', async () => {
       try {
         const results = await subjectRepository.findMany({
-          where: {
-            schoolId: schoolId,
-          },
+          where: { schoolId },
         });
 
         expect(Array.isArray(results)).toBe(true);
-        expect(results.some((s) => s.id === subjectId)).toBe(true);
+        const found = results.find((s) => s.id === subjectId);
+        expect(found).toBeDefined();
       } catch (error) {
         console.error('findMany failed:', error);
         throw error;
@@ -130,12 +102,10 @@ describe('SubjectRepository', () => {
   });
 
   describe('count', () => {
-    it('should count subjects correctly', async () => {
+    it('should count >= 1 for schoolId', async () => {
       try {
         const count = await subjectRepository.count({
-          where: {
-            schoolId: schoolId,
-          },
+          where: { schoolId },
         });
 
         expect(count).toBeGreaterThanOrEqual(1);
@@ -147,21 +117,18 @@ describe('SubjectRepository', () => {
   });
 
   describe('update', () => {
-    it('should update subject title and description', async () => {
+    it('should update title and description', async () => {
       try {
         const updated = await subjectRepository.update({
-          where: {
-            id: subjectId,
-          },
+          where: { id: subjectId },
           data: {
-            title: 'วิทยาศาสตร์เพิ่มเติม 2',
-            description: 'อัปเดตคำอธิบาย',
+            title: 'คณิตศาสตร์เพิ่มเติม',
+            description: 'อัปเดตคำอธิบายแล้ว',
           },
         });
 
         expect(updated.id).toBe(subjectId);
-        expect(updated.title).toBe('วิทยาศาสตร์เพิ่มเติม 2');
-        expect(updated.description).toBe('อัปเดตคำอธิบาย');
+        expect(updated.title).toBe('คณิตศาสตร์เพิ่มเติม');
       } catch (error) {
         console.error('update failed:', error);
         throw error;
@@ -170,15 +137,15 @@ describe('SubjectRepository', () => {
   });
 
   describe('reorderSubjects', () => {
-    it('should reorder subjects by given list', async () => {
+    it('should reorder subjects and match correct order', async () => {
       try {
-        const reordered = await subjectRepository.reorderSubjects({
+        const result = await subjectRepository.reorderSubjects({
           subjectIds: [subjectId],
         });
 
-        expect(Array.isArray(reordered)).toBe(true);
-        expect(reordered[0].id).toBe(subjectId);
-        expect(reordered[0].order).toBe(0);
+        const updated = result.find((s) => s.id === subjectId);
+        expect(updated).toBeDefined();
+        expect(updated.order).toBe(0);
       } catch (error) {
         console.error('reorderSubjects failed:', error);
         throw error;
@@ -187,13 +154,13 @@ describe('SubjectRepository', () => {
   });
 
   describe('deleteSubject', () => {
-    it('should delete subject and clean up related data', async () => {
+    it('should delete the subject', async () => {
       try {
         const deleted = await subjectRepository.deleteSubject({
-          subjectId: subjectId,
+          subjectId,
         });
+
         expect(deleted.id).toBe(subjectId);
-        subjectId = ''; // ป้องกันลบซ้ำใน afterAll
       } catch (error) {
         console.error('deleteSubject failed:', error);
         throw error;

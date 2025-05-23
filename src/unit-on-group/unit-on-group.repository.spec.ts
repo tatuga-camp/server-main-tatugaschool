@@ -28,23 +28,6 @@ describe('UnitOnGroupRepository', () => {
     unitOnGroupRepository = new UnitOnGroupRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (unitOnGroupId) {
-        jest
-          .spyOn(unitOnGroupRepository, 'delete')
-          .mockResolvedValueOnce(mockUnit as any);
-        await unitOnGroupRepository.delete({
-          unitOnGroupId: unitOnGroupId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a unit on group', async () => {
       try {

@@ -13,22 +13,6 @@ describe('SkillOnCareerRepository', () => {
     skillOnCareerRepository = new SkillOnCareerRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (skillOnCareerId) {
-        await skillOnCareerRepository.delete({ 
-            where: { 
-                id: skillOnCareerId 
-            } 
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a skill-on-career record', async () => {
       try {
