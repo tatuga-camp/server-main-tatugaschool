@@ -13,20 +13,6 @@ describe('FeedbackRepository', () => {
     feedbackRepository = new FeedbackRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (feedbackId) {
-        await feedbackRepository.delete({
-          where: {
-            id: feedbackId,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create feedback', async () => {
       try {
