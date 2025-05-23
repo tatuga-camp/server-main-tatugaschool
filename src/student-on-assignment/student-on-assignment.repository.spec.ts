@@ -20,6 +20,7 @@ describe('StudentOnAssignmentRepository', () => {
       prismaService,
     );
   });
+  
   beforeEach(async () => {
     try {
       await prismaService.studentOnAssignment.deleteMany({
@@ -30,29 +31,6 @@ describe('StudentOnAssignmentRepository', () => {
     } catch (error) {
       console.error(error);
       throw error;
-    }
-  });
-
-  afterAll(async () => {
-    try {
-      if (studentOnAssignmentId) {
-        await studentOnAssignmentRepository.delete({
-          studentOnAssignmentId: studentOnAssignmentId,
-        });
-      }
-      if (createdStudentOnSubjectIds.length > 0) {
-        await prismaService.studentOnAssignment.deleteMany({
-          where: {
-            studentOnSubjectId: {
-              in: createdStudentOnSubjectIds,
-            },
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
     }
   });
 

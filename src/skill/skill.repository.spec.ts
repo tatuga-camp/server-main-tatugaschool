@@ -11,20 +11,6 @@ describe('SkillRepository', () => {
     skillRepository = new SkillRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (skillId) {
-        await skillRepository.delete({
-          skillId: skillId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a skill', async () => {
       try {

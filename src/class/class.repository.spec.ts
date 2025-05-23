@@ -14,18 +14,6 @@ describe('ClassRepository', () => {
     classRepository = new ClassRepository(prismaService, {} as any); // mock googleStorageService
   });
 
-  afterAll(async () => {
-    try {
-      if (classId) {
-        await classRepository.delete({
-          classId: classId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create class successfully', async () => {
       try {

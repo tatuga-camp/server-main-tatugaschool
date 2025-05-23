@@ -20,15 +20,6 @@ describe('AttendanceRepository', () => {
     attendanceRepository = new AttendanceRepository(prismaService);
   });
 
-  afterAll(async () => {
-    await prisma.attendance.deleteMany({
-      where: {
-        studentOnSubjectId: studentOnSubjectId,
-        attendanceRowId: attendanceRowId,
-      },
-    });
-  });
-
   describe('create', () => {
     it('should create new attendance', async () => {
       try {

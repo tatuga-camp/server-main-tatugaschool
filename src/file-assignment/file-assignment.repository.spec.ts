@@ -19,18 +19,6 @@ describe('FileAssignmentRepository', () => {
     fileAssignmentRepository = new FileAssignmentRepository(prismaService, mockGoogleStorage);
   });
 
-  afterAll(async () => {
-    try {
-      if (fileId) {
-        await fileAssignmentRepository.delete({ 
-            fileOnAssignmentId: fileId 
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create file on assignment', async () => {
       try {
