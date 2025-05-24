@@ -1,55 +1,47 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
-import {
-  Assignment,
-  PrismaClient,
-  Skill,
-  SkillOnAssignment,
-  User,
-} from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { ConfigService } from '@nestjs/config';
-import { AssignmentService } from './assignment.service';
-import { AiService } from '../vector/ai.service';
 import { HttpService } from '@nestjs/axios';
-import { AuthService } from '../auth/auth.service';
-import { EmailService } from '../email/email.service';
-import { JwtService } from '@nestjs/jwt';
-import { ImageService } from '../image/image.service';
-import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { SubjectService } from '../subject/subject.service';
-import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
-import { SkillService } from '../skill/skill.service';
-import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assignment.service';
-import { GradeService } from '../grade/grade.service';
-import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
-import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
-import { AttendanceTableService } from '../attendance-table/attendance-table.service';
-import { ClassService } from '../class/class.service';
-import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
-import { PushService } from '../web-push/push.service';
-import { SchoolService } from '../school/school.service';
-import { StripeService } from '../stripe/stripe.service';
-import { StudentService } from '../student/student.service';
-import { UsersService } from '../users/users.service';
-import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
-import {
-  CreateAssignmentDto,
-  UpdateAssignmentDto,
-  GetAssignmentByIdDto,
-  GetAssignmentBySubjectIdDto,
-  DeleteAssignmentDto,
-} from './dto';
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
+import { AttendanceTableService } from '../attendance-table/attendance-table.service';
+import { AuthService } from '../auth/auth.service';
+import { ClassService } from '../class/class.service';
+import { EmailService } from '../email/email.service';
+import { GradeService } from '../grade/grade.service';
+import { ImageService } from '../image/image.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { SchoolService } from '../school/school.service';
+import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
+import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
+import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assignment.service';
+import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
+import { SkillService } from '../skill/skill.service';
+import { StripeService } from '../stripe/stripe.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
+import { StudentService } from '../student/student.service';
+import { SubjectService } from '../subject/subject.service';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { UsersService } from '../users/users.service';
+import { AiService } from '../vector/ai.service';
+import { PushService } from '../web-push/push.service';
+import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { AssignmentService } from './assignment.service';
+import {
+  CreateAssignmentDto,
+  DeleteAssignmentDto,
+  GetAssignmentByIdDto,
+  GetAssignmentBySubjectIdDto,
+  UpdateAssignmentDto,
+} from './dto';
 
-import { Subject } from 'rxjs';
 import { fail } from 'assert';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
-import { error } from 'console';
 
 describe('Assignment Service', () => {
   let assignmentService: AssignmentService;
