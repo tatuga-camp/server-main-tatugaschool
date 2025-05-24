@@ -15,18 +15,6 @@ describe('GroupOnSubjectRepository', () => {
     groupRepository = new GroupOnSubjectRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (groupOnSubjectId) {
-        await groupRepository.delete({
-          groupOnSubjectId: groupOnSubjectId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create group on subject', async () => {
       try {

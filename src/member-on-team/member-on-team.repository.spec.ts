@@ -17,20 +17,6 @@ describe('MemberOnTeamRepository', () => {
     memberOnTeamRepository = new MemberOnTeamRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (memberOnTeamId) {
-        await memberOnTeamRepository.delete({
-          where: {
-            id: memberOnTeamId,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create a member on team', async () => {
       try {

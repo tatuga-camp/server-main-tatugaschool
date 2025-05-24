@@ -15,18 +15,6 @@ describe('CommentAssignmentRepository', () => {
     commentRepository = new CommentAssignmentRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (commentId) {
-        await commentRepository.delete({
-          commentOnAssignmentId: commentId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   describe('create', () => {
     it('should create a comment', async () => {
       try {

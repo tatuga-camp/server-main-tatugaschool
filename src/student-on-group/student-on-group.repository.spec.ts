@@ -20,15 +20,6 @@ describe('StudentOnGroupRepository', () => {
     repository = new StudentOnGroupRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try{
-        await prismaService.$disconnect();
-    } catch (error){
-                    console.error('Cleanup failed', error);
-        throw error;
-    }
-  });
-
   describe('create', () => {
     it('should create student-on-group entry', async () => {
       try {
