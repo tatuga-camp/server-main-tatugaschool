@@ -41,6 +41,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Create .env symlink to .env.test
+        run: |
+          rm -f .env
+          ln -s .env.test .env
+
       # Added the missing hyphen here
       - name: Run Database
         run: npm run db:dev:restart
