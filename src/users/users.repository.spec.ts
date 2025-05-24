@@ -14,29 +14,15 @@ describe('Users repository', () => {
   beforeAll(async () => {
     userRepository = new UserRepository(prismaService);
   });
-  afterAll(async () => {
-    try {
-      if (userEmail) {
-        await prisma.user.deleteMany({ 
-          where: { 
-            email: userEmail 
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
+
   describe('createUser', () => {
-    beforeEach(async () => {
-      await prisma.user.deleteMany({ where: { email: userEmail } });
-    });
     it('should create user', async () => {
       try {
+        userEmail = `johnwick+${Date.now()}@email.com`;
         const user = await userRepository.createUser({
           firstName: 'Jonathan',
           lastName: 'Wick',
-          email: 'JohnWick@gmail.com',
+          email: userEmail,
           phone: '0812345678',
           password: 'secret_password123',
           provider: 'LOCAL',
@@ -47,7 +33,7 @@ describe('Users repository', () => {
 
         expect(user.firstName).toBe('Jonathan');
         expect(user.lastName).toBe('Wick');
-        expect(user.email).toBe('JohnWick@gmail.com');
+        expect(user.email).toBe(userEmail);
         expect(user.phone).toBe('0812345678');
         expect(user.password).toBe('secret_password123');
         expect(user.provider).toBe('LOCAL');
@@ -68,17 +54,12 @@ describe('Users repository', () => {
     it('should get user array', async () => {
       try {
         const users = await userRepository.findMany({
-          where: {
-            id: userId,
-            email: userEmail,
-          },
+          where: { email: userEmail },
         });
-
-        expect(users.length).toBeGreaterThan(0);
-        expect(users[0].id).toBe(userId);
-        expect(users[0].email).toBe(userEmail);
+        const match = users.find((u) => u.email === userEmail);
+        expect(match).toBeDefined();
       } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
       }
     });

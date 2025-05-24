@@ -17,18 +17,6 @@ describe('MemberOnSchoolRepository', () => {
     memberOnSchoolRepository = new MemberOnSchoolRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (memberOnSchoolId) {
-        await memberOnSchoolRepository.delete({
-          memberOnSchoolId: memberOnSchoolId,
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    }
-  });
-
   afterEach(() => {
     jest.restoreAllMocks();
   });

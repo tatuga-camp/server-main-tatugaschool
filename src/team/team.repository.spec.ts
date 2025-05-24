@@ -12,22 +12,6 @@ describe('TeamRepository', () => {
     teamRepository = new TeamRepository(prismaService);
   });
 
-  afterAll(async () => {
-    try {
-      if (teamId) {
-        await teamRepository.delete({
-          where: {
-            id: teamId,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Cleanup failed:', error);
-    } finally {
-      await prismaService.$disconnect();
-    }
-  });
-
   describe('create', () => {
     it('should create a team', async () => {
       try {
