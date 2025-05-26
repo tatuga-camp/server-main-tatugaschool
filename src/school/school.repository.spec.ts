@@ -110,7 +110,7 @@ describe('SchoolRepository', () => {
           },
         });
 
-        expect(result.city).toBe('Khon Kaen');
+        expect(result.country).toBe('Thailand');
       } catch (error) {
         console.error('findFirst failed:', error);
         throw error;
