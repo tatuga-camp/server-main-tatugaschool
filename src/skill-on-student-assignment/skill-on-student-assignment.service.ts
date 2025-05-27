@@ -1,3 +1,4 @@
+import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { SkillRepository } from './../skill/skill.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
@@ -14,7 +15,7 @@ import {
   DeleteDto,
   GetByStudentIdDto,
 } from './dto';
-import { SkillOnStudentAssignment, User } from '@prisma/client';
+import { Skill, SkillOnStudentAssignment, User } from '@prisma/client';
 import { StudentOnAssignmentRepository } from '../student-on-assignment/student-on-assignment.repository';
 
 @Injectable()
@@ -25,7 +26,7 @@ export class SkillOnStudentAssignmentService {
   private skillOnAssignmentRepository: SkillOnAssignmentRepository;
 
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
-
+  private studentOnSubjectRepository: StudentOnSubjectRepository;
   private assignmentRepository: AssignmentRepository;
   private skillRepository: SkillRepository;
 
@@ -51,6 +52,10 @@ export class SkillOnStudentAssignmentService {
       this.googleStorageService,
     );
     this.skillRepository = new SkillRepository(this.prisma);
+    this.studentOnSubjectRepository = new StudentOnSubjectRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
 
   async getByStudentId(
@@ -74,6 +79,62 @@ export class SkillOnStudentAssignmentService {
         where: {
           studentId: dto.studentId,
         },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getByStudentOnSubjectId(studentOnSubjectId: string): Promise<
+    (Skill & {
+      skillOnStudentAssignments: SkillOnStudentAssignment[];
+      average: number;
+    })[]
+  > {
+    try {
+      const studentOnSubject =
+        await this.studentOnSubjectRepository.getStudentOnSubjectById({
+          studentOnSubjectId: studentOnSubjectId,
+        });
+
+      const skillOnStudentAssignments =
+        await this.skillOnStudentAssignmentRepository.findMany({
+          where: {
+            studentId: studentOnSubject.studentId,
+            subjectId: studentOnSubject.subjectId,
+          },
+        });
+
+      const skills = await this.skillRepository.findMany({});
+      const groupSkills = skillOnStudentAssignments.reduce<
+        Record<string, SkillOnStudentAssignment[]>
+      >((prev, current) => {
+        const key = current.skillId;
+        if (!prev[key]) {
+          prev[key] = [];
+        }
+        prev[key].push(current);
+        return prev;
+      }, {});
+
+      const mapGroupSkills = Object.entries(groupSkills).map(
+        ([skillId, value]) => ({
+          skillId: skillId,
+          skillOnStudentAssignments: value,
+        }),
+      );
+
+      return mapGroupSkills.map((data) => {
+        const skill = skills.find((s) => s.id === data.skillId);
+        return {
+          ...skill,
+          skillOnStudentAssignments: data.skillOnStudentAssignments,
+          average:
+            data.skillOnStudentAssignments.reduce((prev, cuurent) => {
+              return (prev = +cuurent.weight);
+            }, 0) / data.skillOnStudentAssignments.length,
+        };
       });
     } catch (error) {
       this.logger.error(error);
