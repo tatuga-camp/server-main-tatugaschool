@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { School, User } from '@prisma/client';
+import { MemberRole, Status, User } from '@prisma/client';
+import { fail } from 'assert';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AuthService } from '../auth/auth.service';
 import { ClassService } from '../class/class.service';
@@ -22,6 +23,7 @@ import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assign
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 import { SkillService } from '../skill/skill.service';
 import { StripeService } from '../stripe/stripe.service';
+import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
@@ -31,7 +33,6 @@ import { AiService } from '../vector/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { AssignmentService } from '../assignment/assignment.service';
 import {
   CreateMemberOnSchoolDto,
   DeleteMemberOnSchoolDto,
@@ -40,9 +41,6 @@ import {
   QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
-import { Status, MemberRole } from '@prisma/client';
-import { fail } from 'assert';
-import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 
 describe('MemberOnSchool Service', () => {
   const prismaService = new PrismaService();
@@ -131,11 +129,21 @@ describe('MemberOnSchool Service', () => {
     schoolService,
     gradeService,
   );
+
+  const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
+    prismaService,
+    memberOnSchoolService,
+    googleStorageService,
+  );
+
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     googleStorageService,
     teacherOnSubjectService,
     wheelOfNameService,
+    schoolService,
+    gradeService,
+    skillOnStudentAssignmentService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -163,12 +171,6 @@ describe('MemberOnSchool Service', () => {
     prismaService,
     googleStorageService,
     teacherOnSubjectService,
-  );
-
-  const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
-    prismaService,
-    memberOnSchoolService,
-    googleStorageService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
