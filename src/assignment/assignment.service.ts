@@ -450,8 +450,8 @@ export class AssignmentService {
           imageUrls.push(imgSrc);
         }
       });
-      const accessToken = await this.authService.getGoogleAccessToken();
 
+      const accessToken = await this.authService.getGoogleAccessToken();
       if (imageUrls.length > 0) {
         const imageURLWithType = await Promise.all(
           imageUrls.map(async (url) => {
@@ -468,7 +468,6 @@ export class AssignmentService {
       }
 
       const summaries = [];
-
       if (files.length > 0) {
         const fileTexts = await this.aiService.summarizeFile({
           imageURLs: files.map((file) => {

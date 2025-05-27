@@ -77,9 +77,15 @@ export class AiService implements AiType {
           ],
         };
       }
+      const PROJECT_ID = this.config.get('GOOGLE_CLOUD_PROJECT_ID');
+      const LOCATION_ID = 'us-central1';
+      const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com';
+      const MODEL_ID = 'gemini-2.5-flash-preview-05-20';
+      const GENERATE_CONTENT_API = 'generateContent';
+      console.log(PROJECT_ID);
       const response = this.httpService
         .post<ResponseNonStreamingText>(
-          `https://us-central1-aiplatform.googleapis.com/v1/projects/${this.config.get('GOOGLE_CLOUD_PROJECT_ID')}/locations/asia-southeast1/publishers/google/models/gemini-2.0-flash-001:generateContent `,
+          `https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/${LOCATION_ID}/publishers/google/models/${MODEL_ID}:${GENERATE_CONTENT_API}`,
           {
             contents: [
               {
