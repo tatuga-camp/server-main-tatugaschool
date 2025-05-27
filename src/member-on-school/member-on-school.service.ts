@@ -1,5 +1,3 @@
-import { SchoolService } from './../school/school.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -15,7 +13,7 @@ import { UserRepository } from '../users/users.repository';
 import { PushSubscription } from '../web-push/interfaces';
 import { PushService } from '../web-push/push.service';
 import { EmailService } from './../email/email.service';
-import { SchoolRepository } from './../school/school.repository';
+import { SchoolService } from './../school/school.service';
 import {
   CreateMemberOnSchoolDto,
   DeleteMemberOnSchoolDto,
