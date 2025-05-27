@@ -41,6 +41,14 @@ export class StudentOnSubjectController {
     );
   }
 
+  @Get(':studentOnSubjectId/report')
+  getStudentReport(
+    @Param() dto: GetStudentOnSubjectByIdDto,
+    @GetUser() user: User,
+  ) {
+    return this.studentOnSubjectService.getSummaryData(dto, user);
+  }
+
   @Get('student/:studentId')
   getStudentOnSubjectByStudentId(
     @Param() dto: GetStudentOnSubjectsByStudentIdDto,
