@@ -114,11 +114,19 @@ describe('School Service', () => {
     schoolService,
     gradeService,
   );
+  const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
+    prismaService,
+    memberOnSchoolService,
+    googleStorageService,
+  );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     googleStorageService,
     teacherOnSubjectService,
     wheelOfNameService,
+    schoolService,
+    gradeService,
+    skillOnStudentAssignmentService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -146,12 +154,6 @@ describe('School Service', () => {
     prismaService,
     googleStorageService,
     teacherOnSubjectService,
-  );
-
-  const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
-    prismaService,
-    memberOnSchoolService,
-    googleStorageService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
