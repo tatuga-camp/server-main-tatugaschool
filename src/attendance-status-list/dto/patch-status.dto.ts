@@ -7,6 +7,7 @@ import {
   IsNumber,
   IsObject,
   IsOptional,
+  IsString,
   ValidateNested,
 } from 'class-validator';
 
@@ -18,10 +19,6 @@ class updateQuery {
 
 class updateBody {
   @IsOptional()
-  @IsBoolean()
-  isHidden?: boolean;
-
-  @IsOptional()
   @IsHexColor()
   color?: string;
 
@@ -29,6 +26,10 @@ class updateBody {
   @IsNumber()
   @Transform(({ value }) => Number(value))
   value?: number;
+
+  @IsOptional()
+  @IsString()
+  title?: string;
 }
 
 export class UpdateStatusDto {
