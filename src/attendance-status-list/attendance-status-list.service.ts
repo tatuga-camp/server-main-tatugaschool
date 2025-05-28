@@ -1,7 +1,12 @@
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { AttendanceStatusListSRepository } from './attendance-status-list.repository';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateStatusAttendanceDto,
@@ -46,6 +51,16 @@ export class AttendanceStatusListService {
         userId: user.id,
       });
 
+      const statusList = await this.attendanceStatusListSRepository.findMany({
+        where: {
+          attendanceTableId: table.id,
+        },
+      });
+
+      if (statusList.some((s) => s.title === dto.title)) {
+        throw new BadRequestException('Duplicate title');
+      }
+
       const create = await this.attendanceStatusListSRepository.create({
         data: {
           ...dto,
@@ -76,6 +91,21 @@ export class AttendanceStatusListService {
         throw new NotFoundException('Status not found');
       }
 
+      const statusList = await this.attendanceStatusListSRepository.findMany({
+        where: {
+          attendanceTableId: status.attendanceTableId,
+        },
+      });
+
+      if (
+        dto.body.title &&
+        statusList
+          .filter((s) => s.id !== status.id)
+          .some((s) => s.title === dto.body.title)
+      ) {
+        throw new BadRequestException('Duplicate title');
+      }
+
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: status.subjectId,
@@ -88,6 +118,17 @@ export class AttendanceStatusListService {
         data: dto.body,
       });
 
+      if (dto.body.title) {
+        await this.prisma.attendance.updateMany({
+          where: {
+            attendanceTableId: status.attendanceTableId,
+            status: status.title as string,
+          },
+          data: {
+            status: update.title,
+          },
+        });
+      }
       return update;
     } catch (error) {
       this.logger.error(error);
