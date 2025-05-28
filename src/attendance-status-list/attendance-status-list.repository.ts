@@ -81,7 +81,9 @@ export class AttendanceStatusListSRepository implements Repository {
     request: Prisma.AttendanceStatusListUpdateArgs,
   ): Promise<AttendanceStatusList> {
     try {
-      return await this.prisma.attendanceStatusList.update(request);
+      const updated = await this.prisma.attendanceStatusList.update(request);
+
+      return updated;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
