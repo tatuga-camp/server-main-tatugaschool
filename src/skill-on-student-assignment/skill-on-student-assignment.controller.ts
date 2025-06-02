@@ -25,11 +25,13 @@ export class SkillOnStudentAssignmentController {
     return this.skillOnStudentAssignmentService.getByStudentId(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Post()
   async create(@Body() dto: CreateDto, @GetUser() user: User) {
     return this.skillOnStudentAssignmentService.create(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Delete(':id')
   async delete(@Param() dto: DeleteDto, @GetUser() user: User) {
     return this.skillOnStudentAssignmentService.delete(dto, user);

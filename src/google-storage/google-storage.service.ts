@@ -30,6 +30,9 @@ export class GoogleStorageService {
     this.logger = new Logger(GoogleStorageService.name);
   }
 
+  /**
+   * Initializes cloud storage
+   */
   private async initializeCloudStorage() {
     try {
       const encode = atob(
@@ -96,6 +99,14 @@ export class GoogleStorageService {
     return this.bucket;
   }
 
+  /**
+   * Validates access
+   * @param {
+   *     user,
+   *     schoolId,
+   *   }
+   * @returns access
+   */
   async validateAccess({
     user,
     schoolId,
@@ -124,6 +135,19 @@ export class GoogleStorageService {
     }
   }
 
+  /**
+   * Gets sign url for client to upload
+   * @param {
+   *       fileName,
+   *       fileType,
+   *       userId,
+   *       schoolId,
+   *       fileSize,
+   *     }
+   * @param [user]
+   * @param [student]
+   * @returns
+   */
   async GetSignURL(
     {
       fileName,
@@ -213,6 +237,47 @@ export class GoogleStorageService {
     }
   }
 
+  /**
+   * Generates a V4 signed URL for reading a file from GCS.
+   * @param filePath The full path to the file in the bucket (e.g., "folder/subfolder/file.jpg").
+   * @param durationInMinutes The duration for which the URL will be valid (default: 15 minutes).
+   * @returns A promise that resolves to the signed URL string.
+   */
+  async generateV4ReadSignedUrl(
+    filePath: string,
+    durationInMinutes: number = 15,
+  ): Promise<string> {
+    if (!this.bucket) {
+      this.logger.error(
+        'Bucket not initialized. Call initializeCloudStorage first.',
+      );
+      throw new BadGatewayException(
+        'Storage service not properly initialized.',
+      );
+    }
+
+    const options: GetSignedUrlConfig = {
+      version: 'v4',
+      action: 'read',
+      expires: Date.now() + durationInMinutes * 60 * 1000, // 15 minutes by default
+    };
+
+    try {
+      // Get a v4 signed URL for reading the file
+      const [url] = await this.bucket.file(filePath).getSignedUrl(options);
+      this.logger.log(`Generated V4 read signed URL for: ${filePath}`);
+      return url;
+    } catch (error) {
+      this.logger.error(`Error generating signed URL for ${filePath}:`, error);
+      throw new BadGatewayException('Could not generate file access URL.');
+    }
+  }
+
+  /**
+   * Deletes file on storage
+   * @param input : InputDeleteFileOnStorage
+   * @returns file on storage
+   */
   async DeleteFileOnStorage(
     input: InputDeleteFileOnStorage,
   ): Promise<{ message: string }> {
