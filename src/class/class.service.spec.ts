@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Class, User } from '@prisma/client';
+import { Class, MemberRole, Status, User } from '@prisma/client';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AuthService } from '../auth/auth.service';
 import { ClassService } from '../class/class.service';
@@ -32,10 +32,10 @@ import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { CreateClassDto } from './dto';
-import { Stats } from 'fs';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 
 describe('Class Service', () => {
   let classroomService: ClassService;
@@ -82,6 +82,7 @@ describe('Class Service', () => {
   let assignmentService: AssignmentService;
   let fileAssignmentService: FileAssignmentService;
   let attendanceStatusListService: AttendanceStatusListService;
+  let studentOnAssignmentService: StudentOnAssignmentService;
 
   const schoolService = new SchoolService(
     prismaService,
@@ -176,6 +177,14 @@ describe('Class Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+  );
+
+  studentOnAssignmentService = new StudentOnAssignmentService(
+    prismaService,
+    googleStorageService,
+    teacherOnSubjectService,
+    pushService,
+    skillOnStudentAssignmentService,
   );
   beforeEach(async () => {
     classroomService = new ClassService(
@@ -1672,5 +1681,386 @@ describe('Class Service', () => {
 
   /////////////////////////////// sendNotificationWhenClassDelete ////////////////////////////
 
+  describe('sendNotificationWhenClassDelete', () => {
+    it('should send email and push notification to all members', async () => {
+      try {
+        const user1 = await userService.userRepository.createUser({
+          firstName: 'Alice',
+          lastName: 'Wong',
+          email: 'member11@test.com',
+          phone: '0877777777',
+          photo: 'basic.jpg',
+          password: '12345678',
+          provider: 'LOCAL',
+        });
+
+        const user2 = await userService.userRepository.createUser({
+          firstName: 'Bob',
+          lastName: 'Smith',
+          email: 'member22@test.com',
+          phone: '0877777777',
+          photo: 'basic.jpg',
+          password: '12345678',
+          provider: 'LOCAL',
+        });
+
+        const school = await schoolService.schoolRepository.create({
+          data: {
+            title: 'No Owner School',
+            description: 'Test class',
+            phoneNumber: '0866666666',
+            address: 'Ghost Road',
+            zipCode: '60000',
+            country: 'Thailand',
+            city: 'Lampang',
+            logo: 'ghost.png',
+            plan: 'FREE',
+            billingManagerId: user1.id,
+            stripe_customer_id: 'cus_noowner1111',
+          },
+        });
+
+        const member1 =
+          await memberOnSchoolService.memberOnSchoolRepository.create({
+            userId: user1.id,
+            schoolId: school.id,
+            role: MemberRole.ADMIN,
+            status: Status.ACCEPT,
+            email: user1.email,
+            firstName: user1.firstName,
+            lastName: user1.lastName,
+            phone: user1.phone,
+            photo: user1.photo,
+            blurHash: user1.blurHash,
+          });
+        const member2 =
+          await memberOnSchoolService.memberOnSchoolRepository.create({
+            userId: user2.id,
+            schoolId: school.id,
+            role: MemberRole.TEACHER,
+            status: Status.ACCEPT,
+            email: user2.email,
+            firstName: user2.firstName,
+            lastName: user2.lastName,
+            phone: user2.phone,
+            photo: user2.photo,
+            blurHash: user2.blurHash,
+          });
+
+        const classroom = await classroomService.classRepository.create({
+          title: 'Creator Class',
+          level: 'ม.1',
+          description: 'Only owner can delete',
+          schoolId: school.id,
+          userId: user1.id,
+        });
+        // Mock member of the school
+        const members =
+          await memberOnSchoolService.memberOnSchoolRepository.findMany({
+            where: {
+              schoolId: school.id,
+            },
+          });
+
+        // Mock subscriptions for each user
+        const subscriptions = [
+          {
+            data: {
+              endpoint: 'https://push1',
+              keys: { auth: 'a', p256dh: 'b' },
+            },
+          },
+          {
+            data: {
+              endpoint: 'https://push2',
+              keys: { auth: 'c', p256dh: 'd' },
+            },
+          },
+        ];
+
+        // Mock prisma
+        jest
+          .spyOn(memberOnSchoolService.memberOnSchoolRepository, 'findMany')
+          .mockResolvedValueOnce(members as any);
+
+        // Mock pushRepository.findMany
+
+        // ให้ user1 มี 1 subscription, user2 มีอีก 1 → รวม 2 calls ถูกต้อง
+        jest
+          .spyOn(pushService.pushRepository, 'findMany')
+          .mockImplementation(({ where }) => {
+            if (where.userId === user1.id) {
+              return Promise.resolve([
+                {
+                  data: {
+                    endpoint: 'https://push1',
+                    keys: { auth: 'a', p256dh: 'b' },
+                  },
+                },
+              ]);
+            }
+            if (where.userId === user2.id) {
+              return Promise.resolve([
+                {
+                  data: {
+                    endpoint: 'https://push2',
+                    keys: { auth: 'c', p256dh: 'd' },
+                  },
+                },
+              ]);
+            }
+            return Promise.resolve([]);
+          });
+
+        // Mock emailService.sendMail
+        const sendMailSpy = jest
+          .spyOn(emailService, 'sendMail')
+          .mockResolvedValue(undefined);
+
+        // Mock pushService.sendNotification
+        const sendNotificationSpy = jest
+          .spyOn(pushService, 'sendNotification')
+          .mockResolvedValue(undefined);
+
+        await classroomService.sendNotificationWhenClassDelete(classroom);
+
+        // Validate email sent for each member
+        expect(sendMailSpy).toHaveBeenCalledTimes(members.length);
+        for (const member of members) {
+          expect(sendMailSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              to: member.email,
+              subject: `Class ${classroom.title} has been deleted`,
+            }),
+          );
+        }
+
+        // Validate push sent for each subscription
+        expect(sendNotificationSpy).toHaveBeenCalledTimes(subscriptions.length);
+        for (const member of members) {
+          expect(sendNotificationSpy).toHaveBeenCalledWith(
+            expect.any(Object),
+            expect.objectContaining({
+              title: expect.stringContaining('has been deleted'),
+              body: expect.stringContaining(`Hello ${member.firstName}`),
+            }),
+          );
+        }
+      } catch (error) {
+        throw error;
+      }
+    });
+  });
+
   /////////////////////////////// getGradeSummaryReport ////////////////////////////
+
+  describe('getGradeSummaryReport', () => {
+    it('should return student scores grouped by subject', async () => {
+      try {
+        // สร้างผู้ใช้
+        const user = await userService.userRepository.createUser({
+          firstName: 'Test',
+          lastName: 'Teacher',
+          email: `teacher-${Date.now()}@test.com`,
+          phone: '0891234567',
+          photo: 'avatar.png',
+          password: '12345678',
+          provider: 'LOCAL',
+        });
+
+        // สร้างโรงเรียน
+        const school = await schoolService.schoolRepository.create({
+          data: {
+            title: 'Summary School',
+            description: 'Grade summary test',
+            phoneNumber: '0866666666',
+            address: 'Main Rd',
+            zipCode: '50000',
+            country: 'Thailand',
+            city: 'Chiang Mai',
+            logo: 'school.png',
+            plan: 'FREE',
+            billingManagerId: user.id,
+            stripe_customer_id: 'cus_summary001',
+          },
+        });
+
+        // เพิ่ม member ให้กับโรงเรียน
+        const member =
+          await memberOnSchoolService.memberOnSchoolRepository.create({
+            userId: user.id,
+            schoolId: school.id,
+            role: 'ADMIN',
+            status: 'ACCEPT',
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            phone: user.phone,
+            photo: user.photo,
+            blurHash: user.blurHash,
+          });
+
+        // สร้างห้องเรียน
+        const classroom = await classroomService.classRepository.create({
+          title: 'P6',
+          level: 'ประถม 6',
+          description: 'Test Class',
+          schoolId: school.id,
+          userId: user.id,
+        });
+
+        // สร้างวิชา
+        const subject = await subjectService.subjectRepository.createSubject({
+          title: 'Math',
+          educationYear: '2/2025',
+          description: 'Math Subject',
+          classId: classroom.id,
+          schoolId: school.id,
+          code: 'subjectCode',
+          backgroundImage: 'https://example.com/bg.png',
+          blurHash: 'LEHV6nWB2yk8pyo0adR*.7kCMdnj',
+          order: 0,
+          userId: user.id,
+        });
+
+        // สร้างงาน (Assignment)
+        const assignment = await assignmentService.assignmentRepository.create({
+          data: {
+            title: 'Quiz 1',
+            description: 'First quiz',
+            dueDate: new Date().toISOString(),
+            beginDate: new Date().toISOString(),
+            type: 'Assignment',
+            status: 'Published',
+            subjectId: subject.id,
+            maxScore: 10,
+            weight: 5,
+            userId: user.id,
+            schoolId: school.id,
+          },
+        });
+
+        // สร้างนักเรียน 2 คน
+        const student1 = await studentService.studentRepository.create({
+          title: 'เด็กชาย',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          photo: 'https://example.com/photo.jpg',
+          number: '12',
+          classId: classroom.id,
+          schoolId: school.id,
+          blurHash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH',
+        });
+
+        const student2 = await studentService.studentRepository.create({
+          title: 'เด็กหญิง',
+          firstName: 'สมศรี',
+          lastName: 'พะยองเดช',
+          photo: 'https://example.com/photo.jpg',
+          number: '13',
+          classId: classroom.id,
+          schoolId: school.id,
+          blurHash: 'LKO2?U%2Tw=w]~RBVZRi};RPxuwH',
+        });
+
+        // หานักเรียนในรายวิชา
+        const studentOnSubject1 =
+          await studentOnSubjectService.studentOnSubjectRepository.getStudentOnSubjectsByStudentId(
+            {
+              studentId: student1.id,
+            },
+          );
+
+        const studentOnSubject2 =
+          await studentOnSubjectService.studentOnSubjectRepository.getStudentOnSubjectsByStudentId(
+            {
+              studentId: student2.id,
+            },
+          );
+
+        const studentOnAssignment1 =
+          await studentOnAssignmentService.studentOnAssignmentRepository.getByStudentIdAndAssignmentId(
+            {
+              studentId: student1.id,
+              assignmentId: assignment.id,
+            },
+          );
+
+        const studentOnAssignment2 =
+          await studentOnAssignmentService.studentOnAssignmentRepository.getByStudentIdAndAssignmentId(
+            {
+              studentId: student2.id,
+              assignmentId: assignment.id,
+            },
+          );
+
+        await studentOnAssignmentService.studentOnAssignmentRepository.update({
+          where: { id: studentOnAssignment1.id },
+          data: {
+            score: 8,
+            status: 'SUBMITTED',
+            isAssigned: true,
+            body: 'งานส่งเรียบร้อย',
+          },
+        });
+
+        await studentOnAssignmentService.studentOnAssignmentRepository.update({
+          where: { id: studentOnAssignment2.id },
+          data: {
+            score: 6,
+            status: 'SUBMITTED',
+            isAssigned: true,
+            body: 'งานส่งเรียบร้อย',
+          },
+        });
+
+        // เรียกใช้ฟังก์ชัน
+        const result = await classroomService.getGradeSummaryReport(
+          {
+            classId: classroom.id,
+            educationYear: subject.educationYear,
+          },
+          user,
+        );
+
+        // ตรวจสอบผลลัพธ์
+
+        expect(result.length).toBe(1);
+        expect(result).toEqual([
+          expect.objectContaining({
+            id: subject.id,
+            title: subject.title,
+            educationYear: subject.educationYear,
+            students: expect.arrayContaining([
+              expect.objectContaining({
+                id: student1.id,
+                totalScore: expect.any(Number),
+                assignmentId: assignment.id,
+              }),
+              expect.objectContaining({
+                id: student2.id,
+                totalScore: expect.any(Number),
+                assignmentId: assignment.id,
+              }),
+            ]),
+          }),
+        ]);
+
+        const mathSubject = result.find((r) => r.id === subject.id);
+        expect(mathSubject).toBeDefined();
+        expect(mathSubject.students.length).toBe(2);
+
+        const s1 = mathSubject.students.find((s) => s.id === student1.id);
+        const s2 = mathSubject.students.find((s) => s.id === student2.id);
+
+        expect(s1.assignmentId).toBe(assignment.id);
+        expect(s2.assignmentId).toBe(assignment.id);
+
+        expect(s1.totalScore).toBeCloseTo((8 / 10) * 5); // 4
+        expect(s2.totalScore).toBeCloseTo((6 / 10) * 5); // 3
+      } catch (error) {
+        throw error;
+      }
+    });
+  });
 });
