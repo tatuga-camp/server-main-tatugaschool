@@ -1,3 +1,4 @@
+import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import { GradeService } from './../grade/grade.service';
 import { SchoolService } from './../school/school.service';
 import {
@@ -35,6 +36,8 @@ import {
   UpdateSubjectDto,
 } from './dto';
 import { SubjectRepository } from './subject.repository';
+import { AssignmentService } from '../assignment/assignment.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 
 @Injectable()
 export class SubjectService {
@@ -53,9 +56,13 @@ export class SubjectService {
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     @Inject(forwardRef(() => SchoolService))
-    private SchoolService: SchoolService,
+    private schoolService: SchoolService,
     @Inject(forwardRef(() => GradeService))
     private gradeService: GradeService,
+    @Inject(forwardRef(() => AssignmentService))
+    private assignmentService: AssignmentService,
+    private fileAssignmentService: FileAssignmentService,
+    private attendanceStatusListService: AttendanceStatusListService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
@@ -70,6 +77,172 @@ export class SubjectService {
       this.prisma,
       this.googleStorageService,
     );
+  }
+
+  async duplicateSubject(
+    dto: {
+      subjectId: string;
+      classroomId: string;
+      title: string;
+      description: string;
+      educationYear: string;
+    },
+    user: User,
+  ): Promise<Subject> {
+    try {
+      const subject = await this.subjectRepository.findUnique({
+        where: {
+          id: dto.subjectId,
+        },
+      });
+
+      const classroom = await this.classroomService.classRepository.findById({
+        classId: dto.classroomId,
+      });
+
+      if (!subject || !classroom) {
+        throw new NotFoundException('Classroom Or Subject not found');
+      }
+
+      await this.memberOnSchoolService.validateAccess({
+        schoolId: subject.schoolId,
+        user: user,
+      });
+
+      const assignments =
+        await this.assignmentService.assignmentRepository.findMany({
+          where: {
+            subjectId: subject.id,
+          },
+        });
+      const create = await this.createSubject(
+        {
+          title: dto.title,
+          description: subject.description,
+          educationYear: subject.educationYear,
+          schoolId: subject.schoolId,
+          classId: classroom.id,
+          backgroundImage: subject.backgroundImage,
+        },
+        user,
+      );
+
+      const newAttendanceTables =
+        await this.attendanceTableService.attendanceTableRepository.findMany({
+          where: {
+            subjectId: create.id,
+          },
+        });
+
+      await Promise.allSettled(
+        newAttendanceTables.map((a) =>
+          this.attendanceTableService.attendanceTableRepository.deleteAttendanceTable(
+            {
+              attendanceTableId: a.id,
+            },
+          ),
+        ),
+      );
+
+      const oldAttendanceTables =
+        await this.attendanceTableService.attendanceTableRepository.findMany({
+          where: {
+            subjectId: subject.id,
+          },
+        });
+
+      const status =
+        await this.attendanceStatusListService.attendanceStatusListSRepository.findMany(
+          {
+            where: {
+              subjectId: subject.id,
+            },
+          },
+        );
+
+      for (const attendanceTable of oldAttendanceTables) {
+        const createAttendanceTable =
+          await this.attendanceTableService.attendanceTableRepository.createAttendanceTable(
+            {
+              title: attendanceTable.title,
+              subjectId: create.id,
+              schoolId: create.schoolId,
+              description: attendanceTable.description,
+            },
+          );
+        await Promise.allSettled(
+          status
+            .filter((s) => s.attendanceTableId === attendanceTable.id)
+            .map((s) =>
+              this.attendanceStatusListService.attendanceStatusListSRepository.create(
+                {
+                  data: {
+                    title: s.title,
+                    color: s.color,
+                    subjectId: create.id,
+                    value: s.value,
+                    schoolId: create.schoolId,
+                    attendanceTableId: createAttendanceTable.id,
+                  },
+                },
+              ),
+            ),
+        );
+      }
+      if (assignments.length > 0) {
+        await Promise.all(
+          assignments.map(async (assignment) => {
+            const newAssignment = await this.assignmentService.createAssignment(
+              {
+                title: assignment.title,
+                type: assignment.type,
+                description: assignment.description,
+                ...(assignment.dueDate && {
+                  dueDate: assignment.dueDate.toISOString(),
+                }),
+                ...(assignment.beginDate && {
+                  beginDate: assignment.beginDate.toISOString(),
+                }),
+                subjectId: create.id,
+                status: assignment.status,
+                maxScore: assignment.maxScore,
+              },
+              user,
+            );
+
+            const filesOnAssignments =
+              await this.fileAssignmentService.fileAssignmentRepository.findMany(
+                {
+                  where: {
+                    assignmentId: assignment.id,
+                  },
+                },
+              );
+            if (filesOnAssignments.length > 0) {
+              await Promise.allSettled(
+                filesOnAssignments.map((file) =>
+                  this.fileAssignmentService.fileAssignmentRepository.create({
+                    type: file.type,
+                    blurHash: file.blurHash,
+                    subjectId: create.id,
+                    url: file.url,
+                    size: file.size,
+                    schoolId: create.schoolId,
+                    assignmentId: newAssignment.id,
+                  }),
+                ),
+              );
+            }
+            return newAssignment;
+          }),
+        );
+      }
+      console.log('Create');
+      return subject;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getSubjectById(
@@ -256,7 +429,7 @@ export class SubjectService {
   async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
     let subjectId: string;
     try {
-      const school = await this.SchoolService.schoolRepository.getById({
+      const school = await this.schoolService.schoolRepository.getById({
         schoolId: dto.schoolId,
       });
 
@@ -272,7 +445,7 @@ export class SubjectService {
         },
       });
 
-      await this.SchoolService.ValidateLimit(
+      await this.schoolService.ValidateLimit(
         school,
         'subjects',
         exsitingSubjects.length + 1,
@@ -417,6 +590,21 @@ export class SubjectService {
         },
       ];
 
+      await this.prisma.teacherOnSubject.create({
+        data: {
+          userId: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          phone: user.phone,
+          email: user.email,
+          role: 'ADMIN',
+          status: 'ACCEPT',
+          photo: user.photo,
+          subjectId: subject.id,
+          schoolId: dto.schoolId,
+        },
+      });
+
       await Promise.all([
         this.gradeService.gradeRepository.create({
           data: {
@@ -448,20 +636,6 @@ export class SubjectService {
           .catch((error) => {
             this.logger.error(error);
           }),
-        this.prisma.teacherOnSubject.create({
-          data: {
-            userId: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            phone: user.phone,
-            email: user.email,
-            role: 'ADMIN',
-            status: 'ACCEPT',
-            photo: user.photo,
-            subjectId: subject.id,
-            schoolId: dto.schoolId,
-          },
-        }),
         this.attendanceTableService.createAttendanceTable(
           {
             title: 'Default',
