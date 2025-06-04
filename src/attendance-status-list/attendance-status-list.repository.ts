@@ -23,6 +23,9 @@ type Repository = {
   delete(
     request: Prisma.AttendanceStatusListDeleteArgs,
   ): Promise<AttendanceStatusList>;
+  deleteMany(
+    request: Prisma.AttendanceStatusListDeleteManyArgs,
+  ): Promise<Prisma.BatchPayload>;
 };
 @Injectable()
 export class AttendanceStatusListSRepository implements Repository {
@@ -116,6 +119,22 @@ export class AttendanceStatusListSRepository implements Repository {
   ): Promise<AttendanceStatusList[]> {
     try {
       return await this.prisma.attendanceStatusList.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteMany(
+    request: Prisma.AttendanceStatusListDeleteManyArgs,
+  ): Promise<Prisma.BatchPayload> {
+    try {
+      return await this.prisma.attendanceStatusList.deleteMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

@@ -123,14 +123,26 @@ export class FileAssignmentRepository implements Repository {
         throw new NotFoundException('File not found');
       }
 
-      await this.googleStorageService.DeleteFileOnStorage({
-        fileName: fileOnAssignment.url,
-      });
-
       await this.prisma.fileOnAssignment.delete({
         where: {
           id: request.fileOnAssignmentId,
         },
+      });
+
+      const checkExsit = await this.prisma.fileOnAssignment.findMany({
+        where: {
+          url: fileOnAssignment.url,
+        },
+      });
+
+      if (checkExsit.length === 1) {
+        await this.googleStorageService.DeleteFileOnStorage({
+          fileName: fileOnAssignment.url,
+        });
+      }
+
+      await this.googleStorageService.DeleteFileOnStorage({
+        fileName: fileOnAssignment.url,
       });
 
       return { message: 'File deleted' };

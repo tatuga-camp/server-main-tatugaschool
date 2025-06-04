@@ -32,8 +32,9 @@ import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { CreateClassDto } from './dto';
-import { Stats } from 'fs';
 import { AssignmentService } from '../assignment/assignment.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 
 describe('Class Service', () => {
@@ -78,12 +79,16 @@ describe('Class Service', () => {
   let studentService: StudentService;
   let gradeService: GradeService;
   let subjectService: SubjectService;
+  let assignmentService: AssignmentService;
+  let fileAssignmentService: FileAssignmentService;
+  let attendanceStatusListService: AttendanceStatusListService;
+  let studentOnAssignmentService: StudentOnAssignmentService;
+
   const schoolService = new SchoolService(
     prismaService,
     stripeService,
     memberOnSchoolService,
     googleStorageService,
-    studentService,
     subjectService,
     classroomService,
   );
@@ -113,6 +118,9 @@ describe('Class Service', () => {
     memberOnSchoolService,
     schoolService,
     gradeService,
+    assignmentService,
+    fileAssignmentService,
+    attendanceStatusListService,
   );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
@@ -156,8 +164,7 @@ describe('Class Service', () => {
     googleStorageService,
     teacherOnSubjectService,
   );
-
-  const assignmentService = new AssignmentService(
+  assignmentService = new AssignmentService(
     prismaService,
     aiService,
     googleStorageService,
@@ -166,21 +173,19 @@ describe('Class Service', () => {
     studentOnSubjectService,
     skillService,
     skillOnAssignmentService,
-    httpService,
     authService,
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
   );
 
-  const studentOnAssignmentService = new StudentOnAssignmentService(
+  studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     googleStorageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
   );
-
   beforeEach(async () => {
     classroomService = new ClassService(
       memberOnSchoolService,
@@ -1972,7 +1977,6 @@ describe('Class Service', () => {
               studentId: student2.id,
             },
           );
-
 
         const studentOnAssignment1 =
           await studentOnAssignmentService.studentOnAssignmentRepository.getByStudentIdAndAssignmentId(

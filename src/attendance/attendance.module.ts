@@ -16,6 +16,12 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
 import { GradeService } from '../grade/grade.service';
 import { UsersService } from '../users/users.service';
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
+import { AssignmentService } from '../assignment/assignment.service';
+import { SkillService } from '../skill/skill.service';
+import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assignment.service';
+import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
+import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 
 @Module({
   imports: [HttpModule],
@@ -35,6 +41,12 @@ import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/
     GradeService,
     UsersService,
     SkillOnStudentAssignmentService,
+    AssignmentService,
+    SkillService,
+    SkillOnAssignmentService,
+    ScoreOnSubjectService,
+    ScoreOnStudentService,
+    FileAssignmentService,
   ],
   controllers: [AttendanceController],
 })

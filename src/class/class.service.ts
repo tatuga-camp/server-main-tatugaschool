@@ -1,7 +1,3 @@
-import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
-import { PushRepository } from './../web-push/push.repository';
-import { PushService } from './../web-push/push.service';
-import { EmailService } from './../email/email.service';
 import {
   ForbiddenException,
   forwardRef,
@@ -10,23 +6,21 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { ClassRepository } from './class.repository';
-import {
-  RequestDeleteClass,
-  RequestGetClass,
-  RequestGetClassByPage,
-} from './interfaces/class.interface';
-import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { Class, Student, Subject, User } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { StudentRepository } from '../student/student.repository';
-import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
-import { PushSubscription } from '../web-push/interfaces';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
-import { SubjectRepository } from '../subject/subject.repository';
 import { AssignmentRepository } from '../assignment/assignment.repository';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { SchoolService } from '../school/school.service';
+import { StudentRepository } from '../student/student.repository';
+import { SubjectRepository } from '../subject/subject.repository';
 import { UsersService } from '../users/users.service';
+import { PushSubscription } from '../web-push/interfaces';
+import { EmailService } from './../email/email.service';
+import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
+import { PushService } from './../web-push/push.service';
+import { ClassRepository } from './class.repository';
+import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
 
 @Injectable()
 export class ClassService {
