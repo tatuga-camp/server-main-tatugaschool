@@ -1,3 +1,4 @@
+import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
@@ -42,6 +43,7 @@ import {
 
 import { fail } from 'assert';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 
 describe('Assignment Service', () => {
   let assignmentService: AssignmentService;
@@ -86,12 +88,13 @@ describe('Assignment Service', () => {
   let classroomService: ClassService;
   let gradeService: GradeService;
   let subjectService: SubjectService;
+  let fileAssignmentService: FileAssignmentService;
+  let attendanceStatusListService: AttendanceStatusListService;
   const schoolService = new SchoolService(
     prismaService,
     stripeService,
     memberOnSchoolService,
     googleStorageService,
-    studentService,
     subjectService,
     classroomService,
   );
@@ -130,6 +133,9 @@ describe('Assignment Service', () => {
     memberOnSchoolService,
     schoolService,
     gradeService,
+    assignmentService,
+    fileAssignmentService,
+    attendanceStatusListService,
   );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
@@ -192,7 +198,6 @@ describe('Assignment Service', () => {
       studentOnSubjectService,
       skillService,
       skillOnAssignmentService,
-      httpService,
       authService,
       gradeService,
       scoreOnSubjectService,

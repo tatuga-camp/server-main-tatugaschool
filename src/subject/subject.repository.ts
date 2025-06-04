@@ -1,3 +1,4 @@
+import { AssignmentRepository } from './../assignment/assignment.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   Injectable,
@@ -29,11 +30,16 @@ type Repository = {
 export class SubjectRepository implements Repository {
   private logger: Logger = new Logger(SubjectRepository.name);
   private groupOnSubjectRepository: GroupOnSubjectRepository;
+  private assignmentRepository: AssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
   ) {
     this.groupOnSubjectRepository = new GroupOnSubjectRepository(this.prisma);
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.googleStorageService,
+    );
   }
 
   async count(request: Prisma.SubjectCountArgs): Promise<number> {
@@ -160,11 +166,29 @@ export class SubjectRepository implements Repository {
   async deleteSubject(request: RequestDeleteSubject): Promise<Subject> {
     try {
       const { subjectId } = request;
-      const fileOnAssignments = await this.prisma.fileOnAssignment.findMany({
+
+      await this.prisma.skillOnStudentAssignment.deleteMany({
         where: {
           subjectId: subjectId,
         },
       });
+
+      const assignments = await this.prisma.assignment.findMany({
+        where: {
+          subjectId: subjectId,
+        },
+      });
+
+      if (assignments.length > 0) {
+        await Promise.all(
+          assignments.map((a) =>
+            this.assignmentRepository.delete({
+              assignmentId: a.id,
+            }),
+          ),
+        );
+      }
+
       const groupOnSubjects = await this.groupOnSubjectRepository.findMany({
         where: {
           subjectId: request.subjectId,
@@ -180,64 +204,6 @@ export class SubjectRepository implements Repository {
           ),
         );
       }
-
-      // Delete related commentOnAssignments records
-      await this.prisma.commentOnAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      const fileOnStudentAssignments =
-        await this.prisma.fileOnStudentAssignment.findMany({
-          where: {
-            subjectId: subjectId,
-          },
-        });
-
-      Promise.allSettled([
-        ...fileOnAssignments.map((file) =>
-          this.googleStorageService.DeleteFileOnStorage({
-            fileName: file.url,
-          }),
-        ),
-        this.prisma.gradeRange.delete({
-          where: {
-            subjectId: subjectId,
-          },
-        }),
-        ...fileOnStudentAssignments
-          .filter((f) => f.contentType === 'FILE')
-          .map((file) =>
-            this.googleStorageService.DeleteFileOnStorage({
-              fileName: file.body,
-            }),
-          ),
-        this.prisma.fileOnStudentAssignment.deleteMany({
-          where: {
-            OR: fileOnStudentAssignments.map((f) => {
-              return {
-                id: f.id,
-              };
-            }),
-          },
-        }),
-        this.prisma.fileOnAssignment.deleteMany({
-          where: {
-            OR: fileOnAssignments.map((f) => {
-              return {
-                id: f.id,
-              };
-            }),
-          },
-        }),
-      ]);
-
-      await this.prisma.skillOnStudentAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
 
       // Delete related attendance records
       await this.prisma.attendance.deleteMany({
@@ -279,12 +245,6 @@ export class SubjectRepository implements Repository {
         },
       });
 
-      await this.prisma.studentOnAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
       // Delete related studentOnSubjects records
       await this.prisma.studentOnSubject.deleteMany({
         where: {
@@ -299,25 +259,7 @@ export class SubjectRepository implements Repository {
         },
       });
 
-      await this.prisma.fileOnAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      await this.prisma.fileOnStudentAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      await this.prisma.skillOnAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      await this.prisma.assignment.deleteMany({
+      await this.prisma.gradeRange.deleteMany({
         where: {
           subjectId: subjectId,
         },
@@ -330,6 +272,7 @@ export class SubjectRepository implements Repository {
         },
       });
     } catch (error) {
+      console.log(error);
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
         throw new InternalServerErrorException(

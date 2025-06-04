@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { AssignmentService } from './assignment.service';
 import { AssignmentController } from './assignment.controller';
@@ -18,9 +18,12 @@ import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.serv
 import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
 import { UsersService } from '../users/users.service';
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
+import { SubjectModule } from '../subject/subject.module';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, forwardRef(() => SubjectModule)],
   providers: [
     AssignmentService,
     TeacherOnSubjectService,
@@ -28,7 +31,6 @@ import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/
     WheelOfNameService,
     SkillService,
     SkillOnAssignmentService,
-    SubjectService,
     AttendanceTableService,
     ClassService,
     MemberOnSchoolService,
@@ -39,6 +41,9 @@ import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/
     GradeService,
     UsersService,
     SkillOnStudentAssignmentService,
+    SubjectService,
+    FileAssignmentService,
+    AttendanceStatusListService,
   ],
   controllers: [AssignmentController],
 })

@@ -33,6 +33,9 @@ import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { CreateClassDto } from './dto';
 import { Stats } from 'fs';
+import { AssignmentService } from '../assignment/assignment.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 
 describe('Class Service', () => {
   let classroomService: ClassService;
@@ -76,12 +79,15 @@ describe('Class Service', () => {
   let studentService: StudentService;
   let gradeService: GradeService;
   let subjectService: SubjectService;
+  let assignmentService: AssignmentService;
+  let fileAssignmentService: FileAssignmentService;
+  let attendanceStatusListService: AttendanceStatusListService;
+
   const schoolService = new SchoolService(
     prismaService,
     stripeService,
     memberOnSchoolService,
     googleStorageService,
-    studentService,
     subjectService,
     classroomService,
   );
@@ -111,6 +117,9 @@ describe('Class Service', () => {
     memberOnSchoolService,
     schoolService,
     gradeService,
+    assignmentService,
+    fileAssignmentService,
+    attendanceStatusListService,
   );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
@@ -154,7 +163,20 @@ describe('Class Service', () => {
     googleStorageService,
     teacherOnSubjectService,
   );
-
+  assignmentService = new AssignmentService(
+    prismaService,
+    aiService,
+    googleStorageService,
+    teacherOnSubjectService,
+    subjectService,
+    studentOnSubjectService,
+    skillService,
+    skillOnAssignmentService,
+    authService,
+    gradeService,
+    scoreOnSubjectService,
+    scoreOnStudentService,
+  );
   beforeEach(async () => {
     classroomService = new ClassService(
       memberOnSchoolService,

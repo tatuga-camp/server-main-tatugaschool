@@ -41,6 +41,9 @@ import {
   QueryMemberOnSchoolDto,
   UpdateMemberOnSchoolDto,
 } from './dto';
+import { AssignmentService } from '../assignment/assignment.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 
 describe('MemberOnSchool Service', () => {
   const prismaService = new PrismaService();
@@ -84,12 +87,15 @@ describe('MemberOnSchool Service', () => {
   let classroomService: ClassService;
   let gradeService: GradeService;
   let subjectService: SubjectService;
+  let assignmentService: AssignmentService;
+  let fileAssignmentService: FileAssignmentService;
+  let attendanceStatusListService: AttendanceStatusListService;
+
   const schoolService = new SchoolService(
     prismaService,
     stripeService,
     memberOnSchoolService,
     googleStorageService,
-    studentService,
     subjectService,
     classroomService,
   );
@@ -128,6 +134,9 @@ describe('MemberOnSchool Service', () => {
     memberOnSchoolService,
     schoolService,
     gradeService,
+    assignmentService,
+    fileAssignmentService,
+    attendanceStatusListService,
   );
 
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
@@ -179,6 +188,20 @@ describe('MemberOnSchool Service', () => {
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+  );
+  assignmentService = new AssignmentService(
+    prismaService,
+    aiService,
+    googleStorageService,
+    teacherOnSubjectService,
+    subjectService,
+    studentOnSubjectService,
+    skillService,
+    skillOnAssignmentService,
+    authService,
+    gradeService,
+    scoreOnSubjectService,
+    scoreOnStudentService,
   );
 
   beforeEach(async () => {

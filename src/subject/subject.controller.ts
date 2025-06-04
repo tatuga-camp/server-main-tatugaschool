@@ -1,4 +1,3 @@
-import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import {
   Body,
   Controller,
@@ -10,25 +9,23 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Student, User } from '@prisma/client';
+import { GetStudent, GetUser } from '../auth/decorators';
 import { StudentGuard, UserGuard } from '../auth/guard';
-import { SubjectService } from './subject.service';
 import {
   CreateSubjectDto,
   DeleteSubjectDto,
+  DuplicateSubjectDto,
   GetSubjectByCode,
   GetSubjectByIdDto,
-  GetSubjectByPageDto,
   ParamGetSubjectFromSchool,
   ParamSubjectThatStudentBelongto,
   QueryGetSubjectFromSchool,
   QuerySubjectThatStudentBelongto,
   ReorderSubjectsDto,
   UpdateSubjectDto,
-  getAllSubjectsByTeamIdParam,
-  getAllSubjectsByTeamIdQuery,
 } from './dto';
-import { GetStudent, GetUser } from '../auth/decorators';
-import { Student, User } from '@prisma/client';
+import { SubjectService } from './subject.service';
 
 @Controller('v1/subjects')
 export class SubjectController {
@@ -80,6 +77,15 @@ export class SubjectController {
   @Post()
   async createSubject(@Body() dto: CreateSubjectDto, @GetUser() user: User) {
     return this.subjectService.createSubject(dto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Post('duplicate')
+  async duplicateSubject(
+    @Body() dto: DuplicateSubjectDto,
+    @GetUser() user: User,
+  ) {
+    return this.subjectService.duplicateSubject(dto, user);
   }
 
   @UseGuards(UserGuard)

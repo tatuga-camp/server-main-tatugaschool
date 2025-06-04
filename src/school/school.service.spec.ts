@@ -1,3 +1,4 @@
+import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
@@ -34,6 +35,8 @@ import { GoogleStorageService } from './../google-storage/google-storage.service
 import { CreateSchoolDto, UpdateSchoolDto } from './dto';
 import { fail } from 'assert';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
+import { AssignmentService } from '../assignment/assignment.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 
 describe('School Service', () => {
   let schoolService: SchoolService;
@@ -78,7 +81,9 @@ describe('School Service', () => {
   let classroomService: ClassService;
   let gradeService: GradeService;
   let subjectService: SubjectService;
-
+  let assignmentService: AssignmentService;
+  let fileAssignmentService: FileAssignmentService;
+  let attendanceStatusListService: AttendanceStatusListService;
   const pushService = new PushService(prismaService);
   memberOnSchoolService = new MemberOnSchoolService(
     prismaService,
@@ -103,6 +108,7 @@ describe('School Service', () => {
     userService,
     schoolService,
   );
+
   subjectService = new SubjectService(
     prismaService,
     googleStorageService,
@@ -113,6 +119,9 @@ describe('School Service', () => {
     memberOnSchoolService,
     schoolService,
     gradeService,
+    assignmentService,
+    fileAssignmentService,
+    attendanceStatusListService,
   );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
@@ -163,14 +172,26 @@ describe('School Service', () => {
     pushService,
     skillOnStudentAssignmentService,
   );
-
+  assignmentService = new AssignmentService(
+    prismaService,
+    aiService,
+    googleStorageService,
+    teacherOnSubjectService,
+    subjectService,
+    studentOnSubjectService,
+    skillService,
+    skillOnAssignmentService,
+    authService,
+    gradeService,
+    scoreOnSubjectService,
+    scoreOnStudentService,
+  );
   beforeEach(async () => {
     schoolService = new SchoolService(
       prismaService,
       stripeService,
       memberOnSchoolService,
       googleStorageService,
-      studentService,
       subjectService,
       classroomService,
     );

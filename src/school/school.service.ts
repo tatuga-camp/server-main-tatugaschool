@@ -34,9 +34,9 @@ export class SchoolService {
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
-    @Inject(forwardRef(() => StudentService))
-    private studentService: StudentService,
+    @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
+    @Inject(forwardRef(() => ClassService))
     private classService: ClassService,
   ) {
     this.logger = new Logger(SchoolService.name);
