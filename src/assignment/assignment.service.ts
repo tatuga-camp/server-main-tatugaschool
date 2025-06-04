@@ -4,6 +4,8 @@ import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -58,11 +60,11 @@ export class AssignmentService {
     private aiService: AiService,
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
     private studentOnSubjectService: StudentOnSubjectService,
     private skillService: SkillService,
     private skillOnAssignmentService: SkillOnAssignmentService,
-    private httpService: HttpService,
     private authService: AuthService,
     private gradeService: GradeService,
     private scoreOnSubjectService: ScoreOnSubjectService,

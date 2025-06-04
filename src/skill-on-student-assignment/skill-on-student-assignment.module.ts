@@ -12,6 +12,14 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { HttpModule } from '@nestjs/axios';
 import { GradeService } from '../grade/grade.service';
 import { UsersService } from '../users/users.service';
+import { AssignmentService } from '../assignment/assignment.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
+import { SkillService } from '../skill/skill.service';
+import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assignment.service';
+import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
+import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 
 @Module({
   imports: [HttpModule],
@@ -28,6 +36,14 @@ import { UsersService } from '../users/users.service';
     TeacherOnSubjectService,
     GradeService,
     UsersService,
+    AssignmentService,
+    StudentOnSubjectService,
+    SkillService,
+    SkillOnAssignmentService,
+    ScoreOnSubjectService,
+    ScoreOnStudentService,
+    FileAssignmentService,
+    AttendanceStatusListService,
   ],
 })
 export class SkillOnStudentAssignmentModule {}

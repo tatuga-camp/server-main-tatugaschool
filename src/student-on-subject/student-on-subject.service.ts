@@ -1,9 +1,10 @@
-import { AssignmentRepository } from './../assignment/assignment.repository';
-import { AttendanceRowRepository } from './../attendance-row/attendance-row.repository';
-import { AttendanceRepository } from './../attendance/attendance.repository';
-import { UserRepository } from './../users/users.repository';
-import { ClassRepository } from './../class/class.repository';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Assignment,
   GradeRange,
@@ -12,13 +13,21 @@ import {
   StudentOnSubject,
   User,
 } from '@prisma/client';
+import { GradeService } from '../grade/grade.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SchoolService } from '../school/school.service';
+import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
+import { StudentRepository } from '../student/student.repository';
+import { AssignmentRepository } from './../assignment/assignment.repository';
+import { AttendanceRowRepository } from './../attendance-row/attendance-row.repository';
+import { AttendanceRepository } from './../attendance/attendance.repository';
+import { ClassRepository } from './../class/class.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { ScoreOnStudentRepository } from './../score-on-student/score-on-student.repository';
 import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { SubjectRepository } from './../subject/subject.repository';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
+import { UserRepository } from './../users/users.repository';
 import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import {
   CreateStudentOnSubjectDto,
@@ -36,9 +45,6 @@ import {
   StudentOnSubjectRepository,
   StudentOnSubjectRepositoryType,
 } from './student-on-subject.repository';
-import { StudentRepository } from '../student/student.repository';
-import { GradeService } from '../grade/grade.service';
-import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 
 @Injectable()
 export class StudentOnSubjectService {
@@ -59,6 +65,7 @@ export class StudentOnSubjectService {
     private googleStorageService: GoogleStorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private wheelOfNameService: WheelOfNameService,
+    @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
     private gradeService: GradeService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,

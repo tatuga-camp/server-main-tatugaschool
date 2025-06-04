@@ -184,6 +184,20 @@ export class AssignmentRepository implements AssignmentRepositoryType {
           }),
         },
       });
+      const fileOnStudentAssignments =
+        await this.prisma.fileOnStudentAssignment.findMany({
+          where: {
+            assignmentId: request.assignmentId,
+          },
+        });
+
+      await Promise.all(
+        fileOnStudentAssignments
+          .filter((f) => f.contentType === 'FILE')
+          .map((f) =>
+            this.googleStorageService.DeleteFileOnStorage({ fileName: f.body }),
+          ),
+      );
 
       await this.fileOnStudentAssignmentRepository.deleteMany({
         where: {

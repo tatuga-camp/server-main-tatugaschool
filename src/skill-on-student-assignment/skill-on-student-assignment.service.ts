@@ -7,7 +7,13 @@ import { StudentRepository } from './../student/student.repository';
 import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { SkillOnStudentAssignmentRepository } from './skill-on-student-assignment.repository';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateBySuggestionDto,
@@ -32,6 +38,7 @@ export class SkillOnStudentAssignmentService {
 
   constructor(
     private prisma: PrismaService,
+    @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private googleStorageService: GoogleStorageService,
   ) {

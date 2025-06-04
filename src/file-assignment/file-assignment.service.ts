@@ -6,6 +6,8 @@ import { FileAssignmentRepository } from './file-assignment.repository';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -31,6 +33,7 @@ export class FileAssignmentService {
   constructor(
     private prisma: PrismaService,
     private googleStorageService: GoogleStorageService,
+    @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
     private classService: ClassService,
     private stripe: StripeService,
