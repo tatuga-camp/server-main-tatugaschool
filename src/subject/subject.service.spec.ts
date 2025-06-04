@@ -40,6 +40,8 @@ import {
   UpdateSubjectDto,
   DeleteSubjectDto,
 } from './dto';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 
 describe('Subject Service', () => {
   let subjectService: SubjectService;
@@ -94,12 +96,12 @@ describe('Subject Service', () => {
     userService,
     schoolService,
   );
+
   schoolService = new SchoolService(
     prismaService,
     stripeService,
     memberOnSchoolService,
     googleStorageService,
-    studentService,
     subjectService,
     classroomService,
   );
@@ -118,17 +120,6 @@ describe('Subject Service', () => {
     classroomService,
   );
 
-  subjectService = new SubjectService(
-    prismaService,
-    googleStorageService,
-    wheelOfNameService,
-    attendanceTableService,
-    teacherOnSubjectService,
-    classroomService,
-    memberOnSchoolService,
-    schoolService,
-    gradeService,
-  );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
@@ -181,7 +172,6 @@ describe('Subject Service', () => {
     studentOnSubjectService,
     skillService,
     skillOnAssignmentService,
-    httpService,
     authService,
     gradeService,
     scoreOnSubjectService,
@@ -196,6 +186,19 @@ describe('Subject Service', () => {
     skillOnStudentAssignmentService,
   );
 
+  const fileAssignmentService = new FileAssignmentService(
+    prismaService,
+    googleStorageService,
+    subjectService,
+    classroomService,
+    stripeService,
+  );
+
+  const attendanceStatusListService = new AttendanceStatusListService(
+    prismaService,
+    teacherOnSubjectService
+  )
+  
   beforeEach(async () => {
     subjectService = new SubjectService(
       prismaService,
@@ -207,6 +210,9 @@ describe('Subject Service', () => {
       memberOnSchoolService,
       schoolService,
       gradeService,
+      assignmentService,
+      fileAssignmentService,
+      attendanceStatusListService,
     );
   });
 
