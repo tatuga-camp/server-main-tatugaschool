@@ -66,7 +66,7 @@ jobs:
         run: |
           postman collection run "37935730-d3db3012-849e-4a56-9787-33b317d4abaf" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
 
-  test-school:
+  test-school-delete:
     runs-on: ubuntu-latest
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -193,3 +193,35 @@ jobs:
       - name: Run Postman Collection
         run: |
           postman collection run "37935730-20dc6306-e08a-466a-8dfc-a4bd74ebf3b1" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
+
+  test-student-delete:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      - name: Install Postman CLI
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
+      # Install Node on the runner
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 'lts/*' # Or your preferred Node.js version
+
+          # Added the missing hyphen here
+      - name: Build & Run Test Server
+        run: npm run docker:build:run:test
+
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
+
+      - name: Login to Postman CLI
+        run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+
+      # Run the POSTMAN Collection
+      - name: Run Postman Collection
+        run: |
+          postman collection run "37935730-206efb6a-f229-419a-9da7-5eba07395a35" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
