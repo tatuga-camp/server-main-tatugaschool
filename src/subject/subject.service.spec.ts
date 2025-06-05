@@ -31,7 +31,6 @@ import { AiService } from '../vector/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { Stats } from 'fs';
 import { AssignmentService } from '../assignment/assignment.service';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import {
@@ -196,9 +195,9 @@ describe('Subject Service', () => {
 
   const attendanceStatusListService = new AttendanceStatusListService(
     prismaService,
-    teacherOnSubjectService
-  )
-  
+    teacherOnSubjectService,
+  );
+
   beforeEach(async () => {
     subjectService = new SubjectService(
       prismaService,
@@ -510,6 +509,8 @@ describe('Subject Service', () => {
         await subjectService.createSubject(dto, user);
         fail('Expected ForbiddenException');
       } catch (error) {
+        console.log(error);
+
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
       }
@@ -2750,6 +2751,7 @@ describe('Subject Service', () => {
         await subjectService.deleteSubject(dto, user);
         fail('Expected ForbiddenException');
       } catch (error) {
+        console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain("You're not a member of this school");
       }
