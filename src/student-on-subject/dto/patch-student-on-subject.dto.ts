@@ -7,6 +7,8 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
+  IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
 
@@ -27,6 +29,14 @@ class UpdateStudentBody {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsUrl()
+  photo?: string;
+
+  @IsString()
+  @IsString()
+  blurHash?: string;
 }
 
 export class UpdateStudentOnSubjectDto {
