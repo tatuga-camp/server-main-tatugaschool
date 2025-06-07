@@ -463,7 +463,7 @@ export class StudentOnSubjectService {
         });
       }
 
-      if (subject.wheelOfNamePath) {
+      if (subject.wheelOfNamePath && dto.data.isActive) {
         const studentActives = await this.studentOnSubjectRepository.findMany({
           where: {
             subjectId: studentOnSubject.subjectId,
@@ -581,7 +581,10 @@ export class StudentOnSubjectService {
     }
   }
 
-  async sortStudentOnSubjects(dto: SortDto, user: User) {
+  async sortStudentOnSubjects(
+    dto: SortDto,
+    user: User,
+  ): Promise<StudentOnSubject[]> {
     try {
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
         where: {
@@ -616,7 +619,7 @@ export class StudentOnSubjectService {
       const filterSuccess = updates.filter(
         (update) => update.status === 'fulfilled',
       );
-      return filterSuccess;
+      return filterSuccess.map((f) => f.value);
     } catch (error) {
       this.logger.error(error);
       throw error;
