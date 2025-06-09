@@ -505,6 +505,7 @@ export class SubjectService {
           classId: student.classId,
           subjectId: subject.id,
           schoolId: student.schoolId,
+          order: Number(student.number),
         };
       });
 
