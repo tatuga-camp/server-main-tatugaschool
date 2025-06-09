@@ -90,6 +90,10 @@ jobs:
           echo "Waiting 10 seconds for server to start..."
           sleep 10
 
+          # New step to display Docker logs
+      - name: Show Docker Container Logs
+        run: docker logs tatuga-ci-container
+
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
