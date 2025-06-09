@@ -282,9 +282,14 @@ export class GoogleStorageService {
     input: InputDeleteFileOnStorage,
   ): Promise<{ message: string }> {
     try {
+      if (this.configService.get('NODE_ENV') === 'test') {
+        this.logger.log('You are in test ENV no file is being deleted');
+        return { message: 'URL file is not from google storage' };
+      }
       if (!input.fileName.includes('storage.googleapis.com')) {
         return { message: 'URL file is not from google storage' };
       }
+
       const bucket = this.getBucket();
       const parts = input.fileName.split('/');
       const fileName = parts.slice(4).join('/');

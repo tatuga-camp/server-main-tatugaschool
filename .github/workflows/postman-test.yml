@@ -98,6 +98,12 @@ jobs:
         run: |
           postman collection run "37935730-554c9a4f-9c80-451d-a58e-bf21b9966c12" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
 
+          # THEN, dump the logs. This will include everything from the Postman run.
+      - name: Display Docker Container Logs
+        # This step will run even if the Postman collection fails
+        if: always()
+        run: docker logs tatuga-ci-container
+
   test-attendence:
     runs-on: ubuntu-latest
     steps:
