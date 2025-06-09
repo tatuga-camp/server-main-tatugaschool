@@ -90,10 +90,6 @@ jobs:
           echo "Waiting 10 seconds for server to start..."
           sleep 10
 
-          # New step to display Docker logs
-      - name: Show Docker Container Logs
-        run: docker logs tatuga-ci-container
-
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
@@ -101,6 +97,12 @@ jobs:
       - name: Run Postman Collection
         run: |
           postman collection run "37935730-554c9a4f-9c80-451d-a58e-bf21b9966c12" -e "19610448-7e19cd20-f24a-4726-a730-f51baa7003cc"
+
+          # THEN, dump the logs. This will include everything from the Postman run.
+      - name: Display Docker Container Logs
+        # This step will run even if the Postman collection fails
+        if: always()
+        run: docker logs tatuga-ci-container
 
   test-attendence:
     runs-on: ubuntu-latest
