@@ -1,3 +1,4 @@
+import { SubscriptionService } from './../subscription/subscription.service';
 import { ClassService } from './../class/class.service';
 import { SubjectService } from './../subject/subject.service';
 import { StudentService } from './../student/student.service';
@@ -38,6 +39,8 @@ export class SchoolService {
     private subjectService: SubjectService,
     @Inject(forwardRef(() => ClassService))
     private classService: ClassService,
+    @Inject(forwardRef(() => SubscriptionService))
+    private subscriptionService: SubscriptionService,
   ) {
     this.logger = new Logger(SchoolService.name);
     this.schoolRepository = new SchoolRepository(
@@ -95,12 +98,13 @@ export class SchoolService {
         user,
         schoolId: school.id,
       });
+
       if (school.stripe_subscription_id) {
-        const subscription = await this.stripe.subscriptions.retrieve(
+        const status = await this.subscriptionService.checkSubscriptionStatus(
           school.stripe_subscription_id,
         );
 
-        if (subscription && subscription.status !== 'active') {
+        if (status !== 'active') {
           school = await this.upgradePlanFree(school.id);
         }
       }
@@ -249,7 +253,7 @@ export class SchoolService {
     members: number,
   ): Promise<School> {
     try {
-      return await this.schoolRepository.update({
+      const update = await this.schoolRepository.update({
         where: {
           id: schoolId,
         },
@@ -264,6 +268,48 @@ export class SchoolService {
           limitTotalStorage: 10737418240000,
         },
       });
+
+      const [subjects, classrooms] = await Promise.all([
+        this.subjectService.subjectRepository.findMany({
+          where: {
+            schoolId: schoolId,
+            isLocked: true,
+          },
+        }),
+        this.classService.classRepository.findMany({
+          where: {
+            schoolId: schoolId,
+            isLocked: true,
+          },
+        }),
+      ]);
+
+      const chooseSubjects = subjects.slice(-update.limitSubjectNumber);
+      const chooseClassrooms = classrooms.slice(-update.limitClassNumber);
+      await Promise.all([
+        ...chooseSubjects.map((s) =>
+          this.subjectService.subjectRepository.update({
+            where: {
+              id: s.id,
+            },
+            data: {
+              isLocked: false,
+            },
+          }),
+        ),
+        chooseClassrooms.map((c) =>
+          this.classService.classRepository.update({
+            where: {
+              id: c.id,
+            },
+            data: {
+              isLocked: false,
+            },
+          }),
+        ),
+      ]);
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -272,7 +318,7 @@ export class SchoolService {
 
   async upgradePlanFree(schoolId: string): Promise<School> {
     try {
-      return await this.schoolRepository.update({
+      const update = await this.schoolRepository.update({
         where: {
           id: schoolId,
         },
@@ -280,10 +326,53 @@ export class SchoolService {
           plan: 'FREE',
           limitSchoolMember: 2,
           limitClassNumber: 3,
+          stripe_subscription_id: null,
+          stripe_subscription_expireAt: null,
+          stripe_price_id: null,
           limitSubjectNumber: 3,
           limitTotalStorage: 16106127360,
         },
       });
+
+      const [subjects, classrooms] = await Promise.all([
+        this.subjectService.subjectRepository.findMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+        this.classService.classRepository.findMany({
+          where: {
+            schoolId: schoolId,
+          },
+        }),
+      ]);
+
+      const chooseSubjects = subjects.slice(3);
+      const chooseClassrooms = classrooms.slice(3);
+      await Promise.all([
+        ...chooseSubjects.map((s) =>
+          this.subjectService.subjectRepository.update({
+            where: {
+              id: s.id,
+            },
+            data: {
+              isLocked: true,
+            },
+          }),
+        ),
+        chooseClassrooms.map((c) =>
+          this.classService.classRepository.update({
+            where: {
+              id: c.id,
+            },
+            data: {
+              isLocked: true,
+            },
+          }),
+        ),
+      ]);
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;

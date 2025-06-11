@@ -191,7 +191,9 @@ export class SchoolRepository implements SchoolRepositoryType {
           id: schoolId,
         },
       });
-      await this.stripe.customers.del(school.stripe_customer_id);
+      await this.stripe.customers
+        .del(school.stripe_customer_id)
+        .catch((e) => this.logger.error(e));
       return school;
     } catch (error) {
       this.logger.error(error);

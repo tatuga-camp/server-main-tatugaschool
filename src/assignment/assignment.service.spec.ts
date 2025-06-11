@@ -44,6 +44,7 @@ import {
 import { fail } from 'assert';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('Assignment Service', () => {
   let assignmentService: AssignmentService;
@@ -90,6 +91,8 @@ describe('Assignment Service', () => {
   let subjectService: SubjectService;
   let fileAssignmentService: FileAssignmentService;
   let attendanceStatusListService: AttendanceStatusListService;
+  let subscriptionService: SubscriptionService;
+
   const schoolService = new SchoolService(
     prismaService,
     stripeService,
@@ -97,6 +100,7 @@ describe('Assignment Service', () => {
     googleStorageService,
     subjectService,
     classroomService,
+    subscriptionService,
   );
 
   const pushService = new PushService(prismaService);
