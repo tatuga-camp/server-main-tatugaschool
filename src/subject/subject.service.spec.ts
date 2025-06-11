@@ -41,6 +41,7 @@ import {
 } from './dto';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('Subject Service', () => {
   let subjectService: SubjectService;
@@ -84,6 +85,9 @@ describe('Subject Service', () => {
   let studentService: StudentService;
   let gradeService: GradeService;
   let schoolService: SchoolService;
+  let subscriptionService: SubscriptionService;
+
+  subscriptionService = new SubscriptionService(stripeService, schoolService);
 
   const pushService = new PushService(prismaService);
   const classroomService = new ClassService(
@@ -103,6 +107,7 @@ describe('Subject Service', () => {
     googleStorageService,
     subjectService,
     classroomService,
+    subscriptionService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
