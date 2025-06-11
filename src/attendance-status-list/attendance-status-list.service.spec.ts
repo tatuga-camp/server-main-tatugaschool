@@ -41,6 +41,7 @@ import {
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import * as crypto from 'crypto';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('Attendance-status-list Service', () => {
   let attendanceStatusListService: AttendanceStatusListService;
@@ -85,6 +86,7 @@ describe('Attendance-status-list Service', () => {
   let gradeService: GradeService;
   let schoolService: SchoolService;
   let subjectService: SubjectService;
+  let subscriptionService: SubscriptionService;
 
   const pushService = new PushService(prismaService);
   const classroomService = new ClassService(
@@ -104,6 +106,7 @@ describe('Attendance-status-list Service', () => {
     googleStorageService,
     subjectService,
     classroomService,
+    subscriptionService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(

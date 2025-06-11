@@ -1,16 +1,16 @@
+import { SubscriptionService } from './../subscription/subscription.service';
 import { HttpService } from '@nestjs/axios';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Class, MemberRole, Status, User } from '@prisma/client';
+import * as crypto from 'crypto';
+import { AssignmentService } from '../assignment/assignment.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AuthService } from '../auth/auth.service';
 import { ClassService } from '../class/class.service';
 import { EmailService } from '../email/email.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { GradeService } from '../grade/grade.service';
 import { ImageService } from '../image/image.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
@@ -22,6 +22,7 @@ import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assign
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 import { SkillService } from '../skill/skill.service';
 import { StripeService } from '../stripe/stripe.service';
+import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
@@ -31,19 +32,11 @@ import { AiService } from '../vector/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { AssignmentService } from '../assignment/assignment.service';
-import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import {
   CreateAttendanceTableDto,
-  UpdateAttendanceTableDto,
-  GetAttendanceTablesDto,
-  GetAttendanceTableBySubjectIdDto,
   GetAttendanceTableById,
-  DeleteAttendanceTableDto,
+  GetAttendanceTablesDto,
 } from './dto';
-import { FileAssignmentService } from '../file-assignment/file-assignment.service';
-import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
-import * as crypto from 'crypto';
 
 describe('Attendance-table Service', () => {
   let attendanceTableService: AttendanceTableService;
@@ -83,6 +76,7 @@ describe('Attendance-table Service', () => {
   let gradeService: GradeService;
   let schoolService: SchoolService;
   let subjectService: SubjectService;
+  let subscriptionService: SubscriptionService;
 
   const pushService = new PushService(prismaService);
   const classroomService = new ClassService(
@@ -102,6 +96,7 @@ describe('Attendance-table Service', () => {
     googleStorageService,
     subjectService,
     classroomService,
+    subscriptionService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
