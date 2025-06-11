@@ -21,6 +21,7 @@ import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.serv
 import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Module({
   imports: [HttpModule],
@@ -45,6 +46,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
     ScoreOnStudentService,
     FileAssignmentService,
     AttendanceStatusListService,
+    SubscriptionService,
   ],
   controllers: [StudentOnAssignmentController],
 })

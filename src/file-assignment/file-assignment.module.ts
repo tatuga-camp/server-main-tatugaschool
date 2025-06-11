@@ -21,6 +21,7 @@ import { StudentOnSubjectService } from '../student-on-subject/student-on-subjec
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 import { SubjectModule } from '../subject/subject.module';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Module({
   imports: [HttpModule, forwardRef(() => SubjectModule)],
@@ -44,6 +45,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
     StudentOnSubjectService,
     SkillOnStudentAssignmentService,
     AttendanceStatusListService,
+    SubscriptionService,
   ],
   controllers: [FileAssignmentController],
 })

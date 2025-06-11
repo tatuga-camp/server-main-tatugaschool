@@ -37,6 +37,7 @@ import { fail } from 'assert';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('School Service', () => {
   let schoolService: SchoolService;
@@ -84,6 +85,10 @@ describe('School Service', () => {
   let assignmentService: AssignmentService;
   let fileAssignmentService: FileAssignmentService;
   let attendanceStatusListService: AttendanceStatusListService;
+  let subscriptionService: SubscriptionService;
+
+  subscriptionService = new SubscriptionService(stripeService, schoolService);
+
   const pushService = new PushService(prismaService);
   memberOnSchoolService = new MemberOnSchoolService(
     prismaService,
@@ -194,6 +199,7 @@ describe('School Service', () => {
       googleStorageService,
       subjectService,
       classroomService,
+      subscriptionService,
     );
   });
 

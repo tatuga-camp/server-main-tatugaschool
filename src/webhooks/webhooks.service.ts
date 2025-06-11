@@ -101,34 +101,19 @@ export class WebhooksService {
               stripe_subscription_id: subscriptionDelete.id,
             },
           });
+
         if (!school_subscription_delete) {
           res.status(200).send('stripe_subscription_id not found on School');
           break;
         }
-        await this.schoolService.schoolRepository.update({
-          where: {
-            id: school_subscription_delete.id,
-          },
-          data: {
-            stripe_subscription_id: null,
-            stripe_subscription_expireAt: null,
-            stripe_price_id: null,
-          },
-        });
+
         school_subscription_delete = await this.schoolService.upgradePlanFree(
           school_subscription_delete.id,
         );
         res.status(200).send(school_subscription_delete);
         break;
 
-      case 'invoice.updated':
-        const invoiceUpdate = dataObject as Stripe.Invoice;
-        if (invoiceUpdate.status === 'uncollectible') {
-          await this.stripe.invoices.voidInvoice(invoiceUpdate.id);
-        }
-        res.status(200).send('Updated Invoice');
-
-        break;
+      case 'invoice.paid':
       default:
         console.log(`Unhandled event type ${event.type}`);
     }

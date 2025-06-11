@@ -2,6 +2,8 @@ import { SchoolService } from './../school/school.service';
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   Logger,
   NotFoundException,
@@ -15,6 +17,7 @@ export class SubscriptionService {
   private logger: Logger;
   constructor(
     private stripe: StripeService,
+    @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
   ) {
     this.logger = new Logger(SubscriptionService.name);
@@ -45,6 +48,19 @@ export class SubscriptionService {
       });
 
       return { url: billingPortal.url };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async checkSubscriptionStatus(
+    subscriptionId: string,
+  ): Promise<'active' | 'expire'> {
+    try {
+      const subscription =
+        await this.stripe.subscriptions.retrieve(subscriptionId);
+      return subscription.status === 'active' ? 'active' : 'expire';
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -126,6 +142,7 @@ export class SubscriptionService {
               price: priceId,
             },
           ],
+          cancel_at_period_end: true,
           proration_behavior: 'always_invoice',
           collection_method: 'send_invoice',
           days_until_due: 0,
@@ -207,43 +224,11 @@ export class SubscriptionService {
         );
       }
 
-      // if (
-      //   school.stripe_subscription_id !== null &&
-      //   product.name === 'Tatuga School Enterprise'
-      // ) {
-      //   const subscription = await this.updateMember(
-      //     quantity,
-      //     school,
-      //     price.id,
-      //   );
-      //   return {
-      //     subscriptionId: subscription.subscription.id,
-      //     clientSecret: subscription.paymentIntent
-      //       ? subscription.paymentIntent.client_secret
-      //       : null,
-      //     price: subscription.price,
-      //   };
-      // }
-
       const subscription = await this.create(
         school.stripe_customer_id,
         price.id,
         quantity,
       );
-      // const date = new Date(
-      //   subscription.subscription.current_period_end * 1000,
-      // );
-
-      // await this.schoolService.schoolRepository.update({
-      //   where: {
-      //     id: school.id,
-      //   },
-      //   data: {
-      //     stripe_subscription_id: subscription.subscription.id,
-      //     stripe_subscription_expireAt: date,
-      //     stripe_price_id: subscription.subscription.items.data[0].price.id,
-      //   },
-      // });
 
       return {
         subscriptionId: subscription.subscription.id,
@@ -276,6 +261,7 @@ export class SubscriptionService {
         ],
         collection_method: 'send_invoice',
         days_until_due: 0,
+        cancel_at_period_end: true,
         payment_settings: {
           save_default_payment_method: 'on_subscription',
           payment_method_types: ['promptpay', 'card'],
