@@ -168,6 +168,7 @@ model Class {
   description String?
   order       Int?
   isAchieved  Boolean @default(false)
+  isLocked    Boolean @default(false)
 
   schoolId String @db.ObjectId
   school   School @relation(fields: [schoolId], references: [id])
@@ -275,6 +276,7 @@ model Subject {
   allowStudentViewOverallScore Boolean @default(false)
   allowStudentViewGrade        Boolean @default(false)
   allowStudentViewAttendance   Boolean @default(true)
+  isLocked                     Boolean @default(false)
 
   classId  String  @db.ObjectId
   userId   String? @db.ObjectId

@@ -33,6 +33,7 @@ import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { CreateClassDto } from './dto';
 import * as crypto from 'crypto';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('Class Service', () => {
   let classroomService: ClassService;
@@ -81,6 +82,8 @@ describe('Class Service', () => {
   let attendanceStatusListService: AttendanceStatusListService;
   let studentOnAssignmentService: StudentOnAssignmentService;
 
+  let subscriptionService: SubscriptionService;
+
   const schoolService = new SchoolService(
     prismaService,
     stripeService,
@@ -88,6 +91,7 @@ describe('Class Service', () => {
     googleStorageService,
     subjectService,
     classroomService,
+    subscriptionService,
   );
 
   const pushService = new PushService(prismaService);
