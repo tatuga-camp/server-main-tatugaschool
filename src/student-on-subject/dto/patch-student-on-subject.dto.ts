@@ -34,7 +34,7 @@ class UpdateStudentBody {
   @IsUrl()
   photo?: string;
 
-  @IsString()
+  @IsOptional()
   @IsString()
   blurHash?: string;
 }
