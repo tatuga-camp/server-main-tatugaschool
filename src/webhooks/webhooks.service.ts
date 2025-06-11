@@ -113,7 +113,14 @@ export class WebhooksService {
         res.status(200).send(school_subscription_delete);
         break;
 
-      case 'invoice.paid':
+      case 'invoice.updated':
+        const invoiceUpdate = dataObject as Stripe.Invoice;
+        if (invoiceUpdate.status === 'uncollectible') {
+          await this.stripe.invoices.voidInvoice(invoiceUpdate.id);
+        }
+        res.status(200).send('Updated Invoice');
+
+        break;
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
