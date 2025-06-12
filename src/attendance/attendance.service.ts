@@ -324,7 +324,11 @@ export class AttendanceService {
 
     const workbook = new Workbook();
     data.forEach(async (row) => {
-      const worksheet = workbook.addWorksheet(row.worksheetName);
+      const sanitizedWorksheetName = row.worksheetName.replace(
+        /[*?:\\/\[\]]/g,
+        '',
+      );
+      const worksheet = workbook.addWorksheet(sanitizedWorksheetName);
 
       worksheet.addRow(row.attendanceRows);
       worksheet.addRows(row.attendanceValues);
