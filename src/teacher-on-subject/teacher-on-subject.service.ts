@@ -158,6 +158,11 @@ export class TeacherOnSubjectService {
         throw new NotFoundException('Subject not found');
       }
 
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       const [memberOnSchool, targetMemberOnSchool] = await Promise.all([
         this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId({
           userId: user.id,
@@ -290,6 +295,22 @@ export class TeacherOnSubjectService {
         throw new ForbiddenException('Unauthorized');
       }
 
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: memberOnSubject.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
       const update = await this.teacherOnSubjectRepository.update({
         query: {
           teacherOnSubjectId: dto.query.teacherOnSubjectId,
@@ -336,6 +357,22 @@ export class TeacherOnSubjectService {
         memberOnSubject.role !== 'ADMIN'
       ) {
         throw new ForbiddenException('You are not allowed to delete this data');
+      }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: memberOnSubject.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
 
       const exsitingTeacherOnSubjects =

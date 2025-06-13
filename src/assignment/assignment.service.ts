@@ -340,6 +340,12 @@ export class AssignmentService {
         throw new NotFoundException('Subject Not Found');
       }
 
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
       const assignment = await this.assignmentRepository.create({
         data: { ...dto, schoolId: subject.schoolId, userId: user.id },
       });
@@ -567,7 +573,21 @@ export class AssignmentService {
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: assignment.subjectId,
+        },
+      });
 
+      if (!subject) {
+        throw new NotFoundException('Subject Not Found');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: assignment.subjectId,
@@ -595,6 +615,21 @@ export class AssignmentService {
       if (!assignment) {
         throw new NotFoundException('Assignment not found');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: assignment.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: assignment.subjectId,
@@ -609,6 +644,21 @@ export class AssignmentService {
   }
 
   async exportExcel(subjectId: string, user: User) {
+    const subject = await this.prisma.subject.findUnique({
+      where: {
+        id: subjectId,
+      },
+    });
+
+    if (!subject) {
+      throw new NotFoundException('Subject is invaild');
+    }
+
+    if (subject.isLocked === true) {
+      throw new ForbiddenException(
+        'Subject is locked. Cannot make any changes!',
+      );
+    }
     const listStudentOnSubject =
       await this.studentOnSubjectService.getStudentOnSubjectsBySubjectId(
         { subjectId },

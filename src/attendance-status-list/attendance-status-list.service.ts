@@ -3,6 +3,7 @@ import { AttendanceTableRepository } from './../attendance-table/attendance-tabl
 import { AttendanceStatusListSRepository } from './attendance-status-list.repository';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -46,6 +47,21 @@ export class AttendanceStatusListService {
         throw new NotFoundException('Attendance Table not found');
       }
 
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: table.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         subjectId: table.subjectId,
         userId: user.id,
@@ -89,6 +105,22 @@ export class AttendanceStatusListService {
 
       if (!status) {
         throw new NotFoundException('Status not found');
+      }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: status.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
 
       const statusList = await this.attendanceStatusListSRepository.findMany({
@@ -150,7 +182,21 @@ export class AttendanceStatusListService {
       if (!status) {
         throw new NotFoundException('Status not found');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: status.subjectId,
+        },
+      });
 
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: status.subjectId,

@@ -500,7 +500,6 @@ describe('School Service', () => {
             zipCode: '50000',
             logo: 'stripe.png',
             phoneNumber: '0834567890',
-            plan: 'PREMIUM',
             billingManagerId: mockUser.id,
             stripe_customer_id: 'cus_stripe',
             stripe_subscription_id: 'sub_inactive',
@@ -529,7 +528,7 @@ describe('School Service', () => {
           mockUser,
         );
 
-        expect(result.plan).toBe('FREE'); // ถูก downgrade แล้ว
+        expect(result.plan).toBe('FREE'); // ถูก downgrade ถูกจัดการจาก webhooks
       } catch (error) {
         throw error;
       }
