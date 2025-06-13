@@ -80,6 +80,12 @@ export class ScoreOnSubjectService {
           `Subject with id ${dto.subjectId} not found`,
         );
       }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
@@ -117,6 +123,12 @@ export class ScoreOnSubjectService {
           'Subject with id ${scoreOnSubject.subjectId} not found',
         );
       }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: subject.id,
@@ -144,6 +156,23 @@ export class ScoreOnSubjectService {
       if (!scoreOnSubject) {
         throw new NotFoundException('ScoreOnSubject not foud');
       }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: scoreOnSubject.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
       await this.teacherOnSubjectService.ValidateAccess({
         subjectId: scoreOnSubject.subjectId,
         userId: user.id,

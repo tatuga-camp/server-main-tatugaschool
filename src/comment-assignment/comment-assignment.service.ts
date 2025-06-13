@@ -119,6 +119,23 @@ export class CommentAssignmentService {
           'Only teacher in this subject can leave the comment',
         );
       }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: teacherOnSubject.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
       return await this.commentAssignmentRepository.create({
         ...dto,
         studentOnAssignmentId: studentOnAssignment.id,
@@ -199,6 +216,22 @@ export class CommentAssignmentService {
 
       if (!commentAssignment) {
         throw new NotFoundException('Comment assignment is not found');
+      }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: commentAssignment.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
 
       await this.teacherOnSubjectService.ValidateAccess({

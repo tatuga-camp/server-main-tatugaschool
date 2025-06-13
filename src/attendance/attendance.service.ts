@@ -141,6 +141,21 @@ export class AttendanceService {
       if (!attendanceRow) {
         throw new NotFoundException('Attendance row not found');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: attendanceRow.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
 
       await this.validateAccess({
         userId: user.id,
@@ -190,6 +205,22 @@ export class AttendanceService {
           userId: user.id,
           subjectId: attendance.subjectId,
         });
+
+        const subject = await this.prisma.subject.findUnique({
+          where: {
+            id: attendance.subjectId,
+          },
+        });
+
+        if (!subject) {
+          throw new NotFoundException('Subject is invaild');
+        }
+
+        if (subject.isLocked === true) {
+          throw new ForbiddenException(
+            'Subject is locked. Cannot make any changes!',
+          );
+        }
       }
 
       if (!user) {
@@ -238,6 +269,22 @@ export class AttendanceService {
         },
       });
 
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: attendance.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
       const attendances = await Promise.allSettled(
         dto.data.map(async (data) => {
           const attendance = await this.attendanceRepository.getAttendanceById({
@@ -271,7 +318,21 @@ export class AttendanceService {
 
   async exportExcel(subjectId: string, user: User, req: Request) {
     const userLang = req.headers['accept-language']?.split(',')[0] || 'en-US';
+    const subject = await this.prisma.subject.findUnique({
+      where: {
+        id: subjectId,
+      },
+    });
 
+    if (!subject) {
+      throw new NotFoundException('Subject is invaild');
+    }
+
+    if (subject.isLocked === true) {
+      throw new ForbiddenException(
+        'Subject is locked. Cannot make any changes!',
+      );
+    }
     const listStudentOnSubject =
       await this.studentOnSubjectService.getStudentOnSubjectsBySubjectId(
         { subjectId },

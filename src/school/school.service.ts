@@ -99,16 +99,6 @@ export class SchoolService {
         schoolId: school.id,
       });
 
-      if (school.stripe_subscription_id) {
-        const status = await this.subscriptionService.checkSubscriptionStatus(
-          school.stripe_subscription_id,
-        );
-
-        if (status !== 'active') {
-          school = await this.upgradePlanFree(school.id);
-        }
-      }
-
       const [billingManger, classes, subjects, teachers] = await Promise.all([
         this.prisma.user.findUnique({
           where: {
@@ -224,7 +214,7 @@ export class SchoolService {
     stripe_subscription_id: string,
   ): Promise<School> {
     try {
-      return await this.schoolRepository.update({
+      const update = await this.schoolRepository.update({
         where: {
           id: schoolId,
         },
@@ -239,6 +229,8 @@ export class SchoolService {
           limitTotalStorage: 107374182400,
         },
       });
+      await this.unlockFeatures(update);
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -269,24 +261,62 @@ export class SchoolService {
         },
       });
 
+      await this.unlockFeatures(update);
+
+      return update;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async unlockFeatures(school: School) {
+    try {
       const [subjects, classrooms] = await Promise.all([
         this.subjectService.subjectRepository.findMany({
           where: {
-            schoolId: schoolId,
-            isLocked: true,
+            schoolId: school.id,
           },
         }),
         this.classService.classRepository.findMany({
           where: {
-            schoolId: schoolId,
-            isLocked: true,
+            schoolId: school.id,
           },
         }),
       ]);
 
-      const chooseSubjects = subjects.slice(-update.limitSubjectNumber);
-      const chooseClassrooms = classrooms.slice(-update.limitClassNumber);
+      const chooseSubjects = subjects.slice(-school.limitSubjectNumber);
+      const chooseClassrooms = classrooms.slice(-school.limitClassNumber);
+      const chooseSubjectsUnSelect = subjects.slice(
+        0,
+        -school.limitSubjectNumber,
+      );
+      const chooseClassroomsUnSelect = classrooms.slice(
+        0,
+        -school.limitClassNumber,
+      );
+
       await Promise.all([
+        ...chooseSubjectsUnSelect.map((s) =>
+          this.subjectService.subjectRepository.update({
+            where: {
+              id: s.id,
+            },
+            data: {
+              isLocked: true,
+            },
+          }),
+        ),
+        chooseClassroomsUnSelect.map((c) =>
+          this.classService.classRepository.update({
+            where: {
+              id: c.id,
+            },
+            data: {
+              isLocked: true,
+            },
+          }),
+        ),
         ...chooseSubjects.map((s) =>
           this.subjectService.subjectRepository.update({
             where: {
@@ -308,8 +338,6 @@ export class SchoolService {
           }),
         ),
       ]);
-
-      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;
