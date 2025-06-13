@@ -1,7 +1,12 @@
 import { GroupOnSubjectService } from './../group-on-subject/group-on-subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UnitOnGroupRepository } from './unit-on-group.repository';
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateUnitOnGroupDto,
@@ -37,7 +42,21 @@ export class UnitOnGroupService {
       if (!groupOnSubject) {
         throw new NotFoundException('goupOnSubjectId is invaild');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: groupOnSubject.subjectId,
+        },
+      });
 
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: groupOnSubject.subjectId,
@@ -68,7 +87,21 @@ export class UnitOnGroupService {
       if (!unitOnGroup) {
         throw new NotFoundException('goupOnSubjectId is invaild');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: unitOnGroup.subjectId,
+        },
+      });
 
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       let totalPoints = unitOnGroup.totalScore;
 
       if (dto.body.score) {
@@ -144,6 +177,22 @@ export class UnitOnGroupService {
 
       if (!unitOnGroup) {
         throw new NotFoundException('One of the unitOnGroupId is invaild');
+      }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: unitOnGroup.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
 
       await this.teacherOnSubjectService.ValidateAccess({

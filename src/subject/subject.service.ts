@@ -273,9 +273,11 @@ export class SubjectService {
         }
       }
 
-      return await this.subjectRepository.getSubjectById({
+      const subject = await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
       });
+
+      return subject;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -690,6 +692,12 @@ export class SubjectService {
         throw new NotFoundException('Subject not found');
       }
 
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
       await this.classroomService.validateAccess({
         classId: subject.classId,
       });
@@ -746,6 +754,12 @@ export class SubjectService {
 
       if (!subject) {
         throw new NotFoundException('Subject not found');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
       const tracherOnSubject =
         await this.teacherOnSubjectService.ValidateAccess({

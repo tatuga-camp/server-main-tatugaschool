@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StudentOnGroupRepository } from './student-on-group.repository';
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -133,7 +134,21 @@ export class StudentOnGroupService {
       if (!studentOnGroup) {
         throw new NotFoundException('One of the unitOnGroupId is invaild');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: studentOnGroup.subjectId,
+        },
+      });
 
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: studentOnGroup.subjectId,
@@ -163,6 +178,21 @@ export class StudentOnGroupService {
 
       if (!studentOnGroup) {
         throw new NotFoundException('One of the unitOnGroupId is invaild');
+      }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: studentOnGroup.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
 
       await this.teacherOnSubjectService.ValidateAccess({

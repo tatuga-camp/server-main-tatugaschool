@@ -191,6 +191,21 @@ export class AttendanceRowService {
 
       if (!table) throw new NotFoundException('Attendance table not found');
 
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: table.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: table.subjectId,
@@ -238,6 +253,21 @@ export class AttendanceRowService {
       if (!row) {
         throw new NotFoundException('Attendance row not found');
       }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: row.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
 
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
@@ -264,6 +294,21 @@ export class AttendanceRowService {
 
       if (!row) {
         throw new NotFoundException('Attendance row not found');
+      }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: row.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
 
       await this.teacherOnSubjectService.ValidateAccess({

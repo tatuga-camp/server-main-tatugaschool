@@ -240,6 +240,22 @@ export class StudentOnAssignmentService {
       if (!assignment || !studentOnSubject) {
         throw new NotFoundException('Assignment Or StudentOnSubject not found');
       }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: studentOnSubject.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
           teacherId: user.id,
@@ -312,6 +328,22 @@ export class StudentOnAssignmentService {
           subjectId: studentOnAssignment.subjectId,
           userId: user.id,
         });
+
+        const subject = await this.prisma.subject.findUnique({
+          where: {
+            id: studentOnAssignment.subjectId,
+          },
+        });
+
+        if (!subject) {
+          throw new NotFoundException('Subject is invaild');
+        }
+
+        if (subject.isLocked === true) {
+          throw new ForbiddenException(
+            'Subject is locked. Cannot make any changes!',
+          );
+        }
       }
 
       if (student) {
@@ -394,6 +426,21 @@ export class StudentOnAssignmentService {
 
       if (!studentOnAssignment) {
         throw new NotFoundException('StudentOnAssignment not found');
+      }
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: studentOnAssignment.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
       }
       const teacherOnSubject =
         await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
