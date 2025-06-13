@@ -580,7 +580,7 @@ export class AssignmentService {
       });
 
       if (!subject) {
-        throw new NotFoundException('Subject is invaild');
+        throw new NotFoundException('Subject Not Found');
       }
 
       if (subject.isLocked === true) {
