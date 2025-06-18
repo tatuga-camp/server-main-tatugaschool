@@ -4,6 +4,7 @@ import { EmbeddingsResponse, ResponseNonStreamingText } from './models';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom, lastValueFrom } from 'rxjs';
+import axios from 'axios';
 
 type AiType = {
   embbedingText(text: string, accessToken: string): Promise<EmbeddingsResponse>;
@@ -77,12 +78,58 @@ export class AiService implements AiType {
           ],
         };
       }
+
+      const supportedFiles = dto.imageURLs.filter((url) =>
+        supportFilesType.includes(url.type),
+      );
+
+      if (supportedFiles.length === 0) {
+        return {
+          candidates: [
+            {
+              content: {
+                role: 'USER',
+                parts: [
+                  {
+                    text: '',
+                  },
+                ],
+              },
+              finishReason: '',
+              avgLogprobs: 0,
+            },
+          ],
+        };
+      }
+
+      const parts = await Promise.all(
+        supportedFiles.map(async (url) => {
+          if (url.url.startsWith('data:')) {
+            return {
+              inlineData: {
+                mimeType: url.type,
+                data: url.url,
+              },
+            };
+          }
+          const response = await axios.get(url.url, {
+            responseType: 'arraybuffer',
+          });
+          const base64Data = Buffer.from(response.data).toString('base64');
+          return {
+            inlineData: {
+              mimeType: url.type,
+              data: base64Data,
+            },
+          };
+        }),
+      );
+
       const PROJECT_ID = this.config.get('GOOGLE_CLOUD_PROJECT_ID');
       const LOCATION_ID = 'us-central1';
       const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com';
       const MODEL_ID = 'gemini-2.5-flash-preview-05-20';
       const GENERATE_CONTENT_API = 'generateContent';
-      console.log(PROJECT_ID);
       const response = this.httpService
         .post<ResponseNonStreamingText>(
           `https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/${LOCATION_ID}/publishers/google/models/${MODEL_ID}:${GENERATE_CONTENT_API}`,
@@ -91,18 +138,9 @@ export class AiService implements AiType {
               {
                 role: 'user',
                 parts: [
-                  ...dto.imageURLs
-                    .filter((url) => supportFilesType.includes(url.type))
-                    .map((url) => {
-                      return {
-                        fileData: {
-                          mimeType: url.type,
-                          fileUri: url.url,
-                        },
-                      };
-                    }),
+                  ...parts,
                   {
-                    text: "Describe the content and purpose of this image. If it is a worksheet, summarize the subject, topic, and type of activities included. If it is an assignment attachment, explain how it supports the student's task. Include any relevant text, images, or instructions present in the image.",
+                    text: 'Describe the content and purpose of this teaching material. Include the subject, topic, activity types, target grade level, and relevant 21st-century skills.',
                   },
                 ],
               },
