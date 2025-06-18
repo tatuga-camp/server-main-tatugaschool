@@ -9,8 +9,8 @@ async function bootstrap() {
     rawBody: true,
   });
   app.use('/webhooks', bodyParser.raw({ type: 'application/json' }));
-  app.use(bodyParser.json({ limit: '10mb' }));
-  app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
+  app.use(bodyParser.json({ limit: '100mb' }));
+  app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
 
   const isDevelopment = process.env.NODE_ENV !== 'production';
 

@@ -237,7 +237,6 @@ export class SubjectService {
           }),
         );
       }
-      console.log('Create');
       return subject;
     } catch (error) {
       this.logger.error(error);
