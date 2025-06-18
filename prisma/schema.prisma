@@ -915,6 +915,46 @@ model Task {
   colum   Colum  @relation(fields: [columId], references: [id])
 }
 
+model TeachingMaterial {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String
+  thumbnail   String?
+  tags        String[]
+  accessLevel Plan     @default(PREMIUM)
+
+  vector                  Float[]
+  fileOnTeachingMaterials FileOnTeachingMaterial[]
+}
+
+model FileOnTeachingMaterial {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  url                String
+  type               String
+  size               Float
+  teachingMaterialId String           @db.ObjectId
+  teachingMaterial   TeachingMaterial @relation(fields: [teachingMaterialId], references: [id])
+}
+
+model Feedback {
+  id        String      @id @default(uuid()) @map("_id")
+  title     String
+  body      String
+  tag       FeedbackTag
+  userId    String      @db.ObjectId
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("feedbacks")
+}
+
 enum UserRole {
   ADMIN
   USER
@@ -946,17 +986,4 @@ enum FeedbackTag {
   COMPLIMENT
   BUG
   REQUEST_FEATURE
-}
-
-model Feedback {
-  id        String      @id @default(uuid()) @map("_id")
-  title     String
-  body      String
-  tag       FeedbackTag
-  userId    String      @db.ObjectId
-  user      User        @relation(fields: [userId], references: [id])
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-
-  @@map("feedbacks")
 }
