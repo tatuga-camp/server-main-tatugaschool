@@ -164,6 +164,7 @@ export class GoogleStorageService {
     },
     user?: User,
     student?: Student,
+    destination?: 'teaching_material',
   ) {
     try {
       if (schoolId && user) {

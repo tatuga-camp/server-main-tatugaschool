@@ -45,6 +45,8 @@ import { FeedbackModule } from './feedback/feedback.module';
 import { GroupOnSubjectModule } from './group-on-subject/group-on-subject.module';
 import { UnitOnGroupModule } from './unit-on-group/unit-on-group.module';
 import { StudentOnGroupModule } from './student-on-group/student-on-group.module';
+import { TeachingMaterialModule } from './teaching-material/teaching-material.module';
+import { FileOnTeachingMaterialModule } from './file-on-teaching-material/file-on-teaching-material.module';
 
 @Module({
   imports: [
@@ -99,6 +101,8 @@ import { StudentOnGroupModule } from './student-on-group/student-on-group.module
     GroupOnSubjectModule,
     UnitOnGroupModule,
     StudentOnGroupModule,
+    TeachingMaterialModule,
+    FileOnTeachingMaterialModule,
   ],
   controllers: [AppController],
   providers: [AppService],
