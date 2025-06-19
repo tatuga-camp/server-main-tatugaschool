@@ -84,6 +84,7 @@ export class TeachingMaterialRepository implements Repository {
           tags: string[];
           accessLevel: $Enums.Plan;
           vector: number[];
+          blurHash?: string;
         }[];
       const teachingMaterials = teachingMaterialRaw.map((teachingMaterial) => ({
         id: teachingMaterial._id.$oid,
@@ -94,6 +95,7 @@ export class TeachingMaterialRepository implements Repository {
         tags: teachingMaterial.tags as string[],
         accessLevel: teachingMaterial.accessLevel,
         thumbnail: teachingMaterial.thumbnail,
+        blurHash: teachingMaterial?.blurHash,
       })) as TeachingMaterial[];
 
       return teachingMaterials;
