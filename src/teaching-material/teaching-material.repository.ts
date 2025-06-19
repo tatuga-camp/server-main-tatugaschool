@@ -64,6 +64,7 @@ export class TeachingMaterialRepository implements Repository {
                 tags: 1,
                 accessLevel: 1,
                 thumbnail: 1,
+                blurHash: 1,
               },
             },
           ],
