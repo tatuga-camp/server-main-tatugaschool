@@ -51,3 +51,9 @@ export class UpdateTeachingMaterialDto {
   @ValidateNested()
   body: UpdateTeachingMaterialBody;
 }
+
+export class GernearteThumnailDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  teachingMaterialId: string;
+}
