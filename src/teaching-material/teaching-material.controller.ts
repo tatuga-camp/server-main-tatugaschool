@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   Patch,
+  Param,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
 import {
@@ -17,7 +18,10 @@ import {
   GetDescriptionSuggestionDto,
   GetTeachingMaterialDto,
 } from './dto';
-import { UpdateTeachingMaterialDto } from './dto/patch-teaching-material.dto';
+import {
+  GernearteThumnailDto,
+  UpdateTeachingMaterialDto,
+} from './dto/patch-teaching-material.dto';
 
 @Controller('v1/teaching-materials')
 export class TeachingMaterialController {
@@ -45,5 +49,11 @@ export class TeachingMaterialController {
   @Patch()
   Update(@Body() dto: UpdateTeachingMaterialDto, @GetUser() user: User) {
     return this.teachingMaterialService.update(dto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Patch('thumnail/:teachingMaterialId')
+  GenerateThumnail(@Param() dto: GernearteThumnailDto, @GetUser() user: User) {
+    return this.teachingMaterialService.createThumnail(dto, user);
   }
 }

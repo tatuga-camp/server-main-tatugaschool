@@ -1,3 +1,4 @@
+import { ImageService } from './../image/image.service';
 import {
   ForbiddenException,
   forwardRef,
@@ -17,8 +18,7 @@ import { FileOnTeachingMaterialService } from './../file-on-teaching-material/fi
 import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { AiService } from './../vector/ai.service';
 import { TeachingMaterialRepository } from './teaching-material.repository';
-import { Pagination } from '../interfaces';
-
+import * as crypto from 'crypto';
 @Injectable()
 export class TeachingMaterialService {
   private logger: Logger;
@@ -30,6 +30,7 @@ export class TeachingMaterialService {
     private authService: AuthService,
     @Inject(forwardRef(() => FileOnTeachingMaterialService))
     private fileOnTeachingMaterialService: FileOnTeachingMaterialService,
+    private imageService: ImageService,
   ) {
     this.logger = new Logger(TeachingMaterialService.name);
     this.teachingMaterialRepository = new TeachingMaterialRepository(
@@ -177,6 +178,76 @@ export class TeachingMaterialService {
         },
       });
       return create;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async createThumnail(
+    dto: {
+      teachingMaterialId: string;
+    },
+    user: User,
+  ): Promise<TeachingMaterial> {
+    try {
+      if (user.role !== 'ADMIN') {
+        throw new ForbiddenException('Only Admin is allowed');
+      }
+      const teachingMaterial = await this.teachingMaterialRepository.findUnique(
+        {
+          where: {
+            id: dto.teachingMaterialId,
+          },
+        },
+      );
+      const files =
+        await this.fileOnTeachingMaterialService.fileOnTeachingMaterialRepository.findMany(
+          {
+            where: {
+              teachingMaterialId: dto.teachingMaterialId,
+            },
+          },
+        );
+
+      const pdf = files.find((f) => f.type === 'application/pdf');
+      const image = files.find((f) => f.type.includes('image'));
+
+      if (pdf) {
+        const buffer = await this.imageService.generatePdfThumbnail(pdf.url);
+        const upload = await this.googleStorageService.uploadFile(
+          `userId:${user.id}/thumnail/ID:${crypto.randomBytes(12).toString('hex')}.png`,
+          buffer,
+          'image/png',
+        );
+
+        const burhash = await this.imageService.encodeImageToBlurhash(upload);
+        console.log(burhash);
+
+        return await this.teachingMaterialRepository.update({
+          where: {
+            id: teachingMaterial.id,
+          },
+          data: {
+            thumbnail: upload,
+            blurHash: burhash,
+          },
+        });
+      } else if (image) {
+        const burhash = await this.imageService.encodeImageToBlurhash(
+          image.url,
+        );
+        return await this.teachingMaterialRepository.update({
+          where: {
+            id: teachingMaterial.id,
+          },
+          data: {
+            thumbnail: image.url,
+            blurHash: burhash,
+          },
+        });
+      }
+      return teachingMaterial;
     } catch (error) {
       this.logger.error(error);
       throw error;

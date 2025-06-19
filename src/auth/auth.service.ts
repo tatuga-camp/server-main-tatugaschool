@@ -1,17 +1,25 @@
-import { StudentRepository } from './../student/student.repository';
 import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
   ForbiddenException,
-  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import * as crypto from 'crypto';
-import * as bcrypt from 'bcrypt';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Student, User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
+import { Request, Response } from 'express';
+import { Auth, google } from 'googleapis';
+import { EmailService } from '../email/email.service';
+import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { ImageService } from '../image/image.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserRepository } from '../users/users.repository';
+import { StudentRepository } from './../student/student.repository';
 import {
   ForgotPasswordDto,
   RefreshTokenDto,
@@ -21,16 +29,7 @@ import {
   StudentSignInDto,
   VerifyEmailDto,
 } from './dto';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
-import { Student, User } from '@prisma/client';
-import { Auth, google, GoogleApis } from 'googleapis';
-import { Request, Response } from 'express';
 import { GoogleProfile } from './strategy/google-oauth.strategy';
-import { UserRepository } from '../users/users.repository';
-import { EmailService } from '../email/email.service';
-import { ImageService } from '../image/image.service';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
 
 @Injectable()
 export class AuthService {

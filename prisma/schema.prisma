@@ -923,6 +923,7 @@ model TeachingMaterial {
   title       String
   description String
   thumbnail   String?
+  blurHash  String?
   tags        String[]
   accessLevel Plan     @default(PREMIUM)
 

@@ -275,6 +275,56 @@ export class GoogleStorageService {
   }
 
   /**
+   * Uploads a file from the server to Google Cloud Storage.
+   * @param filePath The desired path and filename in the GCS bucket (e.g., "uploads/my_document.pdf").
+   * @param fileContent The file content as a Buffer
+   * @param contentType The MIME type of the file (e.g., "application/pdf", "image/jpeg").
+   * @returns A promise that resolves to the public URL of the uploaded file.
+   */
+  async uploadFile(
+    filePath: string,
+    fileContent: Buffer,
+    contentType: string,
+  ): Promise<string> {
+    if (this.configService.get('NODE_ENV') === 'test') {
+      this.logger.log('Skipping file upload in test environment.');
+      // Return a dummy URL for testing purposes
+      return `https://storage.googleapis.com/${this.configService.get(
+        'GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET',
+      )}/${filePath}`;
+    }
+
+    if (!this.bucket) {
+      this.logger.error(
+        'Bucket not initialized. Call initializeCloudStorage first.',
+      );
+      throw new BadGatewayException(
+        'Storage service not properly initialized.',
+      );
+    }
+
+    const file = this.bucket.file(filePath);
+
+    try {
+      await file.save(fileContent, {
+        metadata: {
+          contentType: contentType,
+        },
+      });
+
+      this.logger.log(
+        `File uploaded successfully to gs://${this.bucket.name}/${filePath}`,
+      );
+      return `https://storage.googleapis.com/${this.configService.get(
+        'GOOGLE_CLOUD_STORAGE_MEDIA_BUCKET',
+      )}/${filePath}`;
+    } catch (error) {
+      this.logger.error(`Error uploading file to GCS: ${filePath}`, error);
+      throw new BadGatewayException('Failed to upload file to storage.');
+    }
+  }
+
+  /**
    * Deletes file on storage
    * @param input : InputDeleteFileOnStorage
    * @returns file on storage
