@@ -561,7 +561,7 @@ export class SubjectService {
     }
   }
 
-    async generateSummaryReport5Excel(subjectName: string): Promise<any> {
+  async generateSummaryReport5Excel(subjectName: string): Promise<any> {
     try {
       // Load data from JSON files
       const assetsPath = path.join(process.cwd(), 'assets', 'data');
@@ -638,11 +638,23 @@ export class SubjectService {
       // Start with the first template file as base workbook
       const baseTemplateFile = templateFiles[0];
       const mainWorkbook = new Workbook();
-      await mainWorkbook.xlsx.readFile(path.join(templatePath, baseTemplateFile));
+      await mainWorkbook.xlsx.readFile(
+        path.join(templatePath, baseTemplateFile),
+      );
 
       // Update the first worksheet (ปก ปพ 5) with detailed data mapping
       if (mainWorkbook.worksheets[0]) {
-        await this.updateCoverWorksheetDetailed(mainWorkbook.worksheets[0], allData[0], subjectName);
+        await this.updateCoverWorksheetDetailed(
+          mainWorkbook.worksheets[0],
+          allData[0],
+        );
+      }
+
+      if (mainWorkbook.worksheets[1]) {
+        await this.updateStudentDataWorksheetDetailed(
+          mainWorkbook.worksheets[1],
+          allData[1],
+        );
       }
 
       // Add remaining worksheets from other template files
@@ -653,19 +665,25 @@ export class SubjectService {
         try {
           // Load template workbook
           const templateWorkbook = new Workbook();
-          await templateWorkbook.xlsx.readFile(path.join(templatePath, templateFile));
+          await templateWorkbook.xlsx.readFile(
+            path.join(templatePath, templateFile),
+          );
 
           // Get the first worksheet from template
           const templateWorksheet = templateWorkbook.worksheets[0];
 
           if (templateWorksheet) {
             // Get worksheet name
-            const worksheetName = templateWorksheet.name || templateFile.replace('.xlsx', '');
-            const uniqueWorksheetName = this.getUniqueWorksheetName(mainWorkbook, worksheetName);
+            const worksheetName =
+              templateWorksheet.name || templateFile.replace('.xlsx', '');
+            const uniqueWorksheetName = this.getUniqueWorksheetName(
+              mainWorkbook,
+              worksheetName,
+            );
 
             // Add worksheet to main workbook by copying from template
             const newWorksheet = mainWorkbook.addWorksheet(uniqueWorksheetName);
-            
+
             // Copy everything from template worksheet
             this.copyCompleteWorksheet(templateWorksheet, newWorksheet);
 
@@ -673,7 +691,9 @@ export class SubjectService {
             await this.updateWorksheetWithData(newWorksheet, data, subjectName);
           }
         } catch (error) {
-          this.logger.warn(`Could not process template ${templateFile}: ${error.message}`);
+          this.logger.warn(
+            `Could not process template ${templateFile}: ${error.message}`,
+          );
         }
       }
 
@@ -1098,7 +1118,8 @@ export class SubjectService {
 
     // Display indicators by group
     indicatorGroups.forEach((group: any) => {
-      worksheet.getCell(`A${currentRow}`).value = `กลุ่มที่ ${group.group_number}`;
+      worksheet.getCell(`A${currentRow}`).value =
+        `กลุ่มที่ ${group.group_number}`;
       worksheet.getCell(`A${currentRow}`).font = { bold: true };
       currentRow++;
 
@@ -2242,7 +2263,7 @@ export class SubjectService {
     this.applyGeneralFormatting(worksheet);
   }
 
-    private copyWorksheetStructure(sourceWorksheet: any, targetWorksheet: any) {
+  private copyWorksheetStructure(sourceWorksheet: any, targetWorksheet: any) {
     try {
       // Copy worksheet properties safely
       if (sourceWorksheet.properties) {
@@ -2256,52 +2277,67 @@ export class SubjectService {
 
       // Copy all rows and cells with formatting
       if (sourceWorksheet.eachRow) {
-        sourceWorksheet.eachRow({ includeEmpty: true }, (row: any, rowNumber: number) => {
-          if (!row) return;
-          
-          const targetRow = targetWorksheet.getRow(rowNumber);
-          
-          // Copy row properties safely
-          if (row.height) targetRow.height = row.height;
-          if (row.hidden) targetRow.hidden = row.hidden;
-          if (row.outlineLevel) targetRow.outlineLevel = row.outlineLevel;
-          
-          // Copy each cell safely
-          if (row.eachCell) {
-            row.eachCell({ includeEmpty: true }, (cell: any, colNumber: number) => {
-              if (!cell) return;
-              
-              const targetCell = targetRow.getCell(colNumber);
-              
-              // Copy cell value
-              if (cell.value !== undefined) {
-                targetCell.value = cell.value;
-              }
-              
-              // Copy formatting safely
-              if (cell.font) targetCell.font = { ...cell.font };
-              if (cell.alignment) targetCell.alignment = { ...cell.alignment };
-              if (cell.border) targetCell.border = { ...cell.border };
-              if (cell.fill) targetCell.fill = { ...cell.fill };
-              if (cell.numFmt) targetCell.numFmt = cell.numFmt;
-            });
-          }
-        });
+        sourceWorksheet.eachRow(
+          { includeEmpty: true },
+          (row: any, rowNumber: number) => {
+            if (!row) return;
+
+            const targetRow = targetWorksheet.getRow(rowNumber);
+
+            // Copy row properties safely
+            if (row.height) targetRow.height = row.height;
+            if (row.hidden) targetRow.hidden = row.hidden;
+            if (row.outlineLevel) targetRow.outlineLevel = row.outlineLevel;
+
+            // Copy each cell safely
+            if (row.eachCell) {
+              row.eachCell(
+                { includeEmpty: true },
+                (cell: any, colNumber: number) => {
+                  if (!cell) return;
+
+                  const targetCell = targetRow.getCell(colNumber);
+
+                  // Copy cell value
+                  if (cell.value !== undefined) {
+                    targetCell.value = cell.value;
+                  }
+
+                  // Copy formatting safely
+                  if (cell.font) targetCell.font = { ...cell.font };
+                  if (cell.alignment)
+                    targetCell.alignment = { ...cell.alignment };
+                  if (cell.border) targetCell.border = { ...cell.border };
+                  if (cell.fill) targetCell.fill = { ...cell.fill };
+                  if (cell.numFmt) targetCell.numFmt = cell.numFmt;
+                },
+              );
+            }
+          },
+        );
       }
 
       // Copy column properties safely
       if (sourceWorksheet.columns && Array.isArray(sourceWorksheet.columns)) {
         sourceWorksheet.columns.forEach((col: any, index: number) => {
-          if (col && targetWorksheet.columns && targetWorksheet.columns[index]) {
+          if (
+            col &&
+            targetWorksheet.columns &&
+            targetWorksheet.columns[index]
+          ) {
             if (col.width) targetWorksheet.columns[index].width = col.width;
             if (col.hidden) targetWorksheet.columns[index].hidden = col.hidden;
-            if (col.outlineLevel) targetWorksheet.columns[index].outlineLevel = col.outlineLevel;
+            if (col.outlineLevel)
+              targetWorksheet.columns[index].outlineLevel = col.outlineLevel;
           }
         });
       }
 
       // Copy merged cells safely
-      if (sourceWorksheet.model?.merges && Array.isArray(sourceWorksheet.model.merges)) {
+      if (
+        sourceWorksheet.model?.merges &&
+        Array.isArray(sourceWorksheet.model.merges)
+      ) {
         sourceWorksheet.model.merges.forEach((merge: any) => {
           if (merge) {
             try {
@@ -2339,15 +2375,21 @@ export class SubjectService {
     try {
       // Copy all properties from source to target
       if (sourceWorksheet.properties) {
-        targetWorksheet.properties = JSON.parse(JSON.stringify(sourceWorksheet.properties));
+        targetWorksheet.properties = JSON.parse(
+          JSON.stringify(sourceWorksheet.properties),
+        );
       }
 
       if (sourceWorksheet.pageSetup) {
-        targetWorksheet.pageSetup = JSON.parse(JSON.stringify(sourceWorksheet.pageSetup));
+        targetWorksheet.pageSetup = JSON.parse(
+          JSON.stringify(sourceWorksheet.pageSetup),
+        );
       }
 
       if (sourceWorksheet.headerFooter) {
-        targetWorksheet.headerFooter = JSON.parse(JSON.stringify(sourceWorksheet.headerFooter));
+        targetWorksheet.headerFooter = JSON.parse(
+          JSON.stringify(sourceWorksheet.headerFooter),
+        );
       }
 
       // Copy columns
@@ -2358,27 +2400,34 @@ export class SubjectService {
       }
 
       // Copy all rows with complete formatting
-      sourceWorksheet.eachRow({ includeEmpty: true }, (sourceRow: any, rowNumber: number) => {
-        const targetRow = targetWorksheet.getRow(rowNumber);
-        
-        // Copy row properties
-        if (sourceRow.height) targetRow.height = sourceRow.height;
-        if (sourceRow.hidden) targetRow.hidden = sourceRow.hidden;
-        if (sourceRow.outlineLevel) targetRow.outlineLevel = sourceRow.outlineLevel;
+      sourceWorksheet.eachRow(
+        { includeEmpty: true },
+        (sourceRow: any, rowNumber: number) => {
+          const targetRow = targetWorksheet.getRow(rowNumber);
 
-        // Copy all cells
-        sourceRow.eachCell({ includeEmpty: true }, (sourceCell: any, colNumber: number) => {
-          const targetCell = targetRow.getCell(colNumber);
-          
-          // Copy value
-          targetCell.value = sourceCell.value;
-          
-          // Copy all formatting
-          if (sourceCell.style) {
-            targetCell.style = JSON.parse(JSON.stringify(sourceCell.style));
-          }
-        });
-      });
+          // Copy row properties
+          if (sourceRow.height) targetRow.height = sourceRow.height;
+          if (sourceRow.hidden) targetRow.hidden = sourceRow.hidden;
+          if (sourceRow.outlineLevel)
+            targetRow.outlineLevel = sourceRow.outlineLevel;
+
+          // Copy all cells
+          sourceRow.eachCell(
+            { includeEmpty: true },
+            (sourceCell: any, colNumber: number) => {
+              const targetCell = targetRow.getCell(colNumber);
+
+              // Copy value
+              targetCell.value = sourceCell.value;
+
+              // Copy all formatting
+              if (sourceCell.style) {
+                targetCell.style = JSON.parse(JSON.stringify(sourceCell.style));
+              }
+            },
+          );
+        },
+      );
 
       // Copy merged cells
       if (sourceWorksheet.model && sourceWorksheet.model.merges) {
@@ -2393,95 +2442,209 @@ export class SubjectService {
 
       // Copy data validations
       if (sourceWorksheet.dataValidations) {
-        targetWorksheet.dataValidations = JSON.parse(JSON.stringify(sourceWorksheet.dataValidations));
+        targetWorksheet.dataValidations = JSON.parse(
+          JSON.stringify(sourceWorksheet.dataValidations),
+        );
       }
 
       // Copy conditional formatting
       if (sourceWorksheet.conditionalFormattings) {
-        targetWorksheet.conditionalFormattings = JSON.parse(JSON.stringify(sourceWorksheet.conditionalFormattings));
+        targetWorksheet.conditionalFormattings = JSON.parse(
+          JSON.stringify(sourceWorksheet.conditionalFormattings),
+        );
       }
-
     } catch (error) {
       this.logger.error(`Error copying complete worksheet: ${error.message}`);
     }
   }
 
-  private async updateWorksheetWithData(worksheet: any, data: any, subjectName: string) {
+  private async updateWorksheetWithData(
+    worksheet: any,
+    data: any,
+    subjectName: string,
+  ) {
     try {
-      // Update specific cells based on data structure
+      // Check if this is the student data worksheet by looking for specific content
+      let isStudentDataWorksheet = false;
+      worksheet.eachRow((row: any, rowNumber: number) => {
+        row.eachCell((cell: any) => {
+          if (cell.value && typeof cell.value === 'string') {
+            if (cell.value.includes('ข้อมูลนักเรียนประจำรายวิชา')) {
+              isStudentDataWorksheet = true;
+            }
+          }
+        });
+      });
+
+      if (isStudentDataWorksheet) {
+        await this.updateStudentDataWorksheetDetailed(worksheet, data);
+        return;
+      }
+
+      // Update specific cells based on data structure for other worksheets
       worksheet.eachRow((row: any, rowNumber: number) => {
         row.eachCell((cell: any, colNumber: number) => {
           if (cell.value && typeof cell.value === 'string') {
             let cellValue = cell.value;
-            
+
             // Replace data from JSON structure
             if (data) {
               // Handle academic details
               if (data.academic_details) {
-                cellValue = cellValue.replace(/ปีการศึกษา\s*[\d\s]*/, `ปีการศึกษา ${data.academic_details.year}`);
-                cellValue = cellValue.replace(/เทอม\s*[\d\s]*/, `เทอม ${data.academic_details.semester}`);
-                cellValue = cellValue.replace(/รหัสวิชา\s*[\w\d\s]*/, `รหัสวิชา ${data.academic_details.course_code}`);
-                cellValue = cellValue.replace(/ชื่อวิชา\s*[^\n]*/, `ชื่อวิชา ${data.academic_details.course_name}`);
-                cellValue = cellValue.replace(/ชั้น\s*[^\n]*/, `ชั้น ${data.academic_details.class}`);
-                cellValue = cellValue.replace(/กลุ่มสาระการเรียนรู้\s*[^\n]*/, `กลุ่มสาระการเรียนรู้ ${data.academic_details.learning_area}`);
-                cellValue = cellValue.replace(/ประเภทรายวิชา\s*[^\n]*/, `ประเภทรายวิชา ${data.academic_details.course_type}`);
-                cellValue = cellValue.replace(/หน่วยกิต\s*[\d\s]*/, `หน่วยกิต ${data.academic_details.credits}`);
-                cellValue = cellValue.replace(/เวลาเรียน\s*[^\n]*/, `เวลาเรียน ${data.academic_details.learning_hours}`);
+                cellValue = cellValue.replace(
+                  /ปีการศึกษา\s*[\d\s]*/,
+                  `ปีการศึกษา ${data.academic_details.year}`,
+                );
+                cellValue = cellValue.replace(
+                  /เทอม\s*[\d\s]*/,
+                  `เทอม ${data.academic_details.semester}`,
+                );
+                cellValue = cellValue.replace(
+                  /รหัสวิชา\s*[\w\d\s]*/,
+                  `รหัสวิชา ${data.academic_details.course_code}`,
+                );
+                cellValue = cellValue.replace(
+                  /ชื่อวิชา\s*[^\n]*/,
+                  `ชื่อวิชา ${data.academic_details.course_name}`,
+                );
+                cellValue = cellValue.replace(
+                  /ชั้น\s*[^\n]*/,
+                  `ชั้น ${data.academic_details.class}`,
+                );
+                cellValue = cellValue.replace(
+                  /กลุ่มสาระการเรียนรู้\s*[^\n]*/,
+                  `กลุ่มสาระการเรียนรู้ ${data.academic_details.learning_area}`,
+                );
+                cellValue = cellValue.replace(
+                  /ประเภทรายวิชา\s*[^\n]*/,
+                  `ประเภทรายวิชา ${data.academic_details.course_type}`,
+                );
+                cellValue = cellValue.replace(
+                  /หน่วยกิต\s*[\d\s]*/,
+                  `หน่วยกิต ${data.academic_details.credits}`,
+                );
+                cellValue = cellValue.replace(
+                  /เวลาเรียน\s*[^\n]*/,
+                  `เวลาเรียน ${data.academic_details.learning_hours}`,
+                );
               }
-              
+
               // Handle school information
               if (data.school_information) {
-                cellValue = cellValue.replace(/โรงเรียน[^\n]*/, data.school_information.name);
-                cellValue = cellValue.replace(/ที่อยู่[^\n]*/, data.school_information.address);
-                cellValue = cellValue.replace(/สำนักงานเขตพื้นที่[^\n]*/, data.school_information.educational_service_area);
+                cellValue = cellValue.replace(
+                  /โรงเรียน[^\n]*/,
+                  data.school_information.name,
+                );
+                cellValue = cellValue.replace(
+                  /ที่อยู่[^\n]*/,
+                  data.school_information.address,
+                );
+                cellValue = cellValue.replace(
+                  /สำนักงานเขตพื้นที่[^\n]*/,
+                  data.school_information.educational_service_area,
+                );
               }
 
               // Handle personnel information
               if (data.personnel) {
-                if (data.personnel.instructors && data.personnel.instructors[0]) {
-                  cellValue = cellValue.replace(/ครูผู้สอน[^\n]*/, `ครูผู้สอน ${data.personnel.instructors[0].name}`);
-                  cellValue = cellValue.replace(/โทร[^\n]*/, `โทร ${data.personnel.instructors[0].phone}`);
+                if (
+                  data.personnel.instructors &&
+                  data.personnel.instructors[0]
+                ) {
+                  cellValue = cellValue.replace(
+                    /ครูผู้สอน[^\n]*/,
+                    `ครูผู้สอน ${data.personnel.instructors[0].name}`,
+                  );
+                  cellValue = cellValue.replace(
+                    /โทร[^\n]*/,
+                    `โทร ${data.personnel.instructors[0].phone}`,
+                  );
                 }
                 if (data.personnel.homeroom_teacher) {
-                  cellValue = cellValue.replace(/ครูประจำชั้น[^\n]*/, `ครูประจำชั้น ${data.personnel.homeroom_teacher.name}`);
+                  cellValue = cellValue.replace(
+                    /ครูประจำชั้น[^\n]*/,
+                    `ครูประจำชั้น ${data.personnel.homeroom_teacher.name}`,
+                  );
                 }
               }
 
               // Handle course details (for student data worksheet)
               if (data.course_details) {
-                cellValue = cellValue.replace(/ปีการศึกษา\s*[\d\s]*/, `ปีการศึกษา ${data.course_details.academic_year}`);
-                cellValue = cellValue.replace(/เทอม\s*[\d\s]*/, `เทอม ${data.course_details.semester}`);
-                cellValue = cellValue.replace(/รหัสวิชา\s*[\w\d\s]*/, `รหัสวิชา ${data.course_details.course_code}`);
-                cellValue = cellValue.replace(/ชื่อวิชา\s*[^\n]*/, `ชื่อวิชา ${data.course_details.course_name}`);
-                cellValue = cellValue.replace(/กลุ่มสาระการเรียนรู้\s*[^\n]*/, `กลุ่มสาระการเรียนรู้ ${data.course_details.learning_area}`);
-                cellValue = cellValue.replace(/ประเภทรายวิชา\s*[^\n]*/, `ประเภทรายวิชา ${data.course_details.course_type}`);
+                cellValue = cellValue.replace(
+                  /ปีการศึกษา\s*[\d\s]*/,
+                  `ปีการศึกษา ${data.course_details.academic_year}`,
+                );
+                cellValue = cellValue.replace(
+                  /เทอม\s*[\d\s]*/,
+                  `เทอม ${data.course_details.semester}`,
+                );
+                cellValue = cellValue.replace(
+                  /รหัสวิชา\s*[\w\d\s]*/,
+                  `รหัสวิชา ${data.course_details.course_code}`,
+                );
+                cellValue = cellValue.replace(
+                  /ชื่อวิชา\s*[^\n]*/,
+                  `ชื่อวิชา ${data.course_details.course_name}`,
+                );
+                cellValue = cellValue.replace(
+                  /กลุ่มสาระการเรียนรู้\s*[^\n]*/,
+                  `กลุ่มสาระการเรียนรู้ ${data.course_details.learning_area}`,
+                );
+                cellValue = cellValue.replace(
+                  /ประเภทรายวิชา\s*[^\n]*/,
+                  `ประเภทรายวิชา ${data.course_details.course_type}`,
+                );
               }
 
               // Handle student summary
               if (data.student_summary) {
-                cellValue = cellValue.replace(/จำนวนนักเรียนทั้งหมด\s*[\d\s]*/, `จำนวนนักเรียนทั้งหมด ${data.student_summary.total} คน`);
+                cellValue = cellValue.replace(
+                  /จำนวนนักเรียนทั้งหมด\s*[\d\s]*/,
+                  `จำนวนนักเรียนทั้งหมด ${data.student_summary.total} คน`,
+                );
                 if (data.student_summary.gender_distribution) {
-                  const maleCount = data.student_summary.gender_distribution.find(g => g.gender === 'ชาย')?.count || 0;
-                  const femaleCount = data.student_summary.gender_distribution.find(g => g.gender === 'หญิง')?.count || 0;
-                  cellValue = cellValue.replace(/ชาย\s*[\d\s]*\s*คน/, `ชาย ${maleCount} คน`);
-                  cellValue = cellValue.replace(/หญิง\s*[\d\s]*\s*คน/, `หญิง ${femaleCount} คน`);
+                  const maleCount =
+                    data.student_summary.gender_distribution.find(
+                      (g) => g.gender === 'ชาย',
+                    )?.count || 0;
+                  const femaleCount =
+                    data.student_summary.gender_distribution.find(
+                      (g) => g.gender === 'หญิง',
+                    )?.count || 0;
+                  cellValue = cellValue.replace(
+                    /ชาย\s*[\d\s]*\s*คน/,
+                    `ชาย ${maleCount} คน`,
+                  );
+                  cellValue = cellValue.replace(
+                    /หญิง\s*[\d\s]*\s*คน/,
+                    `หญิง ${femaleCount} คน`,
+                  );
                 }
               }
 
               // Handle results summary
               if (data.results_summary) {
-                cellValue = cellValue.replace(/นักเรียนทั้งหมด\s*[\d\s]*/, `นักเรียนทั้งหมด ${data.results_summary.total_students}`);
-                
+                cellValue = cellValue.replace(
+                  /นักเรียนทั้งหมด\s*[\d\s]*/,
+                  `นักเรียนทั้งหมด ${data.results_summary.total_students}`,
+                );
+
                 // Handle grade distribution
                 if (data.results_summary.grade_distribution) {
-                  data.results_summary.grade_distribution.forEach(grade => {
-                    const gradePattern = new RegExp(`เกรด\\s*${grade.grade}\\s*[\\d\\s]*\\s*คน`, 'g');
-                    cellValue = cellValue.replace(gradePattern, `เกรด ${grade.grade} ${grade.count} คน`);
+                  data.results_summary.grade_distribution.forEach((grade) => {
+                    const gradePattern = new RegExp(
+                      `เกรด\\s*${grade.grade}\\s*[\\d\\s]*\\s*คน`,
+                      'g',
+                    );
+                    cellValue = cellValue.replace(
+                      gradePattern,
+                      `เกรด ${grade.grade} ${grade.count} คน`,
+                    );
                   });
                 }
               }
             }
-            
+
             cell.value = cellValue;
           }
         });
@@ -2489,7 +2652,6 @@ export class SubjectService {
 
       // Call specific update methods based on worksheet content
       this.updateSpecificWorksheetData(worksheet, data);
-      
     } catch (error) {
       this.logger.error(`Error updating worksheet with data: ${error.message}`);
     }
@@ -2509,18 +2671,22 @@ export class SubjectService {
         this.updateScoreDataInWorksheet(worksheet, data.scores);
       }
 
-      // Update attendance data if present  
+      // Update attendance data if present
       if (data.attendance && Array.isArray(data.attendance)) {
         this.updateAttendanceDataInWorksheet(worksheet, data.attendance);
       }
 
       // Update grade distribution data
       if (data.results_summary && data.results_summary.grade_distribution) {
-        this.updateGradeDistributionInWorksheet(worksheet, data.results_summary.grade_distribution);
+        this.updateGradeDistributionInWorksheet(
+          worksheet,
+          data.results_summary.grade_distribution,
+        );
       }
-
     } catch (error) {
-      this.logger.error(`Error updating specific worksheet data: ${error.message}`);
+      this.logger.error(
+        `Error updating specific worksheet data: ${error.message}`,
+      );
     }
   }
 
@@ -2529,12 +2695,16 @@ export class SubjectService {
       // Find the starting row for student data (usually after headers)
       let startRow = 1;
       let headerRow = 0;
-      
+
       worksheet.eachRow((row: any, rowNumber: number) => {
         row.eachCell((cell: any) => {
           if (cell.value && typeof cell.value === 'string') {
-            if (cell.value.includes('ลำดับ') || cell.value.includes('เลขที่') || 
-                cell.value.includes('ชื่อ-สกุล') || cell.value.includes('ชื่อ')) {
+            if (
+              cell.value.includes('ลำดับ') ||
+              cell.value.includes('เลขที่') ||
+              cell.value.includes('ชื่อ-สกุล') ||
+              cell.value.includes('ชื่อ')
+            ) {
               headerRow = rowNumber;
               startRow = rowNumber + 1;
             }
@@ -2547,7 +2717,8 @@ export class SubjectService {
         const row = worksheet.getRow(startRow + i);
         if (row) {
           row.eachCell((cell: any, colNumber: number) => {
-            if (colNumber <= 10) { // Clear first 10 columns
+            if (colNumber <= 10) {
+              // Clear first 10 columns
               cell.value = '';
             }
           });
@@ -2558,7 +2729,7 @@ export class SubjectService {
       if (students && Array.isArray(students)) {
         students.forEach((student, index) => {
           const row = worksheet.getRow(startRow + index);
-          
+
           // Update cells based on student data structure
           if (student.list_number) {
             row.getCell(1).value = student.list_number;
@@ -2575,7 +2746,7 @@ export class SubjectService {
           if (student.homeroom_teacher) {
             row.getCell(5).value = student.homeroom_teacher;
           }
-          
+
           // Handle different data structures
           if (student.number) row.getCell(1).value = student.number;
           if (student.name) row.getCell(3).value = student.name;
@@ -2599,22 +2770,37 @@ export class SubjectService {
     // This would be customized based on the specific attendance data structure
   }
 
-  private updateGradeDistributionInWorksheet(worksheet: any, gradeDistribution: any[]) {
+  private updateGradeDistributionInWorksheet(
+    worksheet: any,
+    gradeDistribution: any[],
+  ) {
     try {
       // Find and update grade distribution data in the worksheet
       worksheet.eachRow((row: any, rowNumber: number) => {
         row.eachCell((cell: any, colNumber: number) => {
           if (cell.value && typeof cell.value === 'string') {
             // Update grade counts
-            gradeDistribution.forEach(grade => {
-              const gradePattern = new RegExp(`เกรด\\s*${grade.grade}\\s*[\\d\\s]*\\s*คน`, 'i');
+            gradeDistribution.forEach((grade) => {
+              const gradePattern = new RegExp(
+                `เกรด\\s*${grade.grade}\\s*[\\d\\s]*\\s*คน`,
+                'i',
+              );
               if (gradePattern.test(cell.value)) {
-                cell.value = cell.value.replace(gradePattern, `เกรด ${grade.grade} ${grade.count} คน`);
+                cell.value = cell.value.replace(
+                  gradePattern,
+                  `เกรด ${grade.grade} ${grade.count} คน`,
+                );
               }
-              
+
               // Handle numeric grade patterns
-              const numericPattern = new RegExp(`${grade.grade}\\s*[\\d\\s]*`, 'g');
-              if (cell.value.includes(`เกรด ${grade.grade}`) || cell.value === grade.grade.toString()) {
+              const numericPattern = new RegExp(
+                `${grade.grade}\\s*[\\d\\s]*`,
+                'g',
+              );
+              if (
+                cell.value.includes(`เกรด ${grade.grade}`) ||
+                cell.value === grade.grade.toString()
+              ) {
                 cell.value = grade.count.toString();
               }
             });
@@ -2626,17 +2812,17 @@ export class SubjectService {
     }
   }
 
-  private async updateCoverWorksheetDetailed(worksheet: any, data: any, subjectName: string) {
+  private async updateCoverWorksheetDetailed(worksheet: any, data: any) {
     try {
       this.logger.log('Starting detailed update of cover worksheet (ปก ปพ 5)');
-      
+
       // CORRECTED cell mappings based on actual Excel analysis
       const cellMappings = {
         // School information - CORRECTED
         school_name: { row: 5, col: 2 }, // B5: โรงเรียนบ้านปราสาท (สุวรรณราษฎร์ประสิทธิ์)
         school_address: { row: 6, col: 2 }, // B6: ตำบล เมืองปราสาท อำเภอโนนสูง จ.นครราชสีมา 30160
         school_area: { row: 7, col: 2 }, // B7: สำนักงานเขตพื้นที่การศึกษาประถมศึกษานครราชสีมา เขต 1
-        
+
         // Academic details - CORRECTED
         academic_year_value: { row: 10, col: 4 }, // D10: 2568
         semester_value: { row: 10, col: 7 }, // G10: 1
@@ -2645,23 +2831,23 @@ export class SubjectService {
         course_type_value: { row: 11, col: 11 }, // K11: พื้นฐาน
         course_code_value: { row: 12, col: 4 }, // D12: อ15101
         course_name_value: { row: 12, col: 7 }, // G12: ภาษาอังกฤษ 5 (merged G12:K12)
-        
+
         // Row 13 - Credits and learning hours
         credits_value: { row: 13, col: 4 }, // D13: 3
         learning_hours_value: { row: 13, col: 9 }, // I13: 120 ชั่วโมง/ปี (merged I13:K13)
-        
+
         // Row 14 - First instructor
         instructor_1_name: { row: 14, col: 5 }, // E14: นายศตวรรษ ปิฉิมพลี (merged E14:H14)
         instructor_1_phone: { row: 14, col: 10 }, // J14: 099-997-9797 (merged J14:K14)
-        
+
         // Row 15 - Second instructor
         instructor_2_name: { row: 15, col: 5 }, // E15: - (merged E15:H15)
         instructor_2_phone: { row: 15, col: 10 }, // J15: - (merged J15:K15)
-        
+
         // Row 16 - Homeroom teacher
         homeroom_teacher_name: { row: 16, col: 5 }, // E16: นางวารุณี ศรีนวลแสง (merged E16:H16)
         homeroom_teacher_phone: { row: 16, col: 10 }, // J16: 099-997-9799 (merged J16:K16)
-        
+
         // Grade distribution table (based on detailed analysis)
         // Row 21: A21=total students, B21-L21=grade counts
         total_students: { row: 21, col: 1 }, // A21: 10 (total students)
@@ -2676,7 +2862,7 @@ export class SubjectService {
         grade_r: { row: 21, col: 10 }, // J21: 0 (students with ร)
         grade_mp: { row: 21, col: 11 }, // K21: 0 (students with มผ)
         grade_ms: { row: 21, col: 12 }, // L21: 0 (students with มส)
-        
+
         // Characteristics, reading, and indicators table (Row 25)
         char_3: { row: 25, col: 2 }, // B25: 7 (characteristics level 3)
         char_2: { row: 25, col: 3 }, // C25: 3 (characteristics level 2)
@@ -2688,7 +2874,7 @@ export class SubjectService {
         read_0: { row: 25, col: 9 }, // I25: - (reading level 0)
         indicators_pass: { row: 25, col: 10 }, // J25: 10 (indicators passed)
         indicators_fail: { row: 25, col: 11 }, // K25: - (indicators failed)
-        
+
         // Approval signatures section (G30-G40) - CORRECTED based on actual Excel structure
         signature_1: { row: 30, col: 7 }, // G30: (นายศตวรรษ ปิฉิมพลี)
         signature_2: { row: 32, col: 7 }, // G32: (นางมุกดา พาชวนชม)
@@ -2700,45 +2886,121 @@ export class SubjectService {
 
       // Update school information
       if (data.school_information) {
-        this.updateCellValue(worksheet, cellMappings.school_name, data.school_information.name);
-        this.updateCellValue(worksheet, cellMappings.school_address, data.school_information.address);
-        this.updateCellValue(worksheet, cellMappings.school_area, data.school_information.educational_service_area);
+        this.updateCellValue(
+          worksheet,
+          cellMappings.school_name,
+          data.school_information.name,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.school_address,
+          data.school_information.address,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.school_area,
+          data.school_information.educational_service_area,
+        );
       }
 
       // Update academic details
       if (data.academic_details) {
-        this.updateCellValue(worksheet, cellMappings.academic_year_value, data.academic_details.year);
-        this.updateCellValue(worksheet, cellMappings.semester_value, data.academic_details.semester);
-        this.updateCellValue(worksheet, cellMappings.class_value, data.academic_details.class);
-        this.updateCellValue(worksheet, cellMappings.learning_area_value, data.academic_details.learning_area);
-        this.updateCellValue(worksheet, cellMappings.course_type_value, data.academic_details.course_type);
-        this.updateCellValue(worksheet, cellMappings.course_code_value, data.academic_details.course_code);
-        this.updateCellValue(worksheet, cellMappings.course_name_value, data.academic_details.course_name);
-        this.updateCellValue(worksheet, cellMappings.credits_value, data.academic_details.credits);
-        this.updateCellValue(worksheet, cellMappings.learning_hours_value, data.academic_details.learning_hours);
+        this.updateCellValue(
+          worksheet,
+          cellMappings.academic_year_value,
+          data.academic_details.year,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.semester_value,
+          data.academic_details.semester,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.class_value,
+          data.academic_details.class,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.learning_area_value,
+          data.academic_details.learning_area,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.course_type_value,
+          data.academic_details.course_type,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.course_code_value,
+          data.academic_details.course_code,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.course_name_value,
+          data.academic_details.course_name,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.credits_value,
+          data.academic_details.credits,
+        );
+        this.updateCellValue(
+          worksheet,
+          cellMappings.learning_hours_value,
+          data.academic_details.learning_hours,
+        );
       }
 
       // Update personnel information
       if (data.personnel) {
         if (data.personnel.instructors && data.personnel.instructors[0]) {
-          this.updateCellValue(worksheet, cellMappings.instructor_1_name, data.personnel.instructors[0].name);
-          this.updateCellValue(worksheet, cellMappings.instructor_1_phone, data.personnel.instructors[0].phone);
+          this.updateCellValue(
+            worksheet,
+            cellMappings.instructor_1_name,
+            data.personnel.instructors[0].name,
+          );
+          this.updateCellValue(
+            worksheet,
+            cellMappings.instructor_1_phone,
+            data.personnel.instructors[0].phone,
+          );
         }
         if (data.personnel.instructors && data.personnel.instructors[1]) {
-          this.updateCellValue(worksheet, cellMappings.instructor_2_name, data.personnel.instructors[1].name);
-          this.updateCellValue(worksheet, cellMappings.instructor_2_phone, data.personnel.instructors[1].phone);
+          this.updateCellValue(
+            worksheet,
+            cellMappings.instructor_2_name,
+            data.personnel.instructors[1].name,
+          );
+          this.updateCellValue(
+            worksheet,
+            cellMappings.instructor_2_phone,
+            data.personnel.instructors[1].phone,
+          );
         }
         if (data.personnel.homeroom_teacher) {
-          this.updateCellValue(worksheet, cellMappings.homeroom_teacher_name, data.personnel.homeroom_teacher.name);
-          this.updateCellValue(worksheet, cellMappings.homeroom_teacher_phone, data.personnel.homeroom_teacher.phone);
+          this.updateCellValue(
+            worksheet,
+            cellMappings.homeroom_teacher_name,
+            data.personnel.homeroom_teacher.name,
+          );
+          this.updateCellValue(
+            worksheet,
+            cellMappings.homeroom_teacher_phone,
+            data.personnel.homeroom_teacher.phone,
+          );
         }
       }
 
       // Update results summary
       if (data.results_summary) {
         // Update total students
-        this.updateCellValue(worksheet, cellMappings.total_students, data.results_summary.total_students);
-        
+        this.updateCellValue(
+          worksheet,
+          cellMappings.total_students,
+          data.results_summary.total_students,
+        );
+
         // Update grade distribution
         if (data.results_summary.grade_distribution) {
           const gradeMap = {
@@ -2750,12 +3012,12 @@ export class SubjectService {
             '1.5': cellMappings.grade_1_5,
             '1': cellMappings.grade_1,
             '0': cellMappings.grade_0,
-            'ร': cellMappings.grade_r,
-            'มผ': cellMappings.grade_mp,
-            'มส': cellMappings.grade_ms,
+            ร: cellMappings.grade_r,
+            มผ: cellMappings.grade_mp,
+            มส: cellMappings.grade_ms,
           };
 
-          data.results_summary.grade_distribution.forEach(grade => {
+          data.results_summary.grade_distribution.forEach((grade) => {
             const mapping = gradeMap[grade.grade];
             if (mapping) {
               this.updateCellValue(worksheet, mapping, grade.count);
@@ -2764,7 +3026,10 @@ export class SubjectService {
         }
 
         // Update desirable characteristics
-        if (data.results_summary.desirable_characteristics && data.results_summary.desirable_characteristics.student_count) {
+        if (
+          data.results_summary.desirable_characteristics &&
+          data.results_summary.desirable_characteristics.student_count
+        ) {
           const charMap = {
             '3': cellMappings.char_3,
             '2': cellMappings.char_2,
@@ -2772,16 +3037,21 @@ export class SubjectService {
             '0': cellMappings.char_0,
           };
 
-          data.results_summary.desirable_characteristics.student_count.forEach(char => {
-            const mapping = charMap[char.scale];
-            if (mapping) {
-              this.updateCellValue(worksheet, mapping, char.count);
-            }
-          });
+          data.results_summary.desirable_characteristics.student_count.forEach(
+            (char) => {
+              const mapping = charMap[char.scale];
+              if (mapping) {
+                this.updateCellValue(worksheet, mapping, char.count);
+              }
+            },
+          );
         }
 
         // Update reading thinking analysis
-        if (data.results_summary.reading_thinking_analysis_writing && data.results_summary.reading_thinking_analysis_writing.student_count) {
+        if (
+          data.results_summary.reading_thinking_analysis_writing &&
+          data.results_summary.reading_thinking_analysis_writing.student_count
+        ) {
           const readMap = {
             '3': cellMappings.read_3,
             '2': cellMappings.read_2,
@@ -2789,21 +3059,31 @@ export class SubjectService {
             '0': cellMappings.read_0,
           };
 
-          data.results_summary.reading_thinking_analysis_writing.student_count.forEach(read => {
-            const mapping = readMap[read.scale];
-            if (mapping) {
-              this.updateCellValue(worksheet, mapping, read.count);
-            }
-          });
+          data.results_summary.reading_thinking_analysis_writing.student_count.forEach(
+            (read) => {
+              const mapping = readMap[read.scale];
+              if (mapping) {
+                this.updateCellValue(worksheet, mapping, read.count);
+              }
+            },
+          );
         }
 
         // Update indicators assessment
         if (data.results_summary.indicators_assessment) {
-          data.results_summary.indicators_assessment.forEach(indicator => {
+          data.results_summary.indicators_assessment.forEach((indicator) => {
             if (indicator.result === 'ผ่าน') {
-              this.updateCellValue(worksheet, cellMappings.indicators_pass, indicator.count);
+              this.updateCellValue(
+                worksheet,
+                cellMappings.indicators_pass,
+                indicator.count,
+              );
             } else if (indicator.result === 'ไม่ผ่าน') {
-              this.updateCellValue(worksheet, cellMappings.indicators_fail, indicator.count);
+              this.updateCellValue(
+                worksheet,
+                cellMappings.indicators_fail,
+                indicator.count,
+              );
             }
           });
         }
@@ -2824,28 +3104,44 @@ export class SubjectService {
           if (signaturePositions[index]) {
             // Format signature as "(Name)" to match Excel template
             const formattedSignature = `(${signature.name})`;
-            this.updateCellValue(worksheet, signaturePositions[index], formattedSignature);
+            this.updateCellValue(
+              worksheet,
+              signaturePositions[index],
+              formattedSignature,
+            );
           }
         });
       }
 
-      this.logger.log('Completed detailed update of cover worksheet (ปก ปพ 5)');
+      // Set worksheet name
+      worksheet.name = 'แบบบันทึกผลการเรียนประจำรายวิชา';
       
+      this.logger.log('Completed detailed update of cover worksheet (ปก ปพ 5)');
     } catch (error) {
-      this.logger.error(`Error updating cover worksheet detailed: ${error.message}`);
+      this.logger.error(
+        `Error updating cover worksheet detailed: ${error.message}`,
+      );
       throw error;
     }
   }
 
-  private updateCellValue(worksheet: any, position: { row: number, col: number }, value: any) {
+  private updateCellValue(
+    worksheet: any,
+    position: { row: number; col: number },
+    value: any,
+  ) {
     try {
       if (value !== undefined && value !== null && value !== '') {
         const cell = worksheet.getCell(position.row, position.col);
         cell.value = value;
-        this.logger.debug(`Updated cell ${position.row},${position.col} with value: ${value}`);
+        this.logger.debug(
+          `Updated cell ${position.row},${position.col} with value: ${value}`,
+        );
       }
     } catch (error) {
-      this.logger.warn(`Failed to update cell ${position.row},${position.col}: ${error.message}`);
+      this.logger.warn(
+        `Failed to update cell ${position.row},${position.col}: ${error.message}`,
+      );
     }
   }
 
@@ -2853,7 +3149,7 @@ export class SubjectService {
     // Excel worksheet names must be <= 31 characters and unique
     let worksheetName = baseName.substring(0, 31);
     let counter = 1;
-    
+
     // Check if name already exists
     while (workbook.worksheets.some((ws: any) => ws.name === worksheetName)) {
       const suffix = ` (${counter})`;
@@ -2861,11 +3157,16 @@ export class SubjectService {
       worksheetName = baseName.substring(0, maxBaseLength) + suffix;
       counter++;
     }
-    
+
     return worksheetName;
   }
 
-  private async createWorksheetFallback(workbook: any, data: any, index: number, subjectName: string) {
+  private async createWorksheetFallback(
+    workbook: any,
+    data: any,
+    index: number,
+    subjectName: string,
+  ) {
     // Fallback to original methods if template loading fails
     const fallbackMethods = [
       () => this.createCoverWorksheet(workbook, data, subjectName),
@@ -2894,12 +3195,12 @@ export class SubjectService {
 
   private applyGeneralFormatting(worksheet: any) {
     if (!worksheet) return;
-    
+
     // Set default font and row height
     if (worksheet.properties) {
       worksheet.properties.defaultRowHeight = 25;
     }
-    
+
     // Auto-fit columns with maximum width - check if columns exist first
     if (
       worksheet.columns &&
@@ -2912,7 +3213,7 @@ export class SubjectService {
         }
       });
     }
-    
+
     // Set Thai font for all cells and add borders where appropriate
     if (worksheet.eachRow && typeof worksheet.eachRow === 'function') {
       worksheet.eachRow((row: any) => {
@@ -2923,7 +3224,7 @@ export class SubjectService {
               if (!cell.font) {
                 cell.font = { name: 'TH SarabunPSK', size: 12 };
               }
-              
+
               // Add vertical alignment
               if (!cell.alignment) {
                 cell.alignment = { vertical: 'middle', wrapText: true };
@@ -2933,7 +3234,7 @@ export class SubjectService {
         }
       });
     }
-    
+
     // Add page setup for printing
     if (worksheet.pageSetup) {
       worksheet.pageSetup = {
@@ -2945,13 +3246,166 @@ export class SubjectService {
           top: 0.75,
           bottom: 0.75,
           header: 0.3,
-          footer: 0.3
+          footer: 0.3,
         },
         printArea: undefined,
         fitToPage: true,
         fitToWidth: 1,
-        fitToHeight: 0
+        fitToHeight: 0,
       };
+    }
+  }
+
+  private async updateStudentDataWorksheetDetailed(worksheet: any, data: any) {
+    try {
+      this.logger.log('Starting detailed update of student data worksheet');
+
+      // CORRECTED cell mappings based on actual Excel analysis
+      const cellMappings = {
+        // Title (Row 2, merged B2:I2)
+        title: { row: 2, col: 2, value: data.document_title },
+
+        // Course details (Row 3)
+        academic_year_label: { row: 3, col: 2, value: 'ปีการศึกษา:' },
+        academic_year_value: {
+          row: 3,
+          col: 3,
+          value: data.course_details.academic_year,
+        },
+        semester_label: { row: 3, col: 4, value: 'ภาคเรียนที่:' },
+        semester_value: { row: 3, col: 5, value: data.course_details.semester },
+        learning_area_label: { row: 3, col: 6, value: 'กลุ่มสาระ:' },
+        learning_area_value: {
+          row: 3,
+          col: 8,
+          value: data.course_details.learning_area,
+        },
+
+        // Course details (Row 4)
+        course_type_label: { row: 4, col: 2, value: 'ประเภทวิชา:' },
+        course_type_value: {
+          row: 4,
+          col: 3,
+          value: data.course_details.course_type,
+        },
+        course_code_label: { row: 4, col: 4, value: 'รหัส:' },
+        course_code_value: {
+          row: 4,
+          col: 5,
+          value: data.course_details.course_code,
+        },
+        course_name_label: { row: 4, col: 6, value: 'ชื่อวิชา:' },
+        course_name_value: {
+          row: 4,
+          col: 7,
+          value: data.course_details.course_name,
+        },
+
+        // Student summary (Row 5) - CORRECTED based on merged cells
+        total_students_label: { row: 5, col: 2, value: 'จำนวนนักเรียนทั้งหมด' }, // B5:C5 merged
+        total_students_value: {
+          row: 5,
+          col: 4,
+          value: data.student_summary.total,
+        }, // D5:E5 merged
+        male_label: { row: 5, col: 6, value: 'ชาย' },
+        male_count: {
+          row: 5,
+          col: 7,
+          value:
+            data.student_summary.gender_distribution.find(
+              (g) => g.gender === 'ชาย',
+            )?.count || 0,
+        },
+        female_label: { row: 5, col: 8, value: 'หญิง' },
+        female_count: {
+          row: 5,
+          col: 9,
+          value:
+            data.student_summary.gender_distribution.find(
+              (g) => g.gender === 'หญิง',
+            )?.count || 0,
+        },
+
+        // Table headers (Row 7) - CORRECTED based on merged cells
+        header_number: { row: 7, col: 2, value: 'ที่' },
+        header_student_id: { row: 7, col: 3, value: 'รหัส' },
+        header_name: { row: 7, col: 4, value: 'ชื่อ-สกุล' }, // D7:G7 merged
+        header_class: { row: 7, col: 8, value: 'ชั้น' },
+        header_teacher: { row: 7, col: 9, value: 'ครูประจำชั้น' },
+      };
+
+      // Update course details
+      Object.entries(cellMappings).forEach(([key, mapping]) => {
+        this.updateCellValue(worksheet, mapping, mapping.value);
+      });
+
+      // Update student data (starting from row 8) - CORRECTED structure
+      if (data.student_list && Array.isArray(data.student_list)) {
+        data.student_list.forEach((student, index) => {
+          const rowNum = 8 + index;
+
+          // CORRECTED cell mappings based on actual Excel structure:
+          // Col 2: ลำดับ (ที่)
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 2 },
+            student.list_number,
+          );
+
+          // Col 3: รหัสนักเรียน
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 3 },
+            student.student_id,
+          );
+
+          // Col 4: คำนำหน้า (เด็กชาย/เด็กหญิง) - use Thai title directly
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 4 },
+            student.title,
+          );
+
+          // Col 5: ชื่อ (merged with Col 6)
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 5 },
+            student.first_name,
+          );
+
+          // Col 7: นามสกุล
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 7 },
+            student.last_name,
+          );
+
+          // Col 8: ชั้น
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 8 },
+            student.class,
+          );
+
+          // Col 9: ครูประจำชั้น
+          this.updateCellValue(
+            worksheet,
+            { row: rowNum, col: 9 },
+            student.homeroom_teacher,
+          );
+        });
+      }
+
+      // Set worksheet name
+      worksheet.name = 'ข้อมูลนักเรียนประจำรายวิชา';
+
+      this.logger.log('Completed detailed update of student data worksheet');
+    } catch (error) {
+      this.logger.error(
+        `Error updating student data worksheet detailed: ${error.message}`,
+      );
+      throw error;
     }
   }
 }
