@@ -1,0 +1,66 @@
+{
+  "document_title": "มาตราฐานตัวชี้วัดประจำรายวิชา (จำแนกตามกลุ่ม)",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "1",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5"
+  },
+  "indicators_summary": {
+    "total": 25,
+    "breakdown": [
+      {
+        "type": "ระหว่างทาง",
+        "count": 17
+      },
+      {
+        "type": "ปลายทาง",
+        "count": 8
+      }
+    ]
+  },
+  "indicator_groups": [
+    {
+      "group_number": 1,
+      "indicators": [
+        {
+          "standard_code": "ต.1.1",
+          "indicator_code": "ป.2/1",
+          "description": "ปฏิบัติตามคำสั่งและคำขอร้องง่าย ๆ ที่ฟัง",
+          "assessment_type": "ระหว่างทาง"
+        },
+        {
+          "standard_code": "ต.1.1",
+          "indicator_code": "ป.2/2",
+          "description": "ระบุตัวอักษรและเสียง อ่านออกเสียงคำ สะกดคำ และอ่านประโยคง่าย ๆ ถูกต้องตามหลักการอ่าน",
+          "assessment_type": "ระหว่างทาง"
+        },
+        {
+          "standard_code": "ต.1.1",
+          "indicator_code": "ป.2/3",
+          "description": "เลือกภาพตรงตามความหมายชของคำ กลุ่มคำ และประโยคที่ฟัง",
+          "assessment_type": "ระหว่างทาง"
+        }
+      ]
+    },
+    {
+      "group_number": 2,
+      "indicators": [
+        {
+          "standard_code": "ต.1.1",
+          "indicator_code": "ป.2/4",
+          "description": "ตอบคำถามจากการฟังประโยคบทสนทนา หรือนิทานง่าย ๆ ที่มีภาพประกอบ",
+          "assessment_type": "ปลายทาง"
+        },
+        {
+          "standard_code": "ต.1.2",
+          "indicator_code": "ป.2/1",
+          "description": "พูดโต้ตอบด้วยคำสั้น ๆ ง่าย ๆ ในการสื่อสารระหว่างบุคคล ตามแบบที่ฟัง",
+          "assessment_type": "ปลายทาง"
+        }
+      ]
+    }
+  ]
+}

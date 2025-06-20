@@ -1,0 +1,121 @@
+{
+  "document_title": "Subject Performance Report",
+  "school_information": {
+    "name": "Ban Khlong Yai School",
+    "address": "Khlong Yai Subdistrict, Laem Ngop District, Trat Province 23120",
+    "educational_service_area": "Trat Primary Educational Service Area Office 1"
+  },
+  "academic_details": {
+    "year": "2025",
+    "semester": "1",
+    "class": "Grade 4/2",
+    "learning_area": "Mathematics",
+    "course_type": "Core",
+    "course_code": "MATH14102",
+    "course_name": "Mathematics 4",
+    "credits": 3,
+    "learning_hours": "120 hours/year"
+  },
+  "personnel": {
+    "instructors": [
+      {
+        "name": "Ms. Wannipha Sombun",
+        "phone": "089-123-4567"
+      },
+      {
+        "name": "Mr. Anan Charoensuk",
+        "phone": "081-555-6789"
+      }
+    ],
+    "homeroom_teacher": {
+      "name": "Mr. Somchai Kasetdee",
+      "phone": "086-789-1234"
+    }
+  },
+  "results_summary": {
+    "total_students": 15,
+    "grade_distribution": [
+      { "grade": "4", "count": 6 },
+      { "grade": "3.5", "count": 4 },
+      { "grade": "3", "count": 3 },
+      { "grade": "2.5", "count": 2 },
+      { "grade": "2", "count": 0 },
+      { "grade": "1.5", "count": 0 },
+      { "grade": "1", "count": 0 },
+      { "grade": "0", "count": 0 },
+      { "grade": "I", "count": 0 },
+      { "grade": "IP", "count": 0 },
+      { "grade": "IN", "count": 0 }
+    ],
+    "desirable_characteristics": {
+      "evaluation_scale": [
+        { "scale": "3", "description": "Excellent" },
+        { "scale": "2", "description": "Good" },
+        { "scale": "1", "description": "Satisfactory" },
+        { "scale": "0", "description": "Unsatisfactory" }
+      ],
+      "student_count": [
+        { "scale": "3", "count": 10 },
+        { "scale": "2", "count": 5 },
+        { "scale": "1", "count": 0 },
+        { "scale": "0", "count": 0 }
+      ]
+    },
+    "reading_thinking_analysis_writing": {
+      "evaluation_scale": [
+        { "scale": "3", "description": "Excellent" },
+        { "scale": "2", "description": "Good" },
+        { "scale": "1", "description": "Satisfactory" },
+        { "scale": "0", "description": "Unsatisfactory" }
+      ],
+      "student_count": [
+        { "scale": "3", "count": 9 },
+        { "scale": "2", "count": 6 },
+        { "scale": "1", "count": 0 },
+        { "scale": "0", "count": 0 }
+      ]
+    },
+    "indicators_assessment": [
+      { "result": "Pass", "count": 15 },
+      { "result": "Fail", "count": 0 }
+    ]
+  },
+  "approval_signatures": [
+    {
+      "title": "Instructor",
+      "name": "Ms. Wannipha Sombun",
+      "status": "Approved",
+      "order": 1
+    },
+    {
+      "title": "Head of Learning Area",
+      "name": "Mr. Pakorn Inthra",
+      "status": "Approved",
+      "order": 2
+    },
+    {
+      "title": "Head of Academic Records",
+      "name": "Mrs. Chayanit Boonruang",
+      "status": "Approved",
+      "order": 3
+    },
+    {
+      "title": "Head of Academic Affairs",
+      "name": "Ms. Jarunee Phulsap",
+      "status": "Approved",
+      "order": 4
+    },
+    {
+      "title": "Deputy Director",
+      "name": "Mr. Anucha Kaewkaset",
+      "status": "Approved",
+      "order": 5
+    },
+    {
+      "title": "School Director",
+      "name": "Mrs. Bussaba Thongngam",
+      "status": "Approved",
+      "order": 6
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "document_title": "สรุปผลการเรียนประจำรายวิชา",
+  "course_summary_details": {
+    "academic_year": "2568",
+    "semesters": "1 และ 2",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5",
+    "credits": 3,
+    "learning_hours": {
+      "per_semester": "60 ชั่วโมง/ภาคเรียน",
+      "per_year": "120 ชั่วโมง/ปี"
+    },
+    "indicator_summary": [
+      { "type": "ทั้งหมด", "count": 25 },
+      { "type": "ระหว่างทาง", "count": 17 },
+      { "type": "ปลายทาง", "count": 8 }
+    ],
+    "scoring_ratio": [
+      { "type": "คะแนนเก็บ", "weight": 70 },
+      { "type": "สอบกลางภาค", "weight": 0 },
+      { "type": "สอบปลายภาค", "weight": 30 }
+    ],
+    "student_demographics": {
+      "total": 10,
+      "breakdown": [
+        { "gender": "ชาย", "count": 6 },
+        { "gender": "หญิง", "count": 4 }
+      ]
+    }
+  },
+  "evaluation_summaries": {
+    "academic_results_by_grade": [
+      { "grade": "4", "count": 5, "percentage": 50 },
+      { "grade": "3.5", "count": 2, "percentage": 20 },
+      { "grade": "3", "count": 2, "percentage": 20 },
+      { "grade": "2.5", "count": 1, "percentage": 10 },
+      { "grade": "2", "count": 0, "percentage": 0 },
+      { "grade": "1.5", "count": 0, "percentage": 0 },
+      { "grade": "1", "count": 0, "percentage": 0 },
+      { "grade": "0", "count": 0, "percentage": 0 },
+      { "grade": "ร", "count": 0, "percentage": 0 },
+      { "grade": "มผ", "count": 0, "percentage": 0 },
+      { "grade": "มส", "count": 0, "percentage": 0 }
+    ],
+    "desirable_characteristics": [
+      { "level": "ดีเยี่ยม", "count": 5, "percentage": 50.0 },
+      { "level": "ดี", "count": 3, "percentage": 30.0 },
+      { "level": "ผ่าน", "count": 2, "percentage": 20.0 },
+      { "level": "ไม่ผ่าน", "count": 0, "percentage": 0.0 }
+    ],
+    "reading_thinking_writing": [
+      { "level": "ดีเยี่ยม", "count": 5, "percentage": 50.0 },
+      { "level": "ดี", "count": 3, "percentage": 30.0 },
+      { "level": "ผ่าน", "count": 2, "percentage": 20.0 },
+      { "level": "ไม่ผ่าน", "count": 0, "percentage": 0.0 }
+    ],
+    "indicator_assessment": [
+      { "status": "ผ่านตัวชี้วัด", "count": 10, "percentage": 100.0 },
+      { "status": "ไม่ผ่านตัวชี้วัด", "count": 0, "percentage": 0.0 }
+    ]
+  },
+  "instructor_signature": {
+    "name": "นายวรายุทธ เทกระโทก",
+    "title": "ครูผู้สอน"
+  }
+}

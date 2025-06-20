@@ -1,0 +1,89 @@
+{
+  "document_title": "ข้อมูลนักเรียนประจำรายวิชา",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "1",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5"
+  },
+  "student_summary": {
+    "total": 10,
+    "gender_distribution": [
+      {
+        "gender": "ชาย",
+        "count": 6
+      },
+      {
+        "gender": "หญิง",
+        "count": 4
+      }
+    ]
+  },
+  "student_list": [
+    {
+      "list_number": 1,
+      "student_id": "2561101",
+      "full_name": "เด็กชาย ชาลี สยนานนท์ บอลลูน",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 2,
+      "student_id": "2561102",
+      "full_name": "เด็กชาย ชาลี สยนานนท์ บอลลูน",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 3,
+      "student_id": "2561103",
+      "full_name": "เด็กชาย ชาลี สยนานนท์ บอลลูน",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 4,
+      "student_id": "2561104",
+      "full_name": "เด็กชาย ชาลี สยนานนท์ บอลลูน",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 5,
+      "student_id": "2561105",
+      "full_name": "เด็กชาย ชาลี สยนานนท์ บอลลูน",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 6,
+      "student_id": "2561106",
+      "full_name": "เด็กชาย ชาลี สยนานนท์ บอลลูน",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 8,
+      "student_id": "2561107",
+      "full_name": "เด็กหญิง ธาริกา แสงตะวัน พิณ",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 9,
+      "student_id": "2561108",
+      "full_name": "เด็กหญิง ธาริกา แสงตะวัน พิณ",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    },
+    {
+      "list_number": 10,
+      "student_id": "2561109",
+      "full_name": "เด็กหญิง ธาริกา แสงตะวัน พิณ",
+      "class": "ป.5/1",
+      "homeroom_teacher": "ครูธนิดา เหล่าสกุล ลิเดีย"
+    }
+  ]
+}
