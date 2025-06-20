@@ -1,34 +1,34 @@
 {
-  "document_title": "Subject Performance Report",
+  "document_title": "แบบบันทึกผลการเรียนประจำรายวิชา",
   "school_information": {
-    "name": "Ban Khlong Yai School",
-    "address": "Khlong Yai Subdistrict, Laem Ngop District, Trat Province 23120",
-    "educational_service_area": "Trat Primary Educational Service Area Office 1"
+    "name": "โรงเรียนบ้านคลองใหญ่",
+    "address": "ตำบล คลองใหญ่ อำเภอแหลมงอบ จังหวัดตราด 23120",
+    "educational_service_area": "สำนักงานเขตพื้นที่การศึกษาประถมศึกษาตราด เขต 1"
   },
   "academic_details": {
-    "year": "2025",
+    "year": "2568",
     "semester": "1",
-    "class": "Grade 4/2",
-    "learning_area": "Mathematics",
-    "course_type": "Core",
-    "course_code": "MATH14102",
-    "course_name": "Mathematics 4",
+    "class": "ประถมศึกษาปีที่ 4/2",
+    "learning_area": "คณิตศาสตร์",
+    "course_type": "พื้นฐาน",
+    "course_code": "ค14102",
+    "course_name": "คณิตศาสตร์ 4",
     "credits": 3,
-    "learning_hours": "120 hours/year"
+    "learning_hours": "120 ชั่วโมง/ปี"
   },
   "personnel": {
     "instructors": [
       {
-        "name": "Ms. Wannipha Sombun",
+        "name": "นางสาววรรณิภา สมบุญ",
         "phone": "089-123-4567"
       },
       {
-        "name": "Mr. Anan Charoensuk",
+        "name": "นายอนันต์ เจริญสุข",
         "phone": "081-555-6789"
       }
     ],
     "homeroom_teacher": {
-      "name": "Mr. Somchai Kasetdee",
+      "name": "นายสมชาย เกษตรดี",
       "phone": "086-789-1234"
     }
   },
@@ -43,16 +43,16 @@
       { "grade": "1.5", "count": 0 },
       { "grade": "1", "count": 0 },
       { "grade": "0", "count": 0 },
-      { "grade": "I", "count": 0 },
-      { "grade": "IP", "count": 0 },
-      { "grade": "IN", "count": 0 }
+      { "grade": "ร", "count": 0 },
+      { "grade": "มผ", "count": 0 },
+      { "grade": "มส", "count": 0 }
     ],
     "desirable_characteristics": {
       "evaluation_scale": [
-        { "scale": "3", "description": "Excellent" },
-        { "scale": "2", "description": "Good" },
-        { "scale": "1", "description": "Satisfactory" },
-        { "scale": "0", "description": "Unsatisfactory" }
+        { "scale": "3", "description": "ดีเยี่ยม" },
+        { "scale": "2", "description": "ดี" },
+        { "scale": "1", "description": "ผ่าน" },
+        { "scale": "0", "description": "ไม่ผ่าน" }
       ],
       "student_count": [
         { "scale": "3", "count": 10 },
@@ -63,10 +63,10 @@
     },
     "reading_thinking_analysis_writing": {
       "evaluation_scale": [
-        { "scale": "3", "description": "Excellent" },
-        { "scale": "2", "description": "Good" },
-        { "scale": "1", "description": "Satisfactory" },
-        { "scale": "0", "description": "Unsatisfactory" }
+        { "scale": "3", "description": "ดีเยี่ยม" },
+        { "scale": "2", "description": "ดี" },
+        { "scale": "1", "description": "ผ่าน" },
+        { "scale": "0", "description": "ไม่ผ่าน" }
       ],
       "student_count": [
         { "scale": "3", "count": 9 },
@@ -76,45 +76,45 @@
       ]
     },
     "indicators_assessment": [
-      { "result": "Pass", "count": 15 },
-      { "result": "Fail", "count": 0 }
+      { "result": "ผ่าน", "count": 15 },
+      { "result": "ไม่ผ่าน", "count": 0 }
     ]
   },
   "approval_signatures": [
     {
-      "title": "Instructor",
-      "name": "Ms. Wannipha Sombun",
-      "status": "Approved",
+      "title": "ครูผู้สอน",
+      "name": "นางสาววรรณิภา สมบุญ",
+      "status": "อนุมัติ",
       "order": 1
     },
     {
-      "title": "Head of Learning Area",
-      "name": "Mr. Pakorn Inthra",
-      "status": "Approved",
+      "title": "หัวหน้ากลุ่มสาระการเรียนรู้",
+      "name": "นายปกรณ์ อินทรา",
+      "status": "อนุมัติ",
       "order": 2
     },
     {
-      "title": "Head of Academic Records",
-      "name": "Mrs. Chayanit Boonruang",
-      "status": "Approved",
+      "title": "หัวหน้างานทะเบียนวัดผล",
+      "name": "นางชญานิษฐ์ บุญเรือง",
+      "status": "อนุมัติ",
       "order": 3
     },
     {
-      "title": "Head of Academic Affairs",
-      "name": "Ms. Jarunee Phulsap",
-      "status": "Approved",
+      "title": "หัวหน้างานวิชาการ",
+      "name": "นางสาวจารุณี พูลทรัพย์",
+      "status": "อนุมัติ",
       "order": 4
     },
     {
-      "title": "Deputy Director",
-      "name": "Mr. Anucha Kaewkaset",
-      "status": "Approved",
+      "title": "รองผู้อำนวยการ",
+      "name": "นายอนุชา แก้วเกษ",
+      "status": "อนุมัติ",
       "order": 5
     },
     {
-      "title": "School Director",
-      "name": "Mrs. Bussaba Thongngam",
-      "status": "Approved",
+      "title": "ผู้อำนวยการ",
+      "name": "นางบุษบา ทองงาม",
+      "status": "ไม่อนุมัติ",
       "order": 6
     }
   ]
