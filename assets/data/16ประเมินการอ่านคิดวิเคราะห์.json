@@ -1,0 +1,134 @@
+{
+  "document_title": "แบบประเมินการอ่าน การคิดวิเคราะห์ และการเขียน",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "1",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5"
+  },
+  "student_evaluations": [
+    {
+      "list_number": 1,
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    },
+    {
+      "list_number": 2,
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    },
+    {
+      "list_number": 3,
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    },
+    {
+      "list_number": 4,
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ดี",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 2 },
+        { "item": "ข้อ 2", "score": 2 },
+        { "item": "ข้อ 3", "score": 2 },
+        { "item": "ข้อ 4", "score": 2 },
+        { "item": "ข้อ 5", "score": 2 },
+        { "item": "ข้อ 6", "score": 2 }
+      ]
+    },
+    {
+      "list_number": 5,
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    },
+    {
+      "list_number": 6,
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    },
+    {
+      "list_number": 8,
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "final_evaluation": "ดี",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 2 },
+        { "item": "ข้อ 2", "score": 2 },
+        { "item": "ข้อ 3", "score": 2 },
+        { "item": "ข้อ 4", "score": 2 },
+        { "item": "ข้อ 5", "score": 2 },
+        { "item": "ข้อ 6", "score": 2 }
+      ]
+    },
+    {
+      "list_number": 9,
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    },
+    {
+      "list_number": 10,
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "final_evaluation": "ดีเยี่ยม",
+      "evaluation_scores": [
+        { "item": "ข้อ 1", "score": 3 },
+        { "item": "ข้อ 2", "score": 3 },
+        { "item": "ข้อ 3", "score": 3 },
+        { "item": "ข้อ 4", "score": 3 },
+        { "item": "ข้อ 5", "score": 3 },
+        { "item": "ข้อ 6", "score": 3 }
+      ]
+    }
+  ],
+  "instructor_signature": {
+    "name": "นายวรายุทธ เทกระโทก",
+    "title": "ครูผู้สอน"
+  }
+}

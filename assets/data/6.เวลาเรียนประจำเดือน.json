@@ -1,0 +1,184 @@
+{
+  "document_title": "แบบสรุปเวลาเรียนประจำเดือน",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "1",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5",
+    "credits": 3,
+    "learning_hours": {
+      "per_semester": "60 ชั่วโมง/ภาคเรียน",
+      "per_year": "120 ชั่วโมง/ปี"
+    }
+  },
+  "summary_details": {
+    "month": "พฤษภาคม",
+    "total_school_days_in_month": 3
+  },
+  "attendance_records": [
+    {
+      "list_number": 1,
+      "student_id": "2561101",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "ขาด" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 3 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 1 }
+      ]
+    },
+    {
+      "list_number": 2,
+      "student_id": "2561102",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 4 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 3,
+      "student_id": "2561103",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "ขาด" },
+        { "date": "22-พ.ค.-68", "status": "ขาด" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 2 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 2 }
+      ]
+    },
+    {
+      "list_number": 4,
+      "student_id": "2561104",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "ป่วย" },
+        { "date": "22-พ.ค.-68", "status": "ป่วย" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 2 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 2 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 5,
+      "student_id": "2561105",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 4 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 6,
+      "student_id": "2561106",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "สาย" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 3 },
+        { "status": "สาย", "count": 1 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 8,
+      "student_id": "2561107",
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 4 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 9,
+      "student_id": "2561108",
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "มา" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 4 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 0 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 10,
+      "student_id": "2561109",
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "daily_records": [
+        { "date": "1-พ.ค.-68", "status": "มา" },
+        { "date": "5-พ.ค.-68", "status": "ป่วย" },
+        { "date": "15-พ.ค.-68", "status": "มา" },
+        { "date": "22-พ.ค.-68", "status": "มา" }
+      ],
+      "monthly_summary": [
+        { "status": "มา", "count": 3 },
+        { "status": "สาย", "count": 0 },
+        { "status": "ป่วย", "count": 1 },
+        { "status": "ลา", "count": 0 },
+        { "status": "ขาด", "count": 0 }
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
@@ -29,6 +30,7 @@ import {
 } from './dto';
 import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
+import { Response } from 'express';
 
 @Controller('v1/subjects')
 export class SubjectController {
@@ -74,6 +76,26 @@ export class SubjectController {
   ) {
     const dto = { ...param, ...query };
     return this.subjectService.getSubjectsThatStudentBelongTo(dto, student);
+  }
+
+  @Get(':subjectName/summary-report5/excel')
+  async downloadSummaryReport5Excel(
+    @Param('subjectName') subjectName: string,
+    @Res() res: Response,
+  ) {
+    const buffer =
+      await this.subjectService.generateSummaryReport5Excel(subjectName);
+
+    const filename = `ปพ5-${subjectName}.xlsx`;
+    const encodedFilename = encodeURIComponent(filename);
+    
+    res.set({
+      'Content-Type':
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename*=UTF-8''${encodedFilename}`,
+    });
+
+    return res.send(buffer);
   }
 
   @UseGuards(UserGuard)

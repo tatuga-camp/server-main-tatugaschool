@@ -1,0 +1,352 @@
+{
+  "document_title": "แบบสรุปเวลาการมาเรียน ประจำภาคเรียนและปีการศึกษา",
+  "course_details": {
+    "academic_year": "2568",
+    "semesters": "1 และ 2",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5",
+    "credits": 3,
+    "learning_hours": {
+      "per_semester": "60 ชั่วโมง/ภาคเรียน",
+      "per_year": "120 ชั่วโมง/ปี"
+    }
+  },
+  "total_possible_attendance": {
+    "year_total_days": 120,
+    "semesters": [
+      {
+        "semester_number": 1,
+        "total_days": 60,
+        "monthly_days": [
+          { "month": "พ.ค.", "days": 10 },
+          { "month": "มิ.ย.", "days": 10 },
+          { "month": "ก.ค.", "days": 10 },
+          { "month": "ส.ค.", "days": 10 },
+          { "month": "ก.ย.", "days": 10 },
+          { "month": "ต.ค.", "days": 10 }
+        ]
+      },
+      {
+        "semester_number": 2,
+        "total_days": 60,
+        "monthly_days": [
+          { "month": "พ.ย.", "days": 12 },
+          { "month": "ธ.ค.", "days": 12 },
+          { "month": "ม.ค.", "days": 12 },
+          { "month": "ก.พ.", "days": 12 },
+          { "month": "มี.ค.", "days": 12 }
+        ]
+      }
+    ]
+  },
+  "student_attendance_records": [
+    {
+      "list_number": 1,
+      "student_id": "2561101",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 108
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 53,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 8 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 9 },
+            { "month": "ส.ค.", "days_attended": 7 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 9 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 55,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 12 },
+            { "month": "ธ.ค.", "days_attended": 11 },
+            { "month": "ม.ค.", "days_attended": 11 },
+            { "month": "ก.พ.", "days_attended": 10 },
+            { "month": "มี.ค.", "days_attended": 11 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 2,
+      "student_id": "2561102",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 112
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 58,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 9 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 10 },
+            { "month": "ส.ค.", "days_attended": 9 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 54,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 12 },
+            { "month": "ธ.ค.", "days_attended": 9 },
+            { "month": "ม.ค.", "days_attended": 12 },
+            { "month": "ก.พ.", "days_attended": 11 },
+            { "month": "มี.ค.", "days_attended": 10 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 3,
+      "student_id": "2561103",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 115
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 59,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 10 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 10 },
+            { "month": "ส.ค.", "days_attended": 9 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 56,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 10 },
+            { "month": "ธ.ค.", "days_attended": 12 },
+            { "month": "ม.ค.", "days_attended": 12 },
+            { "month": "ก.พ.", "days_attended": 11 },
+            { "month": "มี.ค.", "days_attended": 11 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 4,
+      "student_id": "2561104",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 116
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 57,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 10 },
+            { "month": "มิ.ย.", "days_attended": 9 },
+            { "month": "ก.ค.", "days_attended": 10 },
+            { "month": "ส.ค.", "days_attended": 9 },
+            { "month": "ก.ย.", "days_attended": 9 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 59,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 12 },
+            { "month": "ธ.ค.", "days_attended": 12 },
+            { "month": "ม.ค.", "days_attended": 11 },
+            { "month": "ก.พ.", "days_attended": 12 },
+            { "month": "มี.ค.", "days_attended": 12 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 5,
+      "student_id": "2561105",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 118
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 60,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 10 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 10 },
+            { "month": "ส.ค.", "days_attended": 10 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 58,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 12 },
+            { "month": "ธ.ค.", "days_attended": 11 },
+            { "month": "ม.ค.", "days_attended": 12 },
+            { "month": "ก.พ.", "days_attended": 12 },
+            { "month": "มี.ค.", "days_attended": 11 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 6,
+      "student_id": "2561106",
+      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "final_evaluation": "ไม่ผ่าน",
+      "year_summary": {
+        "total_days_attended": 107
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 58,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 9 },
+            { "month": "มิ.ย.", "days_attended": 9 },
+            { "month": "ก.ค.", "days_attended": 10 },
+            { "month": "ส.ค.", "days_attended": 10 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 49,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 12 },
+            { "month": "ธ.ค.", "days_attended": 11 },
+            { "month": "ม.ค.", "days_attended": 8 },
+            { "month": "ก.พ.", "days_attended": 10 },
+            { "month": "มี.ค.", "days_attended": 8 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 8,
+      "student_id": "2561107",
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 110
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 58,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 9 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 9 },
+            { "month": "ส.ค.", "days_attended": 10 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 52,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 10 },
+            { "month": "ธ.ค.", "days_attended": 11 },
+            { "month": "ม.ค.", "days_attended": 12 },
+            { "month": "ก.พ.", "days_attended": 7 },
+            { "month": "มี.ค.", "days_attended": 12 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 9,
+      "student_id": "2561108",
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 111
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 56,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 10 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 9 },
+            { "month": "ส.ค.", "days_attended": 8 },
+            { "month": "ก.ย.", "days_attended": 9 },
+            { "month": "ต.ค.", "days_attended": 10 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 55,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 8 },
+            { "month": "ธ.ค.", "days_attended": 12 },
+            { "month": "ม.ค.", "days_attended": 12 },
+            { "month": "ก.พ.", "days_attended": 12 },
+            { "month": "มี.ค.", "days_attended": 11 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 10,
+      "student_id": "2561109",
+      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "final_evaluation": "ผ่าน",
+      "year_summary": {
+        "total_days_attended": 115
+      },
+      "semester_summaries": [
+        {
+          "semester_number": 1,
+          "total_days_attended": 58,
+          "monthly_attendance": [
+            { "month": "พ.ค.", "days_attended": 10 },
+            { "month": "มิ.ย.", "days_attended": 10 },
+            { "month": "ก.ค.", "days_attended": 9 },
+            { "month": "ส.ค.", "days_attended": 10 },
+            { "month": "ก.ย.", "days_attended": 10 },
+            { "month": "ต.ค.", "days_attended": 9 }
+          ]
+        },
+        {
+          "semester_number": 2,
+          "total_days_attended": 57,
+          "monthly_attendance": [
+            { "month": "พ.ย.", "days_attended": 12 },
+            { "month": "ธ.ค.", "days_attended": 11 },
+            { "month": "ม.ค.", "days_attended": 12 },
+            { "month": "ก.พ.", "days_attended": 11 },
+            { "month": "มี.ค.", "days_attended": 11 }
+          ]
+        }
+      ]
+    }
+  ]
+}
