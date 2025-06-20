@@ -2466,11 +2466,15 @@ export class SubjectService {
     try {
       // Check if this is the student data worksheet by looking for specific content
       let isStudentDataWorksheet = false;
-      worksheet.eachRow((row: any, rowNumber: number) => {
+      let isCourseDescriptionWorksheet = false;
+      worksheet.eachRow((row: any) => {
         row.eachCell((cell: any) => {
           if (cell.value && typeof cell.value === 'string') {
             if (cell.value.includes('ข้อมูลนักเรียนประจำรายวิชา')) {
               isStudentDataWorksheet = true;
+            }
+            if (cell.value.includes('คำอธิบายรายวิชา')) {
+              isCourseDescriptionWorksheet = true;
             }
           }
         });
@@ -2478,6 +2482,10 @@ export class SubjectService {
 
       if (isStudentDataWorksheet) {
         await this.updateStudentDataWorksheetDetailed(worksheet, data);
+        return;
+      }
+      if (isCourseDescriptionWorksheet) {
+        await this.updateCourseDescriptionWorksheetDetailed(worksheet, data);
         return;
       }
 
@@ -3115,7 +3123,7 @@ export class SubjectService {
 
       // Set worksheet name
       worksheet.name = 'แบบบันทึกผลการเรียนประจำรายวิชา';
-      
+
       this.logger.log('Completed detailed update of cover worksheet (ปก ปพ 5)');
     } catch (error) {
       this.logger.error(
@@ -3404,6 +3412,136 @@ export class SubjectService {
     } catch (error) {
       this.logger.error(
         `Error updating student data worksheet detailed: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  private async updateCourseDescriptionWorksheetDetailed(
+    worksheet: any,
+    data: any,
+  ) {
+    try {
+      this.logger.log(
+        'Starting detailed update of course description worksheet',
+      );
+
+      // C6:H35: รายละเอียดคำอธิบายรายวิชา
+      try {
+        worksheet.mergeCells('C6:H35');
+      } catch (e) {}
+      worksheet.getCell('C6').value = (
+        data.course_description.details || ''
+      ).trim();
+      worksheet.getCell('C6').alignment = {
+        wrapText: true,
+        vertical: 'top',
+        horizontal: 'left',
+      };
+
+      // B37:C37: ตัวชี้วัดทั้งหมด + จำนวน
+      try {
+        worksheet.mergeCells('B37:C37');
+      } catch (e) {}
+      worksheet.getCell('B37').value =
+        `ตัวชี้วัดทั้งหมด (${data.indicators_summary.total})`;
+      worksheet.getCell('B37').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      // D37:E37: 25 ตัวชี้วัด
+      try {
+        worksheet.mergeCells('D37:E37');
+      } catch (e) {}
+      worksheet.getCell('D37').value =
+        `${data.indicators_summary.total} ตัวชี้วัด`;
+      worksheet.getCell('D37').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      // F37:G37: ระหว่างทาง + จำนวน
+      try {
+        worksheet.mergeCells('F37:G37');
+      } catch (e) {}
+      const midTerm = data.indicators_summary.breakdown.find((b: any) =>
+        b.type.includes('ระหว่างทาง'),
+      );
+      worksheet.getCell('F37').value =
+        `ระหว่างทาง (${midTerm ? midTerm.count : ''})`;
+      worksheet.getCell('F37').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      // H37:I37: ปลายทาง + จำนวน
+      try {
+        worksheet.mergeCells('H37:I37');
+      } catch (e) {}
+      const finalTerm = data.indicators_summary.breakdown.find((b: any) =>
+        b.type.includes('ปลายทาง'),
+      );
+      worksheet.getCell('H37').value =
+        `ปลายทาง (${finalTerm ? finalTerm.count : ''})`;
+      worksheet.getCell('H37').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      // B39:E39: รายละเอียดตัวชี้วัดระหว่างทาง
+      try {
+        worksheet.mergeCells('B39:E39');
+      } catch (e) {}
+      worksheet.getCell('B39').value = 'รายละเอียดตัวชี้วัดระหว่างทาง';
+      worksheet.getCell('B39').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      // F39:I39: รายละเอียดตัวชี้วัดปลายทาง
+      try {
+        worksheet.mergeCells('F39:I39');
+      } catch (e) {}
+      worksheet.getCell('F39').value = 'รายละเอียดตัวชี้วัดปลายทาง';
+      worksheet.getCell('F39').alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+      };
+
+      // เติมตัวชี้วัดระหว่างทาง (B40:E...)
+      if (data.indicator_details && data.indicator_details.mid_term) {
+        data.indicator_details.mid_term.forEach(
+          (indicator: string, idx: number) => {
+            worksheet.getCell(`B${40 + idx}`).value = indicator;
+            worksheet.getCell(`B${40 + idx}`).alignment = {
+              horizontal: 'left',
+            };
+          },
+        );
+      }
+
+      // เติมตัวชี้วัดปลายทาง (F40:I...)
+      if (data.indicator_details && data.indicator_details.final_term) {
+        data.indicator_details.final_term.forEach(
+          (indicator: string, idx: number) => {
+            worksheet.getCell(`F${40 + idx}`).value = indicator;
+            worksheet.getCell(`F${40 + idx}`).alignment = {
+              horizontal: 'left',
+            };
+          },
+        );
+      }
+
+      // ตั้งชื่อ worksheet ให้ถูกต้อง
+      worksheet.name = 'คำอธิบายรายวิชา';
+
+      this.logger.log(
+        'Completed detailed update of course description worksheet',
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error updating course description worksheet: ${error.message}`,
       );
       throw error;
     }
