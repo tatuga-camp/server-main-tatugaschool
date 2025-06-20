@@ -11,7 +11,7 @@
   "student_evaluations": [
     {
       "list_number": 1,
-      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "full_name": "เด็กชายมานะ มีวินัย",
       "evaluation_summary": {
         "score": 2,
         "result": "ดี"
@@ -77,7 +77,7 @@
     },
     {
       "list_number": 2,
-      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "full_name": "เด็กชายมานะ มีวินัย",
       "evaluation_summary": {
         "score": 2,
         "result": "ดี"
@@ -143,7 +143,7 @@
     },
     {
       "list_number": 3,
-      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "full_name": "เด็กชายมานะ มีวินัย",
       "evaluation_summary": {
         "score": 3,
         "result": "ดีเยี่ยม"
@@ -209,7 +209,7 @@
     },
     {
       "list_number": 4,
-      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "full_name": "เด็กชายมานะ มีวินัย",
       "evaluation_summary": {
         "score": 3,
         "result": "ดีเยี่ยม"
@@ -275,7 +275,7 @@
     },
     {
       "list_number": 5,
-      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "full_name": "เด็กชายมานะ มีวินัย",
       "evaluation_summary": {
         "score": 2,
         "result": "ดี"
@@ -341,7 +341,7 @@
     },
     {
       "list_number": 6,
-      "full_name": "เด็กชายชาลี สยนานนท์ บอลลูน",
+      "full_name": "เด็กชายมานะ มีวินัย",
       "evaluation_summary": {
         "score": 3,
         "result": "ดีเยี่ยม"
@@ -407,7 +407,7 @@
     },
     {
       "list_number": 8,
-      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "full_name": "เด็กหญิงมานี มาทำดี",
       "evaluation_summary": {
         "score": 3,
         "result": "ดีเยี่ยม"
@@ -473,7 +473,7 @@
     },
     {
       "list_number": 9,
-      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "full_name": "เด็กหญิงมานี มาทำดี",
       "evaluation_summary": {
         "score": 3,
         "result": "ดีเยี่ยม"
@@ -539,7 +539,7 @@
     },
     {
       "list_number": 10,
-      "full_name": "เด็กหญิงธาริกา แสงตะวัน พิณ",
+      "full_name": "เด็กหญิงมานี มาทำดี",
       "evaluation_summary": {
         "score": 2,
         "result": "ดี"
@@ -605,7 +605,7 @@
     }
   ],
   "instructor_signature": {
-    "name": "นายวรายุทธ เทกระโทก",
+    "name": "นายศตวรรษ ปิฉิมพลี",
     "title": "ครูผู้สอน"
   }
 }
