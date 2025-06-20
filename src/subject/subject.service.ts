@@ -561,7 +561,7 @@ export class SubjectService {
     }
   }
 
-  async generateSummaryReport5Excel(subjectName: string): Promise<any> {
+  async generateSummaryReport5Excel(/*subjectName: string*/): Promise<any> {
     try {
       // Load data from JSON files
       const assetsPath = path.join(process.cwd(), 'assets', 'data');
@@ -688,7 +688,7 @@ export class SubjectService {
             this.copyCompleteWorksheet(templateWorksheet, newWorksheet);
 
             // Update with actual data
-            await this.updateWorksheetWithData(newWorksheet, data, subjectName);
+            await this.updateWorksheetWithData(newWorksheet, data);
           }
         } catch (error) {
           this.logger.warn(
@@ -2461,7 +2461,7 @@ export class SubjectService {
   private async updateWorksheetWithData(
     worksheet: any,
     data: any,
-    subjectName: string,
+    // subjectName: string,
   ) {
     try {
       // Check if this is the student data worksheet by looking for specific content
@@ -2490,8 +2490,8 @@ export class SubjectService {
       }
 
       // Update specific cells based on data structure for other worksheets
-      worksheet.eachRow((row: any, rowNumber: number) => {
-        row.eachCell((cell: any, colNumber: number) => {
+      worksheet.eachRow((row: any, _rowNumber: number) => {
+        row.eachCell((cell: any, _colNumber: number) => {
           if (cell.value && typeof cell.value === 'string') {
             let cellValue = cell.value;
 
@@ -2702,7 +2702,6 @@ export class SubjectService {
     try {
       // Find the starting row for student data (usually after headers)
       let startRow = 1;
-      let headerRow = 0;
 
       worksheet.eachRow((row: any, rowNumber: number) => {
         row.eachCell((cell: any) => {
@@ -2713,7 +2712,6 @@ export class SubjectService {
               cell.value.includes('ชื่อ-สกุล') ||
               cell.value.includes('ชื่อ')
             ) {
-              headerRow = rowNumber;
               startRow = rowNumber + 1;
             }
           }
@@ -2768,12 +2766,12 @@ export class SubjectService {
     }
   }
 
-  private updateScoreDataInWorksheet(worksheet: any, scores: any[]) {
+  private updateScoreDataInWorksheet(_worksheet: any, _scores: any[]) {
     // Implementation for updating score data
     // This would be customized based on the specific score data structure
   }
 
-  private updateAttendanceDataInWorksheet(worksheet: any, attendance: any[]) {
+  private updateAttendanceDataInWorksheet(_worksheet: any, _attendance: any[]) {
     // Implementation for updating attendance data
     // This would be customized based on the specific attendance data structure
   }
@@ -2784,8 +2782,8 @@ export class SubjectService {
   ) {
     try {
       // Find and update grade distribution data in the worksheet
-      worksheet.eachRow((row: any, rowNumber: number) => {
-        row.eachCell((cell: any, colNumber: number) => {
+      worksheet.eachRow((row: any) => {
+        row.eachCell((cell: any) => {
           if (cell.value && typeof cell.value === 'string') {
             // Update grade counts
             gradeDistribution.forEach((grade) => {
@@ -2883,13 +2881,36 @@ export class SubjectService {
         indicators_pass: { row: 25, col: 10 }, // J25: 10 (indicators passed)
         indicators_fail: { row: 25, col: 11 }, // K25: - (indicators failed)
 
-        // Approval signatures section (G30-G40) - CORRECTED based on actual Excel structure
-        signature_1: { row: 30, col: 7 }, // G30: (นายศตวรรษ ปิฉิมพลี)
-        signature_2: { row: 32, col: 7 }, // G32: (นางมุกดา พาชวนชม)
-        signature_3: { row: 34, col: 7 }, // G34: (นางมุกดา พาชวนชม)
-        signature_4: { row: 36, col: 7 }, // G36: (นายวิชัย สุเมศไทย)
-        signature_5: { row: 38, col: 7 }, // G38: (นางสุธีรตรา มหาราณี)
-        signature_6: { row: 40, col: 7 }, // G40: (นายชาญชนะ มานะวินัย)
+        // Approval signatures section - A=อนุมัติ, C=ไม่อนุมัติ
+        signature_1_name: { row: 30, col: 7 },
+        signature_1_title: { row: 29, col: 10 },
+        approval_1_approve: { row: 29, col: 1 },
+        approval_1_disapprove: { row: 29, col: 3 },
+
+        signature_2_name: { row: 32, col: 7 },
+        signature_2_title: { row: 31, col: 10 },
+        approval_2_approve: { row: 31, col: 1 },
+        approval_2_disapprove: { row: 31, col: 3 },
+
+        signature_3_name: { row: 34, col: 7 },
+        signature_3_title: { row: 33, col: 10 },
+        approval_3_approve: { row: 33, col: 1 },
+        approval_3_disapprove: { row: 33, col: 3 },
+
+        signature_4_name: { row: 36, col: 7 },
+        signature_4_title: { row: 35, col: 10 },
+        approval_4_approve: { row: 35, col: 1 },
+        approval_4_disapprove: { row: 35, col: 3 },
+
+        signature_5_name: { row: 38, col: 7 },
+        signature_5_title: { row: 37, col: 10 },
+        approval_5_approve: { row: 37, col: 1 },
+        approval_5_disapprove: { row: 37, col: 3 },
+
+        signature_6_name: { row: 40, col: 7 },
+        signature_6_title: { row: 39, col: 10 },
+        approval_6_approve: { row: 39, col: 1 },
+        approval_6_disapprove: { row: 39, col: 3 },
       };
 
       // Update school information
@@ -3097,26 +3118,29 @@ export class SubjectService {
         }
       }
 
-      // Update approval signatures (specific positions)
+      // Update approval signatures
       if (data.approval_signatures) {
-        const signaturePositions = [
-          cellMappings.signature_1, // ครูผู้สอน
-          cellMappings.signature_2, // หัวหน้ากลุ่มสาระการเรียนรู้
-          cellMappings.signature_3, // หัวหน้างานระเบียนวัดผล
-          cellMappings.signature_4, // หัวหน้างานวิชาการ
-          cellMappings.signature_5, // รองผู้อำนวยการ
-          cellMappings.signature_6, // ผู้อำนวยการ
-        ];
-
         data.approval_signatures.forEach((signature, index) => {
-          if (signaturePositions[index]) {
-            // Format signature as "(Name)" to match Excel template
+          const i = index + 1;
+          const nameMapping = cellMappings[`signature_${i}_name`];
+          const titleMapping = cellMappings[`signature_${i}_title`];
+          const approveMapping = cellMappings[`approval_${i}_approve`];
+          const disapproveMapping = cellMappings[`approval_${i}_disapprove`];
+
+          if (nameMapping) {
             const formattedSignature = `(${signature.name})`;
-            this.updateCellValue(
-              worksheet,
-              signaturePositions[index],
-              formattedSignature,
-            );
+            this.updateCellValue(worksheet, nameMapping, formattedSignature);
+          }
+          if (titleMapping) {
+            this.updateCellValue(worksheet, titleMapping, signature.title);
+          }
+
+          if (signature.status === 'อนุมัติ' && approveMapping) {
+            this.updateCellValue(worksheet, approveMapping, '✓');
+            this.updateCellValue(worksheet, disapproveMapping, ' ');
+          } else if (signature.status === 'ไม่อนุมัติ' && disapproveMapping) {
+            this.updateCellValue(worksheet, approveMapping, ' ');
+            this.updateCellValue(worksheet, disapproveMapping, '✓');
           }
         });
       }
@@ -3344,7 +3368,7 @@ export class SubjectService {
       };
 
       // Update course details
-      Object.entries(cellMappings).forEach(([key, mapping]) => {
+      Object.entries(cellMappings).forEach(([_key, mapping]) => {
         this.updateCellValue(worksheet, mapping, mapping.value);
       });
 

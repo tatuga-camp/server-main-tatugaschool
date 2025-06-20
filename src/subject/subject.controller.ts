@@ -83,12 +83,11 @@ export class SubjectController {
     @Param('subjectName') subjectName: string,
     @Res() res: Response,
   ) {
-    const buffer =
-      await this.subjectService.generateSummaryReport5Excel(subjectName);
+    const buffer = await this.subjectService.generateSummaryReport5Excel();
 
     const filename = `ปพ5-${subjectName}.xlsx`;
     const encodedFilename = encodeURIComponent(filename);
-    
+
     res.set({
       'Content-Type':
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
