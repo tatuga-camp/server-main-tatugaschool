@@ -65,6 +65,7 @@ export class TeachingMaterialRepository implements Repository {
                 accessLevel: 1,
                 thumbnail: 1,
                 blurHash: 1,
+                score: { $meta: 'vectorSearchScore' },
               },
             },
           ],
@@ -83,9 +84,10 @@ export class TeachingMaterialRepository implements Repository {
           thumbnail: string | null;
           tags: string[];
           accessLevel: $Enums.Plan;
-          vector: number[];
           blurHash?: string;
+          score: number;
         }[];
+
       const teachingMaterials = teachingMaterialRaw.map((teachingMaterial) => ({
         id: teachingMaterial._id.$oid,
         createAt: teachingMaterial.createAt.$date,
@@ -96,7 +98,8 @@ export class TeachingMaterialRepository implements Repository {
         accessLevel: teachingMaterial.accessLevel,
         thumbnail: teachingMaterial.thumbnail,
         blurHash: teachingMaterial?.blurHash,
-      })) as TeachingMaterial[];
+        score: teachingMaterial.score,
+      })) as (TeachingMaterial & { score: number })[];
 
       return teachingMaterials;
     } catch (error) {
