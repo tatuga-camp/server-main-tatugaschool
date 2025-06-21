@@ -3146,7 +3146,7 @@ export class SubjectService {
       }
 
       // Set worksheet name
-      worksheet.name = 'แบบบันทึกผลการเรียนประจำรายวิชา';
+      worksheet.name = 'ปก ปพ 5';
 
       this.logger.log('Completed detailed update of cover worksheet (ปก ปพ 5)');
     } catch (error) {
@@ -3430,7 +3430,7 @@ export class SubjectService {
       }
 
       // Set worksheet name
-      worksheet.name = 'ข้อมูลนักเรียนประจำรายวิชา';
+      worksheet.name = 'ข้อมูลนักเรียน';
 
       this.logger.log('Completed detailed update of student data worksheet');
     } catch (error) {
