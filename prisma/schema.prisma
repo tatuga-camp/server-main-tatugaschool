@@ -368,6 +368,7 @@ model StudentOnSubject {
   studentOnGroups      StudentOnGroup[]
 
   @@unique([studentId, subjectId])
+  @@index([order])
 }
 
 model GroupOnSubject {

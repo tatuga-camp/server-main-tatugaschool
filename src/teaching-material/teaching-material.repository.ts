@@ -52,7 +52,7 @@ export class TeachingMaterialRepository implements Repository {
               $addFields: { score: { $meta: 'vectorSearchScore' } },
             },
             {
-              $match: { score: { $gte: 0.5 } },
+              $match: { score: { $gte: 0.56 } },
             },
             {
               $project: {
