@@ -28,6 +28,10 @@ export class CreateTeachingMaterialDto {
   @IsNotEmpty()
   @IsEnum(Plan)
   accessLevel: Plan;
+
+  @IsNotEmpty()
+  @IsUrl()
+  creatorURL: string;
 }
 
 class GetDescriptionSuggestion {

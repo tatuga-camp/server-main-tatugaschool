@@ -5,10 +5,17 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
 } from 'class-validator';
 
-export class GetTeachingMaterialDto {
+export class GetTeachingMaterialsDto {
   @IsNotEmpty()
   @IsString()
   search: string;
+}
+
+export class GetTeachingMaterialDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  teachingMaterialId: string;
 }

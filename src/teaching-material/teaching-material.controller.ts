@@ -11,12 +11,14 @@ import {
   UseGuards,
   Patch,
   Param,
+  Res,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
 import {
   CreateTeachingMaterialDto,
   GetDescriptionSuggestionDto,
   GetTeachingMaterialDto,
+  GetTeachingMaterialsDto,
 } from './dto';
 import {
   GernearteThumnailDto,
@@ -28,15 +30,21 @@ export class TeachingMaterialController {
   constructor(private teachingMaterialService: TeachingMaterialService) {}
 
   @UseGuards(UserGuard)
-  @Post('ai/description')
-  GetDescription(@Body() dto: GetDescriptionSuggestionDto) {
-    return this.teachingMaterialService.suggestionVectorResouce(dto);
+  @Get()
+  getByAI(@Query() dto: GetTeachingMaterialsDto) {
+    return this.teachingMaterialService.findByAI(dto);
   }
 
   @UseGuards(UserGuard)
-  @Get()
-  getByAI(@Query() dto: GetTeachingMaterialDto) {
-    return this.teachingMaterialService.findByAI(dto);
+  @Get(':teachingMaterialId')
+  get(@Param() dto: GetTeachingMaterialDto, @GetUser() user: User) {
+    return this.teachingMaterialService.get(dto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Post('ai/description')
+  GetDescription(@Body() dto: GetDescriptionSuggestionDto) {
+    return this.teachingMaterialService.suggestionVectorResouce(dto);
   }
 
   @UseGuards(UserGuard)

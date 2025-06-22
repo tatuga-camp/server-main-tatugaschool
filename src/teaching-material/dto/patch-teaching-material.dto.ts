@@ -9,6 +9,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUrl,
   ValidateNested,
 } from 'class-validator';
 
@@ -36,6 +37,10 @@ class UpdateTeachingMaterialBody {
   @IsOptional()
   @IsEnum(Plan)
   accessLevel?: Plan;
+
+  @IsOptional()
+  @IsUrl()
+  creatorURL?: string;
 }
 
 export class UpdateTeachingMaterialDto {

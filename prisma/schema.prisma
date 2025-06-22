@@ -926,7 +926,7 @@ model TeachingMaterial {
   blurHash  String?
   tags        String[]
   accessLevel Plan     @default(PREMIUM)
-
+  creatorURL  String?
   vector                  Float[]
   fileOnTeachingMaterials FileOnTeachingMaterial[]
 }
