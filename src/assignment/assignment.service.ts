@@ -1,6 +1,3 @@
-import { ScoreOnStudentService } from './../score-on-student/score-on-student.service';
-import { GradeService } from './../grade/grade.service';
-import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
   ForbiddenException,
@@ -24,11 +21,15 @@ import {
 } from '@prisma/client';
 import * as cheerio from 'cheerio';
 import { Workbook } from 'exceljs';
-import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
+import { AuthService } from '../auth/auth.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 import { PrismaService } from '../prisma/prisma.service';
+import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
+import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { AiService } from '../vector/ai.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { GradeService } from './../grade/grade.service';
+import { ScoreOnStudentService } from './../score-on-student/score-on-student.service';
 import { SkillOnAssignmentService } from './../skill-on-assignment/skill-on-assignment.service';
 import { SkillService } from './../skill/skill.service';
 import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
@@ -44,8 +45,6 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
-import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class AssignmentService {

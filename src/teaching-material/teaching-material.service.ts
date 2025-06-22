@@ -1,10 +1,14 @@
+import { HttpService } from '@nestjs/axios';
 import { ImageService } from './../image/image.service';
 import {
+  BadRequestException,
   ForbiddenException,
   forwardRef,
   Inject,
   Injectable,
+  InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   FileOnTeachingMaterial,
@@ -19,6 +23,10 @@ import { GoogleStorageService } from './../google-storage/google-storage.service
 import { AiService } from './../vector/ai.service';
 import { TeachingMaterialRepository } from './teaching-material.repository';
 import * as crypto from 'crypto';
+import { firstValueFrom } from 'rxjs';
+import { AxiosError } from 'axios';
+import * as cheerio from 'cheerio';
+
 @Injectable()
 export class TeachingMaterialService {
   private logger: Logger;
@@ -31,12 +39,81 @@ export class TeachingMaterialService {
     @Inject(forwardRef(() => FileOnTeachingMaterialService))
     private fileOnTeachingMaterialService: FileOnTeachingMaterialService,
     private imageService: ImageService,
+    private httpService: HttpService,
   ) {
     this.logger = new Logger(TeachingMaterialService.name);
     this.teachingMaterialRepository = new TeachingMaterialRepository(
       this.prisma,
       this.googleStorageService,
     );
+  }
+
+  async get(
+    dto: { teachingMaterialId: string },
+    user: User,
+  ): Promise<
+    TeachingMaterial & {
+      files: FileOnTeachingMaterial[];
+      createor: { image: string; title: string; description: string };
+    }
+  > {
+    try {
+      const teachingMaterial = await this.teachingMaterialRepository.findUnique(
+        {
+          where: {
+            id: dto.teachingMaterialId,
+          },
+        },
+      );
+
+      if (!teachingMaterial) {
+        throw new NotFoundException('TeachingMaterial not found');
+      }
+
+      const files =
+        await this.fileOnTeachingMaterialService.fileOnTeachingMaterialRepository.findMany(
+          {
+            where: {
+              teachingMaterialId: teachingMaterial.id,
+            },
+          },
+        );
+
+      const html = await this.getExternalUrlHtml(
+        teachingMaterial.creatorURL,
+      ).catch((reason) => {
+        this.logger.error(reason);
+      });
+
+      if (!html) {
+        return {
+          ...teachingMaterial,
+          files,
+          createor: {
+            title: 'ERROR',
+            description: 'UNKNOW',
+            image: '/favicon.ico',
+          },
+        };
+      }
+      const $ = cheerio.load(html);
+
+      // 3. Create a helper function to extract meta tag content
+      const getMetaTagContent = (property: string): string => {
+        return $(`meta[property="${property}"]`).attr('content') || '';
+      };
+
+      const ogData = {
+        title: getMetaTagContent('og:title'),
+        description: getMetaTagContent('og:description'),
+        image: getMetaTagContent('og:image'),
+      };
+
+      return { ...teachingMaterial, files, createor: ogData };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async CursorBasedPagination(dto: {
@@ -82,9 +159,7 @@ export class TeachingMaterialService {
     }
   }
 
-  async findByAI(dto: {
-    search: string;
-  }): Promise<(TeachingMaterial & { files: FileOnTeachingMaterial[] })[]> {
+  async findByAI(dto: { search: string }): Promise<TeachingMaterial[]> {
     try {
       const accessToken = await this.authService.getGoogleAccessToken();
       const translated = await this.aiService.translateText(
@@ -103,24 +178,7 @@ export class TeachingMaterialService {
           vector: vector.predictions[0].embeddings.values,
         });
 
-      const files =
-        await this.fileOnTeachingMaterialService.fileOnTeachingMaterialRepository.findMany(
-          {
-            where: {
-              OR: teachingMaterials.map((t) => {
-                return {
-                  teachingMaterialId: t.id,
-                };
-              }),
-            },
-          },
-        );
-      return teachingMaterials.map((t) => {
-        return {
-          ...t,
-          files: files.filter((file) => file.teachingMaterialId === t.id),
-        };
-      });
+      return teachingMaterials;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -156,6 +214,7 @@ export class TeachingMaterialService {
       description: string;
       tags: string[];
       accessLevel: Plan;
+      creatorURL: string;
     },
     user: User,
   ): Promise<TeachingMaterial> {
@@ -262,6 +321,7 @@ export class TeachingMaterialService {
         description?: string;
         tags?: string[];
         accessLevel?: Plan;
+        creatorURL?: string;
       };
     },
     user: User,
@@ -290,6 +350,22 @@ export class TeachingMaterialService {
     } catch (error) {
       this.logger.error(error);
       throw error;
+    }
+  }
+
+  async getExternalUrlHtml(url: string): Promise<string> {
+    if (!url) {
+      throw new BadRequestException('URL is required');
+    }
+
+    try {
+      // Use the HttpService to make a GET request
+      const response = await firstValueFrom(this.httpService.get<string>(url));
+      return response.data;
+    } catch (error) {
+      const axiosError = error as AxiosError;
+      console.error('Error fetching the URL:', axiosError.message);
+      throw new InternalServerErrorException('Error fetching the external URL');
     }
   }
 }
