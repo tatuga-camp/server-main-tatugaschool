@@ -29,7 +29,7 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "dotenv -e .env.test --  jest --verbose --maxWorkers 1",
+    "test": "dotenv -e .env.test --  jest",
     "unit:test": "npm run db:dev:restart && npm run test",
     "unit:test:watch": "npm run db:dev:restart && npm run test:watch",
     "studio:db:test": "dotenv -e .env.test --  npx prisma studio",
@@ -111,22 +111,5 @@
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.6.2"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   }
 }

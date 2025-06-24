@@ -777,6 +777,27 @@ export class SubjectService {
       const remove = await this.subjectRepository.deleteSubject({
         subjectId: dto.subjectId,
       });
+
+      const [subjects, school] = await Promise.all([
+        this.subjectRepository.findMany({
+          where: {
+            schoolId: remove.schoolId,
+          },
+        }),
+        this.schoolService.schoolRepository.findUnique({
+          where: {
+            id: remove.schoolId,
+          },
+        }),
+      ]);
+
+      if (
+        subjects.length <= school.limitSubjectNumber &&
+        subjects.some((s) => s.isLocked === true)
+      ) {
+        await this.schoolService.unlockFeatures(school);
+      }
+
       return remove;
     } catch (error) {
       this.logger.error(error);
