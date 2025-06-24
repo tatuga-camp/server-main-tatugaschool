@@ -6,7 +6,6 @@ import {
   createCanvas,
   loadImage,
 } from 'canvas';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 @Injectable()
 export class ImageService {
@@ -66,6 +65,8 @@ export class ImageService {
     },
   ): Promise<Buffer> {
     try {
+      const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
       const { quality = 80 } = options || {};
 
       // Fetch the PDF data from the URL
