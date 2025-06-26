@@ -21,5 +21,6 @@ export type RequestUpdateScoreOnSubject = {
     icon?: string;
     isDeleted?: boolean;
     blurHash?: string;
+    weight?: number;
   };
 };

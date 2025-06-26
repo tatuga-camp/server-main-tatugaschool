@@ -39,6 +39,14 @@ class UpdateScoreOnSubjectBody {
   blurHash?: string;
 
   @IsOptional()
+  @IsNumber()
+  weight?: number;
+
+  @IsOptional()
+  @IsNumber()
+  maxScore?: number;
+
+  @IsOptional()
   @IsBoolean()
   isDeleted?: boolean;
 }
