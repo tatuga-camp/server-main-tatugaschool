@@ -713,7 +713,7 @@ export class AssignmentService {
               }, 0) ?? 0;
             totalScore =
               listAssignment.scoreOnSubjects.reduce((prev, scoreOnSubject) => {
-                const summaryScore = scoreOnSubject.students.reduce(
+                const sumRawScore = scoreOnSubject.students.reduce(
                   (prev, studentOnScore) => {
                     if (studentOnScore.studentOnSubjectId === student.id) {
                       return (prev += studentOnScore.score);
@@ -722,8 +722,15 @@ export class AssignmentService {
                   },
                   0,
                 );
-
-                return (prev += summaryScore);
+                let score = sumRawScore;
+                const maxScore = scoreOnSubject.scoreOnSubject.maxScore ?? 100;
+                if (scoreOnSubject.scoreOnSubject.weight !== null) {
+                  const originalScore =
+                    (sumRawScore > maxScore ? maxScore : sumRawScore) /
+                    maxScore;
+                  score = originalScore * scoreOnSubject.scoreOnSubject.weight;
+                }
+                return (prev += score);
               }, totalScore) ?? 0;
 
             const grade = await this.gradeService.assignGrade(
@@ -740,14 +747,14 @@ export class AssignmentService {
                     studentOnAssignment.studentOnSubjectId === student.id,
                 );
                 if (!studentOnAssignment) {
-                  return 'Student not assigned';
+                  return 0;
                 }
 
                 if (
                   !studentOnAssignment.score &&
                   studentOnAssignment.status !== 'REVIEWD'
                 ) {
-                  return 'No Work';
+                  return 0;
                 }
                 let score: string | number = 0;
                 score = studentOnAssignment.score;
@@ -769,17 +776,25 @@ export class AssignmentService {
                   (s) => s.studentOnSubjectId === student.id,
                 );
                 if (scoreOnStudents.length === 0) {
-                  return 'NO DATA';
+                  return 0;
                 }
 
-                const totalScore = scoreOnStudents.reduce(
+                const sumRawScore = scoreOnStudents.reduce(
                   (previousValue, current) => {
                     return (previousValue += current.score);
                   },
                   0,
                 );
+                let score = sumRawScore;
+                const maxScore = scoreOnSubject.scoreOnSubject.maxScore ?? 100;
+                if (scoreOnSubject.scoreOnSubject.weight !== null) {
+                  const originalScore =
+                    (sumRawScore > maxScore ? maxScore : sumRawScore) /
+                    maxScore;
+                  score = originalScore * scoreOnSubject.scoreOnSubject.weight;
+                }
 
-                return totalScore;
+                return score;
               }),
               totalScore,
               grade.grade,
@@ -804,6 +819,22 @@ export class AssignmentService {
     firstRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
     for (let i = 3; i <= listAssignment.assignments.length + 3; i++) {
+      const column = worksheet.getColumn(i);
+      column.alignment = {
+        vertical: 'middle',
+        horizontal: 'center',
+        wrapText: true,
+      };
+      column.width = 30;
+    }
+    for (
+      let i = listAssignment.assignments.length + 3;
+      i <=
+      listAssignment.assignments.length +
+        3 +
+        listAssignment.scoreOnSubjects.length;
+      i++
+    ) {
       const column = worksheet.getColumn(i);
       column.alignment = {
         vertical: 'middle',
