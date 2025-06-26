@@ -109,6 +109,10 @@ export class ScoreOnSubjectService {
       if (dto.body.icon && !dto.body.blurHash) {
         throw new BadRequestException('BlurHash is required for icon');
       }
+
+      if (dto.body.weight && !dto.body.maxScore) {
+        throw new BadRequestException('Max Score is required for weight');
+      }
       const scoreOnSubject = await this.prisma.scoreOnSubject.findUnique({
         where: {
           id: dto.query.socreOnSubjectId,
