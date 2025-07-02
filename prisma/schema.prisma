@@ -639,7 +639,7 @@ model ScoreOnSubject {
   icon      String
   blurHash  String?
   isDeleted Boolean @default(false)
-  weight    Float? 
+  weight    Float?
   maxScore  Float?
 
   schoolId  String  @db.ObjectId
@@ -923,13 +923,13 @@ model TeachingMaterial {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  title       String
-  description String
-  thumbnail   String?
-  blurHash  String?
-  tags        String[]
-  accessLevel Plan     @default(PREMIUM)
-  creatorURL  String?
+  title                   String
+  description             String
+  thumbnail               String?
+  blurHash                String?
+  tags                    String[]
+  accessLevel             Plan                     @default(PREMIUM)
+  creatorURL              String?
   vector                  Float[]
   fileOnTeachingMaterials FileOnTeachingMaterial[]
 }
@@ -971,6 +971,7 @@ enum MemberRole {
 
 enum Plan {
   FREE
+  BASIC
   PREMIUM
   ENTERPRISE
 }
