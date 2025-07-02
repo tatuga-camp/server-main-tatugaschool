@@ -52,6 +52,14 @@ export class WebhooksService {
           price.product.toString(),
         );
         const date = new Date(subscription.current_period_end * 1000);
+        if (product.name === 'Tatuga School Basic') {
+          school = await this.schoolService.upgradePlanBasic(
+            school.id,
+            date,
+            price.id,
+            subscription.id,
+          );
+        }
         if (product.name === 'Tatuga School Premium') {
           school = await this.schoolService.upgradePlanPremium(
             school.id,
