@@ -2489,6 +2489,42 @@ export class SubjectService {
         return;
       }
 
+      // Check if this is indicators by code worksheet
+      let isIndicatorsByCodeWorksheet = false;
+      worksheet.eachRow((row: any) => {
+        row.eachCell((cell: any) => {
+          if (cell.value && typeof cell.value === 'string') {
+            if (cell.value.includes('มาตราฐานตัวชี้วัดประจำรายวิชา') && 
+                cell.value.includes('จำแนกตามรหัส')) {
+              isIndicatorsByCodeWorksheet = true;
+            }
+          }
+        });
+      });
+
+      if (isIndicatorsByCodeWorksheet) {
+        await this.updateIndicatorsByCodeWorksheetDetailed(worksheet, data);
+        return;
+      }
+
+      // Check if this is indicators by group worksheet
+      let isIndicatorsByGroupWorksheet = false;
+      worksheet.eachRow((row: any) => {
+        row.eachCell((cell: any) => {
+          if (cell.value && typeof cell.value === 'string') {
+            if (cell.value.includes('มาตราฐานตัวชี้วัดประจำรายวิชา') && 
+                cell.value.includes('จำแนกตามกลุ่ม')) {
+              isIndicatorsByGroupWorksheet = true;
+            }
+          }
+        });
+      });
+
+      if (isIndicatorsByGroupWorksheet) {
+        await this.updateIndicatorsByGroupWorksheetDetailed(worksheet, data);
+        return;
+      }
+
       // Update specific cells based on data structure for other worksheets
       worksheet.eachRow((row: any, _rowNumber: number) => {
         row.eachCell((cell: any, _colNumber: number) => {
@@ -3567,6 +3603,178 @@ export class SubjectService {
       this.logger.error(
         `Error updating course description worksheet: ${error.message}`,
       );
+      throw error;
+    }
+  }
+
+  /**
+   * อัปเดต worksheet สำหรับมาตราฐานตัวชี้วัด (จำแนกตามรหัส)
+   */
+  private async updateIndicatorsByCodeWorksheetDetailed(worksheet: any, data: any) {
+    try {
+      this.logger.log('Starting detailed update of indicators by code worksheet');
+
+      // Cell mappings based on Excel analysis
+      const cellMappings = {
+        // Course details (Row 3)
+        academic_year_value: { row: 3, col: 3 }, // C3
+        semester_value: { row: 3, col: 5 }, // E3
+        learning_area_value: { row: 3, col: 7 }, // G3
+
+        // Course details (Row 4)
+        course_type_value: { row: 4, col: 3 }, // C4
+        course_code_value: { row: 4, col: 5 }, // E4
+        course_name_value: { row: 4, col: 7 }, // G4
+
+        // Summary (Row 5)
+        total_indicators: { row: 5, col: 4 }, // D5
+        midterm_count: { row: 5, col: 7 }, // G5
+        final_count: { row: 5, col: 9 }, // I5
+      };
+
+      // Update course details
+      if (data.course_details) {
+        this.updateCellValue(worksheet, cellMappings.academic_year_value, data.course_details.academic_year);
+        this.updateCellValue(worksheet, cellMappings.semester_value, data.course_details.semester);
+        this.updateCellValue(worksheet, cellMappings.learning_area_value, data.course_details.learning_area);
+        this.updateCellValue(worksheet, cellMappings.course_type_value, data.course_details.course_type);
+        this.updateCellValue(worksheet, cellMappings.course_code_value, data.course_details.course_code);
+        this.updateCellValue(worksheet, cellMappings.course_name_value, data.course_details.course_name);
+      }
+
+      // Update indicators summary
+      if (data.indicators_summary) {
+        this.updateCellValue(worksheet, cellMappings.total_indicators, `${data.indicators_summary.total} ตัวชี้วัด`);
+        
+        const midTermBreakdown = data.indicators_summary.breakdown.find((b: any) => b.type === 'ระหว่างทาง');
+        const finalTermBreakdown = data.indicators_summary.breakdown.find((b: any) => b.type === 'ปลายทาง');
+        
+        if (midTermBreakdown) {
+          this.updateCellValue(worksheet, cellMappings.midterm_count, `${midTermBreakdown.count} ตัวชี้วัด`);
+        }
+        if (finalTermBreakdown) {
+          this.updateCellValue(worksheet, cellMappings.final_count, `${finalTermBreakdown.count} ตัวชี้วัด`);
+        }
+      }
+
+      // Update indicators list (starting from row 9)
+      if (data.indicators && Array.isArray(data.indicators)) {
+        data.indicators.forEach((indicator: any, index: number) => {
+          const rowNum = 9 + index;
+
+          // Column B: ลำดับ
+          this.updateCellValue(worksheet, { row: rowNum, col: 2 }, indicator.list_number);
+
+          // Column C: มาตราฐาน
+          this.updateCellValue(worksheet, { row: rowNum, col: 3 }, indicator.standard_code);
+
+          // Column D: รหัสตัวชี้วัด
+          this.updateCellValue(worksheet, { row: rowNum, col: 4 }, indicator.indicator_code);
+
+          // Column E-H: รายละเอียด (merged cells)
+          this.updateCellValue(worksheet, { row: rowNum, col: 5 }, indicator.description);
+
+          // Column I: ประเภทการประเมิน
+          this.updateCellValue(worksheet, { row: rowNum, col: 9 }, indicator.assessment_type);
+
+          // Column J: กลุ่มตัวชี้วัด
+          this.updateCellValue(worksheet, { row: rowNum, col: 10 }, indicator.indicator_group);
+        });
+      }
+
+      // Set worksheet name
+      worksheet.name = 'ตัวชี้วัดตามรหัส';
+
+      this.logger.log('Completed detailed update of indicators by code worksheet');
+    } catch (error) {
+      this.logger.error(`Error updating indicators by code worksheet: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * อัปเดต worksheet สำหรับมาตราฐานตัวชี้วัด (จำแนกตามกลุ่ม)
+   */
+  private async updateIndicatorsByGroupWorksheetDetailed(worksheet: any, data: any) {
+    try {
+      this.logger.log('Starting detailed update of indicators by group worksheet');
+
+      // Update course details (similar to by code)
+      const cellMappings = {
+        academic_year_value: { row: 3, col: 3 },
+        semester_value: { row: 3, col: 5 },
+        learning_area_value: { row: 3, col: 7 },
+        course_type_value: { row: 4, col: 3 },
+        course_code_value: { row: 4, col: 5 },
+        course_name_value: { row: 4, col: 7 },
+      };
+
+      // Update course details
+      if (data.course_details) {
+        Object.entries(cellMappings).forEach(([key, mapping]) => {
+          const fieldName = key.replace('_value', '');
+          this.updateCellValue(worksheet, mapping, data.course_details[fieldName]);
+        });
+      }
+
+      // Group indicators by indicator_group
+      if (data.indicators && Array.isArray(data.indicators)) {
+        const groupedIndicators = data.indicators.reduce((groups: any, indicator: any) => {
+          const groupNum = indicator.indicator_group || 1;
+          if (!groups[groupNum]) {
+            groups[groupNum] = [];
+          }
+          groups[groupNum].push(indicator);
+          return groups;
+        }, {});
+
+        let currentRow = 9; // Start from row 9
+
+        // Process each group
+        Object.keys(groupedIndicators).sort((a, b) => parseInt(a) - parseInt(b)).forEach((groupNum) => {
+          const indicators = groupedIndicators[groupNum];
+
+          // Group header
+          worksheet.getCell(`A${currentRow}`).value = `กลุ่มที่ ${groupNum}`;
+          worksheet.getCell(`A${currentRow}`).font = { bold: true };
+          currentRow++;
+
+          // Table headers for this group
+          const headers = ['ลำดับ', 'มาตราฐาน', 'ตัวชี้วัด', 'รายละเอียด', 'ประเภท'];
+          headers.forEach((header, index) => {
+            worksheet.getCell(currentRow, 2 + index).value = header;
+            worksheet.getCell(currentRow, 2 + index).font = { bold: true };
+            worksheet.getCell(currentRow, 2 + index).alignment = { horizontal: 'center' };
+          });
+          currentRow++;
+
+          // Group indicators data
+          indicators.forEach((indicator: any, index: number) => {
+            worksheet.getCell(currentRow, 2).value = index + 1; // Local index within group
+            worksheet.getCell(currentRow, 3).value = indicator.standard_code;
+            worksheet.getCell(currentRow, 4).value = indicator.indicator_code;
+            worksheet.getCell(currentRow, 5).value = indicator.description;
+            worksheet.getCell(currentRow, 6).value = indicator.assessment_type;
+
+            // Center align numbers
+            worksheet.getCell(currentRow, 2).alignment = { horizontal: 'center' };
+            
+            // Wrap text for description
+            worksheet.getCell(currentRow, 5).alignment = { wrapText: true };
+
+            currentRow++;
+          });
+
+          currentRow += 2; // Space between groups
+        });
+      }
+
+      // Set worksheet name
+      worksheet.name = 'ตัวชี้วัดตามกลุ่ม';
+
+      this.logger.log('Completed detailed update of indicators by group worksheet');
+    } catch (error) {
+      this.logger.error(`Error updating indicators by group worksheet: ${error.message}`);
       throw error;
     }
   }

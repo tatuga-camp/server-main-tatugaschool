@@ -1,19 +1,19 @@
 {
-  "document_title": "มาตราฐานตัวชี้วัดประจำรายวิชา (จำแนกตามรหัส)",
+  "document_title": "มาตรฐานตัวชี้วัดประจำรายวิชา (จำแนกตามรหัส)",
   "course_details": {
     "academic_year": "2568",
     "semester": "1",
-    "learning_area": "ภาษาต่างประเทศ",
+    "learning_area": "วิทยาศาสตร์",
     "course_type": "พื้นฐาน",
-    "course_code": "อ15101",
-    "course_name": "ภาษาอังกฤษ 5"
+    "course_code": "ว15102",
+    "course_name": "วิทยาศาสตร์ 5"
   },
   "indicators_summary": {
-    "total": 25,
+    "total": 20,
     "breakdown": [
       {
         "type": "ระหว่างทาง",
-        "count": 17
+        "count": 12
       },
       {
         "type": "ปลายทาง",
@@ -24,43 +24,43 @@
   "indicators": [
     {
       "list_number": 1,
-      "standard_code": "ต.1.1",
-      "indicator_code": "ป.2/1",
-      "description": "ปฏิบัติตามคำสั่งและคำขอร้องง่าย ๆ ที่ฟัง",
+      "standard_code": "ว.1.1",
+      "indicator_code": "ป.5/1",
+      "description": "อธิบายลักษณะของสิ่งมีชีวิตและสิ่งไม่มีชีวิต",
       "assessment_type": "ระหว่างทาง",
-      "indicator_group": 4
+      "indicator_group": 1
     },
     {
       "list_number": 2,
-      "standard_code": "ต.1.1",
-      "indicator_code": "ป.2/2",
-      "description": "ระบุตัวอักษรและเสียง อ่านออกเสียงคำ สะกดคำ และอ่านประโยคง่าย ๆ ถูกต้องตามหลักการอ่าน",
+      "standard_code": "ว.1.2",
+      "indicator_code": "ป.5/2",
+      "description": "เปรียบเทียบความแตกต่างของพืชและสัตว์จากลักษณะภายนอก",
       "assessment_type": "ระหว่างทาง",
       "indicator_group": 2
     },
     {
       "list_number": 3,
-      "standard_code": "ต.1.1",
-      "indicator_code": "ป.2/3",
-      "description": "เลือกภาพตรงตามความหมายชของคำ กลุ่มคำ และประโยคที่ฟัง",
-      "assessment_type": "ระหว่างทาง",
+      "standard_code": "ว.2.1",
+      "indicator_code": "ป.5/3",
+      "description": "ทดลองและอธิบายผลของแรงที่กระทำต่อวัตถุ",
+      "assessment_type": "ปลายทาง",
       "indicator_group": 3
     },
     {
       "list_number": 4,
-      "standard_code": "ต.1.1",
-      "indicator_code": "ป.2/4",
-      "description": "ตอบคำถามจากการฟังประโยคบทสนทนา หรือนิทานง่าย ๆ ที่มีภาพประกอบ",
-      "assessment_type": "ปลายทาง",
-      "indicator_group": 1
+      "standard_code": "ว.3.1",
+      "indicator_code": "ป.5/4",
+      "description": "แยกของผสมโดยใช้วิธีการทางวิทยาศาสตร์",
+      "assessment_type": "ระหว่างทาง",
+      "indicator_group": 2
     },
     {
       "list_number": 5,
-      "standard_code": "ต.1.2",
-      "indicator_code": "ป.2/1",
-      "description": "พูดโต้ตอบด้วยคำสั้น ๆ ง่าย ๆ ในการสื่อสารระหว่างบุคคล ตามแบบที่ฟัง",
+      "standard_code": "ว.4.1",
+      "indicator_code": "ป.5/5",
+      "description": "อธิบายวัฏจักรของน้ำในธรรมชาติ",
       "assessment_type": "ปลายทาง",
-      "indicator_group": 2
+      "indicator_group": 1
     }
   ]
 }
