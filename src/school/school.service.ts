@@ -207,6 +207,36 @@ export class SchoolService {
     }
   }
 
+  async upgradePlanBasic(
+    schoolId: string,
+    stripe_subscription_expireAt: Date,
+    stripe_price_id: string,
+    stripe_subscription_id: string,
+  ): Promise<School> {
+    try {
+      const update = await this.schoolRepository.update({
+        where: {
+          id: schoolId,
+        },
+        data: {
+          stripe_subscription_expireAt: stripe_subscription_expireAt,
+          stripe_price_id: stripe_price_id,
+          stripe_subscription_id: stripe_subscription_id,
+          plan: 'BASIC',
+          limitSchoolMember: 2,
+          limitClassNumber: 10,
+          limitSubjectNumber: 10,
+          limitTotalStorage: 16106127360,
+        },
+      });
+      await this.unlockFeatures(update);
+      return update;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async upgradePlanPremium(
     schoolId: string,
     stripe_subscription_expireAt: Date,
