@@ -39,6 +39,9 @@ import { SubjectRepository } from './subject.repository';
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Note: AttendanceMapper would need to be imported if available as a module
+// For now, we'll implement the functionality directly
+
 @Injectable()
 export class SubjectService {
   logger: Logger = new Logger(SubjectService.name);
@@ -557,6 +560,196 @@ export class SubjectService {
       return remove;
     } catch (error) {
       this.logger.error(error);
+      throw error;
+    }
+  }
+
+  /**
+   * สร้าง Excel สำหรับเวลาเรียนประจำเดือน (ปพ5) จากข้อมูล JSON
+   */
+  async generateAttendanceMonthlyExcel(jsonData: any): Promise<any> {
+    try {
+      this.logger.log('🚀 เริ่มสร้าง Excel สำหรับเวลาเรียนประจำเดือน (ปพ5)');
+
+      // โหลด template Excel
+      const templatePath = path.join(
+        process.cwd(),
+        'assets',
+        'template',
+        'แบบสรุปเวลาเรียนประจำเดือน.xlsx',
+      );
+
+      if (!fs.existsSync(templatePath)) {
+        throw new NotFoundException(`ไม่พบไฟล์ template: ${templatePath}`);
+      }
+
+      const workbook = new Workbook();
+      await workbook.xlsx.readFile(templatePath);
+
+      // อัพเดทข้อมูลในแต่ละ worksheet
+      for (let i = 0; i < workbook.worksheets.length; i++) {
+        const worksheet = workbook.worksheets[i];
+        await this.updateAttendanceMonthlyWorksheetDetailed(
+          worksheet,
+          jsonData,
+        );
+      }
+
+      // เปลี่ยนชื่อ worksheet แรกเป็น 'เวลาเรียนประจำเดือน'
+      if (workbook.worksheets.length > 0) {
+        workbook.worksheets[0].name = 'เวลาเรียนประจำเดือน';
+      }
+
+      // สร้าง buffer สำหรับ download
+      const buffer = await workbook.xlsx.writeBuffer();
+
+      this.logger.log('✅ สร้าง Excel เวลาเรียนประจำเดือนสำเร็จ');
+      return buffer;
+    } catch (error) {
+      this.logger.error(
+        '❌ เกิดข้อผิดพลาดในการสร้าง Excel เวลาเรียนประจำเดือน:',
+        error,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * แปลงข้อมูลจาก Excel เป็น JSON สำหรับเวลาเรียนประจำเดือน
+   */
+  async parseAttendanceMonthlyExcel(filePath: string): Promise<any> {
+    try {
+      this.logger.log('🔍 เริ่มแปลงข้อมูลจาก Excel เป็น JSON');
+      const workbook = new Workbook();
+      await workbook.xlsx.readFile(filePath);
+      const worksheet = workbook.worksheets[0];
+
+      // 1. Header mapping
+      const document_title = worksheet.getRow(2).getCell(1).value;
+      const academic_year = worksheet.getRow(3).getCell(3).value;
+      const semester = worksheet.getRow(3).getCell(5).value;
+      const learning_area = worksheet.getRow(3).getCell(7).value;
+      const course_type = worksheet.getRow(4).getCell(3).value;
+      const course_code = worksheet.getRow(4).getCell(5).value;
+      const course_name = worksheet.getRow(4).getCell(7).value;
+      const credits = worksheet.getRow(5).getCell(3).value;
+      const learning_hours_per_semester = worksheet.getRow(5).getCell(6).value;
+      const learning_hours_per_year = worksheet.getRow(5).getCell(10).value;
+      const month = worksheet.getRow(7).getCell(4).value;
+      let total_school_days_in_month = worksheet.getRow(7).getCell(11).value;
+      if (typeof total_school_days_in_month === 'string') {
+        total_school_days_in_month = parseInt(
+          total_school_days_in_month.replace(/[^\d]/g, ''),
+        );
+      }
+
+      // 2. Header row for students (Row 8)
+      const headerRow = worksheet.getRow(8);
+      // Find date columns (Col 5-8)
+      const dateCols = [5, 6, 7, 8];
+      const dates = dateCols.map((col) => {
+        const v = headerRow.getCell(col).value;
+        if (v instanceof Date) {
+          // Convert to dd-mmm-yy (th)
+          const d = v;
+          const thMonths = [
+            'ม.ค.',
+            'ก.พ.',
+            'มี.ค.',
+            'เม.ย.',
+            'พ.ค.',
+            'มิ.ย.',
+            'ก.ค.',
+            'ส.ค.',
+            'ก.ย.',
+            'ต.ค.',
+            'พ.ย.',
+            'ธ.ค.',
+          ];
+          return `${d.getDate()}-${thMonths[d.getMonth()]}-${d.getFullYear().toString().slice(-2)}`;
+        } else if (typeof v === 'string' && v.match(/\d{4}-\d{2}-\d{2}/)) {
+          // ISO string fallback
+          const d = new Date(v);
+          const thMonths = [
+            'ม.ค.',
+            'ก.พ.',
+            'มี.ค.',
+            'เม.ย.',
+            'พ.ค.',
+            'มิ.ย.',
+            'ก.ค.',
+            'ส.ค.',
+            'ก.ย.',
+            'ต.ค.',
+            'พ.ย.',
+            'ธ.ค.',
+          ];
+          return `${d.getDate()}-${thMonths[d.getMonth()]}-${d.getFullYear().toString().slice(-2)}`;
+        }
+        return v;
+      });
+      // Status columns (Col 9-13)
+      const statusCols = [9, 10, 11, 12, 13];
+      const statusNames = statusCols.map((col) => headerRow.getCell(col).value);
+
+      // 3. Student data (Row 9 ...)
+      const attendance_records = [];
+      for (let i = 9; i <= worksheet.rowCount; i++) {
+        const row = worksheet.getRow(i);
+        const list_number = row.getCell(1).value;
+        const student_id = row.getCell(2).value;
+        const full_name = row.getCell(3).value;
+        if (!list_number || !student_id || !full_name) continue;
+        // Daily records
+        const daily_records = dateCols.map((colIdx, j) => {
+          const status = row.getCell(colIdx).value;
+          return {
+            date: dates[j],
+            status: status,
+          };
+        });
+        // Monthly summary
+        const monthly_summary = statusCols.map((colIdx, j) => {
+          return {
+            status: statusNames[j],
+            count: row.getCell(colIdx).value || 0,
+          };
+        });
+        attendance_records.push({
+          list_number,
+          student_id: student_id.toString(),
+          full_name,
+          daily_records,
+          monthly_summary,
+        });
+      }
+
+      const result = {
+        document_title,
+        course_details: {
+          academic_year: academic_year.toString(),
+          semester: semester.toString(),
+          learning_area,
+          course_type,
+          course_code,
+          course_name,
+          credits: Number(credits),
+          learning_hours: {
+            per_semester: learning_hours_per_semester,
+            per_year: learning_hours_per_year,
+          },
+        },
+        summary_details: {
+          month,
+          total_school_days_in_month,
+        },
+        attendance_records,
+      };
+
+      this.logger.log('✅ แปลงข้อมูลจาก Excel สำเร็จ');
+      return result;
+    } catch (error) {
+      this.logger.error('❌ เกิดข้อผิดพลาดในการแปลงข้อมูล:', error);
       throw error;
     }
   }
@@ -2494,8 +2687,10 @@ export class SubjectService {
       worksheet.eachRow((row: any) => {
         row.eachCell((cell: any) => {
           if (cell.value && typeof cell.value === 'string') {
-            if (cell.value.includes('มาตราฐานตัวชี้วัดประจำรายวิชา') && 
-                cell.value.includes('จำแนกตามรหัส')) {
+            if (
+              cell.value.includes('มาตราฐานตัวชี้วัดประจำรายวิชา') &&
+              cell.value.includes('จำแนกตามรหัส')
+            ) {
               isIndicatorsByCodeWorksheet = true;
             }
           }
@@ -2522,6 +2717,25 @@ export class SubjectService {
 
       if (isIndicatorsByGroupWorksheet) {
         await this.updateIndicatorsByGroupWorksheetDetailed(worksheet, data);
+        return;
+      }
+
+      // Check if this is attendance monthly worksheet (แบบสรุปเวลาเรียนประจำเดือน)
+      let isAttendanceMonthlyWorksheet = false;
+      worksheet.eachRow((row: any) => {
+        row.eachCell((cell: any) => {
+          if (cell.value && typeof cell.value === 'string') {
+            if (cell.value.includes('แบบสรุปเวลาเรียนประจำเดือน') ||
+                cell.value.includes('เวลาเรียนประจำเดือน') ||
+                cell.value.includes('ปพ.5')) {
+              isAttendanceMonthlyWorksheet = true;
+            }
+          }
+        });
+      });
+
+      if (isAttendanceMonthlyWorksheet) {
+        await this.updateAttendanceMonthlyWorksheetDetailed(worksheet, data);
         return;
       }
 
@@ -3183,7 +3397,7 @@ export class SubjectService {
 
       // Set worksheet name
       worksheet.name = 'ปก ปพ 5';
-
+      
       this.logger.log('Completed detailed update of cover worksheet (ปก ปพ 5)');
     } catch (error) {
       this.logger.error(
@@ -3695,6 +3909,141 @@ export class SubjectService {
   /**
    * อัปเดต worksheet สำหรับมาตราฐานตัวชี้วัด (จำแนกตามกลุ่ม)
    */
+  /**
+   * อัพเดทข้อมูลในเวิร์คชีทเวลาเรียนประจำเดือน (ปพ5)
+   */
+  private async updateAttendanceMonthlyWorksheetDetailed(worksheet: any, data: any) {
+    try {
+      this.logger.log('📝 กำลังอัพเดทข้อมูลเวลาเรียนประจำเดือน...');
+
+      if (!data || !worksheet) {
+        this.logger.warn('⚠️ ไม่มีข้อมูลหรือ worksheet สำหรับอัพเดท');
+        return;
+      }
+
+      // อัพเดทข้อมูลรายวิชา
+      if (data.course_details) {
+        const courseDetails = data.course_details;
+        
+        // C3: ปีการศึกษา
+        this.updateCellValue(worksheet, { row: 3, col: 3 }, courseDetails.academic_year);
+        
+        // E3: ภาคเรียน
+        this.updateCellValue(worksheet, { row: 3, col: 5 }, courseDetails.semester);
+        
+        // G3: กลุ่มสาระ
+        this.updateCellValue(worksheet, { row: 3, col: 7 }, courseDetails.learning_area);
+        
+        // C4: ประเภทวิชา
+        this.updateCellValue(worksheet, { row: 4, col: 3 }, courseDetails.course_type);
+        
+        // E4: รหัสวิชา
+        this.updateCellValue(worksheet, { row: 4, col: 5 }, courseDetails.course_code);
+        
+        // G4: ชื่อวิชา
+        this.updateCellValue(worksheet, { row: 4, col: 7 }, courseDetails.course_name);
+        
+        // C5: หน่วยกิต
+        this.updateCellValue(worksheet, { row: 5, col: 3 }, courseDetails.credits);
+        
+        // F5: ชั่วโมง/ภาคเรียน
+        if (courseDetails.learning_hours?.per_semester) {
+          this.updateCellValue(worksheet, { row: 5, col: 6 }, courseDetails.learning_hours.per_semester);
+        }
+        
+        // J5: ชั่วโมง/ปี
+        if (courseDetails.learning_hours?.per_year) {
+          this.updateCellValue(worksheet, { row: 5, col: 10 }, courseDetails.learning_hours.per_year);
+        }
+      }
+
+      // อัพเดทข้อมูลสรุปเดือน
+      if (data.summary_details) {
+        const summaryDetails = data.summary_details;
+        
+        // D7: เดือน
+        this.updateCellValue(worksheet, { row: 7, col: 4 }, summaryDetails.month);
+        
+        // K7: จำนวนวันเรียนทั้งหมด
+        this.updateCellValue(worksheet, { row: 7, col: 11 }, summaryDetails.total_school_days_in_month);
+      }
+
+      // อัพเดทข้อมูลการเข้าเรียนของนักเรียน
+      if (data.attendance_records && Array.isArray(data.attendance_records)) {
+        let currentRow = 9; // เริ่มจากแถวที่ 9
+        
+        // สร้างวันที่สำหรับหัวตาราง (แถว 8)
+        const allDates = this.extractUniqueDatesFromAttendance(data.attendance_records);
+        allDates.forEach((date, index) => {
+          const col = 5 + index; // เริ่มจากคอลัมน์ E (5)
+          if (col <= 8) { // จำกัดแค่ 4 คอลัมน์ (E-H)
+            this.updateCellValue(worksheet, { row: 8, col }, date);
+          }
+        });
+
+        // อัพเดทข้อมูลนักเรียนแต่ละคน
+        data.attendance_records.forEach((student: any) => {
+          // A: ลำดับที่
+          this.updateCellValue(worksheet, { row: currentRow, col: 1 }, student.list_number);
+          
+          // B: รหัสนักเรียน
+          this.updateCellValue(worksheet, { row: currentRow, col: 2 }, student.student_id);
+          
+          // C: ชื่อ-สกุล (merged C:D)
+          this.updateCellValue(worksheet, { row: currentRow, col: 3 }, student.full_name);
+          
+          // E-H: ข้อมูลรายวัน
+          if (student.daily_records && Array.isArray(student.daily_records)) {
+            student.daily_records.forEach((record: any, index: number) => {
+              const col = 5 + index; // เริ่มจากคอลัมน์ E (5)
+              if (col <= 8) { // จำกัดแค่ 4 คอลัมน์
+                this.updateCellValue(worksheet, { row: currentRow, col }, record.status);
+              }
+            });
+          }
+          
+          // I-M: สรุปรายเดือน (มา, สาย, ป่วย, ลา, ขาด)
+          if (student.monthly_summary && Array.isArray(student.monthly_summary)) {
+            student.monthly_summary.forEach((summary: any, index: number) => {
+              const col = 9 + index; // เริ่มจากคอลัมน์ I (9)
+              if (col <= 13) { // จำกัดแค่ 5 คอลัมน์
+                this.updateCellValue(worksheet, { row: currentRow, col }, summary.count);
+              }
+            });
+          }
+          
+          currentRow++;
+        });
+      }
+
+      worksheet.name = 'เวลาเรียนประจำเดือน';
+      this.logger.log('✅ อัพเดทข้อมูลเวลาเรียนประจำเดือนสำเร็จ');
+
+    } catch (error) {
+      this.logger.error('❌ เกิดข้อผิดพลาดในการอัพเดทข้อมูลเวลาเรียนประจำเดือน:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * แยกวันที่ที่ไม่ซ้ำจากข้อมูลการเข้าเรียน
+   */
+  private extractUniqueDatesFromAttendance(attendanceRecords: any[]): string[] {
+    const datesSet = new Set<string>();
+    
+    attendanceRecords.forEach((student: any) => {
+      if (student.daily_records && Array.isArray(student.daily_records)) {
+        student.daily_records.forEach((record: any) => {
+          if (record.date) {
+            datesSet.add(record.date);
+          }
+        });
+      }
+    });
+    
+    return Array.from(datesSet).sort();
+  }
+
   private async updateIndicatorsByGroupWorksheetDetailed(worksheet: any, data: any) {
     try {
       this.logger.log('Starting detailed update of indicators by group worksheet');
