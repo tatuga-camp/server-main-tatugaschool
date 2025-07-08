@@ -1,0 +1,363 @@
+{
+  "document_title": "มาตราฐานตัวชี้วัดประจำรายวิชา (จำแนกตามกลุ่ม)",
+  "course_details": {
+    "academic_year": "2568",
+    "semesters": "1 และ 2",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5"
+  },
+  "indicators_summary": {
+    "total": 25,
+    "breakdown": [
+      {
+        "type": "ระหว่างทาง",
+        "count": 17
+      },
+      {
+        "type": "ปลายทาง",
+        "count": 8
+      }
+    ]
+  },
+  "student_indicator_evaluations": [
+    {
+      "list_number": 1,
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 2,
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 3,
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 4,
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 2 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 5,
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 2 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 6,
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 8,
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 12 },
+        { "type": "ไม่ผ่าน", "count": 0 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 2 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 9,
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 8 },
+        { "type": "ไม่ผ่าน", "count": 4 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 0 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 1 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 3 },
+            { "indicator_code": "ป.5/5", "score": 0 },
+            { "indicator_code": "ป.5/6", "score": 3 }
+          ]
+        }
+      ]
+    },
+    {
+      "list_number": 10,
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "overall_summary": [
+        { "type": "ผ่าน", "count": 9 },
+        { "type": "ไม่ผ่าน", "count": 3 }
+      ],
+      "indicator_scores": [
+        {
+          "standard_code": "ต.1.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.1.2",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 0 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 }
+          ]
+        },
+        {
+          "standard_code": "ต.2.1",
+          "evaluations": [
+            { "indicator_code": "ป.5/1", "score": 3 },
+            { "indicator_code": "ป.5/2", "score": 3 },
+            { "indicator_code": "ป.5/3", "score": 3 },
+            { "indicator_code": "ป.5/4", "score": 0 },
+            { "indicator_code": "ป.5/5", "score": 3 },
+            { "indicator_code": "ป.5/6", "score": 0 }
+          ]
+        }
+      ]
+    }
+  ],
+  "instructor_signature": {
+    "name": "นายศตวรรษ ปิฉิมพลี",
+    "title": "ครูผู้สอน"
+  }
+}
