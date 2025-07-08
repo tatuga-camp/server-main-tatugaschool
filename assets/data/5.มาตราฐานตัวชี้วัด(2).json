@@ -1,0 +1,83 @@
+{
+  "document_title": "มาตรฐานตัวชี้วัดประจำรายวิชา (จำแนกตามกลุ่ม)",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "1",
+    "learning_area": "วิทยาศาสตร์",
+    "course_type": "พื้นฐาน",
+    "course_code": "ว15102",
+    "course_name": "วิทยาศาสตร์ 5"
+  },
+  "indicators_summary": {
+    "total": 20,
+    "breakdown": [
+      {
+        "type": "ระหว่างทาง",
+        "count": 12
+      },
+      {
+        "type": "ปลายทาง",
+        "count": 8
+      }
+    ]
+  },
+  "indicator_groups": [
+    {
+      "group_number": 1,
+      "indicators": [
+        {
+          "standard_code": "ว.1.1",
+          "indicator_code": "ป.5/1",
+          "description": "จำแนกสิ่งมีชีวิตและไม่มีชีวิตตามลักษณะสำคัญ",
+          "assessment_type": "ระหว่างทาง"
+        },
+        {
+          "standard_code": "ว.1.1",
+          "indicator_code": "ป.5/2",
+          "description": "อธิบายหน้าที่ของส่วนต่าง ๆ ของพืชในการดำรงชีวิต",
+          "assessment_type": "ระหว่างทาง"
+        },
+        {
+          "standard_code": "ว.1.2",
+          "indicator_code": "ป.5/3",
+          "description": "เปรียบเทียบลักษณะโครงสร้างของสัตว์มีกระดูกสันหลังและไม่มีกระดูกสันหลัง",
+          "assessment_type": "ปลายทาง"
+        }
+      ]
+    },
+    {
+      "group_number": 2,
+      "indicators": [
+        {
+          "standard_code": "ว.2.1",
+          "indicator_code": "ป.5/4",
+          "description": "ทดลองและอธิบายแรงลัพธ์ที่กระทำต่อวัตถุ",
+          "assessment_type": "ระหว่างทาง"
+        },
+        {
+          "standard_code": "ว.2.1",
+          "indicator_code": "ป.5/5",
+          "description": "ระบุผลของแรงเสียดทานในชีวิตประจำวัน",
+          "assessment_type": "ปลายทาง"
+        }
+      ]
+    },
+    {
+      "group_number": 3,
+      "indicators": [
+        {
+          "standard_code": "ว.3.1",
+          "indicator_code": "ป.5/6",
+          "description": "จำแนกสารบริสุทธิ์และสารผสมจากลักษณะภายนอก",
+          "assessment_type": "ระหว่างทาง"
+        },
+        {
+          "standard_code": "ว.3.1",
+          "indicator_code": "ป.5/7",
+          "description": "เลือกวิธีแยกสารตามสมบัติของส่วนผสม",
+          "assessment_type": "ระหว่างทาง"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "document_title": "แบบสรุปผลการเรียนรู้ประจำภาคเรียนที่ 2",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "2",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5",
+    "credits": 3,
+    "learning_hours": {
+      "per_semester": "60 ชั่วโมง/ภาคเรียน",
+      "per_year": "120 ชั่วโมง/ปี"
+    }
+  },
+  "scoring_rubric": {
+    "score_weighting": [
+      { "type": "คะแนนเก็บ", "weight": 70 },
+      { "type": "กลางภาค", "weight": 0 },
+      { "type": "ปลายภาค", "weight": 30 }
+    ],
+    "maximum_scores": [
+      { "type": "คะแนนระหว่างเรียน", "max_score": 70 },
+      { "type": "คะแนนสอบ", "max_score": 30 },
+      { "type": "รวมคะแนน", "max_score": 100 }
+    ]
+  },
+  "student_results": [
+    {
+      "list_number": 1,
+      "student_id": "2561101",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "coursework_score": 65,
+      "exam_score": 15,
+      "total_score": 80,
+      "grade": "4",
+      "evaluation": "ดีเยี่ยม"
+    },
+    {
+      "list_number": 2,
+      "student_id": "2561102",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "coursework_score": 66,
+      "exam_score": 20,
+      "total_score": 86,
+      "grade": "4",
+      "evaluation": "ดีเยี่ยม"
+    },
+    {
+      "list_number": 3,
+      "student_id": "2561103",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "coursework_score": 70,
+      "exam_score": 22,
+      "total_score": 70,
+      "grade": "3",
+      "evaluation": "ดี"
+    },
+    {
+      "list_number": 4,
+      "student_id": "2561104",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "coursework_score": 63,
+      "exam_score": 24,
+      "total_score": 87,
+      "grade": "4",
+      "evaluation": "ดีเยี่ยม"
+    },
+    {
+      "list_number": 5,
+      "student_id": "2561105",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "coursework_score": 50,
+      "exam_score": 26,
+      "total_score": 76,
+      "grade": "3.5",
+      "evaluation": "ดี"
+    },
+    {
+      "list_number": 6,
+      "student_id": "2561106",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "coursework_score": 55,
+      "exam_score": 20,
+      "total_score": 75,
+      "grade": "3.5",
+      "evaluation": "ดี"
+    },
+    {
+      "list_number": 8,
+      "student_id": "2561107",
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "coursework_score": 61,
+      "exam_score": 29,
+      "total_score": 90,
+      "grade": "4",
+      "evaluation": "ดีเยี่ยม"
+    },
+    {
+      "list_number": 9,
+      "student_id": "2561108",
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "coursework_score": 70,
+      "exam_score": 27,
+      "total_score": 97,
+      "grade": "4",
+      "evaluation": "ดีเยี่ยม"
+    },
+    {
+      "list_number": 10,
+      "student_id": "2561109",
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "coursework_score": 69,
+      "exam_score": 25,
+      "total_score": 94,
+      "grade": "4",
+      "evaluation": "ดีเยี่ยม"
+    }
+  ],
+  "instructor_signature": {
+    "name": "นายศตวรรษ ปิฉิมพลี",
+    "title": "ครูผู้สอน"
+  }
+}

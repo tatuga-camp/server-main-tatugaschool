@@ -1,0 +1,184 @@
+{
+  "document_title": "Monthly Attendance Summary",
+  "course_details": {
+    "academic_year": "2025",
+    "semester": "1",
+    "learning_area": "Foreign Languages",
+    "course_type": "Basic",
+    "course_code": "E15101",
+    "course_name": "English 5",
+    "credits": 3,
+    "learning_hours": {
+      "per_semester": "60 hours/semester",
+      "per_year": "120 hours/year"
+    }
+  },
+  "summary_details": {
+    "month": "May",
+    "total_school_days_in_month": 3
+  },
+  "attendance_records": [
+    {
+      "list_number": 1,
+      "student_id": "2561101",
+      "full_name": "Master Mana Meewinai",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Absent" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 3 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 1 }
+      ]
+    },
+    {
+      "list_number": 2,
+      "student_id": "2561102",
+      "full_name": "Master Mana Meewinai",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 4 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 3,
+      "student_id": "2561103",
+      "full_name": "Master Mana Meewinai",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Absent" },
+        { "date": "22-May-25", "status": "Absent" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 2 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 2 }
+      ]
+    },
+    {
+      "list_number": 4,
+      "student_id": "2561104",
+      "full_name": "Master Mana Meewinai",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Sick" },
+        { "date": "22-May-25", "status": "Sick" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 2 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 2 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 5,
+      "student_id": "2561105",
+      "full_name": "Master Mana Meewinai",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 4 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 6,
+      "student_id": "2561106",
+      "full_name": "Master Mana Meewinai",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Late" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 3 },
+        { "status": "Late", "count": 1 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 8,
+      "student_id": "2561107",
+      "full_name": "Miss Mani Matamdee",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 4 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 9,
+      "student_id": "2561108",
+      "full_name": "Miss Mani Matamdee",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Present" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 4 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 0 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    },
+    {
+      "list_number": 10,
+      "student_id": "2561109",
+      "full_name": "Miss Mani Matamdee",
+      "daily_records": [
+        { "date": "1-May-25", "status": "Present" },
+        { "date": "5-May-25", "status": "Sick" },
+        { "date": "15-May-25", "status": "Present" },
+        { "date": "22-May-25", "status": "Present" }
+      ],
+      "monthly_summary": [
+        { "status": "Present", "count": 3 },
+        { "status": "Late", "count": 0 },
+        { "status": "Sick", "count": 1 },
+        { "status": "Excused", "count": 0 },
+        { "status": "Absent", "count": 0 }
+      ]
+    }
+  ]
+}

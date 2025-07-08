@@ -1,0 +1,224 @@
+{
+  "document_title": "แบบเก็บคะแนนประจำรายวิชา ภาคเรียนที่ 2",
+  "course_details": {
+    "academic_year": "2568",
+    "semester": "2",
+    "learning_area": "ภาษาต่างประเทศ",
+    "course_type": "พื้นฐาน",
+    "course_code": "อ15101",
+    "course_name": "ภาษาอังกฤษ 5"
+  },
+  "scoring_rubric": {
+    "score_weighting": [
+      { "type": "คะแนนเก็บ", "weight": 70 },
+      { "type": "กลางภาค", "weight": 0 },
+      { "type": "ปลายภาค", "weight": 30 }
+    ],
+    "maximum_scores": {
+      "total_score": 100,
+      "final_exam": 30,
+      "midterm_exam": 0,
+      "coursework_total": 70,
+      "assignments": [
+        { "name": "งาน 1", "max_score": 10 },
+        { "name": "งาน 2", "max_score": 10 },
+        { "name": "งาน 3", "max_score": 10 },
+        { "name": "งาน 4", "max_score": 10 },
+        { "name": "งาน 5", "max_score": 10 },
+        { "name": "งาน 6", "max_score": 10 },
+        { "name": "งาน 7", "max_score": 10 }
+      ]
+    }
+  },
+  "student_scores": [
+    {
+      "list_number": 1,
+      "student_id": "2561101",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "final_grade": "4",
+      "score_summary": {
+        "total_score": 77,
+        "final_exam_score": 15,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 62
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 9 },
+        { "name": "งาน 2", "score": 8 },
+        { "name": "งาน 3", "score": 10 },
+        { "name": "งาน 4", "score": 9 },
+        { "name": "งาน 5", "score": 8 },
+        { "name": "งาน 6", "score": 10 },
+        { "name": "งาน 7", "score": 8 }
+      ]
+    },
+    {
+      "list_number": 2,
+      "student_id": "2561102",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "final_grade": "4",
+      "score_summary": {
+        "total_score": 89,
+        "final_exam_score": 22,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 67
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 10 },
+        { "name": "งาน 2", "score": 10 },
+        { "name": "งาน 3", "score": 10 },
+        { "name": "งาน 4", "score": 9 },
+        { "name": "งาน 5", "score": 9 },
+        { "name": "งาน 6", "score": 10 },
+        { "name": "งาน 7", "score": 9 }
+      ]
+    },
+    {
+      "list_number": 3,
+      "student_id": "2561103",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "final_grade": "4",
+      "score_summary": {
+        "total_score": 74,
+        "final_exam_score": 25,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 49
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 7 },
+        { "name": "งาน 2", "score": 8 },
+        { "name": "งาน 3", "score": 10 },
+        { "name": "งาน 4", "score": 9 },
+        { "name": "งาน 5", "score": 5 },
+        { "name": "งาน 6", "score": 0 },
+        { "name": "งาน 7", "score": 10 }
+      ]
+    },
+    {
+      "list_number": 4,
+      "student_id": "2561104",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "final_grade": "4",
+      "score_summary": {
+        "total_score": 65,
+        "final_exam_score": 20,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 45
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 10 },
+        { "name": "งาน 2", "score": 9 },
+        { "name": "งาน 3", "score": 7 },
+        { "name": "งาน 4", "score": 7 },
+        { "name": "งาน 5", "score": 7 },
+        { "name": "งาน 6", "score": 0 },
+        { "name": "งาน 7", "score": 5 }
+      ]
+    },
+    {
+      "list_number": 5,
+      "student_id": "2561105",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "final_grade": "2.5",
+      "score_summary": {
+        "total_score": 92,
+        "final_exam_score": 28,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 64
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 10 },
+        { "name": "งาน 2", "score": 9 },
+        { "name": "งาน 3", "score": 9 },
+        { "name": "งาน 4", "score": 9 },
+        { "name": "งาน 5", "score": 9 },
+        { "name": "งาน 6", "score": 9 },
+        { "name": "งาน 7", "score": 9 }
+      ]
+    },
+    {
+      "list_number": 6,
+      "student_id": "2561106",
+      "full_name": "เด็กชายมานะ มีวินัย",
+      "final_grade": "4",
+      "score_summary": {
+        "total_score": 77,
+        "final_exam_score": 20,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 57
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 7 },
+        { "name": "งาน 2", "score": 10 },
+        { "name": "งาน 3", "score": 9 },
+        { "name": "งาน 4", "score": 7 },
+        { "name": "งาน 5", "score": 6 },
+        { "name": "งาน 6", "score": 8 },
+        { "name": "งาน 7", "score": 10 }
+      ]
+    },
+    {
+      "list_number": 8,
+      "student_id": "2561107",
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "final_grade": "2.5",
+      "score_summary": {
+        "total_score": 88,
+        "final_exam_score": 29,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 59
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 10 },
+        { "name": "งาน 2", "score": 8 },
+        { "name": "งาน 3", "score": 8 },
+        { "name": "งาน 4", "score": 8 },
+        { "name": "งาน 5", "score": 8 },
+        { "name": "งาน 6", "score": 8 },
+        { "name": "งาน 7", "score": 9 }
+      ]
+    },
+    {
+      "list_number": 9,
+      "student_id": "2561108",
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "final_grade": "4",
+      "score_summary": {
+        "total_score": 78,
+        "final_exam_score": 27,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 51
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 8 },
+        { "name": "งาน 2", "score": 8 },
+        { "name": "งาน 3", "score": 10 },
+        { "name": "งาน 4", "score": 0 },
+        { "name": "งาน 5", "score": 10 },
+        { "name": "งาน 6", "score": 5 },
+        { "name": "งาน 7", "score": 10 }
+      ]
+    },
+    {
+      "list_number": 10,
+      "student_id": "2561109",
+      "full_name": "เด็กหญิงมานี มาทำดี",
+      "final_grade": "2.5",
+      "score_summary": {
+        "total_score": 89,
+        "final_exam_score": 25,
+        "midterm_exam_score": 0,
+        "coursework_total_score": 64
+      },
+      "coursework_scores": [
+        { "name": "งาน 1", "score": 10 },
+        { "name": "งาน 2", "score": 10 },
+        { "name": "งาน 3", "score": 10 },
+        { "name": "งาน 4", "score": 10 },
+        { "name": "งาน 5", "score": 9 },
+        { "name": "งาน 6", "score": 5 },
+        { "name": "งาน 7", "score": 10 }
+      ]
+    }
+  ]
+}
