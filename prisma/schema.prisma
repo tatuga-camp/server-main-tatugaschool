@@ -210,6 +210,7 @@ model Student {
   studentOnGroups           StudentOnGroup[]
 
   @@index([schoolId, classId])
+  @@index([classId])
 }
 
 model Team {
@@ -369,6 +370,7 @@ model StudentOnSubject {
 
   @@unique([studentId, subjectId])
   @@index([order])
+  @@index([subjectId])
 }
 
 model GroupOnSubject {
@@ -542,6 +544,8 @@ model StudentOnAssignment {
   skillOnStudentAssignments SkillOnStudentAssignment[]
 
   @@unique([studentOnSubjectId, assignmentId])
+  @@index([assignmentId])
+  @@index([subjectId])
 }
 
 enum StudentAssignmentStatus {
@@ -774,6 +778,8 @@ model Attendance {
 
   @@unique([studentOnSubjectId, attendanceRowId])
   @@index([attendanceTableId])
+  @@index([attendanceRowId])
+  @@index([studentId])
 }
 
 model Skill {

@@ -107,13 +107,16 @@ export class AttendanceTableRepository implements Repository {
         }),
       ]);
 
-      const attendances = await this.prisma.attendance.findMany({
-        where: {
-          attendanceRowId: {
-            in: rows.map((row) => row.id),
-          },
-        },
-      });
+      const attendances =
+        rows.length > 0
+          ? await this.prisma.attendance.findMany({
+              where: {
+                attendanceRowId: {
+                  in: rows.map((row) => row.id),
+                },
+              },
+            })
+          : [];
 
       return {
         ...table,
