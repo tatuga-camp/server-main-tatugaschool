@@ -22,9 +22,12 @@ export class EmailService {
     html: string;
   }): Promise<void> {
     try {
-      if (this.config.get('NODE_ENV') !== 'production') {
+      if (
+        this.config.get('NODE_ENV') !== 'production' &&
+        this.config.get('NODE_ENV') !== 'development'
+      ) {
         this.logger.log(
-          `Email will not be sent to ${to} because you are not in production  env`,
+          `Email will not be sent to ${to} because you are in ${this.config.get('NODE_ENV')}  env`,
         );
         return;
       }
