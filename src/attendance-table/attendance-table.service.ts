@@ -130,13 +130,15 @@ export class AttendanceTableService {
       });
 
       const [rows, attendances, statusLists] = await Promise.all([
-        this.attendanceRowRepository.findMany({
-          where: {
-            attendanceTableId: {
-              in: tables.map((table) => table.id),
-            },
-          },
-        }),
+        tables.length > 0
+          ? this.attendanceRowRepository.findMany({
+              where: {
+                attendanceTableId: {
+                  in: tables.map((table) => table.id),
+                },
+              },
+            })
+          : [],
         this.attendanceRepository.findMany({
           where: {
             attendanceTableId: {
