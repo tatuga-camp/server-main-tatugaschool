@@ -190,6 +190,7 @@ describe('School Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    studentService,
   );
   beforeEach(async () => {
     schoolService = new SchoolService(

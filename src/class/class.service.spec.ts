@@ -178,6 +178,7 @@ describe('Class Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    studentService,
   );
 
   studentOnAssignmentService = new StudentOnAssignmentService(
