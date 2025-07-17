@@ -12,6 +12,15 @@ export class GetAssignmentBySubjectIdDto {
   subjectId: string;
 }
 
+export class GetAssignmentOverviewByStudentOnSubjectId {
+  @IsNotEmpty()
+  @IsMongoId()
+  subjectId: string;
+
+  @IsNotEmpty()
+  @IsMongoId()
+  studentId: string;
+}
 export class GetAssignmentExportExcelDto {
   @IsNotEmpty()
   @IsMongoId()
