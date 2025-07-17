@@ -205,6 +205,7 @@ describe('MemberOnSchool Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    studentService,
   );
 
   beforeEach(async () => {

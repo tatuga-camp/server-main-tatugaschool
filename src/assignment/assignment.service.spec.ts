@@ -206,6 +206,7 @@ describe('Assignment Service', () => {
       gradeService,
       scoreOnSubjectService,
       scoreOnStudentService,
+      studentService,
     );
   });
 
@@ -1863,7 +1864,7 @@ describe('Assignment Service', () => {
 
   /////////////////////////////// Get Overview Score On Assignment ////////////////////////////
 
-  describe('getOverviewScoreOnAssignment', () => {
+  describe('getOverviewScoreOnAssignments', () => {
     // กรณี access ถูกปฏิเสธ
     it('should throw ForbiddenException if teacher has no access to subject', async () => {
       try {
@@ -1900,7 +1901,7 @@ describe('Assignment Service', () => {
         });
 
         const dto = { subjectId: subject.id };
-        await assignmentService.getOverviewScoreOnAssignment(dto, mockUser);
+        await assignmentService.getOverviewScoreOnAssignments(dto, mockUser);
 
         fail('Expected ForbiddenException');
       } catch (error) {
@@ -2056,7 +2057,7 @@ describe('Assignment Service', () => {
           },
         );
 
-        const result = await assignmentService.getOverviewScoreOnAssignment(
+        const result = await assignmentService.getOverviewScoreOnAssignments(
           { subjectId: subject.id },
           mockUser,
         );

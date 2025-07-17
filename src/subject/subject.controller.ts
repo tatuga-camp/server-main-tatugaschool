@@ -38,7 +38,7 @@ export class SubjectController {
   }
 
   @UseGuards(StudentGuard)
-  @Get('student/:subjectId')
+  @Get('student/subject/:subjectId')
   async getSubjectByIdFromStudnet(
     @Param() dto: GetSubjectByIdDto,
     @GetStudent() student: Student,

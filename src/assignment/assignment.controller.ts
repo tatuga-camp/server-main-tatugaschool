@@ -16,6 +16,7 @@ import {
   GetAssignmentByIdDto,
   GetAssignmentBySubjectIdDto,
   GetAssignmentExportExcelDto,
+  GetAssignmentOverviewByStudentOnSubjectId,
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
@@ -56,11 +57,25 @@ export class AssignmentController {
 
   @UseGuards(UserGuard)
   @Get('subject/:subjectId/overview')
-  async getAssignmentOverview(
+  async getAssignmentOverviews(
     @Param() dto: GetAssignmentBySubjectIdDto,
     @GetUser() user: User,
   ) {
-    return await this.assignmentService.getOverviewScoreOnAssignment(dto, user);
+    return await this.assignmentService.getOverviewScoreOnAssignments(
+      dto,
+      user,
+    );
+  }
+  @UseGuards(StudentGuard)
+  @Get('subject/:subjectId/student/:studentId/overview')
+  async getAssignmentOverview(
+    @Param() dto: GetAssignmentOverviewByStudentOnSubjectId,
+    @GetStudent() student: Student,
+  ) {
+    return await this.assignmentService.getOverviewScoreOnAssignment(
+      dto,
+      student,
+    );
   }
 
   @UseGuards(StudentGuard)

@@ -45,6 +45,7 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
+import { StudentService } from '../student/student.service';
 
 @Injectable()
 export class AssignmentService {
@@ -68,6 +69,7 @@ export class AssignmentService {
     private gradeService: GradeService,
     private scoreOnSubjectService: ScoreOnSubjectService,
     private scoreOnStudentService: ScoreOnStudentService,
+    private studentService: StudentService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -230,6 +232,117 @@ export class AssignmentService {
   }
 
   async getOverviewScoreOnAssignment(
+    dto: { subjectId: string; studentId: string },
+    student_request: Student,
+  ): Promise<{
+    grade: GradeRange | null;
+    assignments: {
+      assignment: Assignment;
+      studentOnAssignment: StudentOnAssignment;
+    }[];
+    scoreOnSubjects: {
+      scoreOnSubject: ScoreOnSubject;
+      students: ScoreOnStudent[];
+    }[];
+  }> {
+    try {
+      const [subject, student] = await Promise.all([
+        this.subjectService.subjectRepository.findUnique({
+          where: {
+            id: dto.subjectId,
+          },
+        }),
+        this.studentService.studentRepository.findById({
+          studentId: dto.studentId,
+        }),
+      ]);
+
+      if (!subject) {
+        throw new NotFoundException('SubjectId is invaild');
+      }
+      if (!student) {
+        throw new NotFoundException('StudentId is invaild');
+      }
+
+      if (student.id !== student_request.id) {
+        throw new ForbiddenException(
+          'You are not allow to access other student',
+        );
+      }
+
+      const studentOnSubject =
+        await this.studentOnSubjectService.studentOnSubjectRepository.findFirst(
+          {
+            where: {
+              subjectId: subject.id,
+              studentId: student.id,
+            },
+          },
+        );
+
+      const [
+        assignments,
+        studentOnAssignments,
+        grade,
+        scoreOnSubjects,
+        scoreOnStudents,
+      ] = await Promise.all([
+        this.assignmentRepository.findMany({
+          where: {
+            subjectId: dto.subjectId,
+            status: 'Published',
+            type: 'Assignment',
+          },
+        }),
+        this.studentOnAssignmentRepository.findMany({
+          where: { studentOnSubjectId: studentOnSubject.id },
+        }),
+        this.gradeService.gradeRepository.findUnique({
+          where: {
+            subjectId: dto.subjectId,
+          },
+        }),
+        this.scoreOnSubjectService.scoreOnSubjectRepository.findMany({
+          where: {
+            subjectId: dto.subjectId,
+          },
+        }),
+        this.scoreOnStudentService.scoreOnStudentRepository.findMany({
+          where: {
+            studentOnSubjectId: studentOnSubject.id,
+          },
+        }),
+      ]);
+      return {
+        grade: grade
+          ? { ...grade, gradeRules: JSON.parse(grade.gradeRules as string) }
+          : null,
+        assignments: assignments.map((assignment) => {
+          return {
+            assignment,
+            studentOnAssignment: studentOnAssignments.find(
+              (studentOnAssignment) =>
+                studentOnAssignment.assignmentId === assignment.id,
+            ),
+          };
+        }),
+        scoreOnSubjects: scoreOnSubjects.map((scoreOnSubject) => {
+          return {
+            scoreOnSubject: scoreOnSubject,
+            students: scoreOnStudents.filter(
+              (scoreOnStudent) =>
+                scoreOnStudent.scoreOnSubjectId === scoreOnSubject.id,
+            ),
+          };
+        }),
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getOverviewScoreOnAssignments(
     dto: { subjectId: string },
     user: User,
   ): Promise<{
@@ -248,7 +361,7 @@ export class AssignmentService {
 
       const [
         assignments,
-        studentsOnSubjects,
+        studentOnAssignments,
         grade,
         scoreOnSubjects,
         scoreOnStudents,
@@ -287,7 +400,7 @@ export class AssignmentService {
         assignments: assignments.map((assignment) => {
           return {
             assignment,
-            students: studentsOnSubjects.filter(
+            students: studentOnAssignments.filter(
               (student) => student.assignmentId === assignment.id,
             ),
           };
@@ -663,7 +776,7 @@ export class AssignmentService {
         { subjectId },
         user,
       );
-    const listAssignment = await this.getOverviewScoreOnAssignment(
+    const listAssignment = await this.getOverviewScoreOnAssignments(
       { subjectId },
       user,
     ).then((res) => {
