@@ -186,6 +186,7 @@ describe('Unit On Group Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    studentService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(

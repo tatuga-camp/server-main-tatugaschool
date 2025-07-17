@@ -169,6 +169,7 @@ describe('Attendance-table Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    studentService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
