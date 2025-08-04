@@ -519,31 +519,31 @@ export class SubjectService {
       const scoreOnSubjectTitlesDefault = [
         {
           title: 'Good Job',
-          icon: 'https://storage.cloud.google.com/public-tatugaschool/Good-job.png',
+          icon: 'https://storage.googleapis.com/public-tatugaschool/Good-job.png',
           blurHash: 'UEO{GV?D05-m~9WDIqah0NWV08M~X_ows.ov',
           score: 1,
         },
         {
           title: 'Well Done',
-          icon: 'https://storage.cloud.google.com/public-tatugaschool/Well-Done.png',
+          icon: 'https://storage.googleapis.com/public-tatugaschool/Well-Done.png',
           blurHash: 'UlMi|;xpE4n+IrWDs.bFIqahE5bY~QovIrjI',
           score: 1,
         },
         {
           title: 'Keep It Up',
-          icon: 'https://storage.cloud.google.com/public-tatugaschool/Keep-It-Up.png',
+          icon: 'https://storage.googleapis.com/public-tatugaschool/Keep-It-Up.png',
           blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
           score: 1,
         },
         {
           title: 'Excellent',
-          icon: 'https://storage.cloud.google.com/public-tatugaschool/Excellent.png',
+          icon: 'https://storage.googleapis.com/public-tatugaschool/Excellent.png',
           blurHash: 'UAP63q^z06?C^}WCM~a#05WC07Ir~jt5E4oe',
           score: 1,
         },
         {
           title: 'Needs Improvement',
-          icon: 'https://storage.cloud.google.com/public-tatugaschool/Needs-Improvement.png',
+          icon: 'https://storage.googleapis.com/public-tatugaschool/Needs-Improvement.png',
           blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
           score: -1,
         },
