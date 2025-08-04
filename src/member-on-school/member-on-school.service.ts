@@ -169,7 +169,7 @@ export class MemberOnSchoolService {
   async getAllMemberOnSchools(
     dto: GetMemberOnSchoolsDto & QueryMemberOnSchoolDto,
     user: User,
-  ) {
+  ): Promise<MemberOnSchool[]> {
     try {
       await this.validateAccess({
         user: user,
