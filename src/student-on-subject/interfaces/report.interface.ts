@@ -35,6 +35,7 @@ export type StudentOnSubjectReport = {
       item: string;
       score: number;
       maxScore: string;
+      weight: number | null;
     }[];
   };
   skillAssessment: {
