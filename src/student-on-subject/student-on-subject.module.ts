@@ -43,6 +43,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
     ScoreOnStudentService,
     FileAssignmentService,
     AttendanceStatusListService,
+    ScoreOnSubjectService,
   ],
   controllers: [StudentOnSubjectController],
 })

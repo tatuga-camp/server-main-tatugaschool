@@ -6,11 +6,11 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
-import { StudentOnSubjectService } from './student-on-subject.service';
+import { User } from '@prisma/client';
 import { GetUser } from '../auth/decorators';
+import { UserGuard } from '../auth/guard';
 import {
   CreateStudentOnSubjectDto,
   DeleteStudentOnSubjectDto,
@@ -18,12 +18,11 @@ import {
   GetStudentOnSubjectsByStudentIdDto,
   GetStudentOnSubjectsBySubjectIdDto,
 } from './dto';
-import { User } from '@prisma/client';
-import { UserGuard } from '../auth/guard';
 import {
   SortDto,
   UpdateStudentOnSubjectDto,
 } from './dto/patch-student-on-subject.dto';
+import { StudentOnSubjectService } from './student-on-subject.service';
 
 @UseGuards(UserGuard)
 @Controller('v1/student-on-subjects')

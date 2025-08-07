@@ -1,3 +1,4 @@
+import { ScoreOnSubjectService } from './../score-on-subject/score-on-subject.service';
 import {
   forwardRef,
   Inject,
@@ -9,6 +10,7 @@ import {
   Assignment,
   GradeRange,
   ScoreOnStudent,
+  ScoreOnSubject,
   StudentOnAssignment,
   StudentOnSubject,
   User,
@@ -69,6 +71,7 @@ export class StudentOnSubjectService {
     private schoolService: SchoolService,
     private gradeService: GradeService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
+    private scoreOnSubjectService: ScoreOnSubjectService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -196,7 +199,7 @@ export class StudentOnSubjectService {
         studentOnSubject.id,
       );
 
-      const maxScore = assignments.reduce((prev, current) => {
+      let maxScore = assignments.reduce((prev, current) => {
         let score = current.maxScore;
 
         if (current.weight && current.weight !== null) {
@@ -204,6 +207,19 @@ export class StudentOnSubjectService {
         }
         return prev + score;
       }, 0);
+      maxScore += academicPerformance.scoreOnStudents
+        .filter((s) => s.scoreOnSubject.weight !== 0)
+        .reduce((prev, current) => {
+          let score = current.scoreOnSubject.maxScore;
+
+          if (
+            current.scoreOnSubject.weight &&
+            current.scoreOnSubject.weight !== null
+          ) {
+            score = current.scoreOnSubject.weight;
+          }
+          return prev + score;
+        }, 0);
 
       const skills =
         await this.skillOnStudentAssignmentService.getByStudentOnSubjectId(
@@ -247,6 +263,7 @@ export class StudentOnSubjectService {
               return {
                 item: s.assignment.title,
                 score: s.pureScore,
+                weight: s.assignment.weight,
                 maxScore: s.assignment.weight
                   ? s.assignment.weight.toFixed(2)
                   : s.assignment.maxScore.toFixed(2),
@@ -256,7 +273,11 @@ export class StudentOnSubjectService {
               return {
                 item: s.title,
                 score: s.totalscore,
-                maxScore: '-',
+                weight: s.scoreOnSubject.weight,
+                maxScore:
+                  s.scoreOnSubject.maxScore !== null
+                    ? s.scoreOnSubject.maxScore.toFixed(2)
+                    : '-',
               };
             }),
           ],
@@ -290,6 +311,7 @@ export class StudentOnSubjectService {
     grade: string;
     totalScore: number;
     scoreOnStudents: {
+      scoreOnSubject: ScoreOnSubject;
       scoreOnSubjectId: string;
       title: string;
       totalscore: number;
@@ -337,6 +359,22 @@ export class StudentOnSubjectService {
         },
       });
 
+      const studentOnSubject =
+        await this.studentOnSubjectRepository.getStudentOnSubjectById({
+          studentOnSubjectId: studentOnSubjectId,
+        });
+
+      if (!studentOnSubject) {
+        throw new NotFoundException('studentOnSubjectId is invaild');
+      }
+
+      const scoreOnSubjects =
+        await this.scoreOnSubjectService.scoreOnSubjectRepository.findMany({
+          where: {
+            subjectId: studentOnSubject.subjectId,
+          },
+        });
+
       const scoreOnStudentGrouped = scoreOnStudents.reduce<
         Record<string, ScoreOnStudent[]>
       >((acc, item) => {
@@ -348,15 +386,26 @@ export class StudentOnSubjectService {
         return acc;
       }, {});
 
-      const scoreOnSubjects = Object.entries(scoreOnStudentGrouped).map(
+      const totalScoreOnStudents = Object.entries(scoreOnStudentGrouped).map(
         ([scoreOnSubjectId, value]) => {
-          const totalscore = value.reduce((acc, item) => {
+          const sumRawScore = value.reduce((acc, item) => {
             return (acc += item.score);
           }, 0);
+          const scoreOnSubject = scoreOnSubjects.find(
+            (s) => s.id === scoreOnSubjectId,
+          );
+          let score = sumRawScore;
+          const maxScore = scoreOnSubject.maxScore ?? 100;
+          if (scoreOnSubject.weight !== null) {
+            const originalScore =
+              (sumRawScore > maxScore ? maxScore : sumRawScore) / maxScore;
+            score = originalScore * scoreOnSubject.weight;
+          }
           return {
             scoreOnSubjectId,
+            scoreOnSubject,
             title: `SPEICAL: ${value[0].title}`,
-            totalscore: totalscore,
+            totalscore: score,
             value,
           };
         },
@@ -364,19 +413,13 @@ export class StudentOnSubjectService {
 
       const totalScoreAssignment = studentOnAssignments.reduce(
         (prev, current) => {
-          let score = current.score;
-          if (current.assignment.weight && current.assignment.weight !== null) {
-            const originalScore = score / current.assignment.maxScore;
-            score = originalScore * current.assignment.weight;
-          }
-
-          return prev + score;
+          return prev + current.pureScore;
         },
         0,
       );
       const totalScore =
         totalScoreAssignment +
-        scoreOnSubjects.reduce((acc, item) => {
+        totalScoreOnStudents.reduce((acc, item) => {
           return (acc += item.totalscore);
         }, 0);
 
@@ -385,7 +428,7 @@ export class StudentOnSubjectService {
         totalScore,
         grade: grade.grade,
         studentOnAssignments,
-        scoreOnStudents: scoreOnSubjects,
+        scoreOnStudents: totalScoreOnStudents,
       };
     } catch (error) {
       this.logger.error(error);
