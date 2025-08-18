@@ -215,8 +215,8 @@ export class AssignmentService {
           reviewNumber: studentOnAssignments.filter(
             (s) => s.status === 'REVIEWD',
           ).length,
-          files: files.filter((file) => file.assignmentId === assignment.id),
-          //if request come from student attrach studentOnAssignment
+          files:
+            files.filter((file) => file.assignmentId === assignment.id) ?? [],
           studentOnAssignment:
             studentsOnAssignments.length > 0
               ? studentsOnAssignments.find(
