@@ -496,7 +496,7 @@ export class AuthService {
 
       return await this.jwtService.signAsync(payload, {
         secret: this.config.get('JWT_ACCESS_SECRET'),
-        expiresIn: '3h',
+        expiresIn: '5h',
       });
     } catch (error) {
       this.logger.error(error);
@@ -513,7 +513,7 @@ export class AuthService {
 
       return await this.jwtService.signAsync(payload, {
         secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
-        expiresIn: '3h',
+        expiresIn: '5h',
       });
     } catch (error) {
       this.logger.error(error);
