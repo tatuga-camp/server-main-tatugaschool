@@ -386,14 +386,16 @@ export class AttendanceService {
     const data = await Promise.all(
       listAttendanceTable.map((table) => {
         const rows: (AttendanceRow & { attendances: Attendance[] })[] =
-          attendanceRows.map((row) => {
-            return {
-              ...row,
-              attendances: attendances.filter(
-                (a) => a.attendanceRowId === row.id,
-              ),
-            };
-          });
+          attendanceRows
+            .filter((row) => row.attendanceTableId === table.id)
+            .map((row) => {
+              return {
+                ...row,
+                attendances: attendances.filter(
+                  (a) => a.attendanceRowId === row.id,
+                ),
+              };
+            });
         return {
           worksheetName: table.title,
           attendanceRows: [
