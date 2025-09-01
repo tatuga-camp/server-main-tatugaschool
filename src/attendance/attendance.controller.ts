@@ -40,7 +40,7 @@ export class AttendanceController {
     @GetUser() user: User,
     @Req() req: Request,
   ) {
-    return this.attendanceService.exportExcel(dto.subjectId, user, req);
+    return this.attendanceService.exportExcel(dto, user, req);
   }
 
   @UseGuards(UserGuard)
