@@ -11,7 +11,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Attendance, User } from '@prisma/client';
+import { Attendance, AttendanceRow, User } from '@prisma/client';
 import {
   CreateAttendanceDto,
   GetAttendanceByIdDto,
@@ -316,11 +316,15 @@ export class AttendanceService {
     }
   }
 
-  async exportExcel(subjectId: string, user: User, req: Request) {
+  async exportExcel(
+    dto: { subjectId: string; startDate?: string; endDate?: string },
+    user: User,
+    req: Request,
+  ) {
     const userLang = req.headers['accept-language']?.split(',')[0] || 'en-US';
     const subject = await this.prisma.subject.findUnique({
       where: {
-        id: subjectId,
+        id: dto.subjectId,
       },
     });
 
@@ -335,25 +339,67 @@ export class AttendanceService {
     }
     const listStudentOnSubject =
       await this.studentOnSubjectService.getStudentOnSubjectsBySubjectId(
-        { subjectId },
+        { subjectId: dto.subjectId },
         user,
       );
     const listAttendanceTable =
-      await this.attendanceTableService.getBySubjectId({ subjectId }, user);
+      await this.attendanceTableService.getBySubjectId(
+        { subjectId: dto.subjectId },
+        user,
+      );
+
+    const [attendances, attendanceRows] = await Promise.all([
+      this.attendanceRepository.findMany({
+        where: {
+          OR: listAttendanceTable.map((table) => {
+            return {
+              attendanceTableId: table.id,
+            };
+          }),
+          ...(dto.startDate &&
+            dto.endDate && {
+              startDate: {
+                gte: dto.startDate,
+                lte: dto.endDate,
+              },
+            }),
+        },
+      }),
+      this.attendanceRowRepository.findMany({
+        where: {
+          OR: listAttendanceTable.map((table) => {
+            return {
+              attendanceTableId: table.id,
+            };
+          }),
+          ...(dto.startDate &&
+            dto.endDate && {
+              startDate: {
+                gte: dto.startDate,
+                lte: dto.endDate,
+              },
+            }),
+        },
+      }),
+    ]);
 
     const data = await Promise.all(
-      listAttendanceTable.map(async (row) => {
-        const listAttendanceTableBySubjectId =
-          await this.attendanceRowService.GetAttendanceRows(
-            { attendanceTableId: row.id },
-            user,
-          );
+      listAttendanceTable.map((table) => {
+        const rows: (AttendanceRow & { attendances: Attendance[] })[] =
+          attendanceRows.map((row) => {
+            return {
+              ...row,
+              attendances: attendances.filter(
+                (a) => a.attendanceRowId === row.id,
+              ),
+            };
+          });
         return {
-          worksheetName: row.title,
+          worksheetName: table.title,
           attendanceRows: [
             'Nunber',
             'Student Name',
-            ...listAttendanceTableBySubjectId.map((row) => {
+            ...rows.map((row) => {
               return new Date(row.startDate)
                 .toLocaleString(userLang, {
                   month: 'long',
@@ -372,7 +418,7 @@ export class AttendanceService {
               return [
                 student.number,
                 student.title + student.firstName + ' ' + student.lastName,
-                ...listAttendanceTableBySubjectId.map((row) => {
+                ...rows.map((row) => {
                   return row.attendances.find(
                     (att) => att.studentId === student.studentId,
                   )?.status;

@@ -1,10 +1,9 @@
 import {
-  Attendance,
-  AttendanceRow,
-  AttendanceTable,
-  StudentOnSubject,
-} from '@prisma/client';
-import { IsArray, IsMongoId, IsNotEmpty } from 'class-validator';
+  IsDateString,
+  IsMongoId,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 
 export class GetAttendanceByIdDto {
   @IsNotEmpty()
@@ -14,5 +13,14 @@ export class GetAttendanceByIdDto {
 
 export class GetAttendanceExportExcelDto {
   @IsNotEmpty()
+  @IsMongoId()
   subjectId: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }
