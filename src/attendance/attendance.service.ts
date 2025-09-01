@@ -395,7 +395,8 @@ export class AttendanceService {
                   (a) => a.attendanceRowId === row.id,
                 ),
               };
-            });
+            })
+            .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
         return {
           worksheetName: table.title,
           attendanceRows: [
