@@ -1,19 +1,19 @@
 import { HttpService } from '@nestjs/axios';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { Request } from 'express';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Class, MemberRole, Status, User } from '@prisma/client';
+import * as crypto from 'crypto';
+import { AssignmentService } from '../assignment/assignment.service';
+import { AttendanceRowService } from '../attendance-row/attendance-row.service';
+import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
+import { AttendanceService } from '../attendance/attendance.service';
 import { AuthService } from '../auth/auth.service';
 import { ClassService } from '../class/class.service';
 import { EmailService } from '../email/email.service';
+import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { GradeService } from '../grade/grade.service';
+import { GroupOnSubjectService } from '../group-on-subject/group-on-subject.service';
 import { ImageService } from '../image/image.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,33 +24,25 @@ import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assign
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 import { SkillService } from '../skill/skill.service';
 import { StripeService } from '../stripe/stripe.service';
+import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
+import { StudentOnGroupService } from '../student-on-group/student-on-group.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { UnitOnGroupService } from '../unit-on-group/unit-on-group.service';
 import { UsersService } from '../users/users.service';
 import { AiService } from '../vector/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { AssignmentService } from '../assignment/assignment.service';
-import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import {
   CreateUnitOnGroupDto,
-  UpdateUnitOnGroupDto,
-  ReorderUnitOnGroupDto,
   DeleteUnitOnGroupDto,
+  ReorderUnitOnGroupDto,
+  UpdateUnitOnGroupDto,
 } from './dto';
-import * as crypto from 'crypto';
-import { FileAssignmentService } from '../file-assignment/file-assignment.service';
-import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
-import { AttendanceRowService } from '../attendance-row/attendance-row.service';
-import { AttendanceService } from '../attendance/attendance.service';
-import { StudentOnGroupService } from '../student-on-group/student-on-group.service';
-import { UnitOnGroupService } from '../unit-on-group/unit-on-group.service';
-import { GroupOnSubjectService } from '../group-on-subject/group-on-subject.service';
-import { data } from 'cheerio/dist/commonjs/api/attributes';
-import { SubscriptionService } from '../subscription/subscription.service';
 
 describe('Unit On Group Service', () => {
   let unitOnGroupService: UnitOnGroupService;
@@ -135,7 +127,11 @@ describe('Unit On Group Service', () => {
     memberOnSchoolService,
     googleStorageService,
   );
-
+  const scoreOnSubjectService = new ScoreOnSubjectService(
+    prismaService,
+    googleStorageService,
+    teacherOnSubjectService,
+  );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     googleStorageService,
@@ -144,6 +140,7 @@ describe('Unit On Group Service', () => {
     schoolService,
     gradeService,
     skillOnStudentAssignmentService,
+    scoreOnSubjectService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -162,11 +159,7 @@ describe('Unit On Group Service', () => {
     subjectService,
     teacherOnSubjectService,
   );
-  const scoreOnSubjectService = new ScoreOnSubjectService(
-    prismaService,
-    googleStorageService,
-    teacherOnSubjectService,
-  );
+
   const scoreOnStudentService = new ScoreOnStudentService(
     prismaService,
     googleStorageService,
