@@ -118,7 +118,11 @@ describe('Attendance-table Service', () => {
     memberOnSchoolService,
     googleStorageService,
   );
-
+  const scoreOnSubjectService = new ScoreOnSubjectService(
+    prismaService,
+    googleStorageService,
+    teacherOnSubjectService,
+  );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     googleStorageService,
@@ -127,6 +131,7 @@ describe('Attendance-table Service', () => {
     schoolService,
     gradeService,
     skillOnStudentAssignmentService,
+    scoreOnSubjectService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -145,11 +150,7 @@ describe('Attendance-table Service', () => {
     subjectService,
     teacherOnSubjectService,
   );
-  const scoreOnSubjectService = new ScoreOnSubjectService(
-    prismaService,
-    googleStorageService,
-    teacherOnSubjectService,
-  );
+
   const scoreOnStudentService = new ScoreOnStudentService(
     prismaService,
     googleStorageService,

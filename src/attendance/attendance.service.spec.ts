@@ -126,7 +126,11 @@ describe('Attendance Service', () => {
     memberOnSchoolService,
     googleStorageService,
   );
-
+  const scoreOnSubjectService = new ScoreOnSubjectService(
+    prismaService,
+    googleStorageService,
+    teacherOnSubjectService,
+  );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     googleStorageService,
@@ -135,6 +139,7 @@ describe('Attendance Service', () => {
     schoolService,
     gradeService,
     skillOnStudentAssignmentService,
+    scoreOnSubjectService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -153,11 +158,7 @@ describe('Attendance Service', () => {
     subjectService,
     teacherOnSubjectService,
   );
-  const scoreOnSubjectService = new ScoreOnSubjectService(
-    prismaService,
-    googleStorageService,
-    teacherOnSubjectService,
-  );
+
   const scoreOnStudentService = new ScoreOnStudentService(
     prismaService,
     googleStorageService,
@@ -5165,7 +5166,7 @@ describe('Attendance Service', () => {
 
         // 9. เรียกฟังก์ชัน exportExcel
         const result = await attendanceService.exportExcel(
-          subject.id,
+          { subjectId: subject.id },
           user,
           mockRequest,
         );

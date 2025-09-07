@@ -133,7 +133,11 @@ describe('Group On Subject Service', () => {
     memberOnSchoolService,
     googleStorageService,
   );
-
+  const scoreOnSubjectService = new ScoreOnSubjectService(
+    prismaService,
+    googleStorageService,
+    teacherOnSubjectService,
+  );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     googleStorageService,
@@ -142,6 +146,7 @@ describe('Group On Subject Service', () => {
     schoolService,
     gradeService,
     skillOnStudentAssignmentService,
+    scoreOnSubjectService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -160,11 +165,7 @@ describe('Group On Subject Service', () => {
     subjectService,
     teacherOnSubjectService,
   );
-  const scoreOnSubjectService = new ScoreOnSubjectService(
-    prismaService,
-    googleStorageService,
-    teacherOnSubjectService,
-  );
+
   const scoreOnStudentService = new ScoreOnStudentService(
     prismaService,
     googleStorageService,
