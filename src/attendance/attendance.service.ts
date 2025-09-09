@@ -348,7 +348,7 @@ export class AttendanceService {
         user,
       );
 
-    const [attendances, attendanceRows] = await Promise.all([
+    const [attendances, attendanceRows, statusLists] = await Promise.all([
       this.attendanceRepository.findMany({
         where: {
           OR: listAttendanceTable.map((table) => {
@@ -379,6 +379,11 @@ export class AttendanceService {
                 lte: dto.endDate,
               },
             }),
+        },
+      }),
+      this.attendanceStatusListSRepository.findMany({
+        where: {
+          subjectId: dto.subjectId,
         },
       }),
     ]);
@@ -442,6 +447,27 @@ export class AttendanceService {
 
       worksheet.addRow(row.attendanceRows);
       worksheet.addRows(row.attendanceValues);
+
+      worksheet.eachRow({ includeEmpty: true }, (worksheetRow, rowNumber) => {
+        if (rowNumber > 1) {
+          // We start from column 3 to skip "Number" and "Student Name"
+          worksheetRow.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+            if (colNumber > 2) {
+              const cellValue = cell.value?.toString();
+
+              const color = statusLists.find((s) => s.title === cellValue);
+              if (color) {
+                const argbColor = `FF${color.color.replace('#', '')}`;
+                cell.fill = {
+                  type: 'pattern',
+                  pattern: 'solid',
+                  fgColor: { argb: argbColor },
+                };
+              }
+            }
+          });
+        }
+      });
 
       const firstRow = worksheet.getRow(1);
       const columA = worksheet.getColumn(1);
