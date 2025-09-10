@@ -215,6 +215,7 @@ export class TeachingMaterialService {
       tags: string[];
       accessLevel: Plan;
       creatorURL: string;
+      canvaURL?: string;
     },
     user: User,
   ): Promise<TeachingMaterial> {
@@ -281,7 +282,6 @@ export class TeachingMaterialService {
         );
 
         const burhash = await this.imageService.encodeImageToBlurhash(upload);
-        console.log(burhash);
 
         return await this.teachingMaterialRepository.update({
           where: {

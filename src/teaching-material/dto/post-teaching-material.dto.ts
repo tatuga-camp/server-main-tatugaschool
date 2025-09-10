@@ -6,6 +6,7 @@ import {
   IsBase64,
   IsEnum,
   IsNotEmpty,
+  IsOptional,
   IsString,
   IsUrl,
   ValidateNested,
@@ -32,6 +33,10 @@ export class CreateTeachingMaterialDto {
   @IsNotEmpty()
   @IsUrl()
   creatorURL: string;
+
+  @IsOptional()
+  @IsUrl()
+  canvaURL?: string;
 }
 
 class GetDescriptionSuggestion {

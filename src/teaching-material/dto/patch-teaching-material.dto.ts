@@ -41,6 +41,10 @@ class UpdateTeachingMaterialBody {
   @IsOptional()
   @IsUrl()
   creatorURL?: string;
+
+  @IsOptional()
+  @IsUrl()
+  canvaURL?: string;
 }
 
 export class UpdateTeachingMaterialDto {
