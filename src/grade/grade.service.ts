@@ -86,7 +86,9 @@ export class GradeService {
         ) as GradeRule[];
       }
       const grade =
-        gradingRules?.find((rule) => totalScore >= rule.min)?.grade || 'N/A'; // Default grade if not found
+        gradingRules
+          .sort((a, b) => b.min - a.min)
+          .find((rule) => totalScore >= rule.min)?.grade || 'N/A'; // Default grade if not found
 
       return { grade: grade };
     } catch (error) {
