@@ -65,6 +65,7 @@ export class TeachingMaterialRepository implements Repository {
                 accessLevel: 1,
                 thumbnail: 1,
                 blurHash: 1,
+                canvaURL: 1,
                 score: { $meta: 'vectorSearchScore' },
               },
             },
@@ -86,6 +87,7 @@ export class TeachingMaterialRepository implements Repository {
           accessLevel: $Enums.Plan;
           blurHash?: string;
           score: number;
+          canvaURL?: string;
         }[];
 
       const teachingMaterials = teachingMaterialRaw.map((teachingMaterial) => ({
@@ -99,6 +101,7 @@ export class TeachingMaterialRepository implements Repository {
         thumbnail: teachingMaterial.thumbnail,
         blurHash: teachingMaterial?.blurHash,
         score: teachingMaterial.score,
+        canvaURL: teachingMaterial.canvaURL,
       })) as (TeachingMaterial & { score: number })[];
 
       return teachingMaterials;

@@ -936,6 +936,7 @@ model TeachingMaterial {
   tags                    String[]
   accessLevel             Plan                     @default(PREMIUM)
   creatorURL              String?
+  canvaURL                String?
   vector                  Float[]
   fileOnTeachingMaterials FileOnTeachingMaterial[]
 }

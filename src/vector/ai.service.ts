@@ -128,7 +128,7 @@ export class AiService implements AiType {
       const PROJECT_ID = this.config.get('GOOGLE_CLOUD_PROJECT_ID');
       const LOCATION_ID = 'us-central1';
       const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com';
-      const MODEL_ID = 'gemini-2.5-flash-preview-05-20';
+      const MODEL_ID = 'gemini-2.5-flash-lite';
       const GENERATE_CONTENT_API = 'generateContent';
       const response = this.httpService
         .post<ResponseNonStreamingText>(
