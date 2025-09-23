@@ -272,9 +272,45 @@ export class SubjectService {
         }
       }
 
-      const subject = await this.subjectRepository.getSubjectById({
+      let subject = await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
       });
+
+      if (user) {
+        const wheelOfName = await this.wheelOfNameService
+          .get({
+            path: subject.wheelOfNamePath,
+          })
+          .catch(async (error) => {
+            if (error?.response?.status === 404) {
+              const studentOnSubjects =
+                await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId(
+                  {
+                    subjectId: subject.id,
+                  },
+                );
+
+              const create = await this.wheelOfNameService.create({
+                title: subject.title,
+                description: subject.description,
+                texts: studentOnSubjects.map((student) => {
+                  return {
+                    text: `${student.title} ${student.firstName} ${student.lastName}`,
+                  };
+                }),
+              });
+
+              subject = await this.subjectRepository.update({
+                where: {
+                  id: subject.id,
+                },
+                data: {
+                  wheelOfNamePath: create.data.path,
+                },
+              });
+            }
+          });
+      }
 
       return subject;
     } catch (error) {
