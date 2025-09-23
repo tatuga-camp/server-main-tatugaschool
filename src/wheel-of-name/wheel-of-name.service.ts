@@ -27,7 +27,6 @@ export class WheelOfNameService {
       });
       return wheel;
     } catch (error) {
-      this.logger.error(error);
       throw error;
     }
   }
