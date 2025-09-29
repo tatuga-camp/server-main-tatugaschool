@@ -167,6 +167,11 @@ export class GoogleStorageService {
     destination?: 'teaching_material',
   ) {
     try {
+      const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 MB in bytes
+      if (fileSize > MAX_FILE_SIZE) {
+        throw new BadRequestException('File size cannot exceed 200 MB.');
+      }
+
       if (schoolId && user) {
         const school = await this.prisma.school.findUnique({
           where: {
