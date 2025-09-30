@@ -54,6 +54,14 @@ export class ScoreOnStudentController {
     return this.scoreOnStudentService.createScoreOnStudent(dto, user);
   }
 
+  @Post('custom')
+  customCreateScore(
+    @Body() dto: CreateScoreOnStudentDto,
+    @GetUser() user: User,
+  ) {
+    return this.scoreOnStudentService.customScore(dto, user);
+  }
+
   @Delete(':scoreOnStudentId')
   deleteScoreOnStudent(
     @Param() dto: DeleteScoreOnStudentDto,
