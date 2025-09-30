@@ -94,6 +94,96 @@ export class ScoreOnStudentService {
     }
   }
 
+  async customScore(
+    dto: CreateScoreOnStudentDto,
+    user: User,
+  ): Promise<ScoreOnStudent> {
+    try {
+      const targetScore = dto.score;
+      const [studentOnSubject, scoreOnSubject] = await Promise.all([
+        this.studentOnSubjectRepository.getStudentOnSubjectById({
+          studentOnSubjectId: dto.studentOnSubjectId,
+        }),
+        this.prisma.scoreOnSubject.findUnique({
+          where: {
+            id: dto.scoreOnSubjectId,
+          },
+        }),
+      ]);
+
+      if (!studentOnSubject) {
+        throw new NotFoundException('Student not found');
+      }
+
+      if (!scoreOnSubject) {
+        throw new NotFoundException('Score on subject not found');
+      }
+
+      if (!studentOnSubject.isActive) {
+        throw new ForbiddenException('Student is disabled');
+      }
+
+      const subject = await this.prisma.subject.findUnique({
+        where: {
+          id: studentOnSubject.subjectId,
+        },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject is invaild');
+      }
+
+      if (subject.isLocked === true) {
+        throw new ForbiddenException(
+          'Subject is locked. Cannot make any changes!',
+        );
+      }
+
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: studentOnSubject.subjectId,
+      });
+
+      const existing = await this.scoreOnStudentRepository.findMany({
+        where: {
+          studentOnSubjectId: studentOnSubject.id,
+          scoreOnSubjectId: scoreOnSubject.id,
+        },
+      });
+
+      const totalScore = existing.reduce((prev, current) => {
+        return (prev += current.score);
+      }, 0);
+
+      const createPoint = targetScore - totalScore;
+
+      const create = await this.scoreOnStudentRepository.createSocreOnStudent({
+        scoreOnSubjectId: scoreOnSubject.id,
+        studentOnSubjectId: studentOnSubject.id,
+        score: createPoint,
+        title: scoreOnSubject.title,
+        blurHash: scoreOnSubject.blurHash,
+        icon: scoreOnSubject.icon,
+        subjectId: studentOnSubject.subjectId,
+        schoolId: studentOnSubject.schoolId,
+        studentId: studentOnSubject.studentId,
+      });
+
+      await this.studentOnSubjectRepository.updateStudentOnSubject({
+        query: {
+          studentOnSubjectId: dto.studentOnSubjectId,
+        },
+        data: {
+          totalSpeicalScore: studentOnSubject.totalSpeicalScore + createPoint,
+        },
+      });
+      return create;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async createScoreOnStudent(
     dto: CreateScoreOnStudentDto,
     user: User,
@@ -143,7 +233,7 @@ export class ScoreOnStudentService {
         subjectId: studentOnSubject.subjectId,
       });
 
-      const create = this.scoreOnStudentRepository.createSocreOnStudent({
+      const create = await this.scoreOnStudentRepository.createSocreOnStudent({
         ...dto,
         title: scoreOnSubject.title,
         blurHash: scoreOnSubject.blurHash,
