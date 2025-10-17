@@ -857,7 +857,10 @@ model SkillOnCareer {
   skill  Skill  @relation(fields: [skillId], references: [id])
   career Career @relation(fields: [careerId], references: [id])
 
-  @@unique([skillId, careerId])
+  reference String
+
+
+  @@unique([skillId,careerId,reference])
 }
 
 model Board {
