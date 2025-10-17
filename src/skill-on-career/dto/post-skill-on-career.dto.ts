@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsMongoId, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
+import {
+  IsMongoId,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class CreateSkillOnCareerDto {
   @IsNotEmpty()
@@ -9,6 +16,10 @@ export class CreateSkillOnCareerDto {
   @IsNotEmpty()
   @IsMongoId()
   skillId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  reference: string;
 
   @IsNotEmpty()
   @IsNumber()
