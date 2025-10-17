@@ -21,6 +21,7 @@ describe('SkillOnCareerRepository', () => {
             skillId: skillId,
             careerId: careerId,
             weight: 0.85,
+            reference: '0',
           },
         });
 
@@ -40,9 +41,9 @@ describe('SkillOnCareerRepository', () => {
     it('should return skill-on-career by ID', async () => {
       try {
         const found = await skillOnCareerRepository.findUnique({
-          where: { 
-            id: skillOnCareerId 
-        },
+          where: {
+            id: skillOnCareerId,
+          },
         });
 
         expect(found.id).toBe(skillOnCareerId);
@@ -58,9 +59,9 @@ describe('SkillOnCareerRepository', () => {
     it('should find first matching record', async () => {
       try {
         const found = await skillOnCareerRepository.findFirst({
-          where: { 
-            careerId: careerId 
-        },
+          where: {
+            careerId: careerId,
+          },
         });
 
         expect(found.careerId).toBe(careerId);
@@ -75,9 +76,9 @@ describe('SkillOnCareerRepository', () => {
     it('should return all skill-on-career records with careerId', async () => {
       try {
         const result = await skillOnCareerRepository.findMany({
-          where: { 
-            careerId: careerId 
-        },
+          where: {
+            careerId: careerId,
+          },
         });
 
         expect(Array.isArray(result)).toBe(true);
@@ -93,9 +94,9 @@ describe('SkillOnCareerRepository', () => {
     it('should count how many skills are linked to this career', async () => {
       try {
         const count = await skillOnCareerRepository.counts({
-          where: { 
-            careerId: careerId 
-        },
+          where: {
+            careerId: careerId,
+          },
         });
 
         expect(count).toBeGreaterThan(0);
@@ -110,9 +111,9 @@ describe('SkillOnCareerRepository', () => {
     it('should update the weight of skill-on-career', async () => {
       try {
         const updated = await skillOnCareerRepository.update({
-          where: { 
-            id: skillOnCareerId 
-        },
+          where: {
+            id: skillOnCareerId,
+          },
           data: {
             weight: 0.7,
           },
@@ -131,9 +132,9 @@ describe('SkillOnCareerRepository', () => {
     it('should delete the skill-on-career', async () => {
       try {
         const result = await skillOnCareerRepository.delete({
-          where: { 
-            id: skillOnCareerId 
-        },
+          where: {
+            id: skillOnCareerId,
+          },
         });
 
         expect(result.message).toBe('SkillOnCareer deleted successfully');
