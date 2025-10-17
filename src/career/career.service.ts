@@ -34,121 +34,15 @@ export class CareerService {
     dto: { studentId: string },
     user: User,
   ): Promise<{
-    careers: Career;
-    skills: {
-      skill: Skill;
-      average: number;
-    }[];
+    student: {
+      skills: (Skill & { avg: number })[];
+    };
+    careers: (Career & {
+      skill: (Skill & { avg: number; above: number; below: number })[];
+    })[];
   }> {
     try {
-      const student = await this.studentService.studentRepository.findById({
-        studentId: dto.studentId,
-      });
-
-      if (!student) {
-        throw new BadRequestException('Student not found');
-      }
-
-      await this.memberOnSchoolService.validateAccess({
-        user,
-        schoolId: student.schoolId,
-      });
-
-      const [skillOnCareers, skills, skillOnStudents] = await Promise.all([
-        this.skillOnCareerRepository.findMany({}),
-        this.skillService.skillRepository.findMany({}),
-        this.skillOnStudentAssignmentService.skillOnStudentAssignmentRepository.findMany(
-          {
-            where: {
-              studentId: dto.studentId,
-            },
-          },
-        ),
-      ]);
-
-      const groupsSkills = Object.groupBy(
-        skillOnStudents,
-        (skill) => skill.skillId,
-      );
-      const groupedArrayStudentSkills = Object.entries(groupsSkills).map(
-        ([skillId, skillOnAssignment]) => ({
-          title: skills.find((s) => s.id === skillId).title,
-          skillId,
-          average:
-            skillOnAssignment.reduce((sum, skill) => sum + skill.weight, 0) /
-            skillOnAssignment.length, // average weight
-          skillOnAssignment,
-        }),
-      );
-
-      let careers = (await this.careerRepository.findMany({})).map((s) => {
-        return {
-          point: 0,
-          ...s,
-        };
-      });
-      const groupSkillOnCareerBySkillId = Object.groupBy(
-        skillOnCareers,
-        (skill) => skill.skillId,
-      );
-      const groupArraySkillOnCareerBySkillId = Object.entries(
-        groupSkillOnCareerBySkillId,
-      ).map(([skillId, skillOnCareers]) => {
-        return {
-          title: skills.find((s) => s.id === skillId).title,
-          skillId,
-          skillOnCareers,
-        };
-      });
-
-      if (
-        groupArraySkillOnCareerBySkillId.length !==
-        groupedArrayStudentSkills.length
-      ) {
-        throw new BadRequestException(
-          'Data is not enough to give a suggestion',
-        );
-      }
-
-      for (const skillOnCareer of groupArraySkillOnCareerBySkillId) {
-        const skillOnStudent = groupedArrayStudentSkills.find(
-          (s) => s.skillId === skillOnCareer.skillId,
-        );
-        const closestPoint = this.findClosestNumber(
-          skillOnStudent.average,
-          skillOnCareer.skillOnCareers.map((s) => s.weight),
-        );
-
-        const winCareer = skillOnCareer.skillOnCareers.find(
-          (s) => s.weight === closestPoint,
-        );
-
-        careers = careers.map((career) => {
-          if (winCareer.careerId === career.id) {
-            return {
-              point: (career.point += 1),
-              ...career,
-            };
-          } else {
-            return {
-              ...career,
-            };
-          }
-        });
-      }
-
-      return {
-        skills: groupedArrayStudentSkills.map((s) => {
-          const skill = skills.find((skill) => skill.id === s.skillId);
-          delete skill?.vector;
-          delete s.skillId;
-          return {
-            skill: skill,
-            average: s.average,
-          };
-        }),
-        careers: careers.sort((a, b) => b.point - a.point)[0],
-      };
+      return;
     } catch (error) {
       this.logger.error(error);
       throw error;
