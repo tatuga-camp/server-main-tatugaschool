@@ -6,7 +6,7 @@ const main = async () => {
   try {
     const careers = await prisma.career.findMany();
     const skills = await prisma.skill.findMany();
-    const file = Bun.file('../(2025) แบบสอบถามทักษะพื้นฐาน.xlsx - JAPS.json');
+    const file = Bun.file('./survery-data.json');
     const data = (await file.json()) as {
       'Career sector': string;
       Collaboration: string;
@@ -44,7 +44,7 @@ const main = async () => {
           skill: skillName,
           skillId: skills.find((a) => a.title === skillName).id,
           careerId: careers.find((a) => a.title === careerSector).id,
-          value: parseFloat(entry[skillName]), // Convert the string value to a number
+          value: (parseFloat(entry[skillName]) / 6) * 100, // Convert the string value to a number
           reference: index.toString(),
         };
       });

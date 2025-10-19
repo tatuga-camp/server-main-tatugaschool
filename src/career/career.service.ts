@@ -42,18 +42,127 @@ export class CareerService {
     })[];
   }> {
     try {
-      return;
+      const skillOnStudents =
+        await this.skillOnStudentAssignmentService.skillOnStudentAssignmentRepository.findMany(
+          {
+            where: {
+              studentId: dto.studentId,
+            },
+          },
+        );
+
+      if (skillOnStudents.length === 0) {
+        throw new BadRequestException('Student has no enough data');
+      }
+      const [careers, allSkillOnCareers, allSkills] = await Promise.all([
+        this.careerRepository.findMany({}),
+        this.skillOnCareerRepository.findMany({}),
+        this.skillService.skillRepository.findMany({
+          omit: {
+            vector: true,
+          },
+        }),
+      ]);
+
+      // 2. Process student's skills to get their average score for each skill
+      const studentSkillsMap = new Map<
+        string,
+        { total: number; count: number }
+      >();
+
+      for (const record of skillOnStudents) {
+        if (!studentSkillsMap.has(record.skillId)) {
+          studentSkillsMap.set(record.skillId, { total: 0, count: 0 });
+        }
+        const skillData = studentSkillsMap.get(record.skillId);
+        skillData.total += record.weight;
+        skillData.count += 1;
+      }
+      const studentAvgSkillsMap = new Map<string, number>();
+      studentSkillsMap.forEach((data, skillId) => {
+        studentAvgSkillsMap.set(skillId, data.total / data.count);
+      });
+
+      // 3. Create lookup maps for efficient data access
+      const skillsMap = new Map(allSkills.map((s) => [s.id, s]));
+
+      const studentProfileSkills = Array.from(
+        studentAvgSkillsMap.entries(),
+      ).map(([skillId, studentAvg]) => {
+        const skillInfo = skillsMap.get(skillId);
+        return {
+          ...skillInfo,
+          avg: studentAvg, // 'avg' here is the student's own average score
+        };
+      });
+
+      // 5b. Process each career and compare skills
+      const processedCareers = careers.map((career) => {
+        const requiredSkills = allSkillOnCareers.filter(
+          (soc) => soc.careerId === career.id,
+        );
+        const populationSkillsMap = new Map<string, number[]>();
+        for (const assignment of requiredSkills) {
+          if (!populationSkillsMap.has(assignment.skillId)) {
+            populationSkillsMap.set(assignment.skillId, []);
+          }
+          populationSkillsMap.get(assignment.skillId).push(assignment.weight);
+        }
+
+        const comparedSkills = Array.from(populationSkillsMap.entries()).map(
+          (reqSkill) => {
+            const skillId = reqSkill[0];
+            const skillInfo = skillsMap.get(skillId);
+            const studentScore = studentAvgSkillsMap.get(skillId) ?? 0;
+
+            // Get all scores for this skill from the entire student population
+            const populationScores = reqSkill[1];
+
+            // Calculate population average
+            const populationSum = populationScores.reduce(
+              (acc, score) => acc + score,
+              0,
+            );
+            const populationAvg =
+              populationScores.length > 0
+                ? populationSum / populationScores.length
+                : 0;
+
+            // Calculate position relative to the population
+            const above = populationScores.filter(
+              (score) => score > studentScore,
+            ).length;
+            const below = populationScores.filter(
+              (score) => score < studentScore,
+            ).length;
+
+            return {
+              ...skillInfo,
+              avg: populationAvg, // 'avg' here is the population average for this skill
+              above,
+              below,
+            };
+          },
+        );
+
+        return {
+          ...career,
+          skill: comparedSkills,
+        };
+      });
+
+      return {
+        student: {
+          skills: studentProfileSkills,
+        },
+        careers: processedCareers,
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
-  findClosestNumber(target: number, numbers: number[]): number {
-    return numbers.reduce((closest, num) =>
-      Math.abs(num - target) < Math.abs(closest - target) ? num : closest,
-    );
-  }
   async getOne(dto: {
     careerId: string;
   }): Promise<Career & { skills: SkillOnCareer[] }> {
