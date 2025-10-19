@@ -38,7 +38,13 @@ export class CareerService {
       skills: (Skill & { avg: number })[];
     };
     careers: (Career & {
-      skill: (Skill & { avg: number; above: number; below: number })[];
+      careerMatchPoint: number;
+      skills: (Skill & {
+        avg: number;
+        above: number;
+        below: number;
+        matchPoint: number;
+      })[];
     })[];
   }> {
     try {
@@ -136,18 +142,25 @@ export class CareerService {
               (score) => score < studentScore,
             ).length;
 
+            const matchPoint =
+              populationAvg > 0 ? studentScore / populationAvg : 0;
             return {
               ...skillInfo,
               avg: populationAvg, // 'avg' here is the population average for this skill
               above,
               below,
+              matchPoint,
             };
           },
         );
 
         return {
           ...career,
-          skill: comparedSkills,
+          careerMatchPoint: comparedSkills.reduce(
+            (acc, skill) => (acc += skill.matchPoint),
+            0,
+          ),
+          skills: comparedSkills,
         };
       });
 
@@ -155,7 +168,9 @@ export class CareerService {
         student: {
           skills: studentProfileSkills,
         },
-        careers: processedCareers,
+        careers: processedCareers.sort(
+          (a, b) => b.careerMatchPoint - a.careerMatchPoint,
+        ),
       };
     } catch (error) {
       this.logger.error(error);
