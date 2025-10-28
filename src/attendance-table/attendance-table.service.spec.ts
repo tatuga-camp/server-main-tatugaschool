@@ -97,6 +97,7 @@ describe('Attendance-table Service', () => {
     subjectService,
     classroomService,
     subscriptionService,
+    userService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(

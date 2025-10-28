@@ -203,6 +203,7 @@ describe('School Service', () => {
       subjectService,
       classroomService,
       subscriptionService,
+      userService,
     );
   });
 

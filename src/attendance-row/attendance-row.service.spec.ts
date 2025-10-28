@@ -105,6 +105,7 @@ describe('Attendance-row Service', () => {
     subjectService,
     classroomService,
     subscriptionService,
+    userService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(

@@ -109,6 +109,7 @@ describe('Student On Group Service', () => {
     subjectService,
     classroomService,
     subscriptionService,
+    userService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
