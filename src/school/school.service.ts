@@ -1,8 +1,3 @@
-import { SubscriptionService } from './../subscription/subscription.service';
-import { ClassService } from './../class/class.service';
-import { SubjectService } from './../subject/subject.service';
-import { StudentService } from './../student/student.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -13,7 +8,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { MemberRole, School, Status, User } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { StripeService } from '../stripe/stripe.service';
+import { ClassService } from './../class/class.service';
+import { GoogleStorageService } from './../google-storage/google-storage.service';
 import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
+import { SubjectService } from './../subject/subject.service';
+import { SubscriptionService } from './../subscription/subscription.service';
 import {
   CreateSchoolDto,
   DeleteSchoolDto,
@@ -21,8 +22,7 @@ import {
   UpdateSchoolDto,
 } from './dto';
 import { SchoolRepository } from './school.repository';
-import { PrismaService } from '../prisma/prisma.service';
-import { StripeService } from '../stripe/stripe.service';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class SchoolService {
@@ -41,6 +41,7 @@ export class SchoolService {
     private classService: ClassService,
     @Inject(forwardRef(() => SubscriptionService))
     private subscriptionService: SubscriptionService,
+    private userService: UsersService,
   ) {
     this.logger = new Logger(SchoolService.name);
     this.schoolRepository = new SchoolRepository(
@@ -139,6 +140,14 @@ export class SchoolService {
   async createSchool(dto: CreateSchoolDto, user: User): Promise<School> {
     try {
       //create stripe customer
+
+      const memeberOnSchools =
+        await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
+          where: {
+            userId: user.id,
+          },
+        });
+
       const customer = await this.stripe.customers.create({
         email: user.email,
         name: dto.title,
@@ -158,6 +167,17 @@ export class SchoolService {
           billingManagerId: user.id,
         },
       });
+
+      if (memeberOnSchools.length === 0) {
+        await this.userService.userRepository.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            favoritSchool: school.id,
+          },
+        });
+      }
 
       await this.memberOnSchoolService.memberOnSchoolRepository.create({
         email: user.email,

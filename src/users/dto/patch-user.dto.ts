@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsMongoId,
   IsNotEmpty,
   IsOptional,
   IsPhoneNumber,
@@ -35,6 +36,10 @@ export class UpdateUserDto {
   @IsOptional()
   @IsPhoneNumber()
   phone?: string;
+
+  @IsOptional()
+  @IsMongoId()
+  favoritSchool?: string;
 }
 
 export class UpdatePasswordDto {

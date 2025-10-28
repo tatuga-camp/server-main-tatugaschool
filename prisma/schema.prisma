@@ -24,9 +24,8 @@ model User {
   isVerifyEmail             Boolean   @default(false)
   verifyEmailToken          String?
   verifyEmailTokenExpiresAt DateTime?
-
   language Language @default(en)
-
+  isDoneSurvey Boolean @default(false)
   lastActiveAt                DateTime
   isResetPassword             Boolean   @default(false)
   provider                    Provider
@@ -35,6 +34,7 @@ model User {
   deleteAt                    DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
+  favoritSchool           String? @db.ObjectId
 
   memberOnSchools          MemberOnSchool[]
   subjects                 Subject[]
