@@ -101,6 +101,7 @@ describe('Assignment Service', () => {
     subjectService,
     classroomService,
     subscriptionService,
+    userService,
   );
 
   const pushService = new PushService(prismaService);
