@@ -389,7 +389,10 @@ export class AuthService {
           );
         }
         await this.usersRepository.updateLastActiveAt({ email: user.email });
-        return res.redirect(`${process.env.CLIENT_URL}`);
+        const url = user.favoritSchool
+          ? `${process.env.CLIENT_URL}/school/${user.favoritSchool}`
+          : `${process.env.CLIENT_URL}`;
+        return res.redirect(url);
       }
 
       return res.redirect(
