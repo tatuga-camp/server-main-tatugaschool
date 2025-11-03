@@ -23,6 +23,7 @@ import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { AssignmentModule } from '../assignment/assignment.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
     forwardRef(() => StudentModule),
     forwardRef(() => SubjectModule),
     forwardRef(() => ClassModule),
+    forwardRef(() => AssignmentModule),
 
     HttpModule,
   ],
@@ -42,7 +44,6 @@ import { SubscriptionService } from '../subscription/subscription.service';
     UsersService,
     SubjectService,
     ClassService,
-    AssignmentService,
     StudentOnSubjectService,
     SkillService,
     SkillOnAssignmentService,
@@ -52,6 +53,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
     FileAssignmentService,
     AttendanceStatusListService,
     SubscriptionService,
+    AssignmentService,
   ],
   controllers: [SchoolController],
   exports: [SchoolService],

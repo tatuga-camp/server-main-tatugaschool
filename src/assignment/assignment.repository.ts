@@ -26,7 +26,9 @@ type AssignmentRepositoryType = {
   count(request: Prisma.AssignmentCountArgs): Promise<number>;
   create(request: Prisma.AssignmentCreateArgs): Promise<Assignment>;
   update(request: Prisma.AssignmentUpdateArgs): Promise<Assignment>;
-  delete(request: RequestDeleteAssignment): Promise<{ message: string }>;
+  delete(
+    request: RequestDeleteAssignment,
+  ): Promise<{ message: string; totalDeleteSize: number }>;
 };
 @Injectable()
 export class AssignmentRepository implements AssignmentRepositoryType {
@@ -152,9 +154,11 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async delete(request: RequestDeleteAssignment): Promise<{ message: string }> {
+  async delete(
+    request: RequestDeleteAssignment,
+  ): Promise<{ message: string; totalDeleteSize: number }> {
     try {
-      await this.fileAssignmentRepository.deleteByAssignmentId({
+      const files = await this.fileAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
       });
 
@@ -219,7 +223,13 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         },
       });
 
-      return { message: 'Deleted Assignment Successfully' };
+      return {
+        message: 'Deleted Assignment Successfully',
+        totalDeleteSize: [
+          ...files,
+          ...fileOnStudentAssignments.filter((t) => t.contentType === 'FILE'),
+        ].reduce((prev, current) => prev + current.size, 0),
+      };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
