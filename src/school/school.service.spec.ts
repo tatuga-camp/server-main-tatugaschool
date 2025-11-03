@@ -193,6 +193,7 @@ describe('School Service', () => {
     scoreOnSubjectService,
     scoreOnStudentService,
     studentService,
+    schoolService,
   );
   beforeEach(async () => {
     schoolService = new SchoolService(
@@ -250,7 +251,17 @@ describe('School Service', () => {
           phoneNumber: '0891234567',
         };
 
-        const created = await schoolService.createSchool(dto, mockUser);
+        const user = await userService.userRepository.createUser({
+          firstName: 'Petch',
+          lastName: 'School Service',
+          email: 'petchschoolservice@gmail.com',
+          photo: 'https://example.com/photo.jpg',
+          phone: '0899999999',
+          password: '123132132132',
+          provider: 'GOOGLE',
+        });
+
+        const created = await schoolService.createSchool(dto, user);
 
         expect(created).toBeDefined();
         expect(created.title).toBe(dto.title);
@@ -263,12 +274,12 @@ describe('School Service', () => {
         expect(created.blurHash).toBe(dto.blurHash);
         expect(created.phoneNumber).toBe(dto.phoneNumber);
         expect(created.plan).toBe('FREE');
-        expect(created.billingManagerId).toBe(mockUser.id);
+        expect(created.billingManagerId).toBe(user.id);
 
         const foundMember =
           await memberOnSchoolService.memberOnSchoolRepository.findFirst({
             where: {
-              email: mockUser.email,
+              email: user.email,
             },
           });
 

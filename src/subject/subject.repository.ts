@@ -22,7 +22,9 @@ type Repository = {
   findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
   update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
-  deleteSubject(request: RequestDeleteSubject): Promise<Subject>;
+  deleteSubject(
+    request: RequestDeleteSubject,
+  ): Promise<Subject & { totalDeleteSize: number }>;
   reorderSubjects(request: RequestReorderSubjects): Promise<Subject[]>;
   count(request: Prisma.SubjectCountArgs): Promise<number>;
 };
@@ -163,10 +165,12 @@ export class SubjectRepository implements Repository {
     }
   }
 
-  async deleteSubject(request: RequestDeleteSubject): Promise<Subject> {
+  async deleteSubject(
+    request: RequestDeleteSubject,
+  ): Promise<Subject & { totalDeleteSize: number }> {
     try {
       const { subjectId } = request;
-
+      let totalDeleteSize: number = 0;
       await this.prisma.skillOnStudentAssignment.deleteMany({
         where: {
           subjectId: subjectId,
@@ -180,12 +184,16 @@ export class SubjectRepository implements Repository {
       });
 
       if (assignments.length > 0) {
-        await Promise.all(
+        const files = await Promise.all(
           assignments.map((a) =>
             this.assignmentRepository.delete({
               assignmentId: a.id,
             }),
           ),
+        );
+        totalDeleteSize = files.reduce(
+          (prev, current) => prev + current.totalDeleteSize,
+          0,
         );
       }
 
@@ -266,11 +274,13 @@ export class SubjectRepository implements Repository {
       });
 
       // Delete the subject
-      return await this.prisma.subject.delete({
+      const subject = await this.prisma.subject.delete({
         where: {
           id: subjectId,
         },
       });
+
+      return { ...subject, totalDeleteSize };
     } catch (error) {
       console.log(error);
       this.logger.error(error);

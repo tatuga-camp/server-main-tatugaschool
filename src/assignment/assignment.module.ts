@@ -22,9 +22,14 @@ import { SubjectModule } from '../subject/subject.module';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { SchoolModule } from '../school/school.module';
 
 @Module({
-  imports: [HttpModule, forwardRef(() => SubjectModule)],
+  imports: [
+    HttpModule,
+    forwardRef(() => SubjectModule),
+    forwardRef(() => SchoolModule),
+  ],
   providers: [
     AssignmentService,
     TeacherOnSubjectService,
@@ -37,7 +42,6 @@ import { SubscriptionService } from '../subscription/subscription.service';
     MemberOnSchoolService,
     ScoreOnSubjectService,
     ScoreOnStudentService,
-    SchoolService,
     StudentService,
     GradeService,
     UsersService,

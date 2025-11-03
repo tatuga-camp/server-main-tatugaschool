@@ -21,7 +21,9 @@ export type Repository = {
   findById(request: RequestGetClass): Promise<Class | null>;
   findAll(): Promise<Class[]>;
   findMany(request: Prisma.ClassFindManyArgs): Promise<Class[]>;
-  delete(request: RequestDeleteClass): Promise<Class>;
+  delete(
+    request: RequestDeleteClass,
+  ): Promise<Class & { totalDeleteSize: number }>;
   count(request: Prisma.ClassCountArgs): Promise<number>;
 };
 
@@ -134,16 +136,21 @@ export class ClassRepository implements Repository {
     }
   }
 
-  async delete(request: RequestDeleteClass): Promise<Class> {
+  async delete(
+    request: RequestDeleteClass,
+  ): Promise<Class & { totalDeleteSize: number }> {
     try {
+      let total: number = 0;
       const subjects = await this.subjectRepositry.findMany({
         where: { classId: request.classId },
       });
 
       for (const subject of subjects) {
-        await this.subjectRepositry.deleteSubject({
+        const { totalDeleteSize } = await this.subjectRepositry.deleteSubject({
           subjectId: subject.id,
         });
+
+        total = total + totalDeleteSize;
       }
 
       const students = await this.studentRepository.findByClassId({
@@ -158,7 +165,7 @@ export class ClassRepository implements Repository {
         where: { id: request.classId },
       });
       this.logger.log(`Class ${request.classId} has been deleted`);
-      return classDelete;
+      return { ...classDelete, totalDeleteSize: total };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

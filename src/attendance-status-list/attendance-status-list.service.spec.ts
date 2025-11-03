@@ -182,6 +182,7 @@ describe('Attendance-status-list Service', () => {
     scoreOnSubjectService,
     scoreOnStudentService,
     studentService,
+    schoolService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(

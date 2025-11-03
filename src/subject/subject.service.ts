@@ -814,6 +814,17 @@ export class SubjectService {
         subjectId: dto.subjectId,
       });
 
+      await this.schoolService.schoolRepository.update({
+        where: {
+          id: subject.schoolId,
+        },
+        data: {
+          totalStorage: {
+            decrement: remove.totalDeleteSize,
+          },
+        },
+      });
+
       const [subjects, school] = await Promise.all([
         this.subjectRepository.findMany({
           where: {

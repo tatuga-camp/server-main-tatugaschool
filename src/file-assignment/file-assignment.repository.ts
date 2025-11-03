@@ -21,10 +21,10 @@ type Repository = {
     request: RequestGetFilesByAssignmentId,
   ): Promise<FileOnAssignment[]>;
   create(request: RequestCreateFileAssignment): Promise<FileOnAssignment>;
-  delete(request: RequestDeleteFileAssignment): Promise<{ message: string }>;
+  delete(request: RequestDeleteFileAssignment): Promise<FileOnAssignment>;
   deleteByAssignmentId(request: {
     assignmentId: string;
-  }): Promise<{ message: string }>;
+  }): Promise<FileOnAssignment[]>;
   findMany(
     request: Prisma.FileOnAssignmentFindManyArgs,
   ): Promise<FileOnAssignment[]>;
@@ -111,7 +111,7 @@ export class FileAssignmentRepository implements Repository {
 
   async delete(
     request: RequestDeleteFileAssignment,
-  ): Promise<{ message: string }> {
+  ): Promise<FileOnAssignment> {
     try {
       const fileOnAssignment = await this.prisma.fileOnAssignment.findUnique({
         where: {
@@ -145,7 +145,7 @@ export class FileAssignmentRepository implements Repository {
         fileName: fileOnAssignment.url,
       });
 
-      return { message: 'File deleted' };
+      return fileOnAssignment;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -159,7 +159,7 @@ export class FileAssignmentRepository implements Repository {
 
   async deleteByAssignmentId(request: {
     assignmentId: string;
-  }): Promise<{ message: string }> {
+  }): Promise<FileOnAssignment[]> {
     try {
       const filesOnAssignments = await this.prisma.fileOnAssignment.findMany({
         where: {
@@ -186,7 +186,7 @@ export class FileAssignmentRepository implements Repository {
         },
       });
 
-      return { message: 'Files deleted' };
+      return filesOnAssignments;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
