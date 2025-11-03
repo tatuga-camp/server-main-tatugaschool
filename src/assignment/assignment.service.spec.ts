@@ -211,6 +211,7 @@ describe('Assignment Service', () => {
       scoreOnSubjectService,
       scoreOnStudentService,
       studentService,
+      schoolService,
     );
   });
 

@@ -1,3 +1,4 @@
+import { SchoolService } from './../school/school.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -70,6 +71,8 @@ export class AssignmentService {
     private scoreOnSubjectService: ScoreOnSubjectService,
     private scoreOnStudentService: ScoreOnStudentService,
     private studentService: StudentService,
+    @Inject(forwardRef(() => SchoolService))
+    private schoolService: SchoolService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -746,8 +749,18 @@ export class AssignmentService {
         userId: user.id,
         subjectId: assignment.subjectId,
       });
-      await this.assignmentRepository.delete(dto);
+      const { totalDeleteSize } = await this.assignmentRepository.delete(dto);
 
+      await this.schoolService.schoolRepository.update({
+        where: {
+          id: assignment.schoolId,
+        },
+        data: {
+          totalStorage: {
+            decrement: totalDeleteSize,
+          },
+        },
+      });
       return assignment;
     } catch (error) {
       this.logger.error(error);

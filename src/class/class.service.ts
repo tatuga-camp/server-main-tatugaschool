@@ -288,7 +288,20 @@ export class ClassService {
           'Only admin of this school and the creator of this classroom can delete',
         );
       }
-      await this.classRepository.delete({ classId: dto.classId });
+      const { totalDeleteSize } = await this.classRepository.delete({
+        classId: dto.classId,
+      });
+
+      await this.schoolService.schoolRepository.update({
+        where: {
+          id: classroom.schoolId,
+        },
+        data: {
+          totalStorage: {
+            decrement: totalDeleteSize,
+          },
+        },
+      });
       this.sendNotificationWhenClassDelete(classroom);
       return classroom;
     } catch (error) {
