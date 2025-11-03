@@ -272,14 +272,12 @@ export class FileOnStudentAssignmentService {
         fileOnStudentAssignmentId: dto.fileOnStudentAssignmentId,
       });
 
-      const school = await this.schoolRepository.getById({
-        schoolId: fileOnStudentAssignment.schoolId,
-      });
-
       await this.schoolRepository.update({
         where: { id: fileOnStudentAssignment.schoolId },
         data: {
-          totalStorage: school.totalStorage - fileOnStudentAssignment.size,
+          totalStorage: {
+            decrement: deleteFile.size,
+          },
         },
       });
 

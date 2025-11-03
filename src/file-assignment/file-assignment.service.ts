@@ -185,20 +185,14 @@ export class FileAssignmentService {
         fileOnAssignmentId: dto.fileOnAssignmentId,
       });
 
-      const school = await this.schoolRepository.getById({
-        schoolId: assignment.schoolId,
-      });
-
-      if (!school) {
-        throw new NotFoundException('School not found');
-      }
-
       await this.schoolRepository.update({
         where: {
-          id: school.id,
+          id: assignment.schoolId,
         },
         data: {
-          totalStorage: school.totalStorage - fileOnAssignment.size,
+          totalStorage: {
+            decrement: fileOnAssignment.size,
+          },
         },
       });
 

@@ -16,7 +16,10 @@ describe('FileAssignmentRepository', () => {
   let fileId: string;
 
   beforeEach(() => {
-    fileAssignmentRepository = new FileAssignmentRepository(prismaService, mockGoogleStorage);
+    fileAssignmentRepository = new FileAssignmentRepository(
+      prismaService,
+      mockGoogleStorage,
+    );
   });
 
   describe('create', () => {
@@ -39,7 +42,6 @@ describe('FileAssignmentRepository', () => {
         expect(created.url).toBe('https://example.com/file.png');
         expect(created.size).toBe(1234);
 
-
         fileId = created.id;
       } catch (error) {
         console.error('Create failed:', error);
@@ -51,8 +53,8 @@ describe('FileAssignmentRepository', () => {
   describe('getById', () => {
     it('should get file by id', async () => {
       try {
-        const result = await fileAssignmentRepository.getById({ 
-            fileOnAssignmentId: fileId 
+        const result = await fileAssignmentRepository.getById({
+          fileOnAssignmentId: fileId,
         });
         expect(result.id).toBe(fileId);
       } catch (error) {
@@ -65,8 +67,8 @@ describe('FileAssignmentRepository', () => {
   describe('getByAssignmentId', () => {
     it('should get all files for an assignment', async () => {
       try {
-        const result = await fileAssignmentRepository.getByAssignmentId({ 
-            assignmentId: assignmentId 
+        const result = await fileAssignmentRepository.getByAssignmentId({
+          assignmentId: assignmentId,
         });
         expect(Array.isArray(result)).toBe(true);
         expect(result.some((f) => f.id === fileId)).toBe(true);
@@ -80,10 +82,10 @@ describe('FileAssignmentRepository', () => {
   describe('findMany', () => {
     it('should return list of files', async () => {
       try {
-        const result = await fileAssignmentRepository.findMany({ 
-            where: { 
-                assignmentId: assignmentId 
-            } 
+        const result = await fileAssignmentRepository.findMany({
+          where: {
+            assignmentId: assignmentId,
+          },
         });
         expect(Array.isArray(result)).toBe(true);
       } catch (error) {
@@ -96,10 +98,10 @@ describe('FileAssignmentRepository', () => {
   describe('delete', () => {
     it('should delete file and return success message', async () => {
       try {
-        const result = await fileAssignmentRepository.delete({ 
-            fileOnAssignmentId: fileId 
+        const result = await fileAssignmentRepository.delete({
+          fileOnAssignmentId: fileId,
         });
-        expect(result.message).toBe('File deleted');
+        expect(result.id).toBe(fileId);
         fileId = ''; // ป้องกันการลบซ้ำ
       } catch (error) {
         console.error('Delete failed:', error);
@@ -121,10 +123,10 @@ describe('FileAssignmentRepository', () => {
           size: 2048,
         });
 
-        const result = await fileAssignmentRepository.deleteByAssignmentId({ 
-            assignmentId: assignmentId 
+        const result = await fileAssignmentRepository.deleteByAssignmentId({
+          assignmentId: assignmentId,
         });
-        expect(result.message).toBe('Files deleted');
+        expect(result.length).toBeGreaterThan(0);
       } catch (error) {
         console.error('deleteByAssignmentId failed:', error);
         throw error;

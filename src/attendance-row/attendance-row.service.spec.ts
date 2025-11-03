@@ -180,6 +180,7 @@ describe('Attendance-row Service', () => {
     scoreOnSubjectService,
     scoreOnStudentService,
     studentService,
+    schoolService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
