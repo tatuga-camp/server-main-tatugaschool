@@ -63,7 +63,6 @@
     "class-validator": "^0.14.1",
     "exceljs": "^4.4.0",
     "googleapis": "^137.1.0",
-    "lts": "^1.2.0",
     "mailersend": "^2.5.0",
     "nodemailer": "^6.9.13",
     "passport": "^0.7.0",
@@ -72,8 +71,6 @@
     "passport-local": "^1.0.0",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^5.3.31",
-    "pm2": "^6.0.8",
-    "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "stripe": "^15.10.0",
     "web-push": "^3.6.7"

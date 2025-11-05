@@ -33,10 +33,8 @@ export class PushService {
           icon: 'https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png',
         }),
       );
-      this.logger.log('Notification sent:', endpoint);
     } catch (error) {
       if (error?.statusCode === 410) {
-        this.logger.error('Error sending notification:', error.statusCode);
         const subscription = await this.pushRepository.findFirst({
           where: {
             endpoint: endpoint,
@@ -47,7 +45,6 @@ export class PushService {
             id: subscription.id,
           },
         });
-        this.logger.log('Subscription deleted:', subscription.id);
       } else {
         this.logger.error('Error sending notification:', error);
       }

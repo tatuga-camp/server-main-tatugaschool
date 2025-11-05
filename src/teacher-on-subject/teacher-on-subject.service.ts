@@ -260,7 +260,7 @@ export class TeacherOnSubjectService {
     </body>
   `;
 
-      this.emailService.sendMail({
+      await this.emailService.sendMail({
         to: teacher.email,
         subject: 'Tatuga School : Invitation on subject',
         html: body,

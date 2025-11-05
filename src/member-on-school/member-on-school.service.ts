@@ -283,7 +283,7 @@ export class MemberOnSchoolService {
      </body>
      `;
 
-      this.emailService.sendMail({
+      await this.emailService.sendMail({
         to: newMember.email,
         subject: 'Invite to join school - Tatuga School',
         html: emailHTML,
