@@ -31,7 +31,7 @@ import { UsersService } from '../users/users.service';
 import { AiService } from '../vector/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { AssignmentService } from './assignment.service';
 import {
   CreateAssignmentDto,
@@ -52,10 +52,7 @@ describe('Assignment Service', () => {
   const configService = new ConfigService();
   const httpService = new HttpService();
   const stripeService = new StripeService(configService);
-  const googleStorageService = new GoogleStorageService(
-    configService,
-    prismaService,
-  );
+  const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
 
@@ -66,7 +63,7 @@ describe('Assignment Service', () => {
     base64ImageService,
     configService,
     prismaService,
-    googleStorageService,
+    storageService,
   );
 
   const userService = new UsersService(prismaService, authService);
@@ -81,7 +78,7 @@ describe('Assignment Service', () => {
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
-    googleStorageService,
+    storageService,
   );
 
   let memberOnSchoolService: MemberOnSchoolService;
@@ -97,7 +94,7 @@ describe('Assignment Service', () => {
     prismaService,
     stripeService,
     memberOnSchoolService,
-    googleStorageService,
+    storageService,
     subjectService,
     classroomService,
     subscriptionService,
@@ -115,7 +112,7 @@ describe('Assignment Service', () => {
   studentService = new StudentService(
     prismaService,
     memberOnSchoolService,
-    googleStorageService,
+    storageService,
     classroomService,
   );
 
@@ -124,13 +121,13 @@ describe('Assignment Service', () => {
     prismaService,
     emailService,
     pushService,
-    googleStorageService,
+    storageService,
     userService,
     schoolService,
   );
   subjectService = new SubjectService(
     prismaService,
-    googleStorageService,
+    storageService,
     wheelOfNameService,
     attendanceTableService,
     teacherOnSubjectService,
@@ -145,18 +142,18 @@ describe('Assignment Service', () => {
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
-    googleStorageService,
+    storageService,
   );
 
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
   );
 
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
     wheelOfNameService,
     schoolService,
@@ -167,13 +164,13 @@ describe('Assignment Service', () => {
   const skillService = new SkillService(
     prismaService,
     aiService,
-    googleStorageService,
+    storageService,
     authService,
   );
 
   const skillOnAssignmentService = new SkillOnAssignmentService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
   );
   gradeService = new GradeService(
@@ -184,13 +181,13 @@ describe('Assignment Service', () => {
 
   const scoreOnStudentService = new ScoreOnStudentService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
   );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
@@ -200,7 +197,7 @@ describe('Assignment Service', () => {
     assignmentService = new AssignmentService(
       prismaService,
       aiService,
-      googleStorageService,
+      storageService,
       teacherOnSubjectService,
       subjectService,
       studentOnSubjectService,

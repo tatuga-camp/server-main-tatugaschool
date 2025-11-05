@@ -12,7 +12,7 @@ import * as bcrypt from 'bcrypt';
 import { ClassService } from '../class/class.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { DeleteStudentDto } from './dto/delete-student.dto';
 import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
 import { UpdateStudentDto } from './dto/patch-student.dto';
@@ -28,12 +28,12 @@ export class StudentService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private classroomService: ClassService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

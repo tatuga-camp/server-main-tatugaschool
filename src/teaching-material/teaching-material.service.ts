@@ -19,7 +19,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './../auth/auth.service';
 import { FileOnTeachingMaterialService } from './../file-on-teaching-material/file-on-teaching-material.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { AiService } from './../vector/ai.service';
 import { TeachingMaterialRepository } from './teaching-material.repository';
 import * as crypto from 'crypto';
@@ -33,7 +33,7 @@ export class TeachingMaterialService {
   teachingMaterialRepository: TeachingMaterialRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private aiService: AiService,
     private authService: AuthService,
     @Inject(forwardRef(() => FileOnTeachingMaterialService))
@@ -44,7 +44,7 @@ export class TeachingMaterialService {
     this.logger = new Logger(TeachingMaterialService.name);
     this.teachingMaterialRepository = new TeachingMaterialRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 
@@ -275,7 +275,7 @@ export class TeachingMaterialService {
 
       if (pdf) {
         const buffer = await this.imageService.generatePdfThumbnail(pdf.url);
-        const upload = await this.googleStorageService.uploadFile(
+        const upload = await this.storageService.uploadFile(
           `userId:${user.id}/thumnail/ID:${crypto.randomBytes(12).toString('hex')}.png`,
           buffer,
           'image/png',

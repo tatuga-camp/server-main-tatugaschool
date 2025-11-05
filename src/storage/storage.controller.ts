@@ -1,18 +1,18 @@
 import { Student, User } from '@prisma/client';
 import { GetSignURLDto } from './dto';
-import { GoogleStorageService } from './google-storage.service';
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
 import { GetStudent, GetUser } from '../auth/decorators';
+import { StorageService } from './storage.service';
 
 @Controller('v1/google-storage')
-export class GoogleStorageController {
-  constructor(private googleStorageService: GoogleStorageService) {}
+export class StorageController {
+  constructor(private StorageService: StorageService) {}
 
   @UseGuards(UserGuard)
   @Get('get-signURL/teacher')
   UserGetSignURL(@Query() dto: GetSignURLDto, @GetUser() user: User) {
-    return this.googleStorageService.GetSignURL(
+    return this.StorageService.getUploadSignedUrl(
       {
         userId: user.id,
         schoolId: dto.schoolId,
@@ -30,7 +30,7 @@ export class GoogleStorageController {
     @Query() dto: GetSignURLDto,
     @GetStudent() student: Student,
   ) {
-    return this.googleStorageService.GetSignURL(
+    return this.StorageService.getUploadSignedUrl(
       {
         schoolId: dto.schoolId,
         fileName: dto.fileName,

@@ -1,4 +1,4 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   BadRequestException,
   Injectable,
@@ -52,7 +52,7 @@ export class StudentOnSubjectRepository
   logger: Logger = new Logger(StudentOnSubjectRepository.name);
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {}
 
   async findFirst(
@@ -284,7 +284,7 @@ export class StudentOnSubjectRepository
         fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
           .map((file) =>
-            this.googleStorageService.DeleteFileOnStorage({
+            this.storageService.DeleteFileOnStorage({
               fileName: file.body,
             }),
           ),

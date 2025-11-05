@@ -11,7 +11,7 @@ import { MemberRole, School, Status, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StripeService } from '../stripe/stripe.service';
 import { ClassService } from './../class/class.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
 import { SubjectService } from './../subject/subject.service';
 import { SubscriptionService } from './../subscription/subscription.service';
@@ -34,7 +34,7 @@ export class SchoolService {
     private stripe: StripeService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
     @Inject(forwardRef(() => ClassService))
@@ -46,7 +46,7 @@ export class SchoolService {
     this.logger = new Logger(SchoolService.name);
     this.schoolRepository = new SchoolRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
       this.subjectService,
       this.classService,
       this.stripe,

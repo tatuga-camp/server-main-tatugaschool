@@ -1,0 +1,12 @@
+version: '4.2.23'
+services:
+  database_TATUGA_SCHOOL:
+    # This image automatically creates a replica set required for transactions
+    image: prismagraphql/mongo-single-replica:4.4.3-bionic
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: prisma
+      MONGO_REPLICA_HOST: host.docker.internal
+      INIT_WAIT_SEC: 3
+    ports:
+      - 27017:27017

@@ -6,7 +6,7 @@ import {
 import { $Enums, Prisma, TeachingMaterial } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 
 type Repository = {
   findUnique(
@@ -29,7 +29,7 @@ export class TeachingMaterialRepository implements Repository {
 
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.logger = new Logger(TeachingMaterialRepository.name);
   }

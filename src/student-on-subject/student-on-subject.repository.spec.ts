@@ -1,12 +1,12 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentOnSubjectRepository } from './student-on-subject.repository';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 
 describe('StudentOnSubjectRepository', () => {
   const prismaService = new PrismaService();
-  const googleStorageService = {
+  const storageService = {
     DeleteFileOnStorage: jest.fn().mockResolvedValue(null),
-  } as unknown as GoogleStorageService;
+  } as unknown as StorageService;
 
   let studentOnSubjectRepository: StudentOnSubjectRepository;
 
@@ -21,7 +21,7 @@ describe('StudentOnSubjectRepository', () => {
   beforeEach(() => {
     studentOnSubjectRepository = new StudentOnSubjectRepository(
       prismaService,
-      googleStorageService,
+      storageService,
     );
   });
 

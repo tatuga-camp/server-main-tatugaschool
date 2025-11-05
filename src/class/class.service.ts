@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { Class, Student, Subject, User } from '@prisma/client';
 import { AssignmentRepository } from '../assignment/assignment.repository';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SchoolService } from '../school/school.service';
@@ -37,26 +37,26 @@ export class ClassService {
     private prisma: PrismaService,
     private emailService: EmailService,
     private pushService: PushService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private userService: UsersService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
