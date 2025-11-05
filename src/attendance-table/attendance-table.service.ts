@@ -1,5 +1,5 @@
 import { AttendanceRepository } from './../attendance/attendance.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceTableRepository } from './attendance-table.repository';
 import {
@@ -40,12 +40,12 @@ export class AttendanceTableService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.logger = new Logger(AttendanceTableService.name);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       prisma,
-      googleStorageService,
+      storageService,
     );
     this.attendanceRowRepository = new AttendanceRowRepository(prisma);
     this.attendanceTableRepository = new AttendanceTableRepository(prisma);

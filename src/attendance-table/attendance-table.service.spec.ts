@@ -31,12 +31,12 @@ import { UsersService } from '../users/users.service';
 import { AiService } from '../vector/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
 import {
   CreateAttendanceTableDto,
   GetAttendanceTableById,
   GetAttendanceTablesDto,
 } from './dto';
+import { StorageService } from '../storage/storage.service';
 
 describe('Attendance-table Service', () => {
   let attendanceTableService: AttendanceTableService;
@@ -44,10 +44,7 @@ describe('Attendance-table Service', () => {
   const configService = new ConfigService();
   const httpService = new HttpService();
   const stripeService = new StripeService(configService);
-  const googleStorageService = new GoogleStorageService(
-    configService,
-    prismaService,
-  );
+  const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
 
@@ -58,7 +55,7 @@ describe('Attendance-table Service', () => {
     base64ImageService,
     configService,
     prismaService,
-    googleStorageService,
+    storageService,
   );
 
   const userService = new UsersService(prismaService, authService);
@@ -84,7 +81,7 @@ describe('Attendance-table Service', () => {
     prismaService,
     emailService,
     pushService,
-    googleStorageService,
+    storageService,
     userService,
     schoolService,
   );
@@ -93,7 +90,7 @@ describe('Attendance-table Service', () => {
     prismaService,
     stripeService,
     memberOnSchoolService,
-    googleStorageService,
+    storageService,
     subjectService,
     classroomService,
     subscriptionService,
@@ -110,23 +107,23 @@ describe('Attendance-table Service', () => {
   studentService = new StudentService(
     prismaService,
     memberOnSchoolService,
-    googleStorageService,
+    storageService,
     classroomService,
   );
 
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
-    googleStorageService,
+    storageService,
   );
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
   );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
     wheelOfNameService,
     schoolService,
@@ -137,13 +134,13 @@ describe('Attendance-table Service', () => {
   const skillService = new SkillService(
     prismaService,
     aiService,
-    googleStorageService,
+    storageService,
     authService,
   );
 
   const skillOnAssignmentService = new SkillOnAssignmentService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
   );
   gradeService = new GradeService(
@@ -154,14 +151,14 @@ describe('Attendance-table Service', () => {
 
   const scoreOnStudentService = new ScoreOnStudentService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
   );
 
   const assignmentService = new AssignmentService(
     prismaService,
     aiService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
     subjectService,
     studentOnSubjectService,
@@ -177,7 +174,7 @@ describe('Attendance-table Service', () => {
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
-    googleStorageService,
+    storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
@@ -185,7 +182,7 @@ describe('Attendance-table Service', () => {
 
   const fileAssignmentService = new FileAssignmentService(
     prismaService,
-    googleStorageService,
+    storageService,
     subjectService,
     classroomService,
     stripeService,
@@ -198,7 +195,7 @@ describe('Attendance-table Service', () => {
 
   subjectService = new SubjectService(
     prismaService,
-    googleStorageService,
+    storageService,
     wheelOfNameService,
     attendanceTableService,
     teacherOnSubjectService,
@@ -215,7 +212,7 @@ describe('Attendance-table Service', () => {
     attendanceTableService = new AttendanceTableService(
       prismaService,
       teacherOnSubjectService,
-      googleStorageService,
+      storageService,
     );
   });
 

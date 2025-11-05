@@ -1,4 +1,4 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -30,11 +30,11 @@ export class StudentRepository implements Repository {
   private studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

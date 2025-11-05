@@ -1,5 +1,5 @@
 import { AssignmentRepository } from './../assignment/assignment.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   Injectable,
   InternalServerErrorException,
@@ -35,12 +35,12 @@ export class SubjectRepository implements Repository {
   private assignmentRepository: AssignmentRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.groupOnSubjectRepository = new GroupOnSubjectRepository(this.prisma);
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

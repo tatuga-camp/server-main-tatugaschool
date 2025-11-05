@@ -1,6 +1,6 @@
 import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
 import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
 import { AssignmentRepository } from './../assignment/assignment.repository';
@@ -44,18 +44,18 @@ export class StudentOnAssignmentService {
   private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private pushService: PushService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
@@ -66,13 +66,10 @@ export class StudentOnAssignmentService {
     this.memberOnSchoolRepository = new MemberOnSchoolRepository(this.prisma);
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.fileOnStudentAssignmentRepository =
-      new FileOnStudentAssignmentRepository(
-        this.prisma,
-        this.googleStorageService,
-      );
+      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
   }
 
   private async notifyTeachers({
