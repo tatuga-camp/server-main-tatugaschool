@@ -1,6 +1,6 @@
 import { Student, User } from '@prisma/client';
 import { GetSignURLDto } from './dto';
-import { GoogleStorageService } from './google-storage.service';
+import { GoogleStorageService } from './storage.service';
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
 import { GetStudent, GetUser } from '../auth/decorators';

@@ -11,7 +11,7 @@ describe('ClassRepository', () => {
   let classId: string;
 
   beforeEach(() => {
-    classRepository = new ClassRepository(prismaService, {} as any); // mock googleStorageService
+    classRepository = new ClassRepository(prismaService, {} as any); // mock storageService
   });
 
   describe('create', () => {

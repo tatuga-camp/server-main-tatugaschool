@@ -24,7 +24,7 @@ import { AssignmentRepository } from './../assignment/assignment.repository';
 import { AttendanceRowRepository } from './../attendance-row/attendance-row.repository';
 import { AttendanceRepository } from './../attendance/attendance.repository';
 import { ClassRepository } from './../class/class.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { ScoreOnStudentRepository } from './../score-on-student/score-on-student.repository';
 import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { SubjectRepository } from './../subject/subject.repository';
@@ -64,7 +64,7 @@ export class StudentOnSubjectService {
 
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private wheelOfNameService: WheelOfNameService,
     @Inject(forwardRef(() => SchoolService))
@@ -75,7 +75,7 @@ export class StudentOnSubjectService {
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
@@ -83,22 +83,22 @@ export class StudentOnSubjectService {
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.userRepository = new UserRepository(this.prisma);
     this.attendanceRepository = new AttendanceRepository(this.prisma);
     this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

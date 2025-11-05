@@ -9,7 +9,7 @@ import { AssignmentRepository } from './../assignment/assignment.repository';
 import { DeleteFileOnStudentAssignmentDto } from './dto/delete-file.dto';
 import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
 import { FileOnStudentAssignmentRepository } from './file-on-student-assignment.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -34,7 +34,7 @@ export class FileOnStudentAssignmentService {
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private subjectService: SubjectService,
     private classService: ClassService,
     private teacherOnSubjectService: TeacherOnSubjectService,
@@ -44,13 +44,10 @@ export class FileOnStudentAssignmentService {
       this.prisma,
     );
     this.fileOnStudentAssignmentRepository =
-      new FileOnStudentAssignmentRepository(
-        this.prisma,
-        this.googleStorageService,
-      );
+      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
     this.schoolRepository = new SchoolRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
       this.subjectService,
       this.classService,
       this.stripe,
@@ -60,7 +57,7 @@ export class FileOnStudentAssignmentService {
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 
@@ -212,7 +209,7 @@ export class FileOnStudentAssignmentService {
       });
 
       if (file.contentType === 'FILE' && dto.body.body !== file.body) {
-        await this.googleStorageService.DeleteFileOnStorage({
+        await this.storageService.DeleteFileOnStorage({
           fileName: file.body,
         });
       }

@@ -17,8 +17,8 @@ import {
 } from './dto';
 import { Skill, User } from '@prisma/client';
 import { AiService } from '../vector/ai.service';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
 import { AuthService } from '../auth/auth.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class SkillService {
@@ -29,7 +29,7 @@ export class SkillService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
-    private googleStorageService: GoogleStorageService,
+    private googleStorageService: StorageService,
     private authService: AuthService,
   ) {
     this.skillRepository = new SkillRepository(this.prisma);

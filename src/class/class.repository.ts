@@ -8,7 +8,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentRepository } from '../student/student.repository';
 import { SubjectRepository } from '../subject/subject.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   RequestCreateClass,
   RequestDeleteClass,
@@ -34,15 +34,15 @@ export class ClassRepository implements Repository {
   private studentRepository: StudentRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.subjectRepositry = new SubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

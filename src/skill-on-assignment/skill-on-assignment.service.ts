@@ -1,19 +1,13 @@
-import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { SkillRepository } from './../skill/skill.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
-import { AssignmentRepository } from './../assignment/assignment.repository';
-import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
-import { SkillOnAssignmentRepository } from './skill-on-assignment.repository';
-import {
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { GetAssignmentByIdDto } from '../assignment/dto';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Skill, SkillOnAssignment, User } from '@prisma/client';
+import { GetAssignmentByIdDto } from '../assignment/dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { AssignmentRepository } from './../assignment/assignment.repository';
+import { SkillRepository } from './../skill/skill.repository';
 import { CreateSkillOnAssignmentDto, DeleteSkillOnAssignmentDto } from './dto';
+import { SkillOnAssignmentRepository } from './skill-on-assignment.repository';
 
 @Injectable()
 export class SkillOnAssignmentService {
@@ -23,7 +17,7 @@ export class SkillOnAssignmentService {
   private assignmentRepository: AssignmentRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private googleStorageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.assignmentRepository = new AssignmentRepository(

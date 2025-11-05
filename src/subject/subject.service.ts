@@ -22,7 +22,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 import { ClassService } from '../class/class.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
 import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
 import { StudentRepository } from './../student/student.repository';
@@ -48,7 +48,7 @@ export class SubjectService {
   private studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private wheelOfNameService: WheelOfNameService,
     private attendanceTableService: AttendanceTableService,
     private teacherOnSubjectService: TeacherOnSubjectService,
@@ -67,15 +67,15 @@ export class SubjectService {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

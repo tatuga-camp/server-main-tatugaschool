@@ -1,4 +1,4 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   Injectable,
   InternalServerErrorException,
@@ -44,7 +44,7 @@ export class FileOnStudentAssignmentRepository
 
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {}
 
   async update(
@@ -150,7 +150,7 @@ export class FileOnStudentAssignmentRepository
         fileOnStudentAssignment.contentType === 'FILE' &&
         fileOnStudentAssignment.type !== 'link-url'
       ) {
-        await this.googleStorageService.DeleteFileOnStorage({
+        await this.storageService.DeleteFileOnStorage({
           fileName: fileOnStudentAssignment.body,
         });
       }
@@ -183,7 +183,7 @@ export class FileOnStudentAssignmentRepository
         fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
           .map(async (fileOnStudentAssignment) => {
-            await this.googleStorageService.DeleteFileOnStorage({
+            await this.storageService.DeleteFileOnStorage({
               fileName: fileOnStudentAssignment.body,
             });
           }),

@@ -1,4 +1,4 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { FileOnTeachingMaterial, Prisma } from '@prisma/client';
 import {
   Injectable,
@@ -25,7 +25,7 @@ export class FileOnTeachingMaterialRepository implements Repository {
   private logger: Logger;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.logger = new Logger(FileOnTeachingMaterialRepository.name);
   }
@@ -86,7 +86,7 @@ export class FileOnTeachingMaterialRepository implements Repository {
         },
       });
 
-      await this.googleStorageService.DeleteFileOnStorage({
+      await this.storageService.DeleteFileOnStorage({
         fileName: remove.url,
       });
 

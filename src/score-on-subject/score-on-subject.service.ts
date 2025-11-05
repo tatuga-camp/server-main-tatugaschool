@@ -1,4 +1,4 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { ScoreOnSubjectRepository } from './score-on-subject.repository';
 import {
   Injectable,
@@ -26,12 +26,12 @@ export class ScoreOnSubjectService {
 
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.subjectRepository = new SubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
   }

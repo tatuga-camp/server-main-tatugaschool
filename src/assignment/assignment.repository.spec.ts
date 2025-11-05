@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AssignmentRepository } from './assignment.repository';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { ConfigService } from '@nestjs/config';
 
 const prisma = new PrismaClient();
@@ -10,10 +10,13 @@ describe('Assignment repository', () => {
   let assignmentRepository: AssignmentRepository;
   const prismaService = new PrismaService();
   const configService = new ConfigService();
-  const googleStorageService = new GoogleStorageService(configService, prismaService);
+  const storageService = new StorageService(configService, prismaService);
 
   beforeEach(async () => {
-    assignmentRepository = new AssignmentRepository(prismaService, googleStorageService);
+    assignmentRepository = new AssignmentRepository(
+      prismaService,
+      storageService,
+    );
   });
 
   let assignmentId: string;
@@ -86,8 +89,12 @@ describe('Assignment repository', () => {
         expect(updated.description).toBe('<p>Updated description content</p>');
         expect(updated.maxScore).toBe(100);
         expect(updated.weight).toBe(10);
-        expect(new Date(updated.beginDate).toISOString()).toBe(new Date('2025-06-01T00:00:00Z').toISOString());
-        expect(new Date(updated.dueDate).toISOString()).toBe(new Date('2025-06-10T00:00:00Z').toISOString());
+        expect(new Date(updated.beginDate).toISOString()).toBe(
+          new Date('2025-06-01T00:00:00Z').toISOString(),
+        );
+        expect(new Date(updated.dueDate).toISOString()).toBe(
+          new Date('2025-06-10T00:00:00Z').toISOString(),
+        );
         expect(updated.status).toBe('Published');
         expect(updated.type).toBe('Assignment');
       } catch (error) {
