@@ -28,7 +28,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { AiService } from '../vector/ai.service';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { GradeService } from './../grade/grade.service';
 import { ScoreOnStudentService } from './../score-on-student/score-on-student.service';
 import { SkillOnAssignmentService } from './../skill-on-assignment/skill-on-assignment.service';
@@ -59,7 +59,7 @@ export class AssignmentService {
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
@@ -76,18 +76,18 @@ export class AssignmentService {
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
     );
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

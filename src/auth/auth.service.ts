@@ -15,7 +15,7 @@ import * as crypto from 'crypto';
 import { Request, Response } from 'express';
 import { Auth, google } from 'googleapis';
 import { EmailService } from '../email/email.service';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { ImageService } from '../image/image.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from '../users/users.repository';
@@ -43,14 +43,14 @@ export class AuthService {
     private base64ImageService: ImageService,
     private config: ConfigService,
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
     this.usersRepository = new UserRepository(prisma);
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

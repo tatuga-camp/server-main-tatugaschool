@@ -1,12 +1,12 @@
 import { FileAssignmentRepository } from './file-assignment.repository';
 import { PrismaService } from '../prisma/prisma.service';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 
 const prismaService = new PrismaService();
 
 const mockGoogleStorage = {
   DeleteFileOnStorage: jest.fn().mockResolvedValue(undefined),
-} as unknown as GoogleStorageService;
+} as unknown as StorageService;
 
 describe('FileAssignmentRepository', () => {
   let fileAssignmentRepository: FileAssignmentRepository;

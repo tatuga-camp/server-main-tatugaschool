@@ -3,7 +3,7 @@ import { SubjectService } from './../subject/subject.service';
 import { SchoolService } from './../school/school.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { FileAssignmentRepository } from './file-assignment.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   ForbiddenException,
   forwardRef,
@@ -32,7 +32,7 @@ export class FileAssignmentService {
   private teacherOnSubjectRepository: TeacherOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
     private classService: ClassService,
@@ -43,18 +43,18 @@ export class FileAssignmentService {
     );
     this.schoolRepository = new SchoolRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
       this.subjectService,
       this.classService,
       this.stripe,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

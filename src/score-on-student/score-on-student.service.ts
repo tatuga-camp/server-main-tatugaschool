@@ -15,7 +15,7 @@ import {
   GetAllScoreOnStudentBySubjectIdDto,
 } from './dto';
 import { ScoreOnStudent, User } from '@prisma/client';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 
 @Injectable()
@@ -25,12 +25,12 @@ export class ScoreOnStudentService {
   studentOnSubjectRepository: StudentOnSubjectRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
   }

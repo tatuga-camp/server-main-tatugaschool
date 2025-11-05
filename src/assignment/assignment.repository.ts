@@ -14,7 +14,7 @@ import {
 import { Assignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 
 type AssignmentRepositoryType = {
@@ -39,7 +39,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   skillOnAssignmentRepository: SkillOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
@@ -49,13 +49,10 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     );
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.fileOnStudentAssignmentRepository =
-      new FileOnStudentAssignmentRepository(
-        this.prisma,
-        this.googleStorageService,
-      );
+      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
   }
 
   async getById(request: RequestGetAssignmentById): Promise<Assignment> {
@@ -199,7 +196,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
           .map((f) =>
-            this.googleStorageService.DeleteFileOnStorage({ fileName: f.body }),
+            this.storageService.DeleteFileOnStorage({ fileName: f.body }),
           ),
       );
 

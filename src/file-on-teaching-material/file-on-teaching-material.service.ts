@@ -1,6 +1,6 @@
 import { TeachingMaterialService } from './../teaching-material/teaching-material.service';
 import { FileOnTeachingMaterialRepository } from './file-on-teaching-material.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   ForbiddenException,
   forwardRef,
@@ -18,16 +18,13 @@ export class FileOnTeachingMaterialService {
   fileOnTeachingMaterialRepository: FileOnTeachingMaterialRepository;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     @Inject(forwardRef(() => TeachingMaterialService))
     private teachingMaterialService: TeachingMaterialService,
   ) {
     this.logger = new Logger(FileOnTeachingMaterialService.name);
     this.fileOnTeachingMaterialRepository =
-      new FileOnTeachingMaterialRepository(
-        this.prisma,
-        this.googleStorageService,
-      );
+      new FileOnTeachingMaterialRepository(this.prisma, this.storageService);
   }
 
   async create(

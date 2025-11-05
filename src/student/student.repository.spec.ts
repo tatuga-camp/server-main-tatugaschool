@@ -12,7 +12,7 @@ describe('StudentRepository', () => {
   beforeEach(() => {
     studentRepository = new StudentRepository(prismaService, {
       uploadFile: async () => '',
-    } as any); // mock GoogleStorageService
+    } as any); // mock StorageService
   });
 
   describe('create', () => {

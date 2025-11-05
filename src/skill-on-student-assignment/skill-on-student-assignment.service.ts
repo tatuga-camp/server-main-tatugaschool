@@ -1,6 +1,6 @@
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { SkillRepository } from './../skill/skill.repository';
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { SkillOnAssignmentRepository } from './../skill-on-assignment/skill-on-assignment.repository';
 import { StudentRepository } from './../student/student.repository';
@@ -40,13 +40,13 @@ export class SkillOnStudentAssignmentService {
     private prisma: PrismaService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {
     this.skillOnStudentAssignmentRepository =
       new SkillOnStudentAssignmentRepository(this.prisma);
     this.studentRepository = new StudentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
@@ -56,12 +56,12 @@ export class SkillOnStudentAssignmentService {
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
     this.skillRepository = new SkillRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      this.googleStorageService,
+      this.storageService,
     );
   }
 

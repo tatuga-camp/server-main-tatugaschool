@@ -1,4 +1,4 @@
-import { GoogleStorageService } from './../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import {
   Injectable,
   InternalServerErrorException,
@@ -34,7 +34,7 @@ export class FileAssignmentRepository implements Repository {
   logger: Logger = new Logger(FileAssignmentRepository.name);
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
   ) {}
 
   async findMany(
@@ -136,12 +136,12 @@ export class FileAssignmentRepository implements Repository {
       });
 
       if (checkExsit.length === 1) {
-        await this.googleStorageService.DeleteFileOnStorage({
+        await this.storageService.DeleteFileOnStorage({
           fileName: fileOnAssignment.url,
         });
       }
 
-      await this.googleStorageService.DeleteFileOnStorage({
+      await this.storageService.DeleteFileOnStorage({
         fileName: fileOnAssignment.url,
       });
 
@@ -174,7 +174,7 @@ export class FileAssignmentRepository implements Repository {
           },
         });
         if (checkExsit.length === 1) {
-          await this.googleStorageService.DeleteFileOnStorage({
+          await this.storageService.DeleteFileOnStorage({
             fileName: file.url,
           });
         }

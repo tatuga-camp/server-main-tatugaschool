@@ -8,7 +8,7 @@ import {
 import { Prisma, School } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { GoogleStorageService } from '../google-storage/google-storage.service';
+import { StorageService } from '../storage/storage.service';
 import { StripeService } from '../stripe/stripe.service';
 
 export type SchoolRepositoryType = {
@@ -27,7 +27,7 @@ export class SchoolRepository implements SchoolRepositoryType {
   logger: Logger;
   constructor(
     private prisma: PrismaService,
-    private googleStorageService: GoogleStorageService,
+    private storageService: StorageService,
     private subjectService: SubjectService,
     private classService: ClassService,
     private stripe: StripeService,
