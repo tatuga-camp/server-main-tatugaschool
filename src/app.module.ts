@@ -50,12 +50,6 @@ import { FileOnTeachingMaterialModule } from './file-on-teaching-material/file-o
 
 @Module({
   imports: [
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000,
-        limit: 10,
-      },
-    ]),
     AuthModule,
     UsersModule,
     PrismaModule,

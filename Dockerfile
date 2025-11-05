@@ -9,7 +9,7 @@ COPY package*.json ./
 
 # Install app dependencies
 ENV NODE_ENV=production
-RUN npm install --production
+RUN npm ci
 COPY prisma ./prisma/
 RUN npx prisma generate
 RUN npm install -g @nestjs/cli
@@ -17,6 +17,7 @@ RUN npm install -g @nestjs/cli
 COPY . .
 
 # Copy the .env and .env.development files
+
 
 
 # Creates a "dist" folder with the production build

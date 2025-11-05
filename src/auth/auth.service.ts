@@ -449,7 +449,7 @@ export class AuthService {
        </div>
      </body>
      `;
-      this.emailService.sendMail({
+      await this.emailService.sendMail({
         to: update.email,
         subject: 'Verify your email to login on Tatuga School',
         html: emailHTML,
