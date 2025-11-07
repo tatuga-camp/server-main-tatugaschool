@@ -394,7 +394,7 @@ model UnitOnGroup {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  icon        String
+  icon        String?
   title       String
   description String?
   totalScore  Float   @default(0)
