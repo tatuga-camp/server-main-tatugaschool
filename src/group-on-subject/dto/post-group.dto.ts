@@ -1,4 +1,10 @@
-import { IsMongoId, IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import {
+  IsMongoId,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class CreateGroupOnSubjectDto {
   @IsNotEmpty()
@@ -14,4 +20,8 @@ export class CreateGroupOnSubjectDto {
   @IsString()
   @MaxLength(599)
   description: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  numberOfGroups: number;
 }

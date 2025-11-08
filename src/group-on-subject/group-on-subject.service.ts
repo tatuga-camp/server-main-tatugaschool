@@ -218,6 +218,8 @@ export class GroupOnSubjectService {
     }
   > {
     try {
+      const numberOfGroups = dto.numberOfGroups;
+      delete dto.numberOfGroups;
       const subject =
         await this.subjectService.subjectRepository.getSubjectById({
           subjectId: dto.subjectId,
@@ -246,7 +248,10 @@ export class GroupOnSubjectService {
           },
         });
 
-      const groups = this.groupStudentsRandomly(studentOnSubjects, 4);
+      const groups = this.groupStudentsRandomly(
+        studentOnSubjects,
+        numberOfGroups,
+      );
 
       const create = await Promise.all(
         groups.map(async (group, index) => {
