@@ -45,6 +45,8 @@ import { fail } from 'assert';
 import { StudentOnAssignmentService } from '../student-on-assignment/student-on-assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { NotificationRepository } from '../notification/notification.repository';
+import { NotificationService } from '../notification/notification.service';
 
 describe('Assignment Service', () => {
   let assignmentService: AssignmentService;
@@ -185,12 +187,19 @@ describe('Assignment Service', () => {
     teacherOnSubjectService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   beforeEach(async () => {

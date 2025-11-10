@@ -49,6 +49,8 @@ import {
   RefetchGroupOnSubjectDto,
   UpdateGroupOnSubjectDto,
 } from './dto';
+import { NotificationRepository } from '../notification/notification.repository';
+import { NotificationService } from '../notification/notification.service';
 
 describe('Group On Subject Service', () => {
   let groupOnSubjectService: GroupOnSubjectService;
@@ -186,6 +188,11 @@ describe('Group On Subject Service', () => {
     studentService,
     schoolService,
   );
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
@@ -193,8 +200,8 @@ describe('Group On Subject Service', () => {
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
-
   const fileAssignmentService = new FileAssignmentService(
     prismaService,
     storageService,
@@ -371,6 +378,7 @@ describe('Group On Subject Service', () => {
           subjectId: subject.id,
           title: 'กลุ่มที่ 1',
           description: 'กลุ่มทดลอง',
+          numberOfGroups: 5,
         };
 
         const result = await groupOnSubjectService.create(dto, user);
@@ -496,6 +504,7 @@ describe('Group On Subject Service', () => {
           subjectId: subject.id,
           title: 'กลุ่มทดสอบ',
           description: 'สร้างกลุ่มพร้อมสุ่มนักเรียน',
+          numberOfGroups: 10,
         };
 
         const result = await groupOnSubjectService.create(dto, user);
@@ -620,6 +629,7 @@ describe('Group On Subject Service', () => {
           subjectId: '123456789012345678901234',
           title: 'กลุ่มที่ไม่เจอวิชา',
           description: '',
+          numberOfGroups: 4,
         };
 
         await groupOnSubjectService.create(dto, user);
@@ -708,6 +718,7 @@ describe('Group On Subject Service', () => {
           subjectId: subject.id,
           title: 'กลุ่มที่ 1',
           description: 'กลุ่มทดลอง',
+          numberOfGroups: 4,
         };
 
         await groupOnSubjectService.create(dto, user);
@@ -810,6 +821,7 @@ describe('Group On Subject Service', () => {
           subjectId: subject.id,
           title: 'กลุ่มที่ 1',
           description: 'กลุ่มทดลอง',
+          numberOfGroups: 4,
         };
 
         await groupOnSubjectService.create(dto, user);
@@ -899,6 +911,7 @@ describe('Group On Subject Service', () => {
           subjectId: subject.id,
           title: 'กลุ่มที่ 1',
           description: 'กลุ่มทดลอง',
+          numberOfGroups: 4,
         };
 
         await groupOnSubjectService.create(dto, user);
@@ -1001,6 +1014,7 @@ describe('Group On Subject Service', () => {
           subjectId: subject.id,
           title: 'กลุ่มที่ 1',
           description: 'กลุ่มทดลอง',
+          numberOfGroups: 4,
         };
 
         await groupOnSubjectService.create(dto, user);

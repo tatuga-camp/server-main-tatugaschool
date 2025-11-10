@@ -31,6 +31,7 @@ import { StudentRepository } from '../student/student.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { PushService } from '../web-push/push.service';
 import { PushSubscription } from '../web-push/interfaces';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -48,6 +49,7 @@ export class StudentOnAssignmentService {
     private teacherOnSubjectService: TeacherOnSubjectService,
     private pushService: PushService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
+    private notificationService: NotificationService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
@@ -70,40 +72,6 @@ export class StudentOnAssignmentService {
     );
     this.fileOnStudentAssignmentRepository =
       new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
-  }
-
-  private async notifyTeachers({
-    subjectId,
-    title,
-    body,
-    url,
-    assignmentId,
-  }: {
-    subjectId: string;
-    title: string;
-    body: string;
-    url: URL;
-    assignmentId: string;
-  }): Promise<void> {
-    const teachers = await this.teacherOnSubjectRepository.getManyBySubjectId({
-      subjectId: subjectId,
-    });
-
-    const notifications = teachers.map((teacher) =>
-      teacher.user.SubscriptionNotification.map((subscription) =>
-        this.pushService.sendNotification(
-          subscription.data as PushSubscription,
-          {
-            title,
-            body,
-            url,
-            groupId: assignmentId,
-          },
-        ),
-      ),
-    );
-
-    await Promise.all(notifications);
   }
 
   async getById(
@@ -366,14 +334,32 @@ export class StudentOnAssignmentService {
       }
 
       if (dto.body.status === 'SUBMITTED') {
-        await this.notifyTeachers({
+        const params = {
+          studentOnAssignmentId: studentOnAssignment.id,
+          menu: 'studentwork',
+        };
+        const urlParams = new URLSearchParams();
+        for (const key in params) {
+          urlParams.append(key, params[key]);
+        }
+        const newUrl = `${process.env.CLIENT_URL}/subject/${studentOnAssignment.subjectId}/assignment/${studentOnAssignment.assignmentId}?${urlParams.toString()}`;
+        const url = new URL(newUrl);
+
+        const teachers = await this.teacherOnSubjectRepository.findMany({
+          where: {
+            subjectId: studentOnAssignment.subjectId,
+          },
+        });
+        await this.notificationService.createNotifications({
+          type: 'STUDENT_SUBMISSION',
+          message: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
+          link: url,
+          userIds: teachers.map((t) => t.userId),
+          actorImage: studentOnAssignment.photo,
           subjectId: studentOnAssignment.subjectId,
-          assignmentId: studentOnAssignment.assignmentId,
-          title: 'New Assignment Submitted',
-          body: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
-          url: new URL(
-            `${process.env.CLIENT_URL}/subject/${studentOnAssignment.subjectId}/assignment/${studentOnAssignment.assignmentId}?menu=studentwork`,
-          ),
+          schoolId: studentOnAssignment.schoolId,
+          actorId: studentOnAssignment.studentId,
+          actorName: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
         });
       }
 

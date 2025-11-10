@@ -38,6 +38,8 @@ import { StudentOnAssignmentService } from '../student-on-assignment/student-on-
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationRepository } from '../notification/notification.repository';
 
 describe('School Service', () => {
   let schoolService: SchoolService;
@@ -169,13 +171,21 @@ describe('School Service', () => {
     teacherOnSubjectService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
+
   assignmentService = new AssignmentService(
     prismaService,
     aiService,

@@ -46,6 +46,7 @@ import { PushModule } from './web-push/push.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { StorageModule } from './storage/storage.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -96,6 +97,7 @@ import { StorageModule } from './storage/storage.module';
     StudentOnGroupModule,
     TeachingMaterialModule,
     FileOnTeachingMaterialModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
