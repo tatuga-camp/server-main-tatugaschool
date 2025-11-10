@@ -62,6 +62,7 @@ export class NotificationService {
           },
           orderBy: { createAt: 'desc' },
         });
+        if (!subscription) continue;
         this.pushService
           .sendNotification(subscription.data as PushSubscription, {
             title: pushPayload.title,
