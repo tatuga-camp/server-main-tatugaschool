@@ -46,6 +46,8 @@ import {
 } from './dto';
 import { StudentOnGroupService } from './student-on-group.service';
 import { StorageService } from '../storage/storage.service';
+import { NotificationRepository } from '../notification/notification.repository';
+import { NotificationService } from '../notification/notification.service';
 
 describe('Student On Group Service', () => {
   let studentOnGroupService: StudentOnGroupService;
@@ -184,12 +186,19 @@ describe('Student On Group Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   const fileAssignmentService = new FileAssignmentService(

@@ -12,20 +12,20 @@ model User {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  firstName                 String
-  lastName                  String
-  email                     String    @unique
-  phone                     String
-  photo                     String
-  blurHash                  String?
-  password                  String?
-  role                      UserRole  @default(USER)
-  createBySchoolId          String?   @db.ObjectId
-  isVerifyEmail             Boolean   @default(false)
-  verifyEmailToken          String?
-  verifyEmailTokenExpiresAt DateTime?
-  language Language @default(en)
-  isDoneSurvey Boolean @default(false)
+  firstName                   String
+  lastName                    String
+  email                       String    @unique
+  phone                       String
+  photo                       String
+  blurHash                    String?
+  password                    String?
+  role                        UserRole  @default(USER)
+  createBySchoolId            String?   @db.ObjectId
+  isVerifyEmail               Boolean   @default(false)
+  verifyEmailToken            String?
+  verifyEmailTokenExpiresAt   DateTime?
+  language                    Language  @default(en)
+  isDoneSurvey                Boolean   @default(false)
   lastActiveAt                DateTime
   isResetPassword             Boolean   @default(false)
   provider                    Provider
@@ -34,7 +34,7 @@ model User {
   deleteAt                    DateTime?
   resetPasswordToken          String?
   resetPasswordTokenExpiresAt DateTime?
-  favoritSchool           String? @db.ObjectId
+  favoritSchool               String?   @db.ObjectId
 
   memberOnSchools          MemberOnSchool[]
   subjects                 Subject[]
@@ -46,6 +46,7 @@ model User {
   SubscriptionNotification SubscriptionNotification[]
   feedbacks                Feedback[]
   classes                  Class[]
+  Notification             Notification[]
 }
 
 enum Language {
@@ -859,8 +860,7 @@ model SkillOnCareer {
 
   reference String
 
-
-  @@unique([skillId,careerId,reference])
+  @@unique([skillId, careerId, reference])
 }
 
 model Board {
@@ -965,8 +965,34 @@ model Feedback {
   user      User        @relation(fields: [userId], references: [id])
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+}
 
-  @@map("feedbacks")
+model Notification {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+
+  actorName  String
+  actorId    String @db.ObjectId
+  actorImage String
+
+  type    NotificationType
+  message String
+  link    String
+
+  isRead Boolean @default(false)
+
+  schoolId  String @db.ObjectId
+  subjectId String @db.ObjectId
+
+  @@index([userId])
+  @@index([userId, isRead])
+}
+
+enum NotificationType {
+  STUDENT_SUBMISSION
 }
 
 enum UserRole {

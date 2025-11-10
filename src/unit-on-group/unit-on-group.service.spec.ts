@@ -43,6 +43,8 @@ import {
   ReorderUnitOnGroupDto,
   UpdateUnitOnGroupDto,
 } from './dto';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationRepository } from '../notification/notification.repository';
 
 describe('Unit On Group Service', () => {
   let unitOnGroupService: UnitOnGroupService;
@@ -181,12 +183,19 @@ describe('Unit On Group Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -370,7 +379,6 @@ describe('Unit On Group Service', () => {
       }
     });
 
-    // ❌ ทดสอบกรณี: groupOnSubjectId ไม่ถูกต้อง → ควรโยน NotFoundException
     it('should throw NotFoundException if groupOnSubjectId is invalid', async () => {
       try {
         const user = await userService.userRepository.createUser({

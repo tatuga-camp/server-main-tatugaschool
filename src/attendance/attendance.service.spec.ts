@@ -45,6 +45,8 @@ import {
   UpdateManyDto,
 } from './dto';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { NotificationRepository } from '../notification/notification.repository';
+import { NotificationService } from '../notification/notification.service';
 
 describe('Attendance Service', () => {
   let attendanceService: AttendanceService;
@@ -180,12 +182,19 @@ describe('Attendance Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   const fileAssignmentService = new FileAssignmentService(

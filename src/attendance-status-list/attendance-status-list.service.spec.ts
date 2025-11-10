@@ -42,6 +42,8 @@ import { FileAssignmentService } from '../file-assignment/file-assignment.servic
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import * as crypto from 'crypto';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationRepository } from '../notification/notification.repository';
 
 describe('Attendance-status-list Service', () => {
   let attendanceStatusListService: AttendanceStatusListService;
@@ -182,12 +184,19 @@ describe('Attendance-status-list Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
