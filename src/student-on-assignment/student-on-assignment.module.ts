@@ -22,6 +22,8 @@ import { ScoreOnStudentService } from '../score-on-student/score-on-student.serv
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationRepository } from '../notification/notification.repository';
 
 @Module({
   imports: [HttpModule],
@@ -47,6 +49,8 @@ import { SubscriptionService } from '../subscription/subscription.service';
     FileAssignmentService,
     AttendanceStatusListService,
     SubscriptionService,
+    NotificationService,
+    NotificationRepository,
   ],
   controllers: [StudentOnAssignmentController],
 })
