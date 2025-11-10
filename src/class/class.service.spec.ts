@@ -34,6 +34,8 @@ import { StorageService } from '../storage/storage.service';
 import { CreateClassDto } from './dto';
 import * as crypto from 'crypto';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationRepository } from '../notification/notification.repository';
 
 describe('Class Service', () => {
   let classroomService: ClassService;
@@ -182,13 +184,21 @@ describe('Class Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
+
   beforeEach(async () => {
     classroomService = new ClassService(
       memberOnSchoolService,

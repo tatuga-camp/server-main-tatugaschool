@@ -38,6 +38,8 @@ import {
   UpdateSubjectDto,
 } from './dto';
 import { StorageService } from '../storage/storage.service';
+import { NotificationService } from '../notification/notification.service';
+import { NotificationRepository } from '../notification/notification.repository';
 
 describe('Subject Service', () => {
   let subjectService: SubjectService;
@@ -179,12 +181,19 @@ describe('Subject Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   const fileAssignmentService = new FileAssignmentService(

@@ -45,6 +45,8 @@ import { FileAssignmentService } from '../file-assignment/file-assignment.servic
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { StorageService } from '../storage/storage.service';
+import { NotificationRepository } from '../notification/notification.repository';
+import { NotificationService } from '../notification/notification.service';
 
 describe('MemberOnSchool Service', () => {
   const prismaService = new PrismaService();
@@ -185,13 +187,21 @@ describe('MemberOnSchool Service', () => {
     teacherOnSubjectService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
+
   assignmentService = new AssignmentService(
     prismaService,
     aiService,

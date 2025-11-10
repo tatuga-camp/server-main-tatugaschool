@@ -37,6 +37,8 @@ import {
   GetAttendanceTablesDto,
 } from './dto';
 import { StorageService } from '../storage/storage.service';
+import { NotificationRepository } from '../notification/notification.repository';
+import { NotificationService } from '../notification/notification.service';
 
 describe('Attendance-table Service', () => {
   let attendanceTableService: AttendanceTableService;
@@ -172,12 +174,19 @@ describe('Attendance-table Service', () => {
     schoolService,
   );
 
+  const notificationRepository = new NotificationRepository(prismaService);
+  const notificationService = new NotificationService(
+    notificationRepository,
+    pushService,
+  );
+
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
     teacherOnSubjectService,
     pushService,
     skillOnStudentAssignmentService,
+    notificationService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
