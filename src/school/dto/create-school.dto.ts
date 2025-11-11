@@ -13,32 +13,32 @@ import {
 export class CreateSchoolDto {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(300)
   title: string;
 
   @IsNotEmpty()
-  @MaxLength(999)
+  @MaxLength(300)
   @IsString()
   description: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(300)
   country: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(300)
   city: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(300)
   address: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(999)
+  @MaxLength(300)
   zipCode: string;
 
   @IsNotEmpty()
