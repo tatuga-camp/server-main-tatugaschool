@@ -47,6 +47,10 @@ export class CommentAssignmentService {
           studentOnAssignmentId: dto.studentOnAssignmentId,
         });
 
+      if (!studentOnAssignment) {
+        throw new NotFoundException('studentOnAssignment is not found');
+      }
+
       if (user) {
         await this.teacherOnSubjectService.ValidateAccess({
           subjectId: studentOnAssignment.subjectId,
