@@ -152,6 +152,9 @@ export class AssignmentService {
             where: { studentId: student.id, subjectId: dto.subjectId },
           });
 
+        if (!studentOnSubject) {
+          throw new ForbiddenException('Student not enrolled in this subject');
+        }
         studentsOnAssignments =
           await this.studentOnAssignmentRepository.findMany({
             where: {
@@ -160,10 +163,6 @@ export class AssignmentService {
               isAssigned: true,
             },
           });
-
-        if (!studentOnSubject) {
-          throw new ForbiddenException('Student not enrolled in this subject');
-        }
       }
 
       let assignments = await this.assignmentRepository
