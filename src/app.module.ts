@@ -47,6 +47,8 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { StorageModule } from './storage/storage.module';
 import { NotificationModule } from './notification/notification.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -98,8 +100,22 @@ import { NotificationModule } from './notification/notification.module';
     TeachingMaterialModule,
     FileOnTeachingMaterialModule,
     NotificationModule,
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 1000 * 60, // 1 minute
+          limit: 30,
+        },
+      ],
+    }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
