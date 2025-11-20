@@ -499,7 +499,7 @@ export class AuthService {
 
       return await this.jwtService.signAsync(payload, {
         secret: this.config.get('JWT_ACCESS_SECRET'),
-        expiresIn: '1m',
+        expiresIn: this.config.get('NODE_ENV') === 'production' ? '1m' : '15m',
       });
     } catch (error) {
       this.logger.error(error);
@@ -516,7 +516,7 @@ export class AuthService {
 
       return await this.jwtService.signAsync(payload, {
         secret: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
-        expiresIn: '1m',
+        expiresIn: this.config.get('NODE_ENV') === 'production' ? '1m' : '15m',
       });
     } catch (error) {
       this.logger.error(error);
