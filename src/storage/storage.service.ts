@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
+import { Readable } from 'stream';
 import { PrismaService } from '../prisma/prisma.service';
 import { MemberOnSchool, Student, User } from '@prisma/client';
 import { InputDeleteFileOnStorage } from './interfaces';
@@ -19,6 +20,7 @@ import {
   S3ClientConfig,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
 @Injectable()
 export class StorageService {
   private s3Client: S3Client;
@@ -298,6 +300,53 @@ export class StorageService {
     } catch (error) {
       this.logger.error(`Error uploading file to R2: ${filePath}`, error);
       throw new BadGatewayException('Failed to upload file to storage.');
+    }
+  }
+
+  /**
+   * Gets a readable stream of a file from R2.
+   * @param fileUrl The full URL or key of the file in R2.
+   * @returns A promise that resolves to a Readable stream of the file content.
+   */
+  async getFileStream(fileUrl: string): Promise<Readable> {
+    if (!this.s3Client) {
+      this.logger.error('R2 client not initialized.');
+      throw new BadGatewayException(
+        'Storage service not properly initialized.',
+      );
+    }
+
+    try {
+      const fullPublicUrlPrefix = `https://${this.r2PublicDomain}`;
+      let key = fileUrl;
+
+      // Extract key if a full URL is provided
+      if (fileUrl.startsWith(fullPublicUrlPrefix)) {
+        key = fileUrl.substring(fullPublicUrlPrefix.length + 1); // +1 for the '/'
+      }
+
+      if (!key) {
+        throw new BadRequestException('Invalid file URL or key.');
+      }
+
+      const command = new GetObjectCommand({
+        Bucket: this.bucketName,
+        Key: key,
+      });
+
+      const response = await this.s3Client.send(command);
+
+      if (!response.Body) {
+        throw new NotFoundException('File body is empty.');
+      }
+
+      return response.Body as Readable;
+    } catch (error) {
+      this.logger.error(`Error getting file stream for ${fileUrl}:`, error);
+      if (error.name === 'NoSuchKey') {
+        throw new NotFoundException('File not found in storage.');
+      }
+      throw new BadGatewayException('Failed to retrieve file stream.');
     }
   }
 

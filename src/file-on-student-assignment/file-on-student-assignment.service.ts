@@ -23,6 +23,7 @@ import {
   GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
 } from './dto';
 import { FileOnStudentAssignment, Student, User } from '@prisma/client';
+import * as archiver from 'archiver';
 
 @Injectable()
 export class FileOnStudentAssignmentService {
@@ -59,6 +60,94 @@ export class FileOnStudentAssignmentService {
       this.prisma,
       this.storageService,
     );
+  }
+
+  async downloadAllFiles(dto: { assignmentId: string }, user: User) {
+    try {
+      const assignment = await this.assignmentRepository.getById({
+        assignmentId: dto.assignmentId,
+      });
+
+      if (!assignment) {
+        throw new NotFoundException('Assignment not found');
+      }
+
+      const teacherOnSubject =
+        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+          teacherId: user.id,
+          subjectId: assignment.subjectId,
+        });
+
+      if (!teacherOnSubject || teacherOnSubject.status !== 'ACCEPT') {
+        throw new ForbiddenException("You don't have permission to access");
+      }
+
+      const studentOnAssignments =
+        await this.studentOnAssignmentRepository.findMany({
+          where: {
+            assignmentId: dto.assignmentId,
+          },
+        });
+
+      // Verify teacher access to all subjects involved
+      const subjectIds = [
+        ...new Set(studentOnAssignments.map((f) => f.subjectId)),
+      ];
+
+      const files = await this.fileOnStudentAssignmentRepository.findMany({
+        where: {
+          assignmentId: assignment.id,
+          contentType: 'FILE',
+        },
+      });
+
+      const archive = archiver.create('zip', {
+        zlib: { level: 9 },
+      });
+
+      // Process files in background to allow stream to be returned immediately
+      (async () => {
+        try {
+          await Promise.all(
+            files.map(async (file) => {
+              try {
+                const stream = await this.storageService.getFileStream(
+                  file.body,
+                );
+                let folderName = file.studentOnAssignmentId;
+                const student = studentOnAssignments.find(
+                  (s) => s.id === file.studentOnAssignmentId,
+                );
+                if (student) {
+                  folderName = `${student.number}_${student.firstName} ${student.lastName}`;
+                }
+                const fileName =
+                  file.name || file.body.split('/').pop() || 'unknown';
+                archive.append(stream, { name: `${folderName}/${fileName}` });
+              } catch (err) {
+                this.logger.error(
+                  `Failed to add file ${file.id} to archive`,
+                  err,
+                );
+                archive.append(
+                  Buffer.from(`Error downloading file: ${file.body}`),
+                  { name: `error_${file.id}.txt` },
+                );
+              }
+            }),
+          );
+          await archive.finalize();
+        } catch (error) {
+          this.logger.error('Error creating archive', error);
+          archive.abort();
+        }
+      })();
+
+      return archive;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async getFileByStudentOnAssignmentIdFromStudent(

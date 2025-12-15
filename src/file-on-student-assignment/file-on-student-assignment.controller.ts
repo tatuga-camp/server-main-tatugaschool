@@ -1,7 +1,9 @@
 import { Student, User } from '@prisma/client';
+import { Response } from 'express';
 import {
   CreateFileOnStudentAssignmentDto,
   DeleteFileOnStudentAssignmentDto,
+  DowloadAllFilesDto,
   GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
   UpdateFileDto,
 } from './dto';
@@ -14,6 +16,7 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
@@ -47,6 +50,21 @@ export class FileOnStudentAssignmentController {
       dto,
       user,
     );
+  }
+
+  @UseGuards(UserGuard)
+  @Post('download-all')
+  async downloadAllFiles(
+    @Body() dto: DowloadAllFilesDto,
+    @GetUser() user: User,
+    @Res() res: Response,
+  ) {
+    const archive = await this.fileOnStudentAssignmentService.downloadAllFiles(
+      dto,
+      user,
+    );
+    res.attachment('assignments.zip');
+    archive.pipe(res);
   }
 
   @UseGuards(StudentGuard)
