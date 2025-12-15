@@ -277,7 +277,7 @@ export class SubjectService {
       });
 
       if (user) {
-        const wheelOfName = await this.wheelOfNameService
+        await this.wheelOfNameService
           .get({
             path: subject.wheelOfNamePath,
           })

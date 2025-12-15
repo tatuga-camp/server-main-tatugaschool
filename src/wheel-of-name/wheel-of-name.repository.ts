@@ -32,7 +32,7 @@ export class WheelOfNameRepository implements Repository {
     try {
       const response = this.httpService
         .get<ResponseGet>(
-          `https://wheelofnames.com/api/v1/wheels/shared/${request.where.path}`,
+          `https://wheelofnames.com/api/v2/wheels/${request.where.path}`,
           {
             headers: {
               'x-api-key': this.config.get('WHEEL_OF_NAME_SECRET_KEY'),
@@ -56,7 +56,7 @@ export class WheelOfNameRepository implements Repository {
     try {
       const response = this.httpService
         .post<ResponseCreate>(
-          `https://wheelofnames.com/api/v1/wheels/shared`,
+          `https://wheelofnames.com/api/v2/wheels`,
           {
             ...request,
           },

@@ -44,3 +44,9 @@ export class CreateFileOnStudentAssignmentDto {
   @IsMongoId()
   studentOnAssignmentId: string;
 }
+
+export class DowloadAllFilesDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  assignmentId: string;
+}

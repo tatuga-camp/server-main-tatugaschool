@@ -103,8 +103,8 @@ import { APP_GUARD } from '@nestjs/core';
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 1000 * 60, // 1 minute
-          limit: process.env.NODE_ENV === 'production' ? 100 : 1000, // limit per ttl
+          ttl: 1000 * 60,
+          limit: process.env.NODE_ENV === 'production' ? 100 : 1000,
         },
       ],
     }),
