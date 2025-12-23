@@ -351,7 +351,7 @@ export class FileOnStudentAssignmentService {
 
       if (student && subject.allowStudentDeleteWork === false) {
         throw new ForbiddenException(
-          'This assignment is not allow to delete work',
+          'Students are not allowed to delete files on this subject',
         );
       }
       const deleteFile = await this.fileOnStudentAssignmentRepository.delete({
