@@ -17,9 +17,9 @@ export class GetSignURLDto {
   @IsMongoId()
   schoolId?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  fileType: string;
+  fileType?: string;
 
   @IsNotEmpty()
   @IsNumber()

@@ -13,10 +13,10 @@ import {
 } from 'class-validator';
 
 export class CreateFileOnStudentAssignmentDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(255)
-  type: string;
+  type?: string;
 
   @IsNotEmpty()
   @IsString()

@@ -573,7 +573,7 @@ model FileOnStudentAssignment {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  type        String
+  type        String?
   blurHash    String?
   body        String
   name        String?
