@@ -129,6 +129,10 @@ export class FileAssignmentRepository implements Repository {
         },
       });
 
+      if (fileOnAssignment.type === 'LINK') {
+        return fileOnAssignment;
+      }
+
       const checkExsit = await this.prisma.fileOnAssignment.findMany({
         where: {
           url: fileOnAssignment.url,
@@ -140,10 +144,6 @@ export class FileAssignmentRepository implements Repository {
           fileName: fileOnAssignment.url,
         });
       }
-
-      await this.storageService.DeleteFileOnStorage({
-        fileName: fileOnAssignment.url,
-      });
 
       return fileOnAssignment;
     } catch (error) {
@@ -167,7 +167,7 @@ export class FileAssignmentRepository implements Repository {
         },
       });
 
-      for (const file of filesOnAssignments) {
+      for (const file of filesOnAssignments.filter((f) => f.type !== 'LINK')) {
         const checkExsit = await this.prisma.fileOnAssignment.findMany({
           where: {
             url: file.url,
