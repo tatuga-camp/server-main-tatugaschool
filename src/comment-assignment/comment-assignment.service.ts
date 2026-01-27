@@ -1,23 +1,21 @@
-import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
-import { PrismaService } from '../prisma/prisma.service';
-import { CommentAssignmentRepository } from './comment-assignment.repository';
 import {
+  ForbiddenException,
   Injectable,
   Logger,
-  Get,
-  ForbiddenException,
-  BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
+import { Student, User } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationService } from './../notification/notification.service';
+import { StudentOnAssignmentRepository } from './../student-on-assignment/student-on-assignment.repository';
+import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
+import { CommentAssignmentRepository } from './comment-assignment.repository';
 import {
   CreateCommentOnAssignmentDto,
   DeleteCommentAssignmentDto,
   GetCommentAssignmentByStudentOnAssignmentIdDto,
   UpdateCommentOnAssignmentDto,
 } from './dto';
-import { Student, User } from '@prisma/client';
-import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
 
 @Injectable()
 export class CommentAssignmentService {
@@ -27,6 +25,7 @@ export class CommentAssignmentService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private notificationService: NotificationService,
   ) {
     this.commentAssignmentRepository = new CommentAssignmentRepository(
       this.prisma,
@@ -81,8 +80,16 @@ export class CommentAssignmentService {
       if (!studentOnAssignment) {
         throw new NotFoundException('studentOnAssignment is not found');
       }
+      const params = {
+        studentOnAssignmentId: studentOnAssignment.id,
+        menu: 'studentwork',
+      };
+      const urlParams = new URLSearchParams();
+      for (const key in params) {
+        urlParams.append(key, params[key]);
+      }
 
-      return await this.commentAssignmentRepository.create({
+      const create = await this.commentAssignmentRepository.create({
         ...dto,
         studentOnAssignmentId: studentOnAssignment.id,
         studentId: student.id,
@@ -93,6 +100,28 @@ export class CommentAssignmentService {
         subjectId: studentOnAssignment.subjectId,
         schoolId: student.schoolId,
       });
+
+      const teachers =
+        await this.teacherOnSubjectService.teacherOnSubjectRepository.getManyBySubjectId(
+          {
+            subjectId: studentOnAssignment.subjectId,
+          },
+        );
+
+      const newUrl = `${process.env.CLIENT_URL}/subject/${studentOnAssignment.subjectId}/assignment/${studentOnAssignment.assignmentId}?${urlParams.toString()}`;
+      const url = new URL(newUrl);
+      await this.notificationService.createNotifications({
+        type: 'STUDENT_COMMENT',
+        userIds: teachers.map((t) => t.userId),
+        actorId: student.id,
+        actorName: `${student.firstName} ${student.lastName}`,
+        actorImage: student.photo,
+        message: `New comment on assignment from ${student.firstName} ${student.lastName}`,
+        link: url,
+        schoolId: student.schoolId,
+        subjectId: studentOnAssignment.subjectId,
+      });
+      return create;
     } catch (error) {
       this.logger.error(error);
       throw error;
