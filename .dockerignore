@@ -115,4 +115,4 @@ dist
 # Unused Files
 import-survey.ts
 survery-data.json
-send-survey.ts
+send-emails.ts

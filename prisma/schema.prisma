@@ -993,6 +993,7 @@ model Notification {
 
 enum NotificationType {
   STUDENT_SUBMISSION
+  STUDENT_COMMENT
 }
 
 enum UserRole {
