@@ -232,7 +232,7 @@ export class StudentOnSubjectService {
         studentInfo: {
           name: `${studentOnSubject.title}${studentOnSubject.firstName} ${studentOnSubject.lastName}`,
           imageURL: studentOnSubject.photo,
-          class: classroom.title,
+          class: `${classroom.level} : ${classroom.title}`,
         },
         courseInfo: {
           subject: subject.title,
