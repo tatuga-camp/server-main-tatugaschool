@@ -11,10 +11,10 @@ import {
 } from 'class-validator';
 
 export class CreateFileOnAssignmentDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(255)
-  type: string;
+  type?: string;
 
   @IsNotEmpty()
   @IsUrl()
