@@ -493,7 +493,7 @@ model FileOnAssignment {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  type     String
+  type     String?
   blurHash String?
   url      String
   size     Float

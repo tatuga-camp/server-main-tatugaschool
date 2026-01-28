@@ -6,7 +6,7 @@ export type RequestGetFileById = {
 };
 
 export type RequestCreateFileAssignment = {
-  type: string;
+  type?: string;
   url: string;
   size: number;
   blurHash?: string;
