@@ -17,6 +17,7 @@ import {
   CreateFileOnAssignmentDto,
   DeleteFileAssignmentDto,
   GetFileOnAssignmentByAssignmentIdDto,
+  UpdateFileDto,
 } from './dto';
 import { FileOnAssignment, User } from '@prisma/client';
 import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
@@ -85,6 +86,40 @@ export class FileAssignmentService {
       return await this.fileAssignmentRepository.getByAssignmentId({
         assignmentId: dto.assignmentId,
       });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async updateFile(dto: UpdateFileDto, user: User): Promise<FileOnAssignment> {
+    try {
+      const file = await this.fileAssignmentRepository.getById({
+        fileOnAssignmentId: dto.id,
+      });
+
+      if (!file) throw new NotFoundException('File not found');
+
+      const teacherOnSubject =
+        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
+          teacherId: user.id,
+          subjectId: file.subjectId,
+        });
+
+      if (!teacherOnSubject) {
+        throw new ForbiddenException('You are not allowed to update this file');
+      }
+
+      const update = await this.fileAssignmentRepository.update({
+        where: {
+          id: file.id,
+        },
+        data: {
+          preventFastForward: dto.preventFastForward,
+        },
+      });
+
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;

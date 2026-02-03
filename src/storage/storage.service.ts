@@ -154,9 +154,9 @@ export class StorageService {
     student?: Student,
   ) {
     try {
-      const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 MB in bytes
+      const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB in bytes
       if (fileSize > MAX_FILE_SIZE) {
-        throw new BadRequestException('File size cannot exceed 200 MB.');
+        throw new BadRequestException('File size cannot exceed 2 GB.');
       }
 
       // --- Validation logic remains identical ---

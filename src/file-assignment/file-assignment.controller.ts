@@ -4,6 +4,7 @@ import {
   CreateFileOnAssignmentDto,
   DeleteFileAssignmentDto,
   GetFileOnAssignmentByAssignmentIdDto,
+  UpdateFileDto,
 } from './dto';
 import { FileAssignmentService } from './file-assignment.service';
 import {
@@ -12,6 +13,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -38,5 +40,10 @@ export class FileAssignmentController {
   @Delete(':fileOnAssignmentId')
   delete(@Param() dto: DeleteFileAssignmentDto, @GetUser() user: User) {
     return this.fileAssignmentService.deleteFileAssignment(dto, user);
+  }
+
+  @Patch()
+  update(@Body() dto: UpdateFileDto, @GetUser() user: User) {
+    return this.fileAssignmentService.updateFile(dto, user);
   }
 }
