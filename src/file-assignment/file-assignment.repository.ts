@@ -28,6 +28,7 @@ type Repository = {
   findMany(
     request: Prisma.FileOnAssignmentFindManyArgs,
   ): Promise<FileOnAssignment[]>;
+  update(request: Prisma.FileOnAssignmentUpdateArgs): Promise<FileOnAssignment>;
 };
 @Injectable()
 export class FileAssignmentRepository implements Repository {
@@ -36,6 +37,22 @@ export class FileAssignmentRepository implements Repository {
     private prisma: PrismaService,
     private storageService: StorageService,
   ) {}
+
+  async update(
+    request: Prisma.FileOnAssignmentUpdateArgs,
+  ): Promise<FileOnAssignment> {
+    try {
+      return await this.prisma.fileOnAssignment.update(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
 
   async findMany(
     request: Prisma.FileOnAssignmentFindManyArgs,

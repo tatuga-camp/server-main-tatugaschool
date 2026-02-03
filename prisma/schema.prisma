@@ -498,14 +498,30 @@ model FileOnAssignment {
   url      String
   size     Float
 
-  subjectId    String     @db.ObjectId
-  subject      Subject    @relation(fields: [subjectId], references: [id])
-  schoolId     String     @db.ObjectId
-  school       School     @relation(fields: [schoolId], references: [id])
-  assignmentId String     @db.ObjectId
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  preventFastForward Boolean? @default(false)
+
+  subjectId        String            @db.ObjectId
+  subject          Subject           @relation(fields: [subjectId], references: [id])
+  schoolId         String            @db.ObjectId
+  school           School            @relation(fields: [schoolId], references: [id])
+  assignmentId     String            @db.ObjectId
+  assignment       Assignment        @relation(fields: [assignmentId], references: [id])
+  questionOnVideos QuestionOnVideo[]
 
   @@index([assignmentId, url])
+}
+
+model QuestionOnVideo {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  question       String
+  options        String[]
+  correctOptions Int[]
+
+  fileOnAssignmentId String           @db.ObjectId
+  fileOnAssignment   FileOnAssignment @relation(fields: [fileOnAssignmentId], references: [id])
 }
 
 model StudentOnAssignment {
