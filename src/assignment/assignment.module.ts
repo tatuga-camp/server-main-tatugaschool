@@ -23,6 +23,7 @@ import { FileAssignmentService } from '../file-assignment/file-assignment.servic
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { SchoolModule } from '../school/school.module';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { SchoolModule } from '../school/school.module';
     FileAssignmentService,
     AttendanceStatusListService,
     SubscriptionService,
+    AssignmentVideoQuizRepository,
   ],
   controllers: [AssignmentController],
 })

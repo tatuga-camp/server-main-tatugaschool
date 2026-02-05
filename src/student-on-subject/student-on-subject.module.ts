@@ -21,6 +21,7 @@ import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.serv
 import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Module({
   imports: [HttpModule, forwardRef(() => SchoolModule)],
@@ -44,6 +45,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
     FileAssignmentService,
     AttendanceStatusListService,
     ScoreOnSubjectService,
+    AssignmentVideoQuizRepository,
   ],
   controllers: [StudentOnSubjectController],
 })

@@ -22,6 +22,7 @@ import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/
 import { AssignmentModule } from '../assignment/assignment.module';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
     AssignmentService,
     FileAssignmentService,
     AttendanceStatusListService,
+    AssignmentVideoQuizRepository,
   ],
   controllers: [SubjectController],
 })

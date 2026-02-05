@@ -49,6 +49,7 @@ import { StorageModule } from './storage/storage.module';
 import { NotificationModule } from './notification/notification.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-video-quiz.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { APP_GUARD } from '@nestjs/core';
         },
       ],
     }),
+    AssignmentVideoQuizModule,
   ],
   controllers: [AppController],
   providers: [

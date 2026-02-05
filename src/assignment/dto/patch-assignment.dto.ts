@@ -12,6 +12,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
   ValidateNested,
@@ -45,6 +46,14 @@ class UpdateAssignmentBody {
   @IsOptional()
   @IsDateString()
   dueDate?: string;
+
+  @IsOptional()
+  @IsUrl()
+  videoURL?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  preventFastForward?: boolean;
 
   @IsOptional()
   @IsEnum(AssignmentStatus)

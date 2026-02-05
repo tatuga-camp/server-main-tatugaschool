@@ -36,6 +36,7 @@ import * as crypto from 'crypto';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 describe('Class Service', () => {
   let classroomService: ClassService;
@@ -167,6 +168,10 @@ describe('Class Service', () => {
     storageService,
     teacherOnSubjectService,
   );
+
+  const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+    prismaService,
+  );
   assignmentService = new AssignmentService(
     prismaService,
     aiService,
@@ -180,6 +185,7 @@ describe('Class Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    assignmentVideoQuizRepository,
     studentService,
     schoolService,
   );

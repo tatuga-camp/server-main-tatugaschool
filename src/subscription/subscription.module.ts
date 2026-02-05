@@ -21,6 +21,7 @@ import { ScoreOnStudentService } from '../score-on-student/score-on-student.serv
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Module({
   imports: [HttpModule],
@@ -45,6 +46,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
     SkillOnStudentAssignmentService,
     FileAssignmentService,
     AttendanceStatusListService,
+    AssignmentVideoQuizRepository,
   ],
   controllers: [SubscriptionController],
 })

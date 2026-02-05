@@ -13,6 +13,7 @@ import {
   FileOnAssignment,
   GradeRange,
   Prisma,
+  QuestionOnVideo,
   ScoreOnStudent,
   ScoreOnSubject,
   Skill,
@@ -47,6 +48,7 @@ import {
   UpdateAssignmentDto,
 } from './dto';
 import { StudentService } from '../student/student.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Injectable()
 export class AssignmentService {
@@ -70,6 +72,7 @@ export class AssignmentService {
     private gradeService: GradeService,
     private scoreOnSubjectService: ScoreOnSubjectService,
     private scoreOnStudentService: ScoreOnStudentService,
+    private assignmentVideoQuizRepository: AssignmentVideoQuizRepository,
     private studentService: StudentService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
@@ -135,6 +138,7 @@ export class AssignmentService {
       reviewNumber: number;
       summitNumber: number;
       penddingNumber: number;
+      questions: QuestionOnVideo[];
       studentOnAssignment?: StudentOnAssignment;
     })[]
   > {
@@ -200,6 +204,19 @@ export class AssignmentService {
           assignmentId: { in: assignments.map((assignment) => assignment.id) },
         },
       });
+      let questions: QuestionOnVideo[] = [];
+
+      if (assignments.some((a) => a.type === 'VideoQuiz')) {
+        questions = await this.assignmentVideoQuizRepository.findMany({
+          where: {
+            assignmentId: {
+              in: assignments
+                .filter((a) => a.type === 'VideoQuiz')
+                .map((a) => a.id),
+            },
+          },
+        });
+      }
 
       return assignments.map((assignment) => {
         const studentOnAssignments = allStudentOnAssignments.filter(
@@ -207,6 +224,7 @@ export class AssignmentService {
         );
         return {
           ...assignment,
+          questions: questions.filter((a) => a.assignmentId === assignment.id),
           studentAssign: studentOnAssignments.length,
           summitNumber: studentOnAssignments.filter(
             (s) => s.status === 'SUBMITTED',

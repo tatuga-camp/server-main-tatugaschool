@@ -47,6 +47,7 @@ import { FileAssignmentService } from '../file-assignment/file-assignment.servic
 import { SubscriptionService } from '../subscription/subscription.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { NotificationService } from '../notification/notification.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 describe('Assignment Service', () => {
   let assignmentService: AssignmentService;
@@ -202,6 +203,10 @@ describe('Assignment Service', () => {
     notificationService,
   );
 
+  const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+    prismaService,
+  );
+
   beforeEach(async () => {
     assignmentService = new AssignmentService(
       prismaService,
@@ -216,6 +221,7 @@ describe('Assignment Service', () => {
       gradeService,
       scoreOnSubjectService,
       scoreOnStudentService,
+      assignmentVideoQuizRepository,
       studentService,
       schoolService,
     );

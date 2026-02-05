@@ -45,6 +45,7 @@ import {
 } from './dto';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 describe('Unit On Group Service', () => {
   let unitOnGroupService: UnitOnGroupService;
@@ -166,6 +167,9 @@ describe('Unit On Group Service', () => {
     teacherOnSubjectService,
   );
 
+  const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+    prismaService,
+  );
   const assignmentService = new AssignmentService(
     prismaService,
     aiService,
@@ -179,6 +183,7 @@ describe('Unit On Group Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    assignmentVideoQuizRepository,
     studentService,
     schoolService,
   );

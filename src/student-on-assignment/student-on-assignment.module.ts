@@ -24,6 +24,7 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
 import { SubscriptionService } from '../subscription/subscription.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Module({
   imports: [HttpModule],
@@ -51,6 +52,7 @@ import { NotificationRepository } from '../notification/notification.repository'
     SubscriptionService,
     NotificationService,
     NotificationRepository,
+    AssignmentVideoQuizRepository,
   ],
   controllers: [StudentOnAssignmentController],
 })

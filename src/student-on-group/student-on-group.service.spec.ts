@@ -48,6 +48,7 @@ import { StudentOnGroupService } from './student-on-group.service';
 import { StorageService } from '../storage/storage.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { NotificationService } from '../notification/notification.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 describe('Student On Group Service', () => {
   let studentOnGroupService: StudentOnGroupService;
@@ -169,6 +170,9 @@ describe('Student On Group Service', () => {
     teacherOnSubjectService,
   );
 
+  const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+    prismaService,
+  );
   const assignmentService = new AssignmentService(
     prismaService,
     aiService,
@@ -182,6 +186,7 @@ describe('Student On Group Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    assignmentVideoQuizRepository,
     studentService,
     schoolService,
   );

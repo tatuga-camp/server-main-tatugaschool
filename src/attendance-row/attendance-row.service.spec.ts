@@ -47,6 +47,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
 import { StorageService } from '../storage/storage.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 describe('Attendance-row Service', () => {
   let attendanceRowService: AttendanceRowService;
@@ -164,6 +165,9 @@ describe('Attendance-row Service', () => {
     storageService,
     teacherOnSubjectService,
   );
+  const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+    prismaService,
+  );
 
   const assignmentService = new AssignmentService(
     prismaService,
@@ -178,6 +182,7 @@ describe('Attendance-row Service', () => {
     gradeService,
     scoreOnSubjectService,
     scoreOnStudentService,
+    assignmentVideoQuizRepository,
     studentService,
     schoolService,
   );
