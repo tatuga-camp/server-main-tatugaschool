@@ -307,6 +307,7 @@ model Subject {
   groupOnSubjects           GroupOnSubject[]
   unitOnGroups              UnitOnGroup[]
   studentOnGroups           StudentOnGroup[]
+  questionOnVideos          QuestionOnVideo[]
 
   @@index([educationYear, schoolId])
 }
@@ -446,10 +447,12 @@ model Assignment {
   updateAt DateTime @updatedAt
 
   title       String
-  description String
+  description String?
   maxScore    Float?
   weight      Float?
   order       Int?
+
+  videoURL String?
 
   status AssignmentStatus @default(Draft)
 
@@ -458,8 +461,9 @@ model Assignment {
   beginDate DateTime
   dueDate   DateTime?
 
-  vector        Float[]
-  vectorResouce String?
+  vector             Float[]
+  vectorResouce      String?
+  preventFastForward Boolean?
 
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
@@ -474,12 +478,14 @@ model Assignment {
   studentOnAssignments     StudentOnAssignment[]
   skillOnAssignments       SkillOnAssignment[]
   fileOnStudentAssignments FileOnStudentAssignment[]
+  questionOnVideos         QuestionOnVideo[]
 
   @@index([subjectId])
 }
 
 enum AssignmentType {
   Assignment
+  VideoQuiz
   Material
 }
 
@@ -500,13 +506,12 @@ model FileOnAssignment {
 
   preventFastForward Boolean? @default(false)
 
-  subjectId        String            @db.ObjectId
-  subject          Subject           @relation(fields: [subjectId], references: [id])
-  schoolId         String            @db.ObjectId
-  school           School            @relation(fields: [schoolId], references: [id])
-  assignmentId     String            @db.ObjectId
-  assignment       Assignment        @relation(fields: [assignmentId], references: [id])
-  questionOnVideos QuestionOnVideo[]
+  subjectId    String     @db.ObjectId
+  subject      Subject    @relation(fields: [subjectId], references: [id])
+  schoolId     String     @db.ObjectId
+  school       School     @relation(fields: [schoolId], references: [id])
+  assignmentId String     @db.ObjectId
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
 
   @@index([assignmentId, url])
 }
@@ -520,8 +525,13 @@ model QuestionOnVideo {
   options        String[]
   correctOptions Int[]
 
-  fileOnAssignmentId String           @db.ObjectId
-  fileOnAssignment   FileOnAssignment @relation(fields: [fileOnAssignmentId], references: [id])
+  timestamp Float
+
+  assignmentId String     @db.ObjectId
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+
+  subjectId String  @db.ObjectId
+  subject   Subject @relation(fields: [subjectId], references: [id])
 }
 
 model StudentOnAssignment {

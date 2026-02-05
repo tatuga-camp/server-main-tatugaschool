@@ -323,13 +323,15 @@ export class StudentOnAssignmentService {
           );
         }
 
-        if (dto.body.status === 'REVIEWD') {
+        if (assignment.type !== 'VideoQuiz' && dto.body.status === 'REVIEWD') {
           throw new ForbiddenException(
             'You are not allowed to access this resource',
           );
         }
 
-        delete dto.body?.score;
+        if (assignment.type !== 'VideoQuiz') {
+          delete dto.body?.score;
+        }
         delete dto.body?.isAssigned;
       }
 

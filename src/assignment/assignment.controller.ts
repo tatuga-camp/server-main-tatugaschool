@@ -9,6 +9,9 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Student, User } from '@prisma/client';
+import { GetStudent, GetUser } from '../auth/decorators';
+import { StudentGuard, UserGuard } from '../auth/guard';
 import { AssignmentService } from './assignment.service';
 import {
   CreateAssignmentDto,
@@ -20,9 +23,6 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { GetStudent, GetUser } from '../auth/decorators';
-import { Student, User } from '@prisma/client';
-import { StudentGuard, UserGuard } from '../auth/guard';
 
 @Controller('v1/assignments')
 export class AssignmentController {

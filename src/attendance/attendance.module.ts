@@ -23,6 +23,7 @@ import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.serv
 import { ScoreOnStudentService } from '../score-on-student/score-on-student.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { SubscriptionService } from '../subscription/subscription.service';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Module({
   imports: [HttpModule],
@@ -49,6 +50,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
     ScoreOnStudentService,
     FileAssignmentService,
     SubscriptionService,
+    AssignmentVideoQuizRepository,
   ],
   controllers: [AttendanceController],
 })
