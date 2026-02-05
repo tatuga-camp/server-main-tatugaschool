@@ -1,6 +1,7 @@
 import { AssignmentStatus, AssignmentType } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsMongoId,
@@ -54,4 +55,12 @@ export class CreateAssignmentDto {
   @IsNotEmpty()
   @IsEnum(AssignmentStatus)
   status: AssignmentStatus;
+
+  @IsOptional()
+  @IsUrl()
+  videoURL?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  preventFastForward?: boolean;
 }
