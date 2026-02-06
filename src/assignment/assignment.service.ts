@@ -446,6 +446,7 @@ export class AssignmentService {
     user: User,
   ): Promise<Assignment> {
     try {
+      const assignDefultAll = !!dto.assignAll;
       if (dto.type === 'Assignment' && (!dto.beginDate || !dto.maxScore)) {
         throw new BadRequestException(
           'Assign at and max score are required for assignment ',
@@ -478,6 +479,7 @@ export class AssignmentService {
         );
       }
 
+      delete dto.assignAll;
       const assignment = await this.assignmentRepository.create({
         data: { ...dto, schoolId: subject.schoolId, userId: user.id },
       });
@@ -501,6 +503,7 @@ export class AssignmentService {
               studentId: student.studentId,
               studentOnSubjectId: student.id,
               subjectId: student.subjectId,
+              isAssigned: assignDefultAll,
             };
           },
         );
@@ -576,7 +579,7 @@ export class AssignmentService {
       text += assignment.title;
 
       // extract text from html
-      const doc = cheerio.load(assignment.description);
+      const doc = cheerio.load(assignment.description ?? '');
       text += doc('body').text();
       const files = await this.fileAssignmentRepository.getByAssignmentId({
         assignmentId: assignment.id,
@@ -766,7 +769,21 @@ export class AssignmentService {
         userId: user.id,
         subjectId: assignment.subjectId,
       });
-      const { totalDeleteSize } = await this.assignmentRepository.delete(dto);
+      let { totalDeleteSize } = await this.assignmentRepository.delete(dto);
+
+      if (assignment.type === 'VideoQuiz' && assignment.videoURL) {
+        const assignments = await this.assignmentRepository.count({
+          where: {
+            videoURL: assignment.videoURL,
+          },
+        });
+
+        if (assignments === 1) {
+          await this.storageService.DeleteFileOnStorage({
+            fileName: assignment.videoURL,
+          });
+        }
+      }
 
       await this.schoolService.schoolRepository.update({
         where: {
