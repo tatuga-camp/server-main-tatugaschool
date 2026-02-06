@@ -25,6 +25,7 @@ env:
   VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
   VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
   VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
+  GOOGLE_AI_KEY: ${{secrets.GOOGLE_AI_KEY}}
   NODE_ENV: test
 
 # Set the actions that triggers the workflow
