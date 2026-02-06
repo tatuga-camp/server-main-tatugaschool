@@ -23,6 +23,7 @@ env:
   WHEEL_OF_NAME_SECRET_KEY: ${{ secrets.WHEEL_OF_NAME_SECRET_KEY }}
   VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
   VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+  GOOGLE_AI_KEY: ${{secrets.GOOGLE_AI_KEY}}
   VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
   NODE_ENV: test
 jobs:
