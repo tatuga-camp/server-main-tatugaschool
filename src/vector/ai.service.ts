@@ -5,6 +5,13 @@ import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { catchError, firstValueFrom, lastValueFrom } from 'rxjs';
 import axios from 'axios';
+import {
+  ContentListUnion,
+  GoogleGenAI,
+  HarmBlockThreshold,
+  HarmCategory,
+  ThinkingLevel,
+} from '@google/genai';
 
 type AiType = {
   embbedingText(text: string, accessToken: string): Promise<EmbeddingsResponse>;
@@ -22,12 +29,60 @@ type AiType = {
 @Injectable()
 export class AiService implements AiType {
   logger: Logger;
+  private googleAI: GoogleGenAI;
   constructor(
     private config: ConfigService,
     private httpService: HttpService,
     private authService: AuthService,
   ) {
     this.logger = new Logger(AiService.name);
+    this.googleAI = new GoogleGenAI({
+      apiKey: this.config.get('GOOGLE_AI_KEY'),
+    });
+  }
+
+  async generateContent(request: ContentListUnion) {
+    const streamingResp = await this.googleAI.models.generateContentStream({
+      model: 'gemini-3-flash-preview',
+      contents: request,
+      config: {
+        maxOutputTokens: 65535,
+        temperature: 1,
+        topP: 0.95,
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.HIGH,
+        },
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.OFF,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.OFF,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.OFF,
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.OFF,
+          },
+        ],
+      },
+    });
+
+    let fullResponse = '';
+
+    for await (const chunk of streamingResp) {
+      const chunkText = chunk.text;
+      if (chunkText) {
+        fullResponse += chunkText;
+      }
+    }
+
+    return fullResponse;
   }
 
   async summarizeFile(dto: {
@@ -124,67 +179,33 @@ export class AiService implements AiType {
           };
         }),
       );
-
-      const PROJECT_ID = this.config.get('GOOGLE_CLOUD_PROJECT_ID');
-      const LOCATION_ID = 'us-central1';
-      const API_ENDPOINT = 'us-central1-aiplatform.googleapis.com';
-      const MODEL_ID = 'gemini-2.5-flash-lite';
-      const GENERATE_CONTENT_API = 'generateContent';
-      const response = this.httpService
-        .post<ResponseNonStreamingText>(
-          `https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/${LOCATION_ID}/publishers/google/models/${MODEL_ID}:${GENERATE_CONTENT_API}`,
-          {
-            contents: [
-              {
-                role: 'user',
-                parts: [
-                  ...parts,
-                  {
-                    text: 'Describe the content and purpose of this teaching material. Include the subject, topic, activity types, target grade level, and relevant 21st-century skills.',
-                  },
-                ],
-              },
-            ],
-            generationConfig: {
-              responseModalities: ['TEXT'],
-              temperature: 1,
-              maxOutputTokens: 4370,
-              topP: 0.95,
+      const response = await this.generateContent([
+        {
+          role: 'user',
+          parts: [
+            ...parts,
+            {
+              text: 'Describe the content and purpose of this teaching material. Include the subject, topic, activity types, target grade level, and relevant 21st-century skills.',
             },
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'OFF',
-              },
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'OFF',
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'OFF',
-              },
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'OFF',
-              },
-            ],
-          },
+          ],
+        },
+      ]);
+      return {
+        candidates: [
           {
-            headers: {
-              Authorization: `Bearer ${dto.accessToken}`,
-              'Content-Type': 'text/plain; charset=utf-8',
+            content: {
+              role: 'USER',
+              parts: [
+                {
+                  text: response,
+                },
+              ],
             },
+            finishReason: '',
+            avgLogprobs: 0,
           },
-        )
-        .pipe(
-          catchError((e: any) => {
-            this.logger.error(e);
-            throw new HttpException(e.response?.data, e.response?.status);
-          }),
-        );
-      const checkResult = await lastValueFrom(response);
-      return checkResult.data;
+        ],
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;

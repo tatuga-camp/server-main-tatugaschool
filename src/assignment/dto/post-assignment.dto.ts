@@ -63,4 +63,8 @@ export class CreateAssignmentDto {
   @IsOptional()
   @IsBoolean()
   preventFastForward?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  assignAll?: boolean;
 }

@@ -482,6 +482,7 @@ export class AuthService {
   async getGoogleAccessToken(): Promise<string> {
     try {
       const client = await this.oauth2Client.getClient();
+
       const accessToken = await client.getAccessToken();
       return accessToken.token;
     } catch (error) {

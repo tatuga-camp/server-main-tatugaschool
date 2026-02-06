@@ -105,7 +105,7 @@ import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-vi
       throttlers: [
         {
           ttl: 1000 * 60,
-          limit: process.env.NODE_ENV === 'production' ? 100 : 1000,
+          limit: process.env.NODE_ENV === 'production' ? 300 : 1000,
         },
       ],
     }),
