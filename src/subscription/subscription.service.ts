@@ -232,7 +232,7 @@ export class SubscriptionService {
 
       return {
         subscriptionId: subscription.subscription.id,
-        clientSecret: subscription.paymentIntent.client_secret,
+        clientSecret: subscription.paymentIntent?.client_secret ?? null,
         price: subscription.price,
       };
     } catch (error) {
@@ -272,14 +272,16 @@ export class SubscriptionService {
       const latestInvoice = subscription.latest_invoice as {
         id: string;
       };
-
       const invoice = await this.stripe.invoices.finalizeInvoice(
         latestInvoice.id,
       );
 
-      const paymentIntent = await this.stripe.paymentIntents.retrieve(
-        invoice.payment_intent.toString(),
-      );
+      let paymentIntent: Stripe.PaymentIntent | null = null;
+      if (invoice.payment_intent) {
+        paymentIntent = await this.stripe.paymentIntents.retrieve(
+          invoice.payment_intent.toString(),
+        );
+      }
       return { paymentIntent, subscription, price: invoice.amount_due };
     } catch (error) {
       this.logger.error(error);
