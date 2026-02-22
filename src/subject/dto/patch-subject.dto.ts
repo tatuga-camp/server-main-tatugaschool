@@ -60,6 +60,10 @@ class UpdateSubjectBody {
   @IsOptional()
   @IsBoolean()
   allowStudentViewAttendance?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewScoreOnAssignment?: boolean;
 }
 
 export class UpdateSubjectDto {

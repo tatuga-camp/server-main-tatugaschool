@@ -274,11 +274,12 @@ model Subject {
   blurHash        String?
   wheelOfNamePath String?
 
-  allowStudentDeleteWork       Boolean @default(true)
-  allowStudentViewOverallScore Boolean @default(false)
-  allowStudentViewGrade        Boolean @default(false)
-  allowStudentViewAttendance   Boolean @default(true)
-  isLocked                     Boolean @default(false)
+  allowStudentDeleteWork            Boolean @default(true)
+  allowStudentViewOverallScore      Boolean @default(false)
+  allowStudentViewGrade             Boolean @default(false)
+  allowStudentViewAttendance        Boolean @default(true)
+  allowStudentViewScoreOnAssignment Boolean @default(true)
+  isLocked                          Boolean @default(false)
 
   classId  String  @db.ObjectId
   userId   String? @db.ObjectId
