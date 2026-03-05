@@ -185,6 +185,12 @@ export class AssignmentRepository implements AssignmentRepositoryType {
           }),
         },
       });
+
+      await this.prisma.questionOnVideo.deleteMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
+      });
       const fileOnStudentAssignments =
         await this.prisma.fileOnStudentAssignment.findMany({
           where: {
