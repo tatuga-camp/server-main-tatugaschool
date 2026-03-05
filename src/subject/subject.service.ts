@@ -205,6 +205,7 @@ export class SubjectService {
                 }),
                 subjectId: create.id,
                 status: assignment.status,
+                order: assignment.order,
                 maxScore: assignment.maxScore,
               },
               user,
@@ -218,6 +219,13 @@ export class SubjectService {
                   },
                 },
               );
+            const questionsOnVideo = await this.prisma.questionOnVideo.findMany(
+              {
+                where: {
+                  assignmentId: assignment.id,
+                },
+              },
+            );
             if (filesOnAssignments.length > 0) {
               await Promise.allSettled(
                 filesOnAssignments.map((file) =>
@@ -229,6 +237,23 @@ export class SubjectService {
                     size: file.size,
                     schoolId: create.schoolId,
                     assignmentId: newAssignment.id,
+                  }),
+                ),
+              );
+            }
+
+            if (questionsOnVideo.length > 0) {
+              await Promise.allSettled(
+                questionsOnVideo.map((question) =>
+                  this.prisma.questionOnVideo.create({
+                    data: {
+                      assignmentId: newAssignment.id,
+                      question: question.question,
+                      options: question.options,
+                      correctOptions: question.correctOptions,
+                      timestamp: question.timestamp,
+                      subjectId: create.id,
+                    },
                   }),
                 ),
               );
