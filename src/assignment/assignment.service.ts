@@ -230,7 +230,7 @@ export class AssignmentService {
             (s) => s.status === 'SUBMITTED',
           ).length,
           penddingNumber: studentOnAssignments.filter(
-            (s) => s.status === 'PENDDING',
+            (s) => s.status === 'PENDDING' && s.isAssigned === true,
           ).length,
           reviewNumber: studentOnAssignments.filter(
             (s) => s.status === 'REVIEWD',

@@ -61,6 +61,10 @@ export class CreateAssignmentDto {
   videoURL?: string;
 
   @IsOptional()
+  @IsNumber()
+  order?: number;
+
+  @IsOptional()
   @IsBoolean()
   preventFastForward?: boolean;
 
