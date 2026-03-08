@@ -29,6 +29,10 @@ export class NotificationService {
     const { userIds } = dto;
     const methodName = 'createNotifications'; // For logging context
 
+    if (!userIds || userIds.length === 0) {
+      return { count: 0 };
+    }
+
     try {
       const dataToCreate = userIds.map<Prisma.NotificationCreateManyInput>(
         (userId) => ({
