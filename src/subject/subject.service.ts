@@ -118,8 +118,8 @@ export class SubjectService {
       const create = await this.createSubject(
         {
           title: dto.title,
-          description: subject.description,
-          educationYear: subject.educationYear,
+          description: dto.description,
+          educationYear: dto.educationYear,
           schoolId: subject.schoolId,
           classId: classroom.id,
           backgroundImage: subject.backgroundImage,
