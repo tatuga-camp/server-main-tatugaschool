@@ -216,6 +216,7 @@ export class SubjectService {
                 status: assignment.status,
                 order: assignment.order,
                 maxScore: assignment.maxScore,
+                videoURL: assignment.videoURL,
               },
               user,
             );
@@ -555,6 +556,7 @@ export class SubjectService {
       });
 
       const code = crypto.randomBytes(3).toString('hex');
+
       let subject = await this.subjectRepository.createSubject({
         ...dto,
         educationYear: educationYear,
