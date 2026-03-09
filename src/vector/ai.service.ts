@@ -25,6 +25,10 @@ type AiType = {
     targetLang: string,
     accessToken: string,
   ): Promise<string>;
+  suggestTeachingMaterialMetadata(dto: {
+    imageURLs: { url: string; type: string }[];
+    accessToken: string;
+  }): Promise<{ title: string; keywords: string[]; description: string }>;
 };
 @Injectable()
 export class AiService implements AiType {
@@ -43,10 +47,10 @@ export class AiService implements AiType {
 
   async generateContent(request: ContentListUnion) {
     const streamingResp = await this.googleAI.models.generateContentStream({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3.1-flash-lite-preview',
       contents: request,
       config: {
-        maxOutputTokens: 65535,
+        maxOutputTokens: 65536,
         temperature: 1,
         topP: 0.95,
         thinkingConfig: {
@@ -206,6 +210,104 @@ export class AiService implements AiType {
           },
         ],
       };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async suggestTeachingMaterialMetadata(dto: {
+    imageURLs: { url: string; type: string }[];
+    accessToken: string;
+  }): Promise<{ title: string; keywords: string[]; description: string }> {
+    try {
+      const supportFilesType = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+        'video/mp4',
+        'video/webm',
+        'video/x-matroska',
+        'video/quicktime',
+        'application/pdf',
+        'text/plain',
+        'audio/mpeg',
+        'audio/mp3',
+        'audio/wav',
+        'audio/webm',
+        'audio/x-m4a',
+        'audio/opus',
+        'audio/aac',
+        'audio/flac',
+        'audio/L16',
+      ];
+
+      const supportedFiles = dto.imageURLs.filter((url) =>
+        supportFilesType.includes(url.type),
+      );
+
+      if (supportedFiles.length === 0) {
+        return {
+          title: '',
+          keywords: [],
+          description: '',
+        };
+      }
+
+      const parts = await Promise.all(
+        supportedFiles.map(async (url) => {
+          if (url.url.startsWith('data:')) {
+            return {
+              inlineData: {
+                mimeType: url.type,
+                data: url.url,
+              },
+            };
+          }
+          const response = await axios.get(url.url, {
+            responseType: 'arraybuffer',
+          });
+          const base64Data = Buffer.from(response.data).toString('base64');
+          return {
+            inlineData: {
+              mimeType: url.type,
+              data: base64Data,
+            },
+          };
+        }),
+      );
+      const response = await this.generateContent([
+        {
+          role: 'user',
+          parts: [
+            ...parts,
+            {
+              text: 'Analyze the content of this teaching material. Return ONLY a valid JSON object with the following properties: "title" (a concise, descriptive title for the material), "keywords" (an array of 5-10 relevant keywords or tags), and "description" (Analyze the content and purpose of this teaching material. Include the subject, topic, activity types, target grade level in Thai Education System and grade level on US, and relevant 21st-century skills and it should be longer than 200 words). Do not include any markdown formatting or extra text outside the JSON object.',
+            },
+          ],
+        },
+      ]);
+
+      try {
+        const cleanResponse = response
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+        const parsed = JSON.parse(cleanResponse);
+        return {
+          title: parsed.title || '',
+          keywords: parsed.keywords || [],
+          description: parsed.description || '',
+        };
+      } catch (e) {
+        this.logger.error('Failed to parse JSON response from Gemini', e);
+        return {
+          title: '',
+          keywords: [],
+          description: response,
+        };
+      }
     } catch (error) {
       this.logger.error(error);
       throw error;
