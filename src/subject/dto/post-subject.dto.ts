@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsDateString,
   IsMongoId,
   IsNotEmpty,
@@ -34,6 +35,34 @@ export class CreateSubjectDto {
   @IsNotEmpty()
   @IsMongoId()
   schoolId: string;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentDeleteWork?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewOverallScore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewGrade?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewAttendance?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentViewScoreOnAssignment?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowStudentDoneAssignmentInOrder?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowHideStudentList?: boolean;
 }
 
 export class DuplicateSubjectDto {
