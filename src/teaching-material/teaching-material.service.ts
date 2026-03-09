@@ -188,20 +188,23 @@ export class TeachingMaterialService {
   async suggestionVectorResouce(dto: {
     data: { url: string; type: string }[];
   }): Promise<{
+    title: string;
+    keywords: string[];
     description: string;
   }> {
     try {
       const accessToken = await this.authService.getGoogleAccessToken();
-      const vectorResouce = await this.aiService.summarizeFile({
-        imageURLs: dto.data.map((i) => {
-          return {
-            url: i.url,
-            type: i.type,
-          };
-        }),
-        accessToken,
-      });
-      return { description: vectorResouce.candidates[0].content.parts[0].text };
+      const vectorResouce =
+        await this.aiService.suggestTeachingMaterialMetadata({
+          imageURLs: dto.data.map((i) => {
+            return {
+              url: i.url,
+              type: i.type,
+            };
+          }),
+          accessToken,
+        });
+      return vectorResouce;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -229,7 +232,6 @@ export class TeachingMaterialService {
       text += dto.title;
       text += dto.description;
       dto.tags.forEach((tag) => (text += tag));
-
       const vector = await this.aiService.embbedingText(text, accessToken);
       const create = await this.teachingMaterialRepository.create({
         data: {
