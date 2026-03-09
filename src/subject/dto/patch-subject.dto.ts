@@ -68,6 +68,10 @@ class UpdateSubjectBody {
   @IsOptional()
   @IsBoolean()
   allowStudentDoneAssignmentInOrder?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowHideStudentList?: boolean;
 }
 
 export class UpdateSubjectDto {

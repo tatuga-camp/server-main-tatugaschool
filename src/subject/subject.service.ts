@@ -123,6 +123,15 @@ export class SubjectService {
           schoolId: subject.schoolId,
           classId: classroom.id,
           backgroundImage: subject.backgroundImage,
+          allowStudentDeleteWork: subject.allowStudentDeleteWork,
+          allowStudentViewOverallScore: subject.allowStudentViewOverallScore,
+          allowStudentViewGrade: subject.allowStudentViewGrade,
+          allowStudentViewAttendance: subject.allowStudentViewAttendance,
+          allowStudentViewScoreOnAssignment:
+            subject.allowStudentViewScoreOnAssignment,
+          allowStudentDoneAssignmentInOrder:
+            subject.allowStudentDoneAssignmentInOrder,
+          allowHideStudentList: subject.allowHideStudentList,
         },
         user,
       );

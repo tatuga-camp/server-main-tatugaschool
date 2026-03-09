@@ -280,6 +280,7 @@ model Subject {
   allowStudentViewAttendance        Boolean @default(true)
   allowStudentViewScoreOnAssignment Boolean @default(true)
   allowStudentDoneAssignmentInOrder Boolean @default(false)
+  allowHideStudentList              Boolean @default(false)
   isLocked                          Boolean @default(false)
 
   classId  String  @db.ObjectId
