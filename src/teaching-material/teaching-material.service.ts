@@ -159,8 +159,29 @@ export class TeachingMaterialService {
     }
   }
 
-  async findByAI(dto: { search: string }): Promise<TeachingMaterial[]> {
+  async count(): Promise<number> {
     try {
+      return await this.teachingMaterialRepository.count();
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async findByAI(dto: {
+    search?: string;
+    filter?: string;
+  }): Promise<TeachingMaterial[]> {
+    try {
+      if (!dto.search) {
+        return await this.teachingMaterialRepository.findMany({
+          take: 100,
+          orderBy: {
+            createAt: 'desc',
+          },
+        });
+      }
+
       const accessToken = await this.authService.getGoogleAccessToken();
       const translated = await this.aiService.translateText(
         dto.search,
@@ -173,10 +194,16 @@ export class TeachingMaterialService {
         accessToken,
       );
 
-      const teachingMaterials =
+      let teachingMaterials =
         await this.teachingMaterialRepository.findByVector({
           vector: vector.predictions[0].embeddings.values,
         });
+
+      if (dto.filter === 'recent') {
+        teachingMaterials.sort(
+          (a, b) => b.createAt.getTime() - a.createAt.getTime(),
+        );
+      }
 
       return teachingMaterials;
     } catch (error) {

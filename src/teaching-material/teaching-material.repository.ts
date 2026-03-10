@@ -22,6 +22,7 @@ type Repository = {
   update(request: Prisma.TeachingMaterialUpdateArgs): Promise<TeachingMaterial>;
   create(request: Prisma.TeachingMaterialCreateArgs): Promise<TeachingMaterial>;
   delete(request: { id: string }): Promise<TeachingMaterial>;
+  count(request?: Prisma.TeachingMaterialCountArgs): Promise<number>;
 };
 @Injectable()
 export class TeachingMaterialRepository implements Repository {
@@ -204,6 +205,24 @@ export class TeachingMaterialRepository implements Repository {
       });
 
       return teachingMaterial;
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async count(): Promise<number> {
+    try {
+      const response = await this.prisma.$runCommandRaw({
+        count: 'TeachingMaterial',
+      });
+
+      return (response.n as number) || 0;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
