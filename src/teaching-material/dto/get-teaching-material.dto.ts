@@ -9,9 +9,13 @@ import {
 } from 'class-validator';
 
 export class GetTeachingMaterialsDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  search: string;
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  filter?: string;
 }
 
 export class GetTeachingMaterialDto {

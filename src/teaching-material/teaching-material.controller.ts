@@ -30,6 +30,12 @@ export class TeachingMaterialController {
   constructor(private teachingMaterialService: TeachingMaterialService) {}
 
   @UseGuards(UserGuard)
+  @Get('count')
+  count() {
+    return this.teachingMaterialService.count();
+  }
+
+  @UseGuards(UserGuard)
   @Get()
   getByAI(@Query() dto: GetTeachingMaterialsDto) {
     return this.teachingMaterialService.findByAI(dto);
