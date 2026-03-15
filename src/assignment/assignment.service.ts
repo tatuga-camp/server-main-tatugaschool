@@ -388,9 +388,18 @@ export class AssignmentService {
       ] = await Promise.all([
         this.assignmentRepository.findMany({
           where: {
-            subjectId: dto.subjectId,
-            status: 'Published',
-            type: 'Assignment',
+            OR: [
+              {
+                subjectId: dto.subjectId,
+                status: 'Published',
+                type: 'Assignment',
+              },
+              {
+                subjectId: dto.subjectId,
+                status: 'Published',
+                type: 'VideoQuiz',
+              },
+            ],
           },
         }),
         this.studentOnAssignmentRepository.findMany({
