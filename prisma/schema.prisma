@@ -80,15 +80,15 @@ model School {
   plan        Plan    @default(FREE)
   isDeleted   Boolean @default(false)
 
-  country String
-  city    String
-  address String
-  zipCode String
+  country String?
+  city    String?
+  address String?
+  zipCode String?
 
   logo     String
   blurHash String?
 
-  phoneNumber String
+  phoneNumber String?
 
   totalStorage Float @default(0)
 
