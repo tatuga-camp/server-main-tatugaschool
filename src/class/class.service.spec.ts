@@ -47,7 +47,7 @@ describe('Class Service', () => {
   const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
-
+  let schoolService: SchoolService;
   const emailService = new EmailService(configService);
   const authService = new AuthService(
     emailService,
@@ -56,6 +56,7 @@ describe('Class Service', () => {
     configService,
     prismaService,
     storageService,
+    schoolService,
   );
 
   const userService = new UsersService(prismaService, authService);
@@ -84,7 +85,7 @@ describe('Class Service', () => {
 
   let subscriptionService: SubscriptionService;
 
-  const schoolService = new SchoolService(
+  schoolService = new SchoolService(
     prismaService,
     stripeService,
     memberOnSchoolService,
