@@ -139,8 +139,6 @@ export class SchoolService {
 
   async createSchool(dto: CreateSchoolDto, user: User): Promise<School> {
     try {
-      //create stripe customer
-
       const memeberOnSchools =
         await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
           where: {

@@ -60,6 +60,28 @@ describe('Assignment Service', () => {
   const base64ImageService = new ImageService();
 
   const emailService = new EmailService(configService);
+  let memberOnSchoolService: MemberOnSchoolService;
+  let studentService: StudentService;
+  let classroomService: ClassService;
+  let gradeService: GradeService;
+  let subjectService: SubjectService;
+  let fileAssignmentService: FileAssignmentService;
+  let attendanceStatusListService: AttendanceStatusListService;
+  let subscriptionService: SubscriptionService;
+
+  const userService = new UsersService(prismaService, {} as any);
+
+  const schoolService = new SchoolService(
+    prismaService,
+    stripeService,
+    memberOnSchoolService,
+    storageService,
+    subjectService,
+    classroomService,
+    subscriptionService,
+    userService,
+  );
+
   const authService = new AuthService(
     emailService,
     jwtService,
@@ -67,9 +89,10 @@ describe('Assignment Service', () => {
     configService,
     prismaService,
     storageService,
+    schoolService,
   );
 
-  const userService = new UsersService(prismaService, authService);
+  (userService as any).authService = authService;
   const aiService = new AiService(configService, httpService, authService);
   const teacherOnSubjectService = new TeacherOnSubjectService(
     prismaService,
@@ -82,26 +105,6 @@ describe('Assignment Service', () => {
     prismaService,
     teacherOnSubjectService,
     storageService,
-  );
-
-  let memberOnSchoolService: MemberOnSchoolService;
-  let studentService: StudentService;
-  let classroomService: ClassService;
-  let gradeService: GradeService;
-  let subjectService: SubjectService;
-  let fileAssignmentService: FileAssignmentService;
-  let attendanceStatusListService: AttendanceStatusListService;
-  let subscriptionService: SubscriptionService;
-
-  const schoolService = new SchoolService(
-    prismaService,
-    stripeService,
-    memberOnSchoolService,
-    storageService,
-    subjectService,
-    classroomService,
-    subscriptionService,
-    userService,
   );
 
   const pushService = new PushService(prismaService);

@@ -53,6 +53,7 @@ describe('School Service', () => {
   const base64ImageService = new ImageService();
 
   const emailService = new EmailService(configService);
+
   const authService = new AuthService(
     emailService,
     jwtService,
@@ -60,6 +61,7 @@ describe('School Service', () => {
     configService,
     prismaService,
     storageService,
+    schoolService,
   );
 
   const userService = new UsersService(prismaService, authService);

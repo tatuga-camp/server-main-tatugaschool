@@ -30,6 +30,8 @@ import {
   VerifyEmailDto,
 } from './dto';
 import { GoogleProfile } from './strategy/google-oauth.strategy';
+import { SchoolService } from '../school/school.service';
+import { forwardRef, Inject } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -44,6 +46,8 @@ export class AuthService {
     private config: ConfigService,
     private prisma: PrismaService,
     private storageService: StorageService,
+    @Inject(forwardRef(() => SchoolService))
+    private schoolService: SchoolService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
@@ -206,6 +210,29 @@ export class AuthService {
       await this.usersRepository.updateVerified({
         email: user.email,
       });
+
+      const members = await this.prisma.memberOnSchool.findMany({
+        where: {
+          userId: user.id,
+        },
+      });
+
+      if (members.length === 0) {
+        await this.schoolService.createSchool(
+          {
+            title: `${user.firstName} ${user.lastName}'s School`,
+            description: `This is ${user.firstName} ${user.lastName}'s school`,
+            phoneNumber: user.phone,
+            country: 'Thailand',
+            city: 'Nakhon Ratchasima',
+            address: 'Nakhon Ratchasima, Thailand',
+            zipCode: '30000',
+            logo: user.photo,
+            blurHash: user.blurHash,
+          },
+          user,
+        );
+      }
     } catch (error) {
       this.logger.error(error);
       throw error;

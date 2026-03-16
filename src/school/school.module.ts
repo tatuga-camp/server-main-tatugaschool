@@ -33,7 +33,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     forwardRef(() => SubjectModule),
     forwardRef(() => ClassModule),
     forwardRef(() => AssignmentModule),
-
     HttpModule,
   ],
   providers: [
