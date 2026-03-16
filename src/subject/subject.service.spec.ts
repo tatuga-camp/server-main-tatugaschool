@@ -53,35 +53,14 @@ describe('Subject Service', () => {
   const base64ImageService = new ImageService();
 
   const emailService = new EmailService(configService);
-  const authService = new AuthService(
-    emailService,
-    jwtService,
-    base64ImageService,
-    configService,
-    prismaService,
-    storageService,
-  );
-
-  const userService = new UsersService(prismaService, authService);
-  const aiService = new AiService(configService, httpService, authService);
-  const teacherOnSubjectService = new TeacherOnSubjectService(
-    prismaService,
-    configService,
-    emailService,
-  );
-
-  const wheelOfNameService = new WheelOfNameService(httpService, configService);
-  const attendanceTableService = new AttendanceTableService(
-    prismaService,
-    teacherOnSubjectService,
-    storageService,
-  );
 
   let memberOnSchoolService: MemberOnSchoolService;
   let studentService: StudentService;
   let gradeService: GradeService;
   let schoolService: SchoolService;
   let subscriptionService: SubscriptionService;
+
+  const userService = new UsersService(prismaService, {} as any);
 
   subscriptionService = new SubscriptionService(stripeService, schoolService);
 
@@ -105,6 +84,31 @@ describe('Subject Service', () => {
     classroomService,
     subscriptionService,
     userService,
+  );
+
+  const authService = new AuthService(
+    emailService,
+    jwtService,
+    base64ImageService,
+    configService,
+    prismaService,
+    storageService,
+    schoolService,
+  );
+
+  (userService as any).authService = authService;
+  const aiService = new AiService(configService, httpService, authService);
+  const teacherOnSubjectService = new TeacherOnSubjectService(
+    prismaService,
+    configService,
+    emailService,
+  );
+
+  const wheelOfNameService = new WheelOfNameService(httpService, configService);
+  const attendanceTableService = new AttendanceTableService(
+    prismaService,
+    teacherOnSubjectService,
+    storageService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
