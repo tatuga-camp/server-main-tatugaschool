@@ -83,6 +83,11 @@ export class UsersService {
       if (dto.email && dto.email === user.email) {
         throw new BadRequestException("Can't update email to the same email");
       }
+
+      if (dto.email && user.provider === 'GOOGLE') {
+        throw new BadRequestException("Can't update email for Google provider");
+      }
+
       const update = await this.userRepository.update({
         where: {
           id: user.id,
