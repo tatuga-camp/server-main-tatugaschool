@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Student, User } from '@prisma/client';
+import { School, Student, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { Request, Response } from 'express';
@@ -194,7 +194,7 @@ export class AuthService {
     }
   }
 
-  async verifyEmail(dto: VerifyEmailDto): Promise<void> {
+  async verifyEmail(dto: VerifyEmailDto): Promise<School | void> {
     try {
       const user = await this.usersRepository.findByVerifyToken({
         verifyEmailToken: dto.token,
@@ -218,7 +218,7 @@ export class AuthService {
       });
 
       if (members.length === 0) {
-        await this.schoolService.createSchool(
+        return await this.schoolService.createSchool(
           {
             title: `${user.firstName} ${user.lastName}'s School`,
             description: `This is ${user.firstName} ${user.lastName}'s school`,
