@@ -18,14 +18,12 @@ describe('FeedbackRepository', () => {
       try {
         const created = await feedbackRepository.create({
           data: {
-            title: 'Feature Suggestion',
             body: 'Please add dark mode!',
             tag: FeedbackTag.REQUEST_FEATURE,
             userId: userId,
           },
         });
 
-        expect(created.title).toBe('Feature Suggestion');
         expect(created.body).toBe('Please add dark mode!');
         expect(created.tag).toBe(FeedbackTag.REQUEST_FEATURE);
         expect(created.userId).toBe(userId);

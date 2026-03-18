@@ -50,6 +50,7 @@ import { NotificationModule } from './notification/notification.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-video-quiz.module';
+import { FileOnFeedbackModule } from './file-on-feedback/file-on-feedback.module';
 
 @Module({
   imports: [
@@ -110,6 +111,7 @@ import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-vi
       ],
     }),
     AssignmentVideoQuizModule,
+    FileOnFeedbackModule,
   ],
   controllers: [AppController],
   providers: [
