@@ -43,10 +43,10 @@ model User {
   schools                  School[]
   assignments              Assignment[]
   commentOnAssignments     CommentOnAssignment[]
-  SubscriptionNotification SubscriptionNotification[]
+  subscriptionNotifications SubscriptionNotification[]
   feedbacks                Feedback[]
   classes                  Class[]
-  Notification             Notification[]
+  notifications             Notification[]
 }
 
 enum Language {
@@ -986,14 +986,27 @@ model FileOnTeachingMaterial {
 }
 
 model Feedback {
-  id        String      @id @default(uuid()) @map("_id")
-  title     String
-  body      String
-  tag       FeedbackTag
-  userId    String      @db.ObjectId
-  user      User        @relation(fields: [userId], references: [id])
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  body            String
+  tag             FeedbackTag
+  userId          String?           @db.ObjectId
+  user            User?             @relation(fields: [userId], references: [id])
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  fileOnFeedbacks FileOnFeedback[]
+}
+
+model FileOnFeedback {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  url  String
+  type String
+  size Float
+
+  feedbackId String   @db.ObjectId
+  feedback   Feedback @relation(fields: [feedbackId], references: [id])
 }
 
 model Notification {

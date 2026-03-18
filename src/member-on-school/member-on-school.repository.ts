@@ -29,7 +29,7 @@ type Repository = {
   delete(request: { memberOnSchoolId: string }): Promise<MemberOnSchool>;
   getAllMemberOnSchoolsBySchoolId(request: { schoolId: string }): Promise<
     (MemberOnSchool & {
-      user: { SubscriptionNotification: SubscriptionNotification[] };
+      user: { subscriptionNotifications: SubscriptionNotification[] };
     })[]
   >;
   getByUserId(request: { userId: string }): Promise<MemberOnSchool[]>;
@@ -222,7 +222,7 @@ export class MemberOnSchoolRepository implements Repository {
 
   async getAllMemberOnSchoolsBySchoolId(request: { schoolId: string }): Promise<
     (MemberOnSchool & {
-      user: { SubscriptionNotification: SubscriptionNotification[] };
+      user: { subscriptionNotifications: SubscriptionNotification[] };
     })[]
   > {
     try {
@@ -233,7 +233,7 @@ export class MemberOnSchoolRepository implements Repository {
         include: {
           user: {
             include: {
-              SubscriptionNotification: true,
+              subscriptionNotifications: true,
             },
           },
         },

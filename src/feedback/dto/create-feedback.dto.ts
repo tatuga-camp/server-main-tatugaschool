@@ -1,21 +1,32 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
-
-export enum FeedbackTag {
-  COMPLIMENT = 'COMPLIMENT',
-  BUG = 'BUG',
-  REQUEST_FEATURE = 'REQUEST_FEATURE',
-}
+import { FeedbackTag } from '@prisma/client';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { CreateFileOnFeedbackDto } from '../../file-on-feedback/dto/create-file-on-feedback.dto';
 
 export class CreateFeedbackDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
-
-  @IsString()
-  @IsNotEmpty()
   body: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  private: boolean;
 
   @IsEnum(FeedbackTag)
   @IsNotEmpty()
   tag: FeedbackTag;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateFileOnFeedbackDto)
+  files?: CreateFileOnFeedbackDto[];
 }

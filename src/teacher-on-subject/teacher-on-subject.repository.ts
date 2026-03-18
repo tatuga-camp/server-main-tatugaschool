@@ -23,11 +23,9 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 type TeacherOnSubjectRepositoryType = {
   getById(request: RequestGetTeacherOnSubjectById): Promise<TeacherOnSubject>;
-  getManyBySubjectId(
-    request: RequestGetTeacherOnSubjectsBySubjectId,
-  ): Promise<
+  getManyBySubjectId(request: RequestGetTeacherOnSubjectsBySubjectId): Promise<
     (TeacherOnSubject & {
-      user: { SubscriptionNotification: SubscriptionNotification[] };
+      user: { subscriptionNotifications: SubscriptionNotification[] };
     })[]
   >;
   getByTeacherIdAndSubjectId(
@@ -111,7 +109,7 @@ export class TeacherOnSubjectRepository
     request: RequestGetTeacherOnSubjectsBySubjectId,
   ): Promise<
     (TeacherOnSubject & {
-      user: { SubscriptionNotification: SubscriptionNotification[] };
+      user: { subscriptionNotifications: SubscriptionNotification[] };
     })[]
   > {
     try {
@@ -120,7 +118,7 @@ export class TeacherOnSubjectRepository
         include: {
           user: {
             include: {
-              SubscriptionNotification: true,
+              subscriptionNotifications: true,
             },
           },
         },

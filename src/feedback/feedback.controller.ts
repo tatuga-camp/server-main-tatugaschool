@@ -13,6 +13,7 @@ import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { QueryFeedbackDto } from './dto/query-feedback.dto';
 import { AdminGuard, UserGuard } from '../auth/guard';
 import { GetUser } from '../auth/decorators';
+import { User } from '@prisma/client';
 
 @Controller('v1/feedbacks')
 export class FeedbackController {
@@ -20,11 +21,8 @@ export class FeedbackController {
 
   @Post()
   @UseGuards(UserGuard)
-  create(
-    @GetUser('id') userId: string,
-    @Body() createFeedbackDto: CreateFeedbackDto,
-  ) {
-    return this.feedbackService.create(userId, createFeedbackDto);
+  create(@GetUser() user: User, @Body() dto: CreateFeedbackDto) {
+    return this.feedbackService.create(user, dto);
   }
 
   @Get()
