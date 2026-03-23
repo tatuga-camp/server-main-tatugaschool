@@ -106,7 +106,7 @@ import { FileOnFeedbackModule } from './file-on-feedback/file-on-feedback.module
       throttlers: [
         {
           ttl: 1000 * 60,
-          limit: process.env.NODE_ENV === 'production' ? 300 : 1000,
+          limit: process.env.NODE_ENV === 'production' ? 500 : 1000,
         },
       ],
     }),
