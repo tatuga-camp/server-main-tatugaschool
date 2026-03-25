@@ -40,6 +40,7 @@ import { StorageService } from '../storage/storage.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 describe('Attendance-table Service', () => {
   let attendanceTableService: AttendanceTableService;
@@ -83,6 +84,7 @@ describe('Attendance-table Service', () => {
     subscriptionService,
     userService,
   );
+  const lineService = new LineBotService(configService);
 
   const authService = new AuthService(
     emailService,
@@ -196,6 +198,7 @@ describe('Attendance-table Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -224,6 +227,7 @@ describe('Attendance-table Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   beforeEach(async () => {
