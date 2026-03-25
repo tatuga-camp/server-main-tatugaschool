@@ -70,6 +70,7 @@ export class SchoolService {
           id: {
             in: schoolIds,
           },
+          isDeleted: false,
         },
       });
     } catch (error) {
@@ -95,6 +96,10 @@ export class SchoolService {
       if (!school) {
         throw new NotFoundException('School not found or It has been deleted');
       }
+
+      if (school.isDeleted === true)
+        throw new NotFoundException('School is getting deleted');
+
       await this.memberOnSchoolService.validateAccess({
         user,
         schoolId: school.id,
@@ -324,11 +329,13 @@ export class SchoolService {
         this.subjectService.subjectRepository.findMany({
           where: {
             schoolId: school.id,
+            isDeleted: false,
           },
         }),
         this.classService.classRepository.findMany({
           where: {
             schoolId: school.id,
+            isDeleted: false,
           },
         }),
       ]);
@@ -517,6 +524,10 @@ export class SchoolService {
       if (!school) {
         throw new NotFoundException('school not found');
       }
+
+      if (school.isDeleted === true) {
+        throw new NotFoundException('School is flagged as deleted');
+      }
       const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: school.id,
@@ -540,7 +551,14 @@ export class SchoolService {
         );
       }
 
-      return await this.schoolRepository.delete(dto);
+      return await this.schoolRepository.update({
+        where: {
+          id: school.id,
+        },
+        data: {
+          isDeleted: true,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

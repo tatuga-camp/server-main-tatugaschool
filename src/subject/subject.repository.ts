@@ -22,6 +22,9 @@ type Repository = {
   findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
   update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
+  updateMany(
+    request: Prisma.SubjectUpdateManyArgs,
+  ): Promise<Prisma.BatchPayload>;
   deleteSubject(
     request: RequestDeleteSubject,
   ): Promise<Subject & { totalDeleteSize: number }>;
@@ -61,6 +64,22 @@ export class SubjectRepository implements Repository {
   async findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]> {
     try {
       return await this.prisma.subject.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async updateMany(
+    request: Prisma.SubjectUpdateManyArgs,
+  ): Promise<Prisma.BatchPayload> {
+    try {
+      return await this.prisma.subject.updateMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -165,43 +184,67 @@ export class SubjectRepository implements Repository {
     }
   }
 
+  async getTotalDeleteSize(request: { subjectId: string }): Promise<number> {
+    try {
+      let totalDeleteSize: number = 0;
+
+      const assignments = await this.prisma.assignment.findMany({
+        where: {
+          subjectId: request.subjectId,
+        },
+      });
+
+      if (assignments.length > 0) {
+        const getTotalDeleteSizes = await Promise.all(
+          assignments.map((a) =>
+            this.assignmentRepository.getTotalDeleteSize({
+              assignmentId: a.id,
+            }),
+          ),
+        );
+        totalDeleteSize = getTotalDeleteSizes.reduce(
+          (prev, current) => prev + current,
+          0,
+        );
+      }
+      return totalDeleteSize;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async deleteSubject(
     request: RequestDeleteSubject,
   ): Promise<Subject & { totalDeleteSize: number }> {
     try {
       const { subjectId } = request;
-      let totalDeleteSize: number = 0;
       await this.prisma.skillOnStudentAssignment.deleteMany({
         where: {
           subjectId: subjectId,
         },
       });
 
+      const groupOnSubjects = await this.groupOnSubjectRepository.findMany({
+        where: {
+          subjectId: request.subjectId,
+        },
+      });
+
       const assignments = await this.prisma.assignment.findMany({
         where: {
-          subjectId: subjectId,
+          subjectId: request.subjectId,
         },
       });
 
       if (assignments.length > 0) {
-        const files = await Promise.all(
+        await Promise.allSettled(
           assignments.map((a) =>
             this.assignmentRepository.delete({
               assignmentId: a.id,
             }),
           ),
         );
-        totalDeleteSize = files.reduce(
-          (prev, current) => prev + current.totalDeleteSize,
-          0,
-        );
       }
-
-      const groupOnSubjects = await this.groupOnSubjectRepository.findMany({
-        where: {
-          subjectId: request.subjectId,
-        },
-      });
 
       if (groupOnSubjects.length > 0) {
         await Promise.allSettled(
@@ -278,6 +321,10 @@ export class SubjectRepository implements Repository {
         where: {
           id: subjectId,
         },
+      });
+
+      const totalDeleteSize = await this.getTotalDeleteSize({
+        subjectId: subjectId,
       });
 
       return { ...subject, totalDeleteSize };
