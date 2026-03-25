@@ -24,6 +24,7 @@ import {
   QuerySubjectThatStudentBelongto,
   ReorderSubjectsDto,
   UpdateSubjectDto,
+  UpdateverifyLineToken,
 } from './dto';
 import { SubjectService } from './subject.service';
 
@@ -35,6 +36,20 @@ export class SubjectController {
   @Get(':subjectId')
   async getSubjectById(@Param() dto: GetSubjectByIdDto, @GetUser() user: User) {
     return this.subjectService.getSubjectById(dto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Patch('/line/verify')
+  async verifyLineToken(
+    @Body() dto: UpdateverifyLineToken,
+    @GetUser() user: User,
+  ) {
+    return this.subjectService.verifyLineToken(
+      {
+        ...dto,
+      },
+      user,
+    );
   }
 
   @UseGuards(StudentGuard)

@@ -48,6 +48,7 @@ import { StorageService } from '../storage/storage.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 describe('MemberOnSchool Service', () => {
   const prismaService = new PrismaService();
@@ -132,6 +133,8 @@ describe('MemberOnSchool Service', () => {
     userService,
     schoolService,
   );
+
+  const lineService = new LineBotService(configService);
   subjectService = new SubjectService(
     prismaService,
     storageService,
@@ -145,6 +148,7 @@ describe('MemberOnSchool Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
@@ -205,6 +209,7 @@ describe('MemberOnSchool Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
 
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(

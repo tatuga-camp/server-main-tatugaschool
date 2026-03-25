@@ -1,17 +1,28 @@
-import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
-import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
-import { StorageService } from '../storage/storage.service';
-import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
-import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
-import { AssignmentRepository } from './../assignment/assignment.repository';
-import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   FileOnStudentAssignment,
   Student,
   StudentOnAssignment,
   User,
 } from '@prisma/client';
+import { NotificationService } from '../notification/notification.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { StudentRepository } from '../student/student.repository';
+import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { PushService } from '../web-push/push.service';
+import { AssignmentRepository } from './../assignment/assignment.repository';
+import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
+import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
+import { SkillOnStudentAssignmentService } from './../skill-on-student-assignment/skill-on-student-assignment.service';
+import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
+import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import {
   CreateStudentOnAssignmentDto,
   DeleteStudentOnAssignmentDto,
@@ -20,18 +31,7 @@ import {
   UpdateStudentOnAssignmentDto,
 } from './dto';
 import { StudentOnAssignmentRepository } from './student-on-assignment.repository';
-import {
-  BadRequestException,
-  ForbiddenException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { StudentRepository } from '../student/student.repository';
-import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { PushService } from '../web-push/push.service';
-import { PushSubscription } from '../web-push/interfaces';
-import { NotificationService } from '../notification/notification.service';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -43,6 +43,7 @@ export class StudentOnAssignmentService {
   private memberOnSchoolRepository: MemberOnSchoolRepository;
   private assignmentRepository: AssignmentRepository;
   private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
+
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -50,6 +51,7 @@ export class StudentOnAssignmentService {
     private pushService: PushService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
     private notificationService: NotificationService,
+    private line: LineBotService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
@@ -336,6 +338,16 @@ export class StudentOnAssignmentService {
       }
 
       if (dto.body.status === 'SUBMITTED') {
+        const subject = await this.prisma.subject.findUnique({
+          where: {
+            id: studentOnAssignment.subjectId,
+          },
+        });
+        const school = await this.prisma.school.findUnique({
+          where: {
+            id: subject.schoolId,
+          },
+        });
         const params = {
           studentOnAssignmentId: studentOnAssignment.id,
           menu: 'studentwork',
@@ -363,6 +375,33 @@ export class StudentOnAssignmentService {
           actorId: studentOnAssignment.studentId,
           actorName: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
         });
+
+        if (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE') {
+          const totalSummits =
+            await this.studentOnAssignmentRepository.findMany({
+              where: {
+                OR: [
+                  {
+                    assignmentId: assignment.id,
+                    status: 'SUBMITTED',
+                  },
+                  {
+                    assignmentId: assignment.id,
+                    status: 'REVIEWD',
+                  },
+                ],
+              },
+            });
+          await this.line.sendMessage({
+            groupId: subject.lineGroupId,
+            message:
+              `🌟 ปิ๊งป่อง! มีเด็กดีส่งการบ้านค่ะ \n` +
+              `👨‍🎓 นักเรียน: ${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}\n` +
+              `📕 ชิ้นงาน: ${assignment.title}\n` +
+              `✅ สถานะ: ส่งงานเป็นคนที่ ${totalSummits.length} 🎉\n` +
+              `เข้าไปตรวจผลงานได้ที่นี่เลย / Check it out here 👇\n${newUrl}`,
+          });
+        }
       }
 
       let reviewdAt: string | null;
@@ -370,9 +409,11 @@ export class StudentOnAssignmentService {
       if (dto.body.status === 'REVIEWD') {
         reviewdAt = new Date().toISOString();
       }
+
       if (dto.body.status === 'SUBMITTED') {
         completedAt = new Date().toISOString();
       }
+
       if (dto.body.status === 'PENDDING') {
         reviewdAt = null;
         completedAt = null;
