@@ -3,13 +3,117 @@ import { Request, Response } from 'express';
 import Stripe from 'stripe';
 import { StripeService } from '../stripe/stripe.service';
 import { SchoolService } from './../school/school.service';
+import {
+  WebhookEvent,
+  WebhookRequestBody,
+  MessageEvent,
+  TextEventMessage,
+} from '@line/bot-sdk';
+import { LineBotService } from '../line-bot/line-bot.service';
+import { SubjectService } from '../subject/subject.service';
+import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class WebhooksService {
   constructor(
     private stripe: StripeService,
     private schoolService: SchoolService,
+    private line: LineBotService,
+    private subjectService: SubjectService,
+    private email: EmailService,
+    private config: ConfigService,
+    private prisma: PrismaService,
   ) {}
+
+  async handleLineWebhook(dto: WebhookRequestBody) {
+    try {
+      const events: WebhookEvent[] = dto.events;
+      for (const event of events) {
+        if (event.type === 'join' && event.source.type === 'group') {
+          await this.line.sendMessage({
+            groupId: event.source.groupId,
+            message:
+              'กรุณา mention @Tatuga School และพิมพ์รหัสวิชา 6 หลัก เพื่อยืนยันกลุ่ม\n(Please mention @Tatuga School and type 6 digits of subject code)',
+          });
+        }
+
+        if (event.type === 'leave' && event.source.type === 'group') {
+          await this.subjectService.leaveGroupLine({
+            groupId: event.source.groupId,
+          });
+        }
+
+        if (
+          event.type === 'message' &&
+          event.message.type === 'text' &&
+          event.source.type === 'group' &&
+          event.message.mention?.mentionees &&
+          event.message.mention?.mentionees.some((m) => (m as any).isSelf)
+        ) {
+          const messageEvent = event as MessageEvent;
+          const message = messageEvent.message as TextEventMessage;
+
+          const subject = await this.subjectService.subjectRepository.findFirst(
+            {
+              where: {
+                lineGroupId: event.source.groupId,
+              },
+            },
+          );
+
+          const lastText = message.text.split(' ').pop();
+          const codeMatch = lastText.match(/\b[A-Za-z0-9]{6}\b/);
+
+          if (!subject && codeMatch) {
+            const code = codeMatch[0];
+            const subject = await this.prisma.subject.findUnique({
+              where: { code },
+            });
+
+            if (!subject) {
+              await this.line.sendMessage({
+                groupId: event.source.groupId,
+                message:
+                  'ไม่พบรหัสวิชานี้ กรุณาพิมพ์ใหม่อีกครั้ง\n(Incorrect code, please try again)',
+              });
+              return;
+            }
+
+            const verifyLineToken = crypto.randomBytes(32).toString('hex');
+
+            await this.prisma.subject.update({
+              where: { id: subject.id },
+              data: {
+                lineGroupId: event.source.groupId,
+                isVerifyLine: false,
+                verifyLineToken,
+              },
+            });
+
+            await this.line.sendMessage({
+              groupId: event.source.groupId,
+              message:
+                'คุณครูต้องไปกดยืนยันหน้ารายวิชาที่เว็บไซต์เราเพื่อยืนยันตัวตน ถ้าไม่เห็น Popup เด้งขึ้น ให้ reload เว็บ\n(Teachers, please verify your identity on the course page of our website. If the popup does not appear, please refresh the page.)',
+            });
+          }
+
+          if (!subject && !codeMatch) {
+            await this.line.sendMessage({
+              groupId: event.source.groupId,
+              message:
+                'รูปแบบรหัสไม่ถูกต้อง กรุณาพิมพ์รหัสวิชา 6 หลักใหม่อีกครั้ง\n(Incorrect code format, please type the 6-digit code again)',
+            });
+            return;
+          }
+        }
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
 
   async handleStripeWebhook(req: RawBodyRequest<Request>, res: Response) {
     let event: any;
