@@ -52,6 +52,8 @@ import {
 import { NotificationRepository } from '../notification/notification.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
+import { LineBotModule } from '../line-bot/line-bot.module';
 
 describe('Group On Subject Service', () => {
   let groupOnSubjectService: GroupOnSubjectService;
@@ -202,6 +204,7 @@ describe('Group On Subject Service', () => {
     pushService,
   );
 
+  const lineService = new LineBotService(configService);
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,
@@ -209,6 +212,7 @@ describe('Group On Subject Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
   const fileAssignmentService = new FileAssignmentService(
     prismaService,
@@ -242,6 +246,7 @@ describe('Group On Subject Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   const attendanceRowService = new AttendanceRowService(

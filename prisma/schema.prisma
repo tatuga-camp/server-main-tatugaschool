@@ -291,6 +291,10 @@ model Subject {
   user   User?  @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
 
+  lineGroupId String?
+  isVerifyLine               Boolean   @default(false)
+  verifyLineToken            String?
+
   studentOnSubjects         StudentOnSubject[]
   assignments               Assignment[]
   scoreOnSubjects           ScoreOnSubject[]

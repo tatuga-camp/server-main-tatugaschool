@@ -19,6 +19,7 @@ import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.r
 type Repository = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
   findUnique(request: Prisma.SubjectFindUniqueArgs): Promise<Subject | null>;
+  findFirst(request: Prisma.SubjectFindFirstArgs): Promise<Subject | null>;
   findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]>;
   createSubject(request: RequestCreateSubject): Promise<Subject>;
   update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
@@ -42,6 +43,22 @@ export class SubjectRepository implements Repository {
       this.prisma,
       this.storageService,
     );
+  }
+
+  async findFirst(
+    request: Prisma.SubjectFindFirstArgs,
+  ): Promise<Subject | null> {
+    try {
+      return await this.prisma.subject.findFirst(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async count(request: Prisma.SubjectCountArgs): Promise<number> {

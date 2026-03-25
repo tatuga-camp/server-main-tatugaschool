@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  isBoolean,
   IsBoolean,
   IsDateString,
   IsMongoId,
@@ -20,6 +21,20 @@ class UpdateSubjectQuery {
   @IsNotEmpty()
   @IsMongoId()
   subjectId: string;
+}
+
+export class UpdateverifyLineToken {
+  @IsNotEmpty()
+  @IsMongoId()
+  subjectId: string;
+
+  @IsNotEmpty()
+  @IsString()
+  token: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  confirm: boolean;
 }
 
 class UpdateSubjectBody {
