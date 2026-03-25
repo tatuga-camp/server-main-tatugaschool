@@ -81,6 +81,10 @@ export class ClassService {
         );
       }
 
+      if (classroom.isDeleted === true) {
+        throw new NotFoundException('Classroom is flagged as deleted');
+      }
+
       return classroom;
     } catch (error) {
       this.logger.error(error);
@@ -98,6 +102,9 @@ export class ClassService {
       });
       if (!classroom) {
         throw new NotFoundException('Class not found');
+      }
+      if (classroom.isDeleted === true) {
+        throw new NotFoundException('Classroom is flagged as deleted');
       }
       const member = await this.memberOnSchoolService.validateAccess({
         user: user,
@@ -163,6 +170,7 @@ export class ClassService {
         where: {
           schoolId: dto.schoolId,
           isAchieved: dto.isAchieved,
+          isDeleted: false,
         },
       });
 
@@ -243,7 +251,7 @@ export class ClassService {
         throw new NotFoundException('Class not found');
       }
 
-      const member = await this.memberOnSchoolService.validateAccess({
+      await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: classroom.schoolId,
       });
@@ -267,6 +275,9 @@ export class ClassService {
       if (!classroom) {
         throw new NotFoundException('Class not found');
       }
+      if (classroom.isDeleted === true) {
+        throw new NotFoundException('Classroom is flagged as deleted');
+      }
 
       const member = await this.memberOnSchoolService.validateAccess({
         user: user,
@@ -288,10 +299,28 @@ export class ClassService {
           'Only admin of this school and the creator of this classroom can delete',
         );
       }
-      const { totalDeleteSize } = await this.classRepository.delete({
-        classId: dto.classId,
+
+      await this.classRepository.update({
+        where: {
+          id: classroom.id,
+        },
+        data: {
+          isDeleted: true,
+        },
       });
 
+      await this.subjectRepository.updateMany({
+        where: {
+          classId: classroom.id,
+        },
+        data: {
+          isDeleted: true,
+        },
+      });
+
+      const totalDeleteSize = await this.classRepository.getTotalDeleteSize({
+        classroomId: classroom.id,
+      });
       await this.schoolService.schoolRepository.update({
         where: {
           id: classroom.schoolId,
