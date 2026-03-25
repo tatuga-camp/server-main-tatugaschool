@@ -34,10 +34,12 @@ import {
   GetSubjectByIdDto,
   ReorderSubjectsDto,
   UpdateSubjectDto,
+  UpdateverifyLineToken,
 } from './dto';
 import { SubjectRepository } from './subject.repository';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 @Injectable()
 export class SubjectService {
@@ -63,6 +65,7 @@ export class SubjectService {
     private assignmentService: AssignmentService,
     private fileAssignmentService: FileAssignmentService,
     private attendanceStatusListService: AttendanceStatusListService,
+    private line: LineBotService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
@@ -77,6 +80,30 @@ export class SubjectService {
       this.prisma,
       this.storageService,
     );
+  }
+
+  async leaveGroupLine(request: { groupId: string }): Promise<Subject | void> {
+    try {
+      const subject = await this.subjectRepository.findFirst({
+        where: {
+          lineGroupId: request.groupId,
+        },
+      });
+
+      if (subject) {
+        await this.subjectRepository.update({
+          where: {
+            id: subject.id,
+          },
+          data: {
+            isVerifyLine: false,
+            lineGroupId: null,
+          },
+        });
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 
   async duplicateSubject(
@@ -737,6 +764,55 @@ export class SubjectService {
           subjectId: subjectId,
         });
       }
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async verifyLineToken(dto: UpdateverifyLineToken, user: User) {
+    try {
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: dto.subjectId,
+      });
+
+      const subject = await this.subjectRepository.findUnique({
+        where: { id: dto.subjectId },
+      });
+
+      if (!subject || subject.verifyLineToken !== dto.token) {
+        throw new ForbiddenException('Invalid or expired line token');
+      }
+
+      if (dto.confirm === false) {
+        return await this.leaveGroupLine({ groupId: subject.lineGroupId });
+      }
+
+      const updatedSubject = await this.subjectRepository.update({
+        where: { id: dto.subjectId },
+        data: {
+          isVerifyLine: true,
+          verifyLineToken: null,
+        },
+      });
+
+      await this.line.sendMessage({
+        groupId: updatedSubject.lineGroupId,
+        message:
+          '🎉 เชื่อมต่อราย Tatuga School สำเร็จแล้ว! 🏫✨\n\n' +
+          `กลุ่มนี้ได้รับการเชื่อมต่อกับรายวิชา ${updatedSubject.title} เรียบร้อยแล้วครับ/ค่ะ ต่อจากนี้ระบบจะช่วยอัปเดตข้อมูลให้ดังนี้:\n` +
+          '🔔 แจ้งเตือนทันที: เมื่อมีนักเรียนส่งการบ้าน\n' +
+          '⏰ สรุปยามเช้า (08:30 น.): รายชื่อนักเรียนที่ยังไม่ได้ส่งงาน\n\n' +
+          '---\n\n' +
+          '🎉 Successfully connected to Tatuga School! 🏫✨\n\n' +
+          'This group is now linked to your course. From now on, you will receive:\n' +
+          '🔔 Real-time alerts: Whenever a student submits their work.\n' +
+          "⏰ Morning Briefing (08:30 AM): A daily summary of students who haven't submitted their assignments yet.\n\n" +
+          '🚀 ยินดีต้อนรับสู่ห้องเรียนยุคใหม่! / Welcome to the modern classroom!',
+      });
+
+      return updatedSubject;
+    } catch (error) {
       this.logger.error(error);
       throw error;
     }

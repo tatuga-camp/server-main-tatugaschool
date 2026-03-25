@@ -45,6 +45,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 describe('Attendance-status-list Service', () => {
   let attendanceStatusListService: AttendanceStatusListService;
@@ -57,6 +58,7 @@ describe('Attendance-status-list Service', () => {
   const base64ImageService = new ImageService();
 
   const emailService = new EmailService(configService);
+  const lineService = new LineBotService(configService);
 
   let memberOnSchoolService: MemberOnSchoolService;
   let studentService: StudentService;
@@ -206,6 +208,7 @@ describe('Attendance-status-list Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -229,6 +232,7 @@ describe('Attendance-status-list Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   beforeEach(async () => {

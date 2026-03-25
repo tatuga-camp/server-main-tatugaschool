@@ -46,6 +46,7 @@ import {
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 describe('Unit On Group Service', () => {
   let unitOnGroupService: UnitOnGroupService;
@@ -77,6 +78,8 @@ describe('Unit On Group Service', () => {
     userService,
     schoolService,
   );
+
+  const lineService = new LineBotService(configService);
 
   const subscriptionService = new SubscriptionService(
     stripeService,
@@ -205,6 +208,7 @@ describe('Unit On Group Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -239,6 +243,7 @@ describe('Unit On Group Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   const attendanceRowService = new AttendanceRowService(

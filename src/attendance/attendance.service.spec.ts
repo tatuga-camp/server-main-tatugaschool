@@ -48,6 +48,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 describe('Attendance Service', () => {
   let attendanceService: AttendanceService;
@@ -79,6 +80,7 @@ describe('Attendance Service', () => {
     userService,
     schoolService,
   );
+  const lineService = new LineBotService(configService);
 
   schoolService = new SchoolService(
     prismaService,
@@ -201,6 +203,7 @@ describe('Attendance Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -235,6 +238,7 @@ describe('Attendance Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   const attendanceRowService = new AttendanceRowService(
