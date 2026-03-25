@@ -48,6 +48,7 @@ import { StorageService } from '../storage/storage.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 describe('Attendance-row Service', () => {
   let attendanceRowService: AttendanceRowService;
@@ -67,6 +68,7 @@ describe('Attendance-row Service', () => {
   let schoolService: SchoolService;
   let subjectService: SubjectService;
   let subscriptionService: SubscriptionService;
+  const lineService = new LineBotService(configService);
 
   const userService = new UsersService(prismaService, {} as any);
 
@@ -204,6 +206,7 @@ describe('Attendance-row Service', () => {
     pushService,
     skillOnStudentAssignmentService,
     notificationService,
+    lineService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -246,6 +249,7 @@ describe('Attendance-row Service', () => {
     assignmentService,
     fileAssignmentService,
     attendanceStatusListService,
+    lineService,
   );
 
   beforeEach(async () => {
