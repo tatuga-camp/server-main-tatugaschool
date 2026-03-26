@@ -91,7 +91,7 @@ export class SubjectService {
       });
 
       if (subject) {
-        await this.subjectRepository.update({
+        return await this.subjectRepository.update({
           where: {
             id: subject.id,
           },
@@ -780,12 +780,16 @@ export class SubjectService {
         where: { id: dto.subjectId },
       });
 
-      if (!subject || subject.verifyLineToken !== dto.token) {
-        throw new ForbiddenException('Invalid or expired line token');
+      if (!subject) {
+        throw new ForbiddenException('Invalid subject');
       }
 
       if (dto.confirm === false) {
         return await this.leaveGroupLine({ groupId: subject.lineGroupId });
+      }
+
+      if (!subject || subject.verifyLineToken !== dto.token) {
+        throw new ForbiddenException('Expired line token');
       }
 
       const updatedSubject = await this.subjectRepository.update({
