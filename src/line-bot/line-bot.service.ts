@@ -25,4 +25,20 @@ export class LineBotService {
       throw error;
     }
   }
+
+  async replyMessage(request: { replyToken: string; message: string }) {
+    try {
+      const message: TextMessage = {
+        type: 'text',
+        text: request.message,
+      };
+      await this.lineClient.replyMessage({
+        replyToken: request.replyToken,
+
+        messages: [message],
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
