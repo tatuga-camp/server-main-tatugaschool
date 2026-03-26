@@ -15,6 +15,7 @@ import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class WebhooksService {
@@ -26,6 +27,7 @@ export class WebhooksService {
     private email: EmailService,
     private config: ConfigService,
     private prisma: PrismaService,
+    private ai: AiService,
   ) {}
 
   async handleLineWebhook(dto: WebhookRequestBody) {
@@ -107,6 +109,40 @@ export class WebhooksService {
                 'รูปแบบรหัสไม่ถูกต้อง กรุณาพิมพ์รหัสวิชา 6 หลักใหม่อีกครั้ง\n(Incorrect code format, please type the 6-digit code again)',
             });
             return;
+          }
+
+          if (subject && subject.isVerifyLine === true && subject.lineGroupId) {
+            const school = await this.schoolService.schoolRepository.findUnique(
+              {
+                where: {
+                  id: subject.schoolId,
+                },
+              },
+            );
+
+            if (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') {
+              const summarydata = await this.subjectService.getAllSubjectData({
+                subjectId: subject.id,
+              });
+
+              const messageAI = await this.ai.generateLineBotSummary(
+                message.text,
+                JSON.stringify(summarydata),
+              );
+              await this.line.replyMessage({
+                replyToken: event.replyToken,
+                message: messageAI,
+              });
+              return;
+            } else {
+              const upgradeText =
+                'ขออภัยค่ะ ฟีเจอร์ AI สรุปข้อมูลเปิดให้ใช้งานเฉพาะโรงเรียนที่ใช้แพ็กเกจ PREMIUM หรือ ENTERPRISE เท่านั้น กรุณาติดต่อผู้ดูแลระบบของโรงเรียนเพื่ออัปเกรดแพ็กเกจค่ะ';
+
+              await this.line.replyMessage({
+                replyToken: event.replyToken,
+                message: upgradeText,
+              });
+            }
           }
         }
       }
