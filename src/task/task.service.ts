@@ -1,3 +1,4 @@
+import { SubjectService } from './../subject/subject.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
@@ -10,9 +11,10 @@ export class TaskService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly lineBotService: LineBotService,
+    private subjectService: SubjectService,
   ) {}
 
-  @Cron('0 7 * * 1-5', { timeZone: 'Asia/Bangkok' })
+  @Cron('0 15 12 * * 1-5', { timeZone: 'Asia/Bangkok' })
   async notifyPendingAssignments() {
     this.logger.log('Starting Line notification job for pending assignments');
     try {
@@ -43,41 +45,10 @@ export class TaskService {
         await Promise.allSettled(
           subjects.map(async (subject) => {
             try {
-              const studentOnSubjects =
-                await this.prisma.studentOnSubject.findMany({
-                  where: {
-                    subjectId: subject.id,
-                    isActive: true,
-                  },
-                  include: {
-                    studentOnAssignments: {
-                      where: {
-                        status: 'PENDDING',
-                        isAssigned: true,
-                        assignment: {
-                          status: 'Published',
-                        },
-                      },
-                    },
-                  },
-                  orderBy: {
-                    order: 'asc',
-                  },
-                });
+              const message =
+                await this.subjectService.reportPendingAssignments(subject);
 
-              let message = `📚 รายวิชา: ${subject.title}\nสรุปงานค้างของนักเรียน:\n\n`;
-              let hasPending = false;
-
-              for (const sos of studentOnSubjects) {
-                const pendingCount = sos.studentOnAssignments.length;
-                if (pendingCount > 0) {
-                  hasPending = true;
-                  const numberStr = sos.number ? `เลขที่ ${sos.number} ` : '';
-                  message += `${numberStr}${sos.title}${sos.firstName} ${sos.lastName}: ${pendingCount} งาน\n`;
-                }
-              }
-
-              if (hasPending && subject.lineGroupId) {
+              if (subject.lineGroupId) {
                 await this.lineBotService.sendMessage({
                   groupId: subject.lineGroupId,
                   message: message.trim(),

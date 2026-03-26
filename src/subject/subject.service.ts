@@ -967,4 +967,244 @@ export class SubjectService {
       throw error;
     }
   }
+
+  async getAllSubjectData(dto: { subjectId: string }) {
+    try {
+      const subject = await this.prisma.subject.findUnique({
+        where: { id: dto.subjectId },
+      });
+
+      if (!subject) {
+        throw new NotFoundException('Subject not found');
+      }
+
+      const [
+        attendanceTables,
+        attendances,
+        scoreOnStudents,
+        fileOnAssignments,
+        studentOnAssignments,
+        fileOnStudentAssignments,
+        commentOnAssignments,
+        skillOnAssignments,
+        skillOnStudentAssignments,
+        attendanceStatusLists,
+        gradeRanges,
+        groupOnSubjects,
+        unitOnGroups,
+        studentOnGroups,
+        questionOnVideos,
+        studentOnSubjects,
+        assignments,
+        scoreOnSubjects,
+        attendanceRows,
+        teacherOnSubjects,
+      ] = await Promise.all([
+        this.prisma.attendanceTable.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.attendance.findMany({ where: { subjectId: subject.id } }),
+        this.prisma.scoreOnStudent.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.fileOnAssignment.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.studentOnAssignment.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.fileOnStudentAssignment.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.commentOnAssignment.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.skillOnAssignment.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.skillOnStudentAssignment.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.attendanceStatusList.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.gradeRange.findMany({ where: { subjectId: subject.id } }),
+        this.prisma.groupOnSubject.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.unitOnGroup.findMany({ where: { subjectId: subject.id } }),
+        this.prisma.studentOnGroup.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.questionOnVideo.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.studentOnSubject.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.assignment.findMany({
+          where: { subjectId: subject.id, status: 'Published' },
+          omit: { vector: true, vectorResouce: true },
+        }),
+        this.prisma.scoreOnSubject.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.attendanceRow.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.prisma.teacherOnSubject.findMany({
+          where: { subjectId: subject.id },
+        }),
+      ]);
+
+      return {
+        subject: {
+          description:
+            'This data contains the basic information about the subject, such as title, descriptions, and settings. code in subject filed is 6 digits to let student access subject online',
+          data: subject,
+        },
+        attendanceTables: {
+          description:
+            'This data contains lists of attendance tables associated with the subject. Each table groups attendance sessions.',
+          data: attendanceTables,
+        },
+        attendances: {
+          description:
+            'This data contains the individual attendance records for students (e.g., present, absent, late).',
+          data: attendances,
+        },
+        scoreOnStudents: {
+          description:
+            'This data contains behavioral or bonus points/scores awarded directly to individual students in the subject.',
+          data: scoreOnStudents,
+        },
+        fileOnAssignments: {
+          description:
+            'This data contains files or materials attached to an assignment by the teacher.',
+          data: fileOnAssignments,
+        },
+        studentOnAssignments: {
+          description:
+            'This data contains the assignments assigned to students, including their submission status and earned scores.',
+          data: studentOnAssignments,
+        },
+        fileOnStudentAssignments: {
+          description:
+            'This data contains the files or work submitted by students for their assignments.',
+          data: fileOnStudentAssignments,
+        },
+        commentOnAssignments: {
+          description:
+            'This data contains comments or feedback left by teachers or students on specific student assignments.',
+          data: commentOnAssignments,
+        },
+        skillOnAssignments: {
+          description:
+            'This data contains the specific skills tied to each assignment for assessment purposes.',
+          data: skillOnAssignments,
+        },
+        skillOnStudentAssignments: {
+          description:
+            'This data contains the skill weights or evaluations for a student on a specific assignment.',
+          data: skillOnStudentAssignments,
+        },
+        attendanceStatusLists: {
+          description:
+            'This data contains the custom attendance statuses configured for the subject (e.g., Present, Absent, Sick, Leave).',
+          data: attendanceStatusLists,
+        },
+        gradeRanges: {
+          description:
+            'This data contains the grade calculation rules or ranges (e.g., 80-100 = A) set for the subject.',
+          data: gradeRanges,
+        },
+        groupOnSubjects: {
+          description:
+            'This data contains student groups or teams created within the subject.',
+          data: groupOnSubjects,
+        },
+        unitOnGroups: {
+          description:
+            'This data contains specific units, objectives, or scores tracked within each student group.',
+          data: unitOnGroups,
+        },
+        studentOnGroups: {
+          description:
+            'This data maps which student belongs to which group within the subject.',
+          data: studentOnGroups,
+        },
+        questionOnVideos: {
+          description:
+            'This data contains interactive questions embedded in video assignments for the subject.',
+          data: questionOnVideos,
+        },
+        studentOnSubjects: {
+          description:
+            'This data contains the list of students enrolled in the subject along with their personal data (names, photos, IDs).',
+          data: studentOnSubjects,
+        },
+        assignments: {
+          description:
+            'This data contains the list of assignments created for the subject, including their titles, max scores, and due dates.',
+          data: assignments,
+        },
+        scoreOnSubjects: {
+          description:
+            'This data contains the types or categories of behavioral scores (positive/negative) that can be awarded in the subject.',
+          data: scoreOnSubjects,
+        },
+        attendanceRows: {
+          description:
+            'This data represents specific attendance sessions or dates (columns) created in the attendance tables.',
+          data: attendanceRows,
+        },
+        teacherOnSubjects: {
+          description:
+            'This data contains the list of teachers managing or teaching the subject.',
+          data: teacherOnSubjects,
+        },
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async reportPendingAssignments(subject: Subject): Promise<string> {
+    try {
+      const studentOnSubjects = await this.prisma.studentOnSubject.findMany({
+        where: {
+          subjectId: subject.id,
+          isActive: true,
+        },
+        include: {
+          studentOnAssignments: {
+            where: {
+              status: 'PENDDING',
+              isAssigned: true,
+              assignment: {
+                status: 'Published',
+              },
+            },
+          },
+        },
+        orderBy: {
+          order: 'asc',
+        },
+      });
+
+      let message = `📚 รายวิชา: ${subject.title}\nสรุปงานค้างของนักเรียน:\n\n`;
+
+      for (const sos of studentOnSubjects) {
+        const pendingCount = sos.studentOnAssignments.length;
+        if (pendingCount > 0) {
+          const numberStr = sos.number ? `เลขที่ ${sos.number} ` : '';
+          message += `${numberStr}${sos.title}${sos.firstName} ${sos.lastName}: ${pendingCount} งาน\n`;
+        }
+      }
+      return message;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
