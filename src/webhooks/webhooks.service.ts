@@ -33,8 +33,8 @@ export class WebhooksService {
       const events: WebhookEvent[] = dto.events;
       for (const event of events) {
         if (event.type === 'join' && event.source.type === 'group') {
-          await this.line.sendMessage({
-            groupId: event.source.groupId,
+          await this.line.replyMessage({
+            replyToken: event.replyToken,
             message:
               'กรุณา mention @Tatuga School และพิมพ์รหัสวิชา 6 หลัก เพื่อยืนยันกลุ่ม\n(Please mention @Tatuga School and type 6 digits of subject code)',
           });
@@ -74,8 +74,8 @@ export class WebhooksService {
             });
 
             if (!subject) {
-              await this.line.sendMessage({
-                groupId: event.source.groupId,
+              await this.line.replyMessage({
+                replyToken: event.replyToken,
                 message:
                   'ไม่พบรหัสวิชานี้ กรุณาพิมพ์ใหม่อีกครั้ง\n(Incorrect code, please try again)',
               });
@@ -93,16 +93,16 @@ export class WebhooksService {
               },
             });
 
-            await this.line.sendMessage({
-              groupId: event.source.groupId,
+            await this.line.replyMessage({
+              replyToken: event.replyToken,
               message:
                 'คุณครูต้องไปกดยืนยันหน้ารายวิชาที่เว็บไซต์เราเพื่อยืนยันตัวตน ถ้าไม่เห็น Popup เด้งขึ้น ให้ reload เว็บ\n(Teachers, please verify your identity on the course page of our website. If the popup does not appear, please refresh the page.)',
             });
           }
 
           if (!subject && !codeMatch) {
-            await this.line.sendMessage({
-              groupId: event.source.groupId,
+            await this.line.replyMessage({
+              replyToken: event.replyToken,
               message:
                 'รูปแบบรหัสไม่ถูกต้อง กรุณาพิมพ์รหัสวิชา 6 หลักใหม่อีกครั้ง\n(Incorrect code format, please type the 6-digit code again)',
             });
