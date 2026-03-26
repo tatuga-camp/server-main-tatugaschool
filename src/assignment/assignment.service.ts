@@ -28,7 +28,6 @@ import { FileAssignmentRepository } from '../file-assignment/file-assignment.rep
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreOnSubjectService } from '../score-on-subject/score-on-subject.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
-import { AiService } from '../vector/ai.service';
 import { StorageService } from '../storage/storage.service';
 import { GradeService } from './../grade/grade.service';
 import { ScoreOnStudentService } from './../score-on-student/score-on-student.service';
@@ -49,6 +48,7 @@ import {
 } from './dto';
 import { StudentService } from '../student/student.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class AssignmentService {

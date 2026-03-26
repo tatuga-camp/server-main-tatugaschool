@@ -16,9 +16,9 @@ import {
   UpdateSkillDto,
 } from './dto';
 import { Skill, User } from '@prisma/client';
-import { AiService } from '../vector/ai.service';
 import { AuthService } from '../auth/auth.service';
 import { StorageService } from '../storage/storage.service';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class SkillService {

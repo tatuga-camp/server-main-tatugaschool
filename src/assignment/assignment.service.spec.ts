@@ -28,7 +28,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../vector/ai.service';
+import { AiService } from '../ai/ai.service
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StorageService } from '../storage/storage.service';

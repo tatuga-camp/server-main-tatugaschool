@@ -20,12 +20,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './../auth/auth.service';
 import { FileOnTeachingMaterialService } from './../file-on-teaching-material/file-on-teaching-material.service';
 import { StorageService } from '../storage/storage.service';
-import { AiService } from './../vector/ai.service';
 import { TeachingMaterialRepository } from './teaching-material.repository';
 import * as crypto from 'crypto';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class TeachingMaterialService {
