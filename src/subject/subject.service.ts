@@ -807,11 +807,13 @@ export class SubjectService {
           `กลุ่มนี้ได้รับการเชื่อมต่อกับรายวิชา ${updatedSubject.title} เรียบร้อยแล้วครับ/ค่ะ ต่อจากนี้ระบบจะช่วยอัปเดตข้อมูลให้ดังนี้:\n` +
           '🔔 แจ้งเตือนทันที: เมื่อมีนักเรียนส่งการบ้าน\n' +
           '⏰ สรุปยามเช้า (08:30 น.): รายชื่อนักเรียนที่ยังไม่ได้ส่งงาน\n\n' +
+          '🙋‍♂️ ถามตอบ AI: @ ถามตอบ Tatuga AI เกี่ยวกับรายวิชานี้\n\n' +
           '---\n\n' +
           '🎉 Successfully connected to Tatuga School! 🏫✨\n\n' +
           'This group is now linked to your course. From now on, you will receive:\n' +
           '🔔 Real-time alerts: Whenever a student submits their work.\n' +
           "⏰ Morning Briefing (08:30 AM): A daily summary of students who haven't submitted their assignments yet.\n\n" +
+          '🙋‍♂️ Ask AI: @Mention us to ask AI about this subject\n\n' +
           '🚀 ยินดีต้อนรับสู่ห้องเรียนยุคใหม่! / Welcome to the modern classroom!',
       });
 
