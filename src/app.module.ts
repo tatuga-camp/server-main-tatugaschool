@@ -40,7 +40,6 @@ import { TeachingMaterialModule } from './teaching-material/teaching-material.mo
 import { TeamModule } from './team/team.module';
 import { UnitOnGroupModule } from './unit-on-group/unit-on-group.module';
 import { UsersModule } from './users/users.module';
-import { AiModule } from './vector/ai.module';
 import { PushModule } from './web-push/push.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
@@ -51,6 +50,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-video-quiz.module';
 import { FileOnFeedbackModule } from './file-on-feedback/file-on-feedback.module';
 import { LineBotModule } from './line-bot/line-bot.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
