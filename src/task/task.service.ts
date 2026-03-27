@@ -14,7 +14,7 @@ export class TaskService {
     private subjectService: SubjectService,
   ) {}
 
-  @Cron('0 15 12 * * 1-5', { timeZone: 'Asia/Bangkok' })
+  @Cron('0 7 * * 1-5', { timeZone: 'Asia/Bangkok' })
   async notifyPendingAssignments() {
     this.logger.log('Starting Line notification job for pending assignments');
     try {
