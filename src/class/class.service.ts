@@ -452,7 +452,7 @@ export class ClassService {
             );
             let score = studentAssignment.score;
 
-            if (assignment.weight !== null) {
+            if (assignment.weight && assignment.weight !== null) {
               const originalScore =
                 studentAssignment.score / assignment.maxScore;
               score = originalScore * assignment.weight;
