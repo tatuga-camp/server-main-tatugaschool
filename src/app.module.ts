@@ -101,25 +101,11 @@ import { AiModule } from './ai/ai.module';
     TeachingMaterialModule,
     FileOnTeachingMaterialModule,
     NotificationModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 1000 * 60,
-          limit: process.env.NODE_ENV === 'production' ? 500 : 1000,
-        },
-      ],
-    }),
     AssignmentVideoQuizModule,
     FileOnFeedbackModule,
     LineBotModule,
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+  providers: [AppService],
 })
 export class AppModule {}
