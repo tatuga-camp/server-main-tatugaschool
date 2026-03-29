@@ -36,16 +36,16 @@ model User {
   resetPasswordTokenExpiresAt DateTime?
   favoritSchool               String?   @db.ObjectId
 
-  memberOnSchools          MemberOnSchool[]
-  subjects                 Subject[]
-  memberOnTeams            MemberOnTeam[]
-  teacherOnSubjects        TeacherOnSubject[]
-  schools                  School[]
-  assignments              Assignment[]
-  commentOnAssignments     CommentOnAssignment[]
+  memberOnSchools           MemberOnSchool[]
+  subjects                  Subject[]
+  memberOnTeams             MemberOnTeam[]
+  teacherOnSubjects         TeacherOnSubject[]
+  schools                   School[]
+  assignments               Assignment[]
+  commentOnAssignments      CommentOnAssignment[]
   subscriptionNotifications SubscriptionNotification[]
-  feedbacks                Feedback[]
-  classes                  Class[]
+  feedbacks                 Feedback[]
+  classes                   Class[]
   notifications             Notification[]
 }
 
@@ -291,9 +291,9 @@ model Subject {
   user   User?  @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
 
-  lineGroupId String?
-  isVerifyLine               Boolean   @default(false)
-  verifyLineToken            String?
+  lineGroupId     String?
+  isVerifyLine    Boolean @default(false)
+  verifyLineToken String?
 
   studentOnSubjects         StudentOnSubject[]
   assignments               Assignment[]
@@ -864,6 +864,7 @@ model SkillOnStudentAssignment {
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
 
   @@unique([skillId, studentOnAssignmentId])
+  @@index([studentOnAssignmentId])
 }
 
 model Career {
@@ -993,8 +994,8 @@ model Feedback {
   id              String           @id @default(auto()) @map("_id") @db.ObjectId
   body            String
   tag             FeedbackTag
-  userId          String?           @db.ObjectId
-  user            User?             @relation(fields: [userId], references: [id])
+  userId          String?          @db.ObjectId
+  user            User?            @relation(fields: [userId], references: [id])
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   fileOnFeedbacks FileOnFeedback[]
