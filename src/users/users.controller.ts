@@ -1,4 +1,3 @@
-import { UsersService } from './users.service';
 import {
   Body,
   Controller,
@@ -8,17 +7,16 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { GetUser } from '../auth/decorators';
 import { NoVerifyUserGuard, UserGuard } from '../auth/guard';
 import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
-import { SkipThrottle } from '@nestjs/throttler';
+import { UsersService } from './users.service';
 
 @Controller('v1/users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @SkipThrottle()
   @UseGuards(UserGuard)
   @Get('me')
   GetUser(@GetUser() user: User) {
