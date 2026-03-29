@@ -176,6 +176,7 @@ model Class {
 
   userId String? @db.ObjectId
   user   User?   @relation(fields: [userId], references: [id])
+  isDeleted                 Boolean @default(false)
 
   subjects          Subject[]
   students          Student[]
@@ -201,6 +202,7 @@ model Student {
   classId                   String                     @db.ObjectId
   school                    School                     @relation(fields: [schoolId], references: [id])
   class                     Class                      @relation(fields: [classId], references: [id])
+
   studentOnSubjects         StudentOnSubject[]
   studentOnAssignments      StudentOnAssignment[]
   commentOnAssignments      CommentOnAssignment[]
@@ -282,6 +284,7 @@ model Subject {
   allowStudentDoneAssignmentInOrder Boolean @default(false)
   allowHideStudentList              Boolean @default(false)
   isLocked                          Boolean @default(false)
+  isDeleted                 Boolean @default(false)
 
   classId  String  @db.ObjectId
   userId   String? @db.ObjectId

@@ -151,13 +151,49 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
+  async getTotalDeleteSize(request: { assignmentId: string }): Promise<number> {
+    try {
+      const fileOnStudentAssignments =
+        await this.prisma.fileOnStudentAssignment.findMany({
+          where: {
+            assignmentId: request.assignmentId,
+          },
+        });
+
+      const fileOnAssignments = await this.fileAssignmentRepository.findMany({
+        where: {
+          assignmentId: request.assignmentId,
+        },
+      });
+
+      const totalDeleteSize = [
+        ...fileOnAssignments,
+        ...fileOnStudentAssignments.filter((t) => t.contentType === 'FILE'),
+      ].reduce((prev, current) => prev + current.size, 0);
+
+      return totalDeleteSize;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async delete(
     request: RequestDeleteAssignment,
   ): Promise<{ message: string; totalDeleteSize: number }> {
     try {
+      const totalDeleteSize = await this.getTotalDeleteSize({
+        assignmentId: request.assignmentId,
+      });
+
       const files = await this.fileAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
       });
+
+      await Promise.allSettled(
+        files.map((f) =>
+          this.storageService.DeleteFileOnStorage({ fileName: f.url }),
+        ),
+      );
 
       const studentOnAssignments =
         await this.studentOnAssignmentRepository.findMany({
@@ -198,7 +234,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
           },
         });
 
-      await Promise.all(
+      await Promise.allSettled(
         fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
           .map((f) =>
@@ -228,10 +264,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
       return {
         message: 'Deleted Assignment Successfully',
-        totalDeleteSize: [
-          ...files,
-          ...fileOnStudentAssignments.filter((t) => t.contentType === 'FILE'),
-        ].reduce((prev, current) => prev + current.size, 0),
+        totalDeleteSize: totalDeleteSize,
       };
     } catch (error) {
       this.logger.error(error);

@@ -338,6 +338,10 @@ export class SubjectService {
         subjectId: dto.subjectId,
       });
 
+      if (subject.isDeleted === true) {
+        throw new NotFoundException('Subject is flagged as deleted');
+      }
+
       if (user) {
         await this.wheelOfNameService
           .get({
@@ -401,6 +405,7 @@ export class SubjectService {
         where: {
           schoolId: dto.schoolId,
           educationYear: dto.educationYear,
+          isDeleted: false,
         },
       });
 
@@ -471,6 +476,7 @@ export class SubjectService {
             ),
           },
           educationYear: dto.educationYear,
+          isDeleted: false,
         },
       });
 
@@ -909,11 +915,16 @@ export class SubjectService {
         throw new NotFoundException('Subject not found');
       }
 
+      if (subject.isDeleted === true) {
+        throw new NotFoundException('Subject is flagged as deleted');
+      }
+
       if (subject.isLocked === true) {
         throw new ForbiddenException(
           'Subject is locked. Cannot make any changes!',
         );
       }
+
       const tracherOnSubject =
         await this.teacherOnSubjectService.ValidateAccess({
           userId: user.id,
@@ -928,8 +939,18 @@ export class SubjectService {
           'Only admin of this school and admin of this subject can delete',
         );
       }
-      const remove = await this.subjectRepository.deleteSubject({
-        subjectId: dto.subjectId,
+
+      await this.subjectRepository.update({
+        where: {
+          id: subject.id,
+        },
+        data: {
+          isDeleted: true,
+        },
+      });
+
+      const totalDeleteSize = await this.subjectRepository.getTotalDeleteSize({
+        subjectId: subject.id,
       });
 
       await this.schoolService.schoolRepository.update({
@@ -938,7 +959,7 @@ export class SubjectService {
         },
         data: {
           totalStorage: {
-            decrement: remove.totalDeleteSize,
+            decrement: totalDeleteSize,
           },
         },
       });
@@ -946,12 +967,13 @@ export class SubjectService {
       const [subjects, school] = await Promise.all([
         this.subjectRepository.findMany({
           where: {
-            schoolId: remove.schoolId,
+            schoolId: subject.schoolId,
+            isDeleted: false,
           },
         }),
         this.schoolService.schoolRepository.findUnique({
           where: {
-            id: remove.schoolId,
+            id: subject.schoolId,
           },
         }),
       ]);
@@ -963,7 +985,7 @@ export class SubjectService {
         await this.schoolService.unlockFeatures(school);
       }
 
-      return remove;
+      return subject;
     } catch (error) {
       this.logger.error(error);
       throw error;
