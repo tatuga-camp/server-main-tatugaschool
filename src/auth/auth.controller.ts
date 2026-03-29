@@ -23,9 +23,7 @@ import {
   StudentSignInDto,
   VerifyEmailDto,
 } from './dto';
-import { SkipThrottle } from '@nestjs/throttler';
 
-@SkipThrottle()
 @Controller('v1/auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
