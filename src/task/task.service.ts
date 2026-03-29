@@ -1,10 +1,10 @@
-import { SchoolRepository } from './../school/school.repository';
 import { SubjectService } from './../subject/subject.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { LineBotService } from '../line-bot/line-bot.service';
-import { ClassRepository } from '../class/class.repository';
+import { ClassService } from '../class/class.service';
+import { SchoolService } from '../school/school.service';
 
 @Injectable()
 export class TaskService {
@@ -14,8 +14,8 @@ export class TaskService {
     private readonly prisma: PrismaService,
     private readonly lineBotService: LineBotService,
     private subjectService: SubjectService,
-    private classroomRepository: ClassRepository,
-    private schoolRepository: SchoolRepository,
+    private classroomService: ClassService,
+    private schoolService: SchoolService,
   ) {}
 
   @Cron('0 7 * * 1-5', { timeZone: 'Asia/Bangkok' })
@@ -92,7 +92,9 @@ export class TaskService {
         } else {
           for (const s of schools) {
             try {
-              await this.schoolRepository.delete({ schoolId: s.id });
+              await this.schoolService.schoolRepository.delete({
+                schoolId: s.id,
+              });
               this.logger.log(`Real deleted school ${s.id}`);
             } catch (err) {
               this.logger.error(`Failed to delete school ${s.id}:`, err);
@@ -114,7 +116,9 @@ export class TaskService {
         } else {
           for (const c of classes) {
             try {
-              await this.classroomRepository.delete({ classId: c.id });
+              await this.classroomService.classRepository.delete({
+                classId: c.id,
+              });
               this.logger.log(`Real deleted class ${c.id}`);
             } catch (err) {
               this.logger.error(`Failed to delete class ${c.id}:`, err);
