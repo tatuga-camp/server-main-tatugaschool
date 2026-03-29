@@ -321,6 +321,7 @@ export class ClassService {
       const totalDeleteSize = await this.classRepository.getTotalDeleteSize({
         classroomId: classroom.id,
       });
+
       await this.schoolService.schoolRepository.update({
         where: {
           id: classroom.schoolId,
@@ -331,6 +332,28 @@ export class ClassService {
           },
         },
       });
+
+      const [subjects, school] = await Promise.all([
+        this.subjectRepository.findMany({
+          where: {
+            schoolId: classroom.schoolId,
+            isDeleted: false,
+          },
+        }),
+        this.schoolService.schoolRepository.findUnique({
+          where: {
+            id: classroom.schoolId,
+          },
+        }),
+      ]);
+
+      if (
+        subjects.length <= school.limitSubjectNumber &&
+        subjects.some((s) => s.isLocked === true)
+      ) {
+        await this.schoolService.unlockFeatures(school);
+      }
+
       this.sendNotificationWhenClassDelete(classroom);
       return classroom;
     } catch (error) {
