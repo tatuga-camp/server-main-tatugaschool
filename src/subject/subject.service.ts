@@ -468,17 +468,20 @@ export class SubjectService {
           studentId: student.id,
         },
       });
-      const subjects = await this.subjectRepository.findMany({
-        where: {
-          id: {
-            in: studentOnSubjects.map(
-              (studentOnSubject) => studentOnSubject.subjectId,
-            ),
-          },
-          educationYear: dto.educationYear,
-          isDeleted: false,
-        },
-      });
+      const subjects =
+        studentOnSubjects.length > 0
+          ? await this.subjectRepository.findMany({
+              where: {
+                id: {
+                  in: studentOnSubjects.map(
+                    (studentOnSubject) => studentOnSubject.subjectId,
+                  ),
+                },
+                educationYear: dto.educationYear,
+                isDeleted: false,
+              },
+            })
+          : [];
 
       return subjects;
     } catch (error) {

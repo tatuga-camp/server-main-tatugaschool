@@ -233,15 +233,17 @@ export class StudentOnSubjectRepository
         });
       // Fetch related entities
       const fileOnStudentAssignments =
-        await this.prisma.fileOnStudentAssignment.findMany({
-          where: {
-            studentOnAssignmentId: {
-              in: studentOnAssignments.map(
-                (studentOnAssignment) => studentOnAssignment.id,
-              ),
-            },
-          },
-        });
+        studentOnAssignments.length > 0
+          ? await this.prisma.fileOnStudentAssignment.findMany({
+              where: {
+                studentOnAssignmentId: {
+                  in: studentOnAssignments.map(
+                    (studentOnAssignment) => studentOnAssignment.id,
+                  ),
+                },
+              },
+            })
+          : [];
 
       await this.prisma.studentOnGroup.deleteMany({
         where: {
@@ -260,24 +262,28 @@ export class StudentOnSubjectRepository
       });
 
       // Delete related fileOnStudentAssignments records
-      await this.prisma.fileOnStudentAssignment.deleteMany({
-        where: {
-          id: {
-            in: fileOnStudentAssignments.map((file) => file.id),
+      if (fileOnStudentAssignments.length > 0) {
+        await this.prisma.fileOnStudentAssignment.deleteMany({
+          where: {
+            id: {
+              in: fileOnStudentAssignments.map((file) => file.id),
+            },
           },
-        },
-      });
+        });
+      }
 
       // Delete related commentOnAssignments records
-      await this.prisma.commentOnAssignment.deleteMany({
-        where: {
-          studentOnAssignmentId: {
-            in: studentOnAssignments.map(
-              (studentOnAssignment) => studentOnAssignment.id,
-            ),
+      if (studentOnAssignments.length > 0) {
+        await this.prisma.commentOnAssignment.deleteMany({
+          where: {
+            studentOnAssignmentId: {
+              in: studentOnAssignments.map(
+                (studentOnAssignment) => studentOnAssignment.id,
+              ),
+            },
           },
-        },
-      });
+        });
+      }
 
       // Use Promise.allSettled to delete files in Google Storage
       Promise.allSettled(
