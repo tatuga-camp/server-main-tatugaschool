@@ -1,8 +1,10 @@
+import { SchoolRepository } from './../school/school.repository';
 import { SubjectService } from './../subject/subject.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { ClassRepository } from '../class/class.repository';
 
 @Injectable()
 export class TaskService {
@@ -12,6 +14,8 @@ export class TaskService {
     private readonly prisma: PrismaService,
     private readonly lineBotService: LineBotService,
     private subjectService: SubjectService,
+    private classroomRepository: ClassRepository,
+    private schoolRepository: SchoolRepository,
   ) {}
 
   @Cron('0 7 * * 1-5', { timeZone: 'Asia/Bangkok' })
@@ -66,6 +70,86 @@ export class TaskService {
       this.logger.log('Finished Line notification job');
     } catch (error) {
       this.logger.error('Error in notifyPendingAssignments job:', error);
+    }
+  }
+
+  @Cron('0 3 * * *', { timeZone: 'Asia/Bangkok' })
+  async executeRealDelete() {
+    this.logger.log('Starting real delete job for flagged items');
+    try {
+      const take = 5;
+
+      // Delete schools
+      let hasMoreSchools = true;
+      while (hasMoreSchools) {
+        const schools = await this.prisma.school.findMany({
+          where: { isDeleted: true },
+          take,
+        });
+
+        if (schools.length === 0) {
+          hasMoreSchools = false;
+        } else {
+          for (const s of schools) {
+            try {
+              await this.schoolRepository.delete({ schoolId: s.id });
+              this.logger.log(`Real deleted school ${s.id}`);
+            } catch (err) {
+              this.logger.error(`Failed to delete school ${s.id}:`, err);
+            }
+          }
+        }
+      }
+
+      // Delete classes
+      let hasMoreClasses = true;
+      while (hasMoreClasses) {
+        const classes = await this.prisma.class.findMany({
+          where: { isDeleted: true },
+          take,
+        });
+
+        if (classes.length === 0) {
+          hasMoreClasses = false;
+        } else {
+          for (const c of classes) {
+            try {
+              await this.classroomRepository.delete({ classId: c.id });
+              this.logger.log(`Real deleted class ${c.id}`);
+            } catch (err) {
+              this.logger.error(`Failed to delete class ${c.id}:`, err);
+            }
+          }
+        }
+      }
+
+      // Delete subjects
+      let hasMoreSubjects = true;
+      while (hasMoreSubjects) {
+        const subjects = await this.prisma.subject.findMany({
+          where: { isDeleted: true },
+          take,
+        });
+
+        if (subjects.length === 0) {
+          hasMoreSubjects = false;
+        } else {
+          for (const s of subjects) {
+            try {
+              await this.subjectService.subjectRepository.deleteSubject({
+                subjectId: s.id,
+              });
+              this.logger.log(`Real deleted subject ${s.id}`);
+            } catch (err) {
+              this.logger.error(`Failed to delete subject ${s.id}:`, err);
+            }
+          }
+        }
+      }
+
+      this.logger.log('Finished real delete job');
+    } catch (error) {
+      this.logger.error('Error in executeRealDelete job:', error);
     }
   }
 }
