@@ -868,6 +868,7 @@ model SkillOnStudentAssignment {
 
   @@unique([skillId, studentOnAssignmentId])
   @@index([studentOnAssignmentId])
+  @@index([subjectId])
 }
 
 model Career {

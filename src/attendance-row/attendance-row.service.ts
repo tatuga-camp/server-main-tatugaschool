@@ -72,13 +72,16 @@ export class AttendanceRowService {
         attendanceTableId: dto.attendanceTableId,
       });
 
-      const attendances = await this.attendanceRepository.findMany({
-        where: {
-          attendanceRowId: {
-            in: rows.map((row) => row.id),
-          },
-        },
-      });
+      const attendances =
+        rows.length > 0
+          ? await this.attendanceRepository.findMany({
+              where: {
+                attendanceRowId: {
+                  in: rows.map((row) => row.id),
+                },
+              },
+            })
+          : [];
 
       return rows.map((row) => {
         return {

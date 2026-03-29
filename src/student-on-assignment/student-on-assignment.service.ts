@@ -137,15 +137,18 @@ export class StudentOnAssignmentService {
 
       const studentOnAssignments =
         await this.studentOnAssignmentRepository.getByAssignmentId(dto);
-      const files = await this.prisma.fileOnStudentAssignment.findMany({
-        where: {
-          studentOnAssignmentId: {
-            in: studentOnAssignments.map(
-              (studentOnAssignment) => studentOnAssignment.id,
-            ),
-          },
-        },
-      });
+      const files =
+        studentOnAssignments.length > 0
+          ? await this.prisma.fileOnStudentAssignment.findMany({
+              where: {
+                studentOnAssignmentId: {
+                  in: studentOnAssignments.map(
+                    (studentOnAssignment) => studentOnAssignment.id,
+                  ),
+                },
+              },
+            })
+          : [];
       return studentOnAssignments.map((studentOnAssignment) => ({
         ...studentOnAssignment,
         files: files.filter(

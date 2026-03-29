@@ -169,22 +169,27 @@ export class AssignmentService {
           });
       }
 
-      let assignments = await this.assignmentRepository
-        .findMany({
-          where: {
-            ...(student
-              ? {
-                  id: { in: studentsOnAssignments.map((s) => s?.assignmentId) },
-                }
-              : { subjectId: dto.subjectId }),
-          },
-        })
-        .then((assignments) => {
-          return assignments.map((assignment) => {
-            delete assignment.vector;
-            return { ...assignment };
-          });
-        });
+      let assignments =
+        student && studentsOnAssignments.length === 0
+          ? []
+          : await this.assignmentRepository
+              .findMany({
+                where: {
+                  ...(student
+                    ? {
+                        id: {
+                          in: studentsOnAssignments.map((s) => s.assignmentId),
+                        },
+                      }
+                    : { subjectId: dto.subjectId }),
+                },
+              })
+              .then((assignments) => {
+                return assignments.map((assignment) => {
+                  delete assignment.vector;
+                  return { ...assignment };
+                });
+              });
 
       if (student) {
         assignments = assignments.filter(
@@ -199,11 +204,16 @@ export class AssignmentService {
           },
         });
 
-      const files = await this.fileAssignmentRepository.findMany({
-        where: {
-          assignmentId: { in: assignments.map((assignment) => assignment.id) },
-        },
-      });
+      const files =
+        assignments.length > 0
+          ? await this.fileAssignmentRepository.findMany({
+              where: {
+                assignmentId: {
+                  in: assignments.map((assignment) => assignment.id),
+                },
+              },
+            })
+          : [];
       let questions: QuestionOnVideo[] = [];
 
       if (assignments.some((a) => a.type === 'VideoQuiz')) {

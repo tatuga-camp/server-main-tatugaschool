@@ -79,13 +79,16 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      const statusLists = await this.attendanceStatusListSRepository.findMany({
-        where: {
-          attendanceTableId: {
-            in: tables.map((table) => table.id),
-          },
-        },
-      });
+      const statusLists =
+        tables.length > 0
+          ? await this.attendanceStatusListSRepository.findMany({
+              where: {
+                attendanceTableId: {
+                  in: tables.map((table) => table.id),
+                },
+              },
+            })
+          : [];
       return tables.map((table) => ({
         ...table,
         statusLists: statusLists.filter(
@@ -139,21 +142,25 @@ export class AttendanceTableService {
               },
             })
           : [],
-        this.attendanceRepository.findMany({
-          where: {
-            attendanceTableId: {
-              in: tables.map((table) => table.id),
-            },
-            studentOnSubjectId: studentOnSubject.id,
-          },
-        }),
-        this.attendanceStatusListSRepository.findMany({
-          where: {
-            attendanceTableId: {
-              in: tables.map((table) => table.id),
-            },
-          },
-        }),
+        tables.length > 0
+          ? this.attendanceRepository.findMany({
+              where: {
+                attendanceTableId: {
+                  in: tables.map((table) => table.id),
+                },
+                studentOnSubjectId: studentOnSubject.id,
+              },
+            })
+          : [],
+        tables.length > 0
+          ? this.attendanceStatusListSRepository.findMany({
+              where: {
+                attendanceTableId: {
+                  in: tables.map((table) => table.id),
+                },
+              },
+            })
+          : [],
       ]);
 
       return tables.map((table) => ({
