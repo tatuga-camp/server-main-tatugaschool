@@ -114,11 +114,13 @@ export class SchoolService {
         this.classService.classRepository.count({
           where: {
             schoolId: school.id,
+            isDeleted: false,
           },
         }),
         this.subjectService.subjectRepository.count({
           where: {
             schoolId: school.id,
+            isDeleted: false,
           },
         }),
         this.memberOnSchoolService.memberOnSchoolRepository.count({
