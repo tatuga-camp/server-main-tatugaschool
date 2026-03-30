@@ -251,7 +251,7 @@ export class SchoolService {
           limitSchoolMember: 2,
           limitClassNumber: 10,
           limitSubjectNumber: 10,
-          limitTotalStorage: 16106127360,
+          limitTotalStorage: 10737418240000,
         },
       });
       await this.unlockFeatures(update);
@@ -281,7 +281,7 @@ export class SchoolService {
           limitSchoolMember: 3,
           limitClassNumber: 20,
           limitSubjectNumber: 30,
-          limitTotalStorage: 107374182400,
+          limitTotalStorage: 10737418240000,
         },
       });
       await this.unlockFeatures(update);
@@ -310,8 +310,8 @@ export class SchoolService {
           stripe_subscription_id: stripe_subscription_id,
           plan: 'ENTERPRISE',
           limitSchoolMember: members,
-          limitClassNumber: 9999,
-          limitSubjectNumber: 9999,
+          limitClassNumber: 999999999,
+          limitSubjectNumber: 999999999,
           limitTotalStorage: 10737418240000,
         },
       });
@@ -497,7 +497,7 @@ export class SchoolService {
           throw new BadRequestException('User is already a billing manager');
         }
 
-        const updateStripeCustomer = await this.stripe.UpdateCustomer({
+      await this.stripe.UpdateCustomer({
           query: {
             stripeCustomerId: school.stripe_customer_id,
           },
