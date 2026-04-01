@@ -44,15 +44,15 @@ jobs:
       - name: Install Postman CLI
         run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      # Install Node on the runner
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      # Install Bun on the runner
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*' # Or your preferred Node.js version
+          bun-version: latest
 
           # Added the missing hyphen here
       - name: Build & Run Test Server
-        run: npm run docker:build:run:test
+        run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |
@@ -76,15 +76,15 @@ jobs:
       - name: Install Postman CLI
         run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      # Install Node on the runner
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      # Install Bun on the runner
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*' # Or your preferred Node.js version
+          bun-version: latest
 
           # Added the missing hyphen here
       - name: Build & Run Test Server
-        run: npm run docker:build:run:test
+        run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |
@@ -114,15 +114,15 @@ jobs:
       - name: Install Postman CLI
         run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      # Install Node on the runner
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      # Install Bun on the runner
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*' # Or your preferred Node.js version
+          bun-version: latest
 
           # Added the missing hyphen here
       - name: Build & Run Test Server
-        run: npm run docker:build:run:test
+        run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |
@@ -146,15 +146,15 @@ jobs:
       - name: Install Postman CLI
         run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      # Install Node on the runner
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      # Install Bun on the runner
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*' # Or your preferred Node.js version
+          bun-version: latest
 
           # Added the missing hyphen here
       - name: Build & Run Test Server
-        run: npm run docker:build:run:test
+        run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |
@@ -178,15 +178,15 @@ jobs:
       - name: Install Postman CLI
         run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      # Install Node on the runner
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      # Install Bun on the runner
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*' # Or your preferred Node.js version
+          bun-version: latest
 
           # Added the missing hyphen here
       - name: Build & Run Test Server
-        run: npm run docker:build:run:test
+        run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |
@@ -210,15 +210,15 @@ jobs:
       - name: Install Postman CLI
         run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
 
-      # Install Node on the runner
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      # Install Bun on the runner
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: 'lts/*' # Or your preferred Node.js version
+          bun-version: latest
 
           # Added the missing hyphen here
       - name: Build & Run Test Server
-        run: npm run docker:build:run:test
+        run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |

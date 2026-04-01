@@ -28,7 +28,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service
+import { AiService } from '../ai/ai.service'
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StorageService } from '../storage/storage.service';
@@ -705,7 +705,7 @@ describe('School Service', () => {
         expect(upgraded.limitSchoolMember).toBe(3);
         expect(upgraded.limitClassNumber).toBe(20);
         expect(upgraded.limitSubjectNumber).toBe(30);
-        expect(upgraded.limitTotalStorage).toBe(107374182400);
+        expect(upgraded.limitTotalStorage).toBe(10737418240000);
       } catch (error) {
         throw error;
       }
@@ -750,8 +750,8 @@ describe('School Service', () => {
         expect(result.id).toBe(school.id);
         expect(result.plan).toBe('ENTERPRISE');
         expect(result.limitSchoolMember).toBe(200);
-        expect(result.limitClassNumber).toBe(9999);
-        expect(result.limitSubjectNumber).toBe(9999);
+        expect(result.limitClassNumber).toBe(999999999);
+        expect(result.limitSubjectNumber).toBe(999999999);
         expect(result.limitTotalStorage).toBe(10737418240000);
         expect(result.stripe_price_id).toBe('price_enterprise_001');
         expect(result.stripe_subscription_id).toBe('sub_enterprise_001');
