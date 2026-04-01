@@ -1,18 +1,18 @@
 # Base image
-FROM node:22
+FROM oven/bun:latest
 
 # Create app directory
 WORKDIR /usr/src/app
 
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-COPY package*.json ./
+# A wildcard is used to ensure both package.json AND bun.lock are copied
+COPY package*.json bun.lock* ./
 
 # Install app dependencies
 ENV NODE_ENV=production
-RUN npm ci
+RUN bun install --ci
 COPY prisma ./prisma/
-RUN npx prisma generate
-RUN npm install -g @nestjs/cli
+RUN bunx prisma generate
+RUN bun install -g @nestjs/cli
 # Bundle app source
 COPY . .
 
@@ -21,9 +21,9 @@ COPY . .
 
 
 # Creates a "dist" folder with the production build
-RUN npm run build
+RUN bun run build
 
 
 
 # Start the server using the production build
-CMD ["npm", "run", "start:prod"]
+CMD ["bun", "run", "start:prod"]
