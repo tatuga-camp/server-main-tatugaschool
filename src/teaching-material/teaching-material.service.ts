@@ -25,7 +25,7 @@ import * as crypto from 'crypto';
 import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
-import { AiService } from '../ai/ai.service';
+import { AiService } from '../ai/ai.service'
 
 @Injectable()
 export class TeachingMaterialService {
