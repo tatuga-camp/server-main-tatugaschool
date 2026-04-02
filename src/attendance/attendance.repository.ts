@@ -31,7 +31,7 @@ export class AttendanceRepository implements AttendanceRepositoryType {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `attendance_subjectId:${subjectId}`;
   }
 
   async create(request: Prisma.AttendanceCreateArgs): Promise<Attendance> {

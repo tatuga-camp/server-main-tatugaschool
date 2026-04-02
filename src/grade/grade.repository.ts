@@ -143,6 +143,6 @@ export class GradeRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `grade_subjectId:${subjectId}`;
   }
 }

@@ -355,6 +355,6 @@ export class StudentOnAssignmentRepository
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `student_assignment_subjectId:${subjectId}`;
   }
 }

@@ -191,6 +191,6 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `score_subject_subjectId:${subjectId}`;
   }
 }

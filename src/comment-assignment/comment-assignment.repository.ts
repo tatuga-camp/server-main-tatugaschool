@@ -190,6 +190,6 @@ export class CommentAssignmentRepository
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `comment_assignment_subjectId:${subjectId}`;
   }
 }

@@ -374,6 +374,6 @@ export class StudentOnSubjectRepository
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `student_subject_subjectId:${subjectId}`;
   }
 }
