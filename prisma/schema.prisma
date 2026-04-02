@@ -346,6 +346,7 @@ model TeacherOnSubject {
   commentOnAssignments CommentOnAssignment[]
 
   @@unique([userId, subjectId])
+  @@index([subjectId, status]) // <-- Add this new index
 }
 
 model StudentOnSubject {
@@ -381,7 +382,6 @@ model StudentOnSubject {
   studentOnGroups      StudentOnGroup[]
 
   @@unique([studentId, subjectId])
-  @@index([order])
   @@index([subjectId])
 }
 
@@ -583,6 +583,7 @@ model StudentOnAssignment {
   @@unique([studentOnSubjectId, assignmentId])
   @@index([assignmentId])
   @@index([subjectId])
+  @@index([studentId])
 }
 
 enum StudentAssignmentStatus {
@@ -1038,8 +1039,8 @@ model Notification {
   schoolId  String @db.ObjectId
   subjectId String @db.ObjectId
 
-  @@index([userId])
   @@index([userId, isRead])
+  @@index([createAt])
 }
 
 enum NotificationType {

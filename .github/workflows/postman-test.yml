@@ -25,6 +25,7 @@ env:
   VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
   VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
   VAPID_EMAIL: ${{ secrets.VAPID_EMAIL}}
+  REDIS_URL: redis://host.docker.internal:6379
   GOOGLE_AI_KEY: ${{secrets.GOOGLE_AI_KEY}}
   NODE_ENV: test
 
@@ -50,7 +51,9 @@ jobs:
         with:
           bun-version: latest
 
-          # Added the missing hyphen here
+      - name: Start Redis
+        run: docker compose up -d redis_TATUGA
+
       - name: Build & Run Test Server
         run: bun run docker:build:run:test
 
@@ -82,14 +85,16 @@ jobs:
         with:
           bun-version: latest
 
-          # Added the missing hyphen here
+      - name: Start Redis
+        run: docker compose up -d redis_TATUGA
+
       - name: Build & Run Test Server
         run: bun run docker:build:run:test
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 10 seconds for server to start..."
-          sleep 10
+          echo "Waiting 20 seconds for server to start..."
+          sleep 20
 
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
@@ -120,7 +125,9 @@ jobs:
         with:
           bun-version: latest
 
-          # Added the missing hyphen here
+      - name: Start Redis
+        run: docker compose up -d redis_TATUGA
+
       - name: Build & Run Test Server
         run: bun run docker:build:run:test
 
@@ -152,7 +159,9 @@ jobs:
         with:
           bun-version: latest
 
-          # Added the missing hyphen here
+      - name: Start Redis
+        run: docker compose up -d redis_TATUGA
+
       - name: Build & Run Test Server
         run: bun run docker:build:run:test
 
@@ -184,7 +193,9 @@ jobs:
         with:
           bun-version: latest
 
-          # Added the missing hyphen here
+      - name: Start Redis
+        run: docker compose up -d redis_TATUGA
+
       - name: Build & Run Test Server
         run: bun run docker:build:run:test
 
@@ -216,7 +227,9 @@ jobs:
         with:
           bun-version: latest
 
-          # Added the missing hyphen here
+      - name: Start Redis
+        run: docker compose up -d redis_TATUGA
+
       - name: Build & Run Test Server
         run: bun run docker:build:run:test
 

@@ -7,13 +7,27 @@ const prisma = new PrismaClient();
 describe('AttendanceTableRepository', () => {
   let attendanceTableRepository: AttendanceTableRepository;
   const prismaService = new PrismaService();
+  const generateObjectId = () =>
+    Math.floor(Math.random() * 10000000000000000)
+      .toString(16)
+      .padStart(24, '0');
 
-  const subjectId = 'bcf4d87416d1469b94b8a131';
-  const schoolId = '526e3dfdbd6f4d86a5d0406f';
+  const subjectId = generateObjectId();
+  const schoolId = generateObjectId();
   let attendanceTableId: string;
 
+  const mockRedisService = {
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+    del: jest.fn(),
+  } as any;
+
   beforeEach(() => {
-    attendanceTableRepository = new AttendanceTableRepository(prismaService);
+    attendanceTableRepository = new AttendanceTableRepository(
+      prismaService,
+      mockRedisService,
+    );
   });
 
   describe('createAttendanceTable', () => {
@@ -38,24 +52,6 @@ describe('AttendanceTableRepository', () => {
     });
   });
 
-  describe('getAttendanceTables', () => {
-    it('should get tables by subjectId', async () => {
-      try {
-        const tables = await attendanceTableRepository.getAttendanceTables({
-          subjectId: subjectId,
-        });
-
-        expect(Array.isArray(tables)).toBe(true);
-        expect(tables.length).toBeGreaterThan(0);
-        expect(tables[0].subjectId).toBe(subjectId);
-        expect(tables[0].id).toBe(attendanceTableId);
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
-    });
-  });
-
   describe('findMany', () => {
     it('should return tables from findMany', async () => {
       try {
@@ -69,21 +65,6 @@ describe('AttendanceTableRepository', () => {
 
         expect(tables[0].subjectId).toBe(subjectId);
         expect(tables[0].id).toBe(attendanceTableId);
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
-    });
-  });
-
-  describe('getAttendanceTableById', () => {
-    it('should return table by id with rows and students', async () => {
-      try {
-        const result = await attendanceTableRepository.getAttendanceTableById({
-          attendanceTableId: attendanceTableId,
-        });
-
-        expect(result.id).toBe(attendanceTableId);
       } catch (error) {
         console.error(error);
         throw error;

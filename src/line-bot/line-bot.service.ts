@@ -1,5 +1,5 @@
 import { TextMessage } from '@line/bot-sdk';
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { messagingApi, WebhookEvent } from '@line/bot-sdk';
 @Injectable()
@@ -13,6 +13,11 @@ export class LineBotService {
 
   async sendMessage(request: { groupId: string; message: string }) {
     try {
+
+      if(!request.message) {
+        throw new BadRequestException('Message is required');
+      }
+      
       const message: TextMessage = {
         type: 'text',
         text: request.message,
@@ -28,13 +33,15 @@ export class LineBotService {
 
   async replyMessage(request: { replyToken: string; message: string }) {
     try {
+         if(!request.message) {
+        throw new BadRequestException('Message is required');
+      }
       const message: TextMessage = {
         type: 'text',
         text: request.message,
       };
       await this.lineClient.replyMessage({
         replyToken: request.replyToken,
-
         messages: [message],
       });
     } catch (error) {

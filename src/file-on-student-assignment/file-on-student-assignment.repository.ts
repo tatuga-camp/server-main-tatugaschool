@@ -12,6 +12,7 @@ import {
 import { FileOnStudentAssignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RedisService } from '../redis/redis.service';
 
 type FileOnStudentAssignmentRepositoryType = {
   getById(
@@ -45,13 +46,18 @@ export class FileOnStudentAssignmentRepository
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private redisService?: RedisService,
   ) {}
 
   async update(
     request: Prisma.FileOnStudentAssignmentUpdateArgs,
   ): Promise<FileOnStudentAssignment> {
     try {
-      return await this.prisma.fileOnStudentAssignment.update(request);
+      const result = await this.prisma.fileOnStudentAssignment.update(request);
+      if (result && result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -67,6 +73,24 @@ export class FileOnStudentAssignmentRepository
     request: Prisma.FileOnStudentAssignmentFindManyArgs,
   ): Promise<FileOnStudentAssignment[]> {
     try {
+      const subjectId = request.where?.subjectId;
+
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result =
+          await this.prisma.fileOnStudentAssignment.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.fileOnStudentAssignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -123,7 +147,11 @@ export class FileOnStudentAssignmentRepository
     request: Prisma.FileOnStudentAssignmentCreateArgs,
   ): Promise<FileOnStudentAssignment> {
     try {
-      return await this.prisma.fileOnStudentAssignment.create(request);
+      const result = await this.prisma.fileOnStudentAssignment.create(request);
+      if (result && result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -160,7 +188,13 @@ export class FileOnStudentAssignmentRepository
           id: request.fileOnStudentAssignmentId,
         },
       });
-      return remove;
+
+      const result = remove;
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -207,5 +241,9 @@ export class FileOnStudentAssignmentRepository
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }
