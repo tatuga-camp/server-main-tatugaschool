@@ -7,6 +7,9 @@ const config = {
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
+  moduleNameMapper: {
+    '^bun$': '<rootDir>/../__mocks__/bun.ts',
+  },
   // This is the key change:
   // By default, Jest ignores node_modules. We are making an exception for pdfjs-dist.
   collectCoverageFrom: ['**/*.(t|j)s'],
