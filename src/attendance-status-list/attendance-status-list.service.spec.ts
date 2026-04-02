@@ -27,7 +27,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service'
+import { AiService } from '../ai/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StorageService } from '../storage/storage.service';
@@ -46,6 +46,7 @@ import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { RedisService } from '../redis/redis.service';
 
 describe('Attendance-status-list Service', () => {
   let attendanceStatusListService: AttendanceStatusListService;
@@ -110,10 +111,19 @@ describe('Attendance-status-list Service', () => {
   );
 
   const wheelOfNameService = new WheelOfNameService(httpService, configService);
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
     storageService,
+    mockRedisService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
@@ -149,6 +159,7 @@ describe('Attendance-status-list Service', () => {
     gradeService,
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
+    mockRedisService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -379,7 +390,7 @@ describe('Attendance-status-list Service', () => {
       } catch (error) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe('attendanceTableId not found');
+        expect(error.message).toBe('Attendance Table not found');
       }
     });
 
