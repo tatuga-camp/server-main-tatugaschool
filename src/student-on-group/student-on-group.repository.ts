@@ -205,6 +205,6 @@ export class StudentOnGroupRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `student_group_subjectId:${subjectId}`;
   }
 }

@@ -244,6 +244,6 @@ export class FileOnStudentAssignmentRepository
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `file_student_assignment_subjectId:${subjectId}`;
   }
 }

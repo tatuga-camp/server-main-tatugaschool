@@ -281,6 +281,6 @@ export class FileAssignmentRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `file_assignment_subjectId:${subjectId}`;
   }
 }

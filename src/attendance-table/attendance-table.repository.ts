@@ -2,21 +2,16 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
-  NotFoundException,
 } from '@nestjs/common';
+import { AttendanceTable, Prisma } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 import {
   RequestCreateAttendanceTable,
   RequestDeleteAttendanceTable,
-  RequestGetAttendanceTableById,
-  RequestGetAttendanceTables,
   RequestUpdateAttendanceTable,
-  ResponseGetAttendanceTableById,
 } from './interfaces';
-import { AttendanceTable, Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { NotFoundError } from 'rxjs';
-import { RedisService } from '../redis/redis.service';
 
 type Repository = {
   createAttendanceTable(
@@ -46,7 +41,7 @@ export class AttendanceTableRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `attendance_table:subjectId:${subjectId}`;
   }
 
   async findUnique(

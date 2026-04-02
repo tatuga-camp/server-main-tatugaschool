@@ -247,6 +247,6 @@ export class AttendanceRowRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `attendance_row_subjectId:${subjectId}`;
   }
 }

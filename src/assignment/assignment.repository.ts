@@ -312,6 +312,6 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `assignment_subjectId:${subjectId}`;
   }
 }

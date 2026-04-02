@@ -236,6 +236,6 @@ export class SkillOnStudentAssignmentRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `skill_student_assignment_subjectId:${subjectId}`;
   }
 }

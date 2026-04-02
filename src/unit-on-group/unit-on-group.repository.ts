@@ -159,6 +159,6 @@ export class UnitOnGroupRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `unit_group_subjectId:${subjectId}`;
   }
 }

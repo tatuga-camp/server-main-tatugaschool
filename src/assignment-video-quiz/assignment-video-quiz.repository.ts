@@ -186,6 +186,6 @@ export class AssignmentVideoQuizRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `assignment_video_subjectId:${subjectId}`;
   }
 }

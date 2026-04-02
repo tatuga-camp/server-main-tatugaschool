@@ -199,7 +199,6 @@ export class TeacherOnSubjectRepository
           'Teacher is already teaching this subject',
         );
       }
-      this.logger.error(error.message);
       throw error;
     }
   }
@@ -258,6 +257,6 @@ export class TeacherOnSubjectRepository
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `teacher_subject_subjectId:${subjectId}`;
   }
 }
