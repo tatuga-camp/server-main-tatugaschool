@@ -531,7 +531,7 @@ export class AuthService {
           this.config.get('NODE_ENV') === 'production'
             ? '3m'
             : this.config.get('NODE_ENV') === 'development'
-              ? '10s'
+              ? '10m'
               : '15m',
       });
     } catch (error) {
@@ -553,7 +553,7 @@ export class AuthService {
           this.config.get('NODE_ENV') === 'production'
             ? '3m'
             : this.config.get('NODE_ENV') === 'development'
-              ? '10s'
+              ? '10m'
               : '15m',
       });
     } catch (error) {
