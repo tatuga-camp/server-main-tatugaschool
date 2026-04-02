@@ -32,7 +32,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service'
+import { AiService } from '../ai/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { AttendanceRowService } from './attendance-row.service';
@@ -49,6 +49,7 @@ import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { RedisService } from '../redis/redis.service';
 
 describe('Attendance-row Service', () => {
   let attendanceRowService: AttendanceRowService;
@@ -139,6 +140,14 @@ describe('Attendance-row Service', () => {
     storageService,
     teacherOnSubjectService,
   );
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     storageService,
@@ -148,6 +157,7 @@ describe('Attendance-row Service', () => {
     gradeService,
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
+    mockRedisService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -226,6 +236,7 @@ describe('Attendance-row Service', () => {
     prismaService,
     teacherOnSubjectService,
     storageService,
+    mockRedisService,
   );
 
   const attendanceService = new AttendanceService(
@@ -234,6 +245,7 @@ describe('Attendance-row Service', () => {
     studentOnSubjectService,
     attendanceTableService,
     attendanceRowService,
+    mockRedisService,
   );
 
   subjectService = new SubjectService(
@@ -259,6 +271,7 @@ describe('Attendance-row Service', () => {
       subjectService,
       attendanceStatusListService,
       teacherOnSubjectService,
+      mockRedisService,
     );
   });
 
@@ -499,7 +512,7 @@ describe('Attendance-row Service', () => {
       } catch (error) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
-        expect(error.message).toBe('attendanceTableId not found');
+        expect(error.message).toBe('Attendance table not found');
       }
     });
 
