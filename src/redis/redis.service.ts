@@ -1,17 +1,26 @@
-import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleDestroy,
+  OnModuleInit,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RedisClient } from 'bun';
 
 @Injectable()
-export class RedisService extends RedisClient implements OnModuleInit, OnModuleDestroy {
+export class RedisService
+  extends RedisClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(RedisService.name);
 
   constructor(private configService: ConfigService) {
     // 1. Retrieve the Redis URL from your environment variables
-    const redisUrl = configService.get<string>('REDIS_URL')
-    
+    const redisUrl = configService.get<string>('REDIS_URL');
+
     // 2. Pass the URL to the underlying Bun RedisClient constructor
-    super(redisUrl);
+
+    super(redisUrl ?? undefined);
   }
 
   async onModuleInit() {
