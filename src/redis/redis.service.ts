@@ -20,7 +20,7 @@ export class RedisService
 
     // 2. Pass the URL to the underlying Bun RedisClient constructor
 
-    super(redisUrl ?? undefined);
+    super(redisUrl);
   }
 
   async onModuleInit() {
