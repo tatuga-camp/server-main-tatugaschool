@@ -2,6 +2,7 @@ import { AttendanceRepository } from './../attendance/attendance.repository';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceTableRepository } from './attendance-table.repository';
+import { RedisService } from '../redis/redis.service';
 import {
   ForbiddenException,
   Injectable,
@@ -41,17 +42,24 @@ export class AttendanceTableService {
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private storageService: StorageService,
+    private redisService: RedisService,
   ) {
     this.logger = new Logger(AttendanceTableService.name);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
-      prisma,
-      storageService,
+      this.prisma,
+      this.storageService,
     );
-    this.attendanceRowRepository = new AttendanceRowRepository(prisma);
-    this.attendanceTableRepository = new AttendanceTableRepository(prisma);
-    this.attendanceRepository = new AttendanceRepository(prisma);
+    this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
+    this.attendanceTableRepository = new AttendanceTableRepository(
+      this.prisma,
+      this.redisService,
+    );
+    this.attendanceRepository = new AttendanceRepository(
+      this.prisma,
+      this.redisService,
+    );
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
-      prisma,
+      this.prisma,
     );
   }
 
@@ -75,8 +83,10 @@ export class AttendanceTableService {
         subjectId: dto.subjectId,
       });
 
-      const tables = await this.attendanceTableRepository.getAttendanceTables({
-        subjectId: dto.subjectId,
+      const tables = await this.attendanceTableRepository.findMany({
+        where: {
+          subjectId: dto.subjectId,
+        },
       });
 
       const statusLists =
@@ -184,22 +194,55 @@ export class AttendanceTableService {
     user: User,
   ): Promise<ResponseGetAttendanceTableById> {
     try {
-      const table = await this.attendanceTableRepository.getAttendanceTableById(
-        {
-          attendanceTableId: dto.attendanceTableId,
+      const table = await this.attendanceTableRepository.findUnique({
+        where: {
+          id: dto.attendanceTableId,
         },
-      );
+      });
 
       if (!table) {
-        throw new NotFoundException('Attendance table not found');
+        throw new NotFoundException('attendanceTableId not found');
       }
+
+      const [studentOnSubjects, rows] = await Promise.all([
+        this.studentOnSubjectRepository.findMany({
+          where: {
+            subjectId: table.subjectId,
+          },
+        }),
+        this.attendanceRowRepository.findMany({
+          where: {
+            attendanceTableId: table.id,
+          },
+        }),
+      ]);
+
+      const attendances =
+        rows.length > 0
+          ? await this.attendanceRepository.findMany({
+              where: {
+                attendanceRowId: {
+                  in: rows.map((row) => row.id),
+                },
+              },
+            })
+          : [];
 
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: table.subjectId,
       });
 
-      return table;
+      return {
+        ...table,
+        rows: rows.map((row) => ({
+          ...row,
+          attendances: attendances.filter(
+            (attendance) => attendance.attendanceRowId === row.id,
+          ),
+        })),
+        students: studentOnSubjects,
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
