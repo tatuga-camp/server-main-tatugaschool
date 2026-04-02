@@ -818,6 +818,7 @@ model Attendance {
   @@index([attendanceTableId])
   @@index([attendanceRowId])
   @@index([studentId])
+  @@index([subjectId])
 }
 
 model Skill {
