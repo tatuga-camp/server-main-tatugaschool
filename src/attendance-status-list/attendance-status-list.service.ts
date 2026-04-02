@@ -1,4 +1,5 @@
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
+import { RedisService } from '../redis/redis.service';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { AttendanceStatusListSRepository } from './attendance-status-list.repository';
 import {
@@ -24,12 +25,13 @@ export class AttendanceStatusListService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private redisService?: RedisService,
   ) {
+    this.logger = new Logger(AttendanceStatusListService.name);
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       this.prisma,
     );
-
-    this.attendanceTableRepository = new AttendanceTableRepository(this.prisma);
+    this.attendanceTableRepository = new AttendanceTableRepository(this.prisma, this.redisService);
   }
 
   async create(
@@ -37,9 +39,11 @@ export class AttendanceStatusListService {
     user: User,
   ): Promise<AttendanceStatusList> {
     try {
-      const table = await this.attendanceTableRepository.getAttendanceTableById(
+      const table = await this.attendanceTableRepository.findUnique(
         {
-          attendanceTableId: dto.attendanceTableId,
+          where: {
+            id: dto.attendanceTableId,
+          }
         },
       );
 

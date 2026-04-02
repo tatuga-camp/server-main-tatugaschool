@@ -16,6 +16,7 @@ import {
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RedisService } from '../redis/redis.service';
 
 export type StudentOnSubjectRepositoryType = {
   getStudentOnSubjectsBySubjectId(
@@ -53,6 +54,7 @@ export class StudentOnSubjectRepository
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private redisService?: RedisService,
   ) {}
 
   async findFirst(
@@ -115,6 +117,22 @@ export class StudentOnSubjectRepository
     request: Prisma.StudentOnSubjectFindManyArgs,
   ): Promise<StudentOnSubject[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.studentOnSubject.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.studentOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -151,9 +169,14 @@ export class StudentOnSubjectRepository
     request: RequestCreateStudentOnSubject,
   ): Promise<StudentOnSubject> {
     try {
-      return await this.prisma.studentOnSubject.create({
+      const result = await this.prisma.studentOnSubject.create({
         data: request,
       });
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
@@ -170,6 +193,13 @@ export class StudentOnSubjectRepository
   ): Promise<Prisma.BatchPayload> {
     try {
       const create = await this.prisma.studentOnSubject.createMany(request);
+
+      const subjectId = request.data[0]?.subjectId;
+
+      if (typeof subjectId === 'string' && this.redisService) {
+        await this.redisService?.del(this.getCacheKey(subjectId));
+      }
+
       return create;
     } catch (error) {
       this.logger.error(error);
@@ -186,12 +216,17 @@ export class StudentOnSubjectRepository
     request: RequestUpdateStudentOnSubject,
   ): Promise<StudentOnSubject> {
     try {
-      return await this.prisma.studentOnSubject.update({
+      const result = await this.prisma.studentOnSubject.update({
         where: {
           id: request.query.studentOnSubjectId,
         },
         data: request.data,
       });
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -207,7 +242,12 @@ export class StudentOnSubjectRepository
     request: Prisma.StudentOnSubjectUpdateArgs,
   ): Promise<StudentOnSubject> {
     try {
-      return await this.prisma.studentOnSubject.update(request);
+      const result = await this.prisma.studentOnSubject.update(request);
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -313,9 +353,15 @@ export class StudentOnSubjectRepository
 
       // Delete the StudentOnSubject
 
-      return await this.prisma.studentOnSubject.delete({
+      const result = await this.prisma.studentOnSubject.delete({
         where: { id: studentOnSubjectId },
       });
+
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -325,5 +371,9 @@ export class StudentOnSubjectRepository
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }

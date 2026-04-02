@@ -12,8 +12,15 @@ describe('AttendanceTableRepository', () => {
   const schoolId = '526e3dfdbd6f4d86a5d0406f';
   let attendanceTableId: string;
 
+  const mockRedisService = {
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+    del: jest.fn()
+  } as any;
+
   beforeEach(() => {
-    attendanceTableRepository = new AttendanceTableRepository(prismaService);
+    attendanceTableRepository = new AttendanceTableRepository(prismaService, mockRedisService);
   });
 
   describe('createAttendanceTable', () => {
@@ -38,23 +45,7 @@ describe('AttendanceTableRepository', () => {
     });
   });
 
-  describe('getAttendanceTables', () => {
-    it('should get tables by subjectId', async () => {
-      try {
-        const tables = await attendanceTableRepository.getAttendanceTables({
-          subjectId: subjectId,
-        });
 
-        expect(Array.isArray(tables)).toBe(true);
-        expect(tables.length).toBeGreaterThan(0);
-        expect(tables[0].subjectId).toBe(subjectId);
-        expect(tables[0].id).toBe(attendanceTableId);
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
-    });
-  });
 
   describe('findMany', () => {
     it('should return tables from findMany', async () => {
@@ -76,20 +67,6 @@ describe('AttendanceTableRepository', () => {
     });
   });
 
-  describe('getAttendanceTableById', () => {
-    it('should return table by id with rows and students', async () => {
-      try {
-        const result = await attendanceTableRepository.getAttendanceTableById({
-          attendanceTableId: attendanceTableId,
-        });
-
-        expect(result.id).toBe(attendanceTableId);
-      } catch (error) {
-        console.error(error);
-        throw error;
-      }
-    });
-  });
 
   describe('updateAttendanceTable', () => {
     it('should update title and description', async () => {

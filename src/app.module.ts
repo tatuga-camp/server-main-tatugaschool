@@ -51,6 +51,7 @@ import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-vi
 import { FileOnFeedbackModule } from './file-on-feedback/file-on-feedback.module';
 import { LineBotModule } from './line-bot/line-bot.module';
 import { AiModule } from './ai/ai.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { AiModule } from './ai/ai.module';
     AssignmentVideoQuizModule,
     FileOnFeedbackModule,
     LineBotModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

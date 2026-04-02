@@ -24,6 +24,7 @@ import { StudentOnSubjectService } from '../student-on-subject/student-on-subjec
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AttendanceRowService } from '../attendance-row/attendance-row.service';
 import { Request, Response } from 'express';
+import { RedisService } from '../redis/redis.service';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
@@ -38,15 +39,19 @@ export class AttendanceService {
     private studentOnSubjectService: StudentOnSubjectService,
     private attendanceTableService: AttendanceTableService,
     private attendanceRowService: AttendanceRowService,
+    private redisService: RedisService,
   ) {
     this.logger = new Logger(AttendanceService.name);
-    this.attendanceRepository = new AttendanceRepository(prisma);
-    this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
-      prisma,
+    this.attendanceRepository = new AttendanceRepository(
+      this.prisma,
+      this.redisService,
     );
-    this.attendanceRowRepository = new AttendanceRowRepository(prisma);
+    this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
+      this.prisma,
+    );
+    this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
-      prisma,
+      this.prisma,
       storageService,
     );
     this.subjectRepository = new SubjectRepository(

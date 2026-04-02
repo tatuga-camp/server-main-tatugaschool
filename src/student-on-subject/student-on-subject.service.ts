@@ -1,3 +1,4 @@
+import { RedisService } from './../redis/redis.service';
 import { ScoreOnSubjectService } from './../score-on-subject/score-on-subject.service';
 import {
   forwardRef,
@@ -72,6 +73,7 @@ export class StudentOnSubjectService {
     private gradeService: GradeService,
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
     private scoreOnSubjectService: ScoreOnSubjectService,
+    private redisService: RedisService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -94,7 +96,10 @@ export class StudentOnSubjectService {
       this.storageService,
     );
     this.userRepository = new UserRepository(this.prisma);
-    this.attendanceRepository = new AttendanceRepository(this.prisma);
+    this.attendanceRepository = new AttendanceRepository(
+      this.prisma,
+      this.redisService,
+    );
     this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,

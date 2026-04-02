@@ -14,6 +14,7 @@ import {
 import { FileOnAssignment, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RedisService } from '../redis/redis.service';
 
 type Repository = {
   getById(request: RequestGetFileById): Promise<FileOnAssignment>;
@@ -36,13 +37,26 @@ export class FileAssignmentRepository implements Repository {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private redisService?: RedisService,
   ) {}
 
   async update(
     request: Prisma.FileOnAssignmentUpdateArgs,
   ): Promise<FileOnAssignment> {
     try {
-      return await this.prisma.fileOnAssignment.update(request);
+      const result = await this.prisma.fileOnAssignment.update(request);
+      if (result) {
+        if (Array.isArray(result)) {
+          for (const item of result) {
+            if (item.subjectId) {
+              await this.redisService?.del(this.getCacheKey(item.subjectId));
+            }
+          }
+        } else if (result.subjectId) {
+          await this.redisService?.del(this.getCacheKey(result.subjectId));
+        }
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -58,6 +72,22 @@ export class FileAssignmentRepository implements Repository {
     request: Prisma.FileOnAssignmentFindManyArgs,
   ): Promise<FileOnAssignment[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.fileOnAssignment.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.fileOnAssignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -112,9 +142,21 @@ export class FileAssignmentRepository implements Repository {
     request: RequestCreateFileAssignment,
   ): Promise<FileOnAssignment> {
     try {
-      return await this.prisma.fileOnAssignment.create({
+      const result = await this.prisma.fileOnAssignment.create({
         data: request,
       });
+      if (result) {
+        if (Array.isArray(result)) {
+          for (const item of result) {
+            if (item.subjectId) {
+              await this.redisService?.del(this.getCacheKey(item.subjectId));
+            }
+          }
+        } else if (result.subjectId) {
+          await this.redisService?.del(this.getCacheKey(result.subjectId));
+        }
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -162,7 +204,19 @@ export class FileAssignmentRepository implements Repository {
         });
       }
 
-      return fileOnAssignment;
+      const result = fileOnAssignment;
+      if (result) {
+        if (Array.isArray(result)) {
+          for (const item of result) {
+            if (item.subjectId) {
+              await this.redisService?.del(this.getCacheKey(item.subjectId));
+            }
+          }
+        } else if (result.subjectId) {
+          await this.redisService?.del(this.getCacheKey(result.subjectId));
+        }
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -203,7 +257,18 @@ export class FileAssignmentRepository implements Repository {
         },
       });
 
-      return filesOnAssignments;
+      const result = filesOnAssignments;
+
+      if (result) {
+        if (Array.isArray(result)) {
+          for (const item of result) {
+            if (item.subjectId) {
+              await this.redisService?.del(this.getCacheKey(item.subjectId));
+            }
+          }
+        }
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -213,5 +278,9 @@ export class FileAssignmentRepository implements Repository {
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }
