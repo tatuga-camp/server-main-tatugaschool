@@ -7,20 +7,27 @@ const prisma = new PrismaClient();
 describe('AttendanceTableRepository', () => {
   let attendanceTableRepository: AttendanceTableRepository;
   const prismaService = new PrismaService();
+  const generateObjectId = () =>
+    Math.floor(Math.random() * 10000000000000000)
+      .toString(16)
+      .padStart(24, '0');
 
-  const subjectId = 'bcf4d87416d1469b94b8a131';
-  const schoolId = '526e3dfdbd6f4d86a5d0406f';
+  const subjectId = generateObjectId();
+  const schoolId = generateObjectId();
   let attendanceTableId: string;
 
   const mockRedisService = {
     hget: jest.fn(),
     hset: jest.fn(),
     expire: jest.fn(),
-    del: jest.fn()
+    del: jest.fn(),
   } as any;
 
   beforeEach(() => {
-    attendanceTableRepository = new AttendanceTableRepository(prismaService, mockRedisService);
+    attendanceTableRepository = new AttendanceTableRepository(
+      prismaService,
+      mockRedisService,
+    );
   });
 
   describe('createAttendanceTable', () => {
@@ -45,8 +52,6 @@ describe('AttendanceTableRepository', () => {
     });
   });
 
-
-
   describe('findMany', () => {
     it('should return tables from findMany', async () => {
       try {
@@ -66,7 +71,6 @@ describe('AttendanceTableRepository', () => {
       }
     });
   });
-
 
   describe('updateAttendanceTable', () => {
     it('should update title and description', async () => {

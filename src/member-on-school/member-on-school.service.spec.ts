@@ -29,7 +29,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service'
+import { AiService } from '../ai/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import {
@@ -49,6 +49,7 @@ import { NotificationRepository } from '../notification/notification.repository'
 import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { RedisService } from '../redis/redis.service';
 
 describe('MemberOnSchool Service', () => {
   const prismaService = new PrismaService();
@@ -58,7 +59,7 @@ describe('MemberOnSchool Service', () => {
   const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
-
+  const redisService = new RedisService(configService);
   const emailService = new EmailService(configService);
 
   let memberOnSchoolService: MemberOnSchoolService;
@@ -109,6 +110,7 @@ describe('MemberOnSchool Service', () => {
     prismaService,
     teacherOnSubjectService,
     storageService,
+    redisService,
   );
   memberOnSchoolService = new MemberOnSchoolService(
     prismaService,
@@ -171,6 +173,7 @@ describe('MemberOnSchool Service', () => {
     gradeService,
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
+    redisService,
   );
   const skillService = new SkillService(
     prismaService,
