@@ -4,20 +4,37 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+import { RedisService } from '../redis/redis.service';
+
 describe('AttendanceRepository', () => {
   const prismaService = new PrismaService();
-
+  const redisService = {
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+  } as any as RedisService;
   let attendanceRepository: AttendanceRepository;
-  let attendanceRowId = '660d16ef446ebda4dbd74f80';
-  let studentOnSubjectId = '660d16ef446ebda4dbd74f81';
-  let subjectId = '660d16ef446ebda4dbd74f82';
-  let attendanceTableId = '660d16ef446ebda4dbd74f83';
-  let studentId = '660d16ef446ebda4dbd74f84';
-  let schoolId = '660d16ef446ebda4dbd74f85';
+  const generateObjectId = () =>
+    Math.floor(Math.random() * 10000000000000000)
+      .toString(16)
+      .padStart(24, '0');
+
+  let attendanceRowId = generateObjectId();
+  let studentOnSubjectId = generateObjectId();
+  let subjectId = generateObjectId();
+  let attendanceTableId = generateObjectId();
+  let studentId = generateObjectId();
+  let schoolId = generateObjectId();
   let attendanceId: string;
 
   beforeEach(() => {
-    attendanceRepository = new AttendanceRepository(prismaService);
+    attendanceRepository = new AttendanceRepository(
+      prismaService,
+      redisService,
+    );
   });
 
   describe('create', () => {
@@ -94,7 +111,7 @@ describe('AttendanceRepository', () => {
       }
     });
   });
-  
+
   describe('findMany', () => {
     it('should return list of attendances for subject', async () => {
       try {

@@ -37,7 +37,7 @@ import { SubscriptionService } from '../subscription/subscription.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UnitOnGroupService } from '../unit-on-group/unit-on-group.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service'
+import { AiService } from '../ai/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StorageService } from '../storage/storage.service';
@@ -54,6 +54,7 @@ import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { LineBotModule } from '../line-bot/line-bot.module';
+import { RedisService } from '../redis/redis.service';
 
 describe('Group On Subject Service', () => {
   let groupOnSubjectService: GroupOnSubjectService;
@@ -144,6 +145,7 @@ describe('Group On Subject Service', () => {
     storageService,
     teacherOnSubjectService,
   );
+  const mockRedisService = {  del: jest.fn(), get: jest.fn(), set: jest.fn() , hget: jest.fn(), hset: jest.fn(), expire: jest.fn() } as any as RedisService;
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     storageService,
@@ -153,6 +155,7 @@ describe('Group On Subject Service', () => {
     gradeService,
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
+    mockRedisService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -231,6 +234,7 @@ describe('Group On Subject Service', () => {
     prismaService,
     teacherOnSubjectService,
     storageService,
+    mockRedisService,
   );
 
   subjectService = new SubjectService(
@@ -255,6 +259,7 @@ describe('Group On Subject Service', () => {
     subjectService,
     attendanceStatusListService,
     teacherOnSubjectService,
+    mockRedisService,
   );
 
   const attendanceService = new AttendanceService(
@@ -263,6 +268,7 @@ describe('Group On Subject Service', () => {
     studentOnSubjectService,
     attendanceTableService,
     attendanceRowService,
+    mockRedisService,
   );
 
   const unitOnGroupService = new UnitOnGroupService(

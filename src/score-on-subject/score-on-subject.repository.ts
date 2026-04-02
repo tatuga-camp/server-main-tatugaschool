@@ -11,6 +11,7 @@ import {
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RedisService } from '../redis/redis.service';
 
 export type ScoreOnSubjectRepositoryType = {
   getAllScoreOnSubjectBySubjectId(
@@ -33,7 +34,10 @@ export type ScoreOnSubjectRepositoryType = {
 @Injectable()
 export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
   logger: Logger = new Logger(ScoreOnSubjectRepository.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private redisService?: RedisService,
+  ) {}
 
   async findUnique(
     request: Prisma.ScoreOnSubjectFindUniqueArgs,
@@ -55,6 +59,22 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: Prisma.ScoreOnSubjectFindManyArgs,
   ): Promise<ScoreOnSubject[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.scoreOnSubject.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.scoreOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -92,11 +112,16 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: RequestCreateSocreOnSubject,
   ): Promise<ScoreOnSubject> {
     try {
-      return await this.prisma.scoreOnSubject.create({
+      const result = await this.prisma.scoreOnSubject.create({
         data: {
           ...request,
         },
       });
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -112,7 +137,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: RequestUpdateScoreOnSubject,
   ): Promise<ScoreOnSubject> {
     try {
-      return await this.prisma.scoreOnSubject.update({
+      const result = await this.prisma.scoreOnSubject.update({
         where: {
           id: request.query.scoreOnSubjectId,
         },
@@ -120,6 +145,11 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
           ...request.body,
         },
       });
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -138,11 +168,17 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
           scoreOnSubjectId: request.scoreOnSubjectId,
         },
       });
-      return await this.prisma.scoreOnSubject.delete({
+
+      const result = await this.prisma.scoreOnSubject.delete({
         where: {
           id: request.scoreOnSubjectId,
         },
       });
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -152,5 +188,9 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }

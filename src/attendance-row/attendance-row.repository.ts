@@ -14,6 +14,7 @@ import {
 import { AttendanceRow, Prisma, StudentOnSubject } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RedisService } from '../redis/redis.service';
 
 export type Repository = {
   findMany(request: Prisma.AttendanceRowFindManyArgs): Promise<AttendanceRow[]>;
@@ -36,7 +37,10 @@ export type Repository = {
 @Injectable()
 export class AttendanceRowRepository implements Repository {
   logger: Logger;
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private redisService?: RedisService,
+  ) {
     this.logger = new Logger(AttendanceRowRepository.name);
   }
 
@@ -44,6 +48,22 @@ export class AttendanceRowRepository implements Repository {
     request: Prisma.AttendanceRowFindManyArgs,
   ): Promise<AttendanceRow[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.attendanceRow.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.attendanceRow.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -142,7 +162,14 @@ export class AttendanceRowRepository implements Repository {
         });
       }
 
-      return row;
+      const result = row;
+      if ((result as any).subjectId) {
+        await this.redisService?.del(
+          this.getCacheKey((result as any).subjectId),
+        );
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -158,7 +185,7 @@ export class AttendanceRowRepository implements Repository {
     request: RequestUpdateAttendanceRow,
   ): Promise<AttendanceRow> {
     try {
-      return await this.prisma.attendanceRow.update({
+      const result = await this.prisma.attendanceRow.update({
         where: {
           id: request.query.attendanceRowId,
         },
@@ -166,6 +193,13 @@ export class AttendanceRowRepository implements Repository {
           ...request.body,
         },
       });
+      if ((result as any).subjectId) {
+        await this.redisService?.del(
+          this.getCacheKey((result as any).subjectId),
+        );
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -192,7 +226,15 @@ export class AttendanceRowRepository implements Repository {
           id: request.attendanceRowId,
         },
       });
-      return remove;
+
+      const result = remove;
+      if ((result as any).subjectId) {
+        await this.redisService?.del(
+          this.getCacheKey((result as any).subjectId),
+        );
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -202,5 +244,9 @@ export class AttendanceRowRepository implements Repository {
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }

@@ -27,7 +27,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service'
+import { AiService } from '../ai/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StorageService } from '../storage/storage.service';
@@ -38,6 +38,7 @@ import { NotificationService } from '../notification/notification.service';
 import { NotificationRepository } from '../notification/notification.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { RedisService } from '../redis/redis.service';
 
 describe('Class Service', () => {
   let classroomService: ClassService;
@@ -69,10 +70,12 @@ describe('Class Service', () => {
   );
 
   const wheelOfNameService = new WheelOfNameService(httpService, configService);
+  const mockRedisService = {  del: jest.fn(), get: jest.fn(), set: jest.fn() , hget: jest.fn(), hset: jest.fn(), expire: jest.fn() } as any as RedisService;
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
     storageService,
+    mockRedisService,
   );
   const lineService = new LineBotService(configService);
 
@@ -148,6 +151,7 @@ describe('Class Service', () => {
     gradeService,
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
+    mockRedisService,
   );
   const skillService = new SkillService(
     prismaService,

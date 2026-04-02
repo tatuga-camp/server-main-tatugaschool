@@ -10,3 +10,16 @@ services:
       INIT_WAIT_SEC: 3
     ports:
       - 27017:27017
+  # Added Redis service
+  redis_TATUGA:
+    image: redis:7-alpine
+    container_name: redis-test
+    restart: always
+    ports:
+      - 6379:6379
+    # Healthcheck ensures the container is ready before other services use it
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5

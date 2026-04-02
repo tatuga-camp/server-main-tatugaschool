@@ -34,7 +34,7 @@ import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { AiService } from '../ai/ai.service'
+import { AiService } from '../ai/ai.service';
 import { PushService } from '../web-push/push.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StorageService } from '../storage/storage.service';
@@ -49,6 +49,7 @@ import { NotificationRepository } from '../notification/notification.repository'
 import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { RedisService } from '../redis/redis.service';
 
 describe('Attendance Service', () => {
   let attendanceService: AttendanceService;
@@ -59,8 +60,9 @@ describe('Attendance Service', () => {
   const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
-
+  const redisService = new RedisService(configService);
   const emailService = new EmailService(configService);
+
   let memberOnSchoolService: MemberOnSchoolService;
   let studentService: StudentService;
   let gradeService: GradeService;
@@ -145,6 +147,7 @@ describe('Attendance Service', () => {
     gradeService,
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
+    redisService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -223,6 +226,7 @@ describe('Attendance Service', () => {
     prismaService,
     teacherOnSubjectService,
     storageService,
+    redisService,
   );
 
   subjectService = new SubjectService(
@@ -247,6 +251,7 @@ describe('Attendance Service', () => {
     subjectService,
     attendanceStatusListService,
     teacherOnSubjectService,
+    redisService,
   );
 
   beforeEach(async () => {
@@ -256,6 +261,7 @@ describe('Attendance Service', () => {
       studentOnSubjectService,
       attendanceTableService,
       attendanceRowService,
+      redisService,
     );
   });
 

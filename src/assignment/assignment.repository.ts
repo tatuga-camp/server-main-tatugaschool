@@ -16,6 +16,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { StorageService } from '../storage/storage.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
+import { RedisService } from '../redis/redis.service';
 
 type AssignmentRepositoryType = {
   getById(request: RequestGetAssignmentById): Promise<Assignment>;
@@ -40,6 +41,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private redisService?: RedisService,
   ) {
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
@@ -77,6 +79,22 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: Prisma.AssignmentFindManyArgs,
   ): Promise<Assignment[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.assignment.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.assignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -125,7 +143,12 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
   async create(request: Prisma.AssignmentCreateArgs): Promise<Assignment> {
     try {
-      return await this.prisma.assignment.create(request);
+      const result = await this.prisma.assignment.create(request);
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -139,7 +162,12 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
   async update(request: Prisma.AssignmentUpdateArgs): Promise<Assignment> {
     try {
-      return await this.prisma.assignment.update(request);
+      const result = await this.prisma.assignment.update(request);
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -256,16 +284,22 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         assignmentId: request.assignmentId,
       });
 
-      await this.prisma.assignment.delete({
+      const assignment = await this.prisma.assignment.delete({
         where: {
           id: request.assignmentId,
         },
       });
 
-      return {
+      const result = {
         message: 'Deleted Assignment Successfully',
         totalDeleteSize: totalDeleteSize,
       };
+
+      if (assignment.subjectId) {
+        await this.redisService?.del(this.getCacheKey(assignment.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -275,5 +309,9 @@ export class AssignmentRepository implements AssignmentRepositoryType {
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }

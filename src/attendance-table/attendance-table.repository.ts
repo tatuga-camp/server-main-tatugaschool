@@ -16,14 +16,9 @@ import { AttendanceTable, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { NotFoundError } from 'rxjs';
+import { RedisService } from '../redis/redis.service';
 
 type Repository = {
-  getAttendanceTables(
-    request: RequestGetAttendanceTables,
-  ): Promise<AttendanceTable[]>;
-  getAttendanceTableById(
-    request: RequestGetAttendanceTableById,
-  ): Promise<ResponseGetAttendanceTableById>;
   createAttendanceTable(
     request: RequestCreateAttendanceTable,
   ): Promise<AttendanceTable>;
@@ -36,98 +31,62 @@ type Repository = {
   findMany(
     request: Prisma.AttendanceTableFindManyArgs,
   ): Promise<AttendanceTable[]>;
+  findUnique(
+    request: Prisma.AttendanceTableFindUniqueArgs,
+  ): Promise<AttendanceTable | null>;
 };
 @Injectable()
 export class AttendanceTableRepository implements Repository {
   logger: Logger;
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private redisService: RedisService,
+  ) {
     this.logger = new Logger(AttendanceTableRepository.name);
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
+  }
+
+  async findUnique(
+    request: Prisma.AttendanceTableFindUniqueArgs,
+  ): Promise<AttendanceTable | null> {
+    try {
+      return await this.prisma.attendanceTable.findUnique(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
   }
 
   async findMany(
     request: Prisma.AttendanceTableFindManyArgs,
   ): Promise<AttendanceTable[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string') {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.attendanceTable.findMany(request);
+        if (result && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
+
       return await this.prisma.attendanceTable.findMany(request);
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getAttendanceTables(
-    request: RequestGetAttendanceTables,
-  ): Promise<AttendanceTable[]> {
-    try {
-      return await this.prisma.attendanceTable.findMany({
-        where: {
-          subjectId: request.subjectId,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getAttendanceTableById(
-    request: RequestGetAttendanceTableById,
-  ): Promise<ResponseGetAttendanceTableById> {
-    try {
-      const table = await this.prisma.attendanceTable.findUnique({
-        where: {
-          id: request.attendanceTableId,
-        },
-      });
-
-      if (!table) {
-        throw new NotFoundException('attendanceTableId not found');
-      }
-
-      const [studentOnSubjects, rows] = await Promise.all([
-        this.prisma.studentOnSubject.findMany({
-          where: {
-            subjectId: table.subjectId,
-          },
-        }),
-        this.prisma.attendanceRow.findMany({
-          where: {
-            attendanceTableId: table.id,
-          },
-        }),
-      ]);
-
-      const attendances =
-        rows.length > 0
-          ? await this.prisma.attendance.findMany({
-              where: {
-                attendanceRowId: {
-                  in: rows.map((row) => row.id),
-                },
-              },
-            })
-          : [];
-
-      return {
-        ...table,
-        rows: rows.map((row) => ({
-          ...row,
-          attendances: attendances.filter(
-            (attendance) => attendance.attendanceRowId === row.id,
-          ),
-        })),
-        students: studentOnSubjects,
-      };
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -143,11 +102,15 @@ export class AttendanceTableRepository implements Repository {
     request: RequestCreateAttendanceTable,
   ): Promise<AttendanceTable> {
     try {
-      return await this.prisma.attendanceTable.create({
+      const result = await this.prisma.attendanceTable.create({
         data: {
           ...request,
         },
       });
+      if (result.subjectId) {
+        await this.redisService.del(this.getCacheKey(result.subjectId));
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -163,7 +126,7 @@ export class AttendanceTableRepository implements Repository {
     request: RequestUpdateAttendanceTable,
   ): Promise<AttendanceTable> {
     try {
-      return await this.prisma.attendanceTable.update({
+      const result = await this.prisma.attendanceTable.update({
         where: {
           id: request.query.attendanceTableId,
         },
@@ -171,6 +134,10 @@ export class AttendanceTableRepository implements Repository {
           ...request.body,
         },
       });
+      if (result.subjectId) {
+        await this.redisService.del(this.getCacheKey(result.subjectId));
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -209,6 +176,10 @@ export class AttendanceTableRepository implements Repository {
           id: request.attendanceTableId,
         },
       });
+
+      if (remove.subjectId) {
+        await this.redisService.del(this.getCacheKey(remove.subjectId));
+      }
 
       return remove;
     } catch (error) {
