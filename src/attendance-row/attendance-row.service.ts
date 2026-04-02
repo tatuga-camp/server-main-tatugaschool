@@ -1,5 +1,6 @@
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
+import { RedisService } from '../redis/redis.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -43,11 +44,18 @@ export class AttendanceRowService {
     private subjectService: SubjectService,
     private attendanceStatusListService: AttendanceStatusListService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private redisService: RedisService,
   ) {
     this.logger = new Logger(AttendanceRowService.name);
-    this.attendanceRowRepository = new AttendanceRowRepository(prisma);
-    this.attendanceRepository = new AttendanceRepository(this.prisma);
-    this.attendanceTableRepository = new AttendanceTableRepository(this.prisma);
+    this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
+    this.attendanceRepository = new AttendanceRepository(
+      this.prisma,
+      this.redisService,
+    );
+    this.attendanceTableRepository = new AttendanceTableRepository(
+      this.prisma,
+      this.redisService,
+    );
   }
 
   async GetAttendanceRows(
@@ -186,11 +194,11 @@ export class AttendanceRowService {
     user: User,
   ): Promise<AttendanceRow & { attendances: Attendance[] }> {
     try {
-      const table = await this.attendanceTableRepository.getAttendanceTableById(
-        {
-          attendanceTableId: dto.attendanceTableId,
+      const table = await this.attendanceTableRepository.findUnique({
+        where: {
+          id: dto.attendanceTableId,
         },
-      );
+      });
 
       if (!table) throw new NotFoundException('Attendance table not found');
 

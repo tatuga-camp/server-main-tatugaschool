@@ -40,6 +40,16 @@ import { SubjectRepository } from './subject.repository';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { StudentOnAssignmentRepository } from '../student-on-assignment/student-on-assignment.repository';
+import { FileOnStudentAssignmentRepository } from '../file-on-student-assignment/file-on-student-assignment.repository';
+import { ScoreOnStudentRepository } from '../score-on-student/score-on-student.repository';
+import { CommentAssignmentRepository } from '../comment-assignment/comment-assignment.repository';
+import { SkillOnAssignmentRepository } from '../skill-on-assignment/skill-on-assignment.repository';
+import { SkillOnStudentAssignmentRepository } from '../skill-on-student-assignment/skill-on-student-assignment.repository';
+import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.repository';
+import { UnitOnGroupRepository } from '../unit-on-group/unit-on-group.repository';
+import { StudentOnGroupRepository } from '../student-on-group/student-on-group.repository';
+import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 
 @Injectable()
 export class SubjectService {
@@ -48,6 +58,16 @@ export class SubjectService {
   private scoreOnSubjectRepository: ScoreOnSubjectRepository;
   private studentRepository: StudentRepository;
   private studentOnSubjectRepository: StudentOnSubjectRepository;
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
+  private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
+  private scoreOnStudentRepository: ScoreOnStudentRepository;
+  private commentAssignmentRepository: CommentAssignmentRepository;
+  private skillOnAssignmentRepository: SkillOnAssignmentRepository;
+  private skillOnStudentAssignmentRepository: SkillOnStudentAssignmentRepository;
+  private groupOnSubjectRepository: GroupOnSubjectRepository;
+  private unitOnGroupRepository: UnitOnGroupRepository;
+  private studentOnGroupRepository: StudentOnGroupRepository;
+  private assignmentVideoQuizRepository: AssignmentVideoQuizRepository;
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -79,6 +99,26 @@ export class SubjectService {
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
+    );
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      this.prisma,
+    );
+    this.fileOnStudentAssignmentRepository =
+      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
+    this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
+    this.commentAssignmentRepository = new CommentAssignmentRepository(
+      this.prisma,
+    );
+    this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
+      this.prisma,
+    );
+    this.skillOnStudentAssignmentRepository =
+      new SkillOnStudentAssignmentRepository(this.prisma);
+    this.groupOnSubjectRepository = new GroupOnSubjectRepository(this.prisma);
+    this.unitOnGroupRepository = new UnitOnGroupRepository(this.prisma);
+    this.studentOnGroupRepository = new StudentOnGroupRepository(this.prisma);
+    this.assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+      this.prisma,
     );
   }
 
@@ -1027,59 +1067,67 @@ export class SubjectService {
         attendanceRows,
         teacherOnSubjects,
       ] = await Promise.all([
-        this.prisma.attendanceTable.findMany({
+        this.attendanceTableService.attendanceTableRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.attendance.findMany({ where: { subjectId: subject.id } }),
-        this.prisma.scoreOnStudent.findMany({
+        this.attendanceTableService.attendanceRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.fileOnAssignment.findMany({
+        this.scoreOnStudentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.studentOnAssignment.findMany({
+        this.fileAssignmentService.fileAssignmentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.fileOnStudentAssignment.findMany({
+        this.studentOnAssignmentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.commentOnAssignment.findMany({
+        this.fileOnStudentAssignmentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.skillOnAssignment.findMany({
+        this.commentAssignmentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.skillOnStudentAssignment.findMany({
+        this.skillOnAssignmentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.attendanceStatusList.findMany({
+        this.skillOnStudentAssignmentRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.gradeRange.findMany({ where: { subjectId: subject.id } }),
-        this.prisma.groupOnSubject.findMany({
+        this.attendanceStatusListService.attendanceStatusListSRepository.findMany(
+          {
+            where: { subjectId: subject.id },
+          },
+        ),
+        this.gradeService.gradeRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.unitOnGroup.findMany({ where: { subjectId: subject.id } }),
-        this.prisma.studentOnGroup.findMany({
+        this.groupOnSubjectRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.questionOnVideo.findMany({
+        this.unitOnGroupRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.studentOnSubject.findMany({
+        this.studentOnGroupRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.assignment.findMany({
+        this.assignmentVideoQuizRepository.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.studentOnSubjectRepository.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.assignmentService.assignmentRepository.findMany({
           where: { subjectId: subject.id, status: 'Published' },
-          omit: { vector: true, vectorResouce: true },
+          omit: { vector: true },
         }),
-        this.prisma.scoreOnSubject.findMany({
+        this.scoreOnSubjectRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.attendanceRow.findMany({
+        this.attendanceTableService.attendanceRowRepository.findMany({
           where: { subjectId: subject.id },
         }),
-        this.prisma.teacherOnSubject.findMany({
+        this.teacherOnSubjectService.teacherOnSubjectRepository.findMany({
           where: { subjectId: subject.id },
         }),
       ]);

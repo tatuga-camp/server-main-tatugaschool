@@ -20,6 +20,7 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { RedisService } from '../redis/redis.service';
 
 type TeacherOnSubjectRepositoryType = {
   getById(request: RequestGetTeacherOnSubjectById): Promise<TeacherOnSubject>;
@@ -46,12 +47,31 @@ export class TeacherOnSubjectRepository
   implements TeacherOnSubjectRepositoryType
 {
   logger: Logger = new Logger(TeacherOnSubjectRepository.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private redisService?: RedisService,
+  ) {}
 
   async findMany(
     request: Prisma.TeacherOnSubjectFindManyArgs,
   ): Promise<TeacherOnSubject[]> {
     try {
+      const subjectId = request.where?.subjectId;
+      if (typeof subjectId === 'string' && this.redisService) {
+        const cacheKey = this.getCacheKey(subjectId);
+        const field = JSON.stringify(request);
+        const cached = await this.redisService.hget(cacheKey, field);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+
+        const result = await this.prisma.teacherOnSubject.findMany(request);
+        if (result && Array.isArray(result) && result.length > 0) {
+          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
+          await this.redisService.expire(cacheKey, 3600);
+        }
+        return result;
+      }
       return await this.prisma.teacherOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -163,7 +183,13 @@ export class TeacherOnSubjectRepository
           ...request,
         },
       });
-      return teacherOnSubject;
+
+      const result = teacherOnSubject;
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       if (
         error instanceof PrismaClientKnownRequestError &&
@@ -188,7 +214,13 @@ export class TeacherOnSubjectRepository
           ...request.body,
         },
       });
-      return teacherOnSubject;
+
+      const result = teacherOnSubject;
+      if (result.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -204,10 +236,16 @@ export class TeacherOnSubjectRepository
     request: RequestDeleteTeacherOnSubject,
   ): Promise<{ message: string }> {
     try {
-      await this.prisma.teacherOnSubject.delete({
+      const teacher = await this.prisma.teacherOnSubject.delete({
         where: { id: request.teacherOnSubjectId },
       });
-      return { message: 'Teacher on subject deleted successfully' };
+
+      const result = { message: 'Teacher on subject deleted successfully' };
+      if (teacher.subjectId) {
+        await this.redisService?.del(this.getCacheKey(teacher.subjectId));
+      }
+
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -217,5 +255,9 @@ export class TeacherOnSubjectRepository
       }
       throw error;
     }
+  }
+
+  private getCacheKey(subjectId: string): string {
+    return `subjectId:${subjectId}`;
   }
 }
