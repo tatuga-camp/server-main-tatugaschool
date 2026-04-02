@@ -174,6 +174,6 @@ export class GroupOnSubjectRepository implements Repository {
   }
 
   private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
+    return `group_subject_subjectId:${subjectId}`;
   }
 }
