@@ -49,6 +49,7 @@ import {
 import { StudentService } from '../student/student.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { AiService } from '../ai/ai.service';
+import { LineBotService } from '../line-bot/line-bot.service';
 
 @Injectable()
 export class AssignmentService {
@@ -57,7 +58,6 @@ export class AssignmentService {
   private fileAssignmentRepository: FileAssignmentRepository;
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   private studentOnSubjectRepository: StudentOnSubjectRepository;
-
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
@@ -76,6 +76,7 @@ export class AssignmentService {
     private studentService: StudentService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
+    private linebotService: LineBotService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -532,6 +533,21 @@ export class AssignmentService {
         });
       }
 
+      if (dto.status === 'Published') {
+        const school = await this.schoolService.schoolRepository.findUnique({
+          where: {
+            id: assignment.schoolId,
+          },
+        });
+
+        if (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') {
+          const url = `https://student.tatugaschool.com?subject_code=${subject.code}`;
+          await this.linebotService.sendMessage({
+            groupId: subject.lineGroupId,
+            message: `📢 แจ้งเตือน: มีงานใหม่เพิ่มเข้ามา 📚\nหัวข้อ: ${assignment.title}\n\nอย่าลืมเข้าไปดูรายละเอียดและทำส่งนะครับ/ค่ะ!\nลิงก์รายวิชา: ${url}`,
+          });
+        }
+      }
       return assignment;
     } catch (error) {
       this.logger.error(error);
@@ -747,10 +763,30 @@ export class AssignmentService {
         subjectId: assignment.subjectId,
       });
 
-      return await this.assignmentRepository.update({
+      const update = await this.assignmentRepository.update({
         where: { id: dto.query.assignmentId },
         data: { ...dto.data },
       });
+
+      if (
+        dto.data.status === 'Published' &&
+        assignment.status !== 'Published'
+      ) {
+        const school = await this.schoolService.schoolRepository.findUnique({
+          where: {
+            id: assignment.schoolId,
+          },
+        });
+
+        if (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') {
+          const url = `https://student.tatugaschool.com?subject_code=${subject.code}`;
+          await this.linebotService.sendMessage({
+            groupId: subject.lineGroupId,
+            message: `📢 แจ้งเตือน: มีงานใหม่เพิ่มเข้ามา 📚\nหัวข้อ: ${update.title}\n\nอย่าลืมเข้าไปดูรายละเอียดและทำส่งนะครับ/ค่ะ!\nลิงก์รายวิชา: ${url}`,
+          });
+        }
+      }
+      return update;
     } catch (error) {
       this.logger.error(error);
       throw error;
