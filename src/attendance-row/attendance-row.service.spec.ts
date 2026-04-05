@@ -201,6 +201,7 @@ describe('Attendance-row Service', () => {
     assignmentVideoQuizRepository,
     studentService,
     schoolService,
+    lineService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);

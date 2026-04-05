@@ -234,6 +234,7 @@ describe('MemberOnSchool Service', () => {
     assignmentVideoQuizRepository,
     studentService,
     schoolService,
+    lineService,
   );
 
   beforeEach(async () => {
