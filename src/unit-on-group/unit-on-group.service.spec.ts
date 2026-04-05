@@ -141,7 +141,14 @@ describe('Unit On Group Service', () => {
     storageService,
     teacherOnSubjectService,
   );
-  const mockRedisService = {  del: jest.fn(), get: jest.fn(), set: jest.fn() , hget: jest.fn(), hset: jest.fn(), expire: jest.fn() } as any as RedisService;
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     storageService,
@@ -196,6 +203,7 @@ describe('Unit On Group Service', () => {
     assignmentVideoQuizRepository,
     studentService,
     schoolService,
+    lineService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
