@@ -52,7 +52,15 @@ describe('Attendance-table Service', () => {
   const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
-  const redisService = new RedisService(configService);
+  const redisService = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+    disconnect: jest.fn(),
+  } as unknown as RedisService;
   const emailService = new EmailService(configService);
 
   let memberOnSchoolService: MemberOnSchoolService;
