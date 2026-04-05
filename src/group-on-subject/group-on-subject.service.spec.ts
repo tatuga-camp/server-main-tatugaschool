@@ -145,7 +145,14 @@ describe('Group On Subject Service', () => {
     storageService,
     teacherOnSubjectService,
   );
-  const mockRedisService = {  del: jest.fn(), get: jest.fn(), set: jest.fn() , hget: jest.fn(), hset: jest.fn(), expire: jest.fn() } as any as RedisService;
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
     storageService,
@@ -183,6 +190,7 @@ describe('Group On Subject Service', () => {
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
     prismaService,
   );
+  const lineService = new LineBotService(configService);
 
   const assignmentService = new AssignmentService(
     prismaService,
@@ -200,6 +208,7 @@ describe('Group On Subject Service', () => {
     assignmentVideoQuizRepository,
     studentService,
     schoolService,
+    lineService,
   );
   const notificationRepository = new NotificationRepository(prismaService);
   const notificationService = new NotificationService(
@@ -207,7 +216,6 @@ describe('Group On Subject Service', () => {
     pushService,
   );
 
-  const lineService = new LineBotService(configService);
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
     storageService,

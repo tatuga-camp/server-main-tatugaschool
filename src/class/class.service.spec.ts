@@ -70,7 +70,14 @@ describe('Class Service', () => {
   );
 
   const wheelOfNameService = new WheelOfNameService(httpService, configService);
-  const mockRedisService = {  del: jest.fn(), get: jest.fn(), set: jest.fn() , hget: jest.fn(), hset: jest.fn(), expire: jest.fn() } as any as RedisService;
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
@@ -196,6 +203,7 @@ describe('Class Service', () => {
     assignmentVideoQuizRepository,
     studentService,
     schoolService,
+    lineService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);

@@ -185,6 +185,8 @@ describe('Student On Group Service', () => {
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
     prismaService,
   );
+  const lineService = new LineBotService(configService);
+
   const assignmentService = new AssignmentService(
     prismaService,
     aiService,
@@ -201,6 +203,7 @@ describe('Student On Group Service', () => {
     assignmentVideoQuizRepository,
     studentService,
     schoolService,
+    lineService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
@@ -208,7 +211,6 @@ describe('Student On Group Service', () => {
     notificationRepository,
     pushService,
   );
-  const lineService = new LineBotService(configService);
 
   const studentOnAssignmentService = new StudentOnAssignmentService(
     prismaService,
