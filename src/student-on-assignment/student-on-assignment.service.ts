@@ -379,7 +379,11 @@ export class StudentOnAssignmentService {
           actorName: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
         });
 
-        if (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE') {
+        if (
+          (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE') &&
+          subject.isVerifyLine === true &&
+          subject.lineGroupId
+        ) {
           const totalSummits =
             await this.studentOnAssignmentRepository.findMany({
               where: {
