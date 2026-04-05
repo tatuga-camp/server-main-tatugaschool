@@ -533,7 +533,11 @@ export class AssignmentService {
         });
       }
 
-      if (dto.status === 'Published' && subject.lineGroupId) {
+      if (
+        dto.status === 'Published' &&
+        subject.isVerifyLine === true &&
+        subject.lineGroupId
+      ) {
         const school = await this.schoolService.schoolRepository.findUnique({
           where: {
             id: assignment.schoolId,
