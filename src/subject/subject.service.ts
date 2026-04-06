@@ -590,6 +590,7 @@ export class SubjectService {
       const exsitingSubjects = await this.subjectRepository.findMany({
         where: {
           schoolId: school.id,
+          isDeleted: false,
         },
       });
 
