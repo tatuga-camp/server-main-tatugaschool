@@ -18,9 +18,6 @@ import { RedisService } from '../redis/redis.service';
 
 export type Repository = {
   findMany(request: Prisma.AttendanceRowFindManyArgs): Promise<AttendanceRow[]>;
-  getAttendanceRows(
-    request: RequestGetAttendanceRows,
-  ): Promise<AttendanceRow[]>;
   getAttendanceRowById(
     request: RequestGetAttendanceRowById,
   ): Promise<ResponseGetAttendanceRowById>;
@@ -65,26 +62,6 @@ export class AttendanceRowRepository implements Repository {
         return result;
       }
       return await this.prisma.attendanceRow.findMany(request);
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getAttendanceRows(
-    request: RequestGetAttendanceRows,
-  ): Promise<AttendanceRow[]> {
-    try {
-      return await this.prisma.attendanceRow.findMany({
-        where: {
-          attendanceTableId: request.attendanceTableId,
-        },
-      });
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
