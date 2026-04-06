@@ -62,6 +62,10 @@ jobs:
           echo "Waiting 20 seconds for server to start..."
           sleep 20
 
+          # Add this new step here
+      - name: View Server Startup Logs
+        run: docker logs tatuga-ci-container
+
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
@@ -95,6 +99,10 @@ jobs:
         run: |
           echo "Waiting 20 seconds for server to start..."
           sleep 20
+
+          # Add this new step here
+      - name: View Server Startup Logs
+        run: docker logs tatuga-ci-container
 
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
@@ -130,6 +138,10 @@ jobs:
           echo "Waiting 20 seconds for server to start..."
           sleep 20
 
+          # Add this new step here
+      - name: View Server Startup Logs
+        run: docker logs tatuga-ci-container
+
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
@@ -163,6 +175,10 @@ jobs:
         run: |
           echo "Waiting 20 seconds for server to start..."
           sleep 20
+
+          # Add this new step here
+      - name: View Server Startup Logs
+        run: docker logs tatuga-ci-container
 
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
@@ -198,6 +214,10 @@ jobs:
           echo "Waiting 20 seconds for server to start..."
           sleep 20
 
+          # Add this new step here
+      - name: View Server Startup Logs
+        run: docker logs tatuga-ci-container
+
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
@@ -231,6 +251,10 @@ jobs:
         run: |
           echo "Waiting 20 seconds for server to start..."
           sleep 20
+
+          # Add this new step here
+      - name: View Server Startup Logs
+        run: docker logs tatuga-ci-container
 
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
