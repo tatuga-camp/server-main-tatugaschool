@@ -142,8 +142,10 @@ describe('Assignment repository', () => {
   describe('getBySubjectId', () => {
     it('should return assignment by subjectId', async () => {
       try {
-        const assignments = await assignmentRepository.getBySubjectId({
-          subjectId,
+        const assignments = await assignmentRepository.findMany({
+          where: {
+            subjectId,
+          },
         });
 
         expect(assignments.length).toBeGreaterThan(0);

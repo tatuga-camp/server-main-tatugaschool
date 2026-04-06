@@ -33,7 +33,7 @@ export class PushService {
           icon: 'https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png',
         }),
       );
-    } catch (error) {
+    } catch (error: any) {
       if (error?.statusCode === 410) {
         const subscription = await this.pushRepository.findFirst({
           where: {

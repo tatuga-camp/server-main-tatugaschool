@@ -80,11 +80,7 @@ export class StorageService {
       // Note: CORS configuration for R2 is managed in the Cloudflare Dashboard,
       // not via the API like GCS.
     } catch (err) {
-      console.error('Error initializing R2 storage:', err);
-      throw new BadGatewayException(
-        'Error initializing R2 storage:',
-        err.message,
-      );
+      throw new BadGatewayException('Error initializing R2 storage:');
     }
   }
 
@@ -342,10 +338,6 @@ export class StorageService {
 
       return response.Body as Readable;
     } catch (error) {
-      this.logger.error(`Error getting file stream for ${fileUrl}:`, error);
-      if (error.name === 'NoSuchKey') {
-        throw new NotFoundException('File not found in storage.');
-      }
       throw new BadGatewayException('Failed to retrieve file stream.');
     }
   }
@@ -392,15 +384,6 @@ export class StorageService {
 
       return { message: `file ${input.fileName} has been deleted` };
     } catch (error) {
-      this.logger.error(
-        `Failed to delete file ${input.fileName}: ${error.message}`,
-      );
-      // Don't throw an error if the file just wasn't found,
-      // but do throw on other errors.
-      if (error.name === 'NoSuchKey') {
-        this.logger.error(`${input.fileName} : file not found in R2`);
-        return { message: `file ${input.fileName} not found` };
-      }
       throw error; // Re-throw other errors
     }
   }

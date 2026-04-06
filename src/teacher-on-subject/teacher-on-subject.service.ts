@@ -80,8 +80,7 @@ export class TeacherOnSubjectService {
         throw new ForbiddenException("You're not a teacher on this subject");
       }
       return memberOnSubject;
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
@@ -99,8 +98,7 @@ export class TeacherOnSubjectService {
         subjectId: teacherOnSubject.subjectId,
       });
       return teacherOnSubject;
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
@@ -121,8 +119,7 @@ export class TeacherOnSubjectService {
       });
 
       return teacherOnSubject;
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
@@ -140,8 +137,7 @@ export class TeacherOnSubjectService {
           teacherId: dto.teacherId,
         });
       return teacherOnSubject;
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
@@ -267,8 +263,7 @@ export class TeacherOnSubjectService {
       });
 
       return create;
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
@@ -327,8 +322,7 @@ export class TeacherOnSubjectService {
       }
 
       return update;
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
@@ -397,8 +391,7 @@ export class TeacherOnSubjectService {
       return await this.teacherOnSubjectRepository.delete({
         teacherOnSubjectId: dto.teacherOnSubjectId,
       });
-    } catch (error) {
-      this.logger.error(error.message);
+    } catch (error: any) {
       throw error;
     }
   }
