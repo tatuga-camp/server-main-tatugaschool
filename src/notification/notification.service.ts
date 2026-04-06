@@ -84,10 +84,6 @@ export class NotificationService {
 
       return createResult;
     } catch (error) {
-      this.logger.error(
-        `[${methodName}] Failed to create notifications: ${error.message}`,
-        error.stack,
-      );
       throw error;
     }
   }
@@ -105,10 +101,6 @@ export class NotificationService {
     try {
       return await this.repository.findManyForUser({ userId: user.id });
     } catch (error) {
-      this.logger.error(
-        `[getNotificationsForUser] Failed to get notifications for user ${user.id}: ${error.message}`,
-        error.stack,
-      );
       throw error;
     }
   }
@@ -118,10 +110,6 @@ export class NotificationService {
       const count = await this.repository.getUnreadCount({ userId: user.id });
       return { count };
     } catch (error) {
-      this.logger.error(
-        `[getUnreadCount] Failed to get unread count for user ${user.id}: ${error.message}`,
-        error.stack,
-      );
       throw error;
     }
   }
@@ -137,10 +125,6 @@ export class NotificationService {
 
       return await this.repository.markAsRead({ id });
     } catch (error) {
-      this.logger.error(
-        `[markNotificationAsRead] Failed to mark notification ${id} as read for user ${user.id}: ${error.message}`,
-        error.stack,
-      );
       throw error;
     }
   }
@@ -151,10 +135,6 @@ export class NotificationService {
         userId: user.id,
       });
     } catch (error) {
-      this.logger.error(
-        `[markAllNotificationsAsRead] Failed to mark all notifications as read for user ${user.id}: ${error.message}`,
-        error.stack,
-      );
       throw error;
     }
   }

@@ -20,9 +20,6 @@ import { RedisService } from '../redis/redis.service';
 
 type AssignmentRepositoryType = {
   getById(request: RequestGetAssignmentById): Promise<Assignment>;
-  getBySubjectId(
-    request: RequestGetAssignmentBySubjectId,
-  ): Promise<Assignment[]>;
   findMany(request: Prisma.AssignmentFindManyArgs): Promise<Assignment[]>;
   count(request: Prisma.AssignmentCountArgs): Promise<number>;
   create(request: Prisma.AssignmentCreateArgs): Promise<Assignment>;
@@ -110,26 +107,6 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   async count(request: Prisma.AssignmentCountArgs): Promise<number> {
     try {
       return await this.prisma.assignment.count(request);
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getBySubjectId(
-    request: RequestGetAssignmentBySubjectId,
-  ): Promise<Assignment[]> {
-    try {
-      return await this.prisma.assignment.findMany({
-        where: {
-          subjectId: request.subjectId,
-        },
-      });
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
