@@ -76,8 +76,10 @@ export class AttendanceRowService {
         subjectId: table.subjectId,
       });
 
-      const rows = await this.attendanceRowRepository.getAttendanceRows({
-        attendanceTableId: dto.attendanceTableId,
+      const rows = await this.attendanceRowRepository.findMany({
+        where: {
+          attendanceTableId: dto.attendanceTableId,
+        },
       });
 
       const attendances =

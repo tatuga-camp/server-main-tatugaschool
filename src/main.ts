@@ -38,12 +38,12 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3005;
   await app.listen(port, () => {
     logger.log(`Hello world listening on port : ${port}`);
     logger.log(`Allowed origins: ${allowedOrigins}`);
     logger.log(`Environment: ${process.env.NODE_ENV}`);
-    
+
     const isBun = typeof Bun !== 'undefined';
     logger.log(`Runtime: ${isBun ? 'Bun' : 'Node.js'}`);
     logger.log(`Version: ${isBun ? Bun.version : process.version}`);
