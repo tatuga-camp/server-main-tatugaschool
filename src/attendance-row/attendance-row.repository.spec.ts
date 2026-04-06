@@ -74,7 +74,7 @@ describe('AttendanceRowRepository', () => {
             endDate: new Date(Date.now() + 3 * 60 * 60 * 1000),
           },
         });
-  
+
         expect(updated.id).toBe(attendanceRowId);
         expect(updated.note).toBe('Updated note');
       } catch (error) {
@@ -83,7 +83,6 @@ describe('AttendanceRowRepository', () => {
       }
     });
   });
-  
 
   describe('findMany', () => {
     it('should return array of attendance rows', async () => {
@@ -107,8 +106,10 @@ describe('AttendanceRowRepository', () => {
   describe('getAttendanceRows', () => {
     it('should return rows by tableId', async () => {
       try {
-        const rows = await attendanceRowRepository.getAttendanceRows({
-          attendanceTableId: attendanceTableId,
+        const rows = await attendanceRowRepository.findMany({
+          where: {
+            attendanceTableId: attendanceTableId,
+          },
         });
 
         expect(rows.length).toBeGreaterThan(0);
