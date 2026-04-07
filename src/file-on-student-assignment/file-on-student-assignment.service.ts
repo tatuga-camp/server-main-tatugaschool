@@ -163,9 +163,11 @@ export class FileOnStudentAssignmentService {
       if (studentOnAssignment.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
-      return await this.fileOnStudentAssignmentRepository.getByStudentOnAssignmentId(
-        dto,
-      );
+      return await this.fileOnStudentAssignmentRepository.findMany({
+        where: {
+          studentOnAssignmentId: dto.studentOnAssignmentId,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -195,9 +197,11 @@ export class FileOnStudentAssignmentService {
       if (!teacherOnSubject) {
         throw new ForbiddenException("You don't have permission to access");
       }
-      return await this.fileOnStudentAssignmentRepository.getByStudentOnAssignmentId(
-        dto,
-      );
+      return await this.fileOnStudentAssignmentRepository.findMany({
+        where: {
+          studentOnAssignmentId: dto.studentOnAssignmentId,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

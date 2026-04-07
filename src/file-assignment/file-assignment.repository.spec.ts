@@ -67,8 +67,10 @@ describe('FileAssignmentRepository', () => {
   describe('getByAssignmentId', () => {
     it('should get all files for an assignment', async () => {
       try {
-        const result = await fileAssignmentRepository.getByAssignmentId({
-          assignmentId: assignmentId,
+        const result = await fileAssignmentRepository.findMany({
+          where: {
+            assignmentId: assignmentId,
+          },
         });
         expect(Array.isArray(result)).toBe(true);
         expect(result.some((f) => f.id === fileId)).toBe(true);

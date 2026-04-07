@@ -113,8 +113,10 @@ export class AssignmentService {
         subjectId: assignment.subjectId,
       });
 
-      const files = await this.fileAssignmentRepository.getByAssignmentId({
-        assignmentId: assignment.id,
+      const files = await this.fileAssignmentRepository.findMany({
+        where: {
+          assignmentId: assignment.id,
+        },
       });
 
       const skills = await this.skillOnAssignmentService.getByAssignmentId(
@@ -620,8 +622,10 @@ export class AssignmentService {
       // extract text from html
       const doc = cheerio.load(assignment.description ?? '');
       text += doc('body').text();
-      const files = await this.fileAssignmentRepository.getByAssignmentId({
-        assignmentId: assignment.id,
+      const files = await this.fileAssignmentRepository.findMany({
+        where: {
+          assignmentId: assignment.id,
+        },
       });
 
       // extract URL <img> tags
