@@ -360,7 +360,7 @@ describe('Attendance-status-list Service', () => {
         expect(result.attendanceTableId).toBe(dto.attendanceTableId);
         expect(result.schoolId).toBe(school.id);
         expect(result.subjectId).toBe(subject.id);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -388,7 +388,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.create(dto, user);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Attendance Table not found');
@@ -504,7 +504,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.create(dto, user);
         fail('Expected BadRequestException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toBe('Duplicate title');
@@ -617,7 +617,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.create(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
@@ -743,7 +743,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.create(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
@@ -869,7 +869,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.create(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a teacher on this subject");
@@ -1009,7 +1009,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.create(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a teacher on this subject");
@@ -1137,7 +1137,7 @@ describe('Attendance-status-list Service', () => {
         expect(result.title).toBe(dto.body.title);
         expect(result.value).toBe(dto.body.value);
         expect(result.color).toBe(dto.body.color);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -1167,7 +1167,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.update(dto, user);
         fail('should throw NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Status not found');
@@ -1300,7 +1300,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.update(dto, user);
         fail('should throw BadRequestException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toBe('Duplicate title');
@@ -1429,7 +1429,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.update(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
@@ -1571,7 +1571,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.update(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
@@ -1713,7 +1713,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.update(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a teacher on this subject");
@@ -1869,7 +1869,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.update(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a teacher on this subject");
@@ -1992,7 +1992,7 @@ describe('Attendance-status-list Service', () => {
         expect(result.attendanceTableId).toBe(table.id);
         expect(result.subjectId).toBe(subject.id);
         expect(result.schoolId).toBe(school.id);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -2017,7 +2017,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.delete(dto, user);
         fail('should throw NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Status not found');
@@ -2139,7 +2139,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.delete(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
@@ -2274,7 +2274,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.delete(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a member of this school");
@@ -2409,7 +2409,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.delete(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a teacher on this subject");
@@ -2558,7 +2558,7 @@ describe('Attendance-status-list Service', () => {
 
         await attendanceStatusListService.delete(dto, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not a teacher on this subject");
