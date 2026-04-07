@@ -61,9 +61,11 @@ export class CommentAssignmentService {
         throw new ForbiddenException("You don't have permission to access");
       }
 
-      return await this.commentAssignmentRepository.getByStudentOnAssignmentId(
-        dto,
-      );
+      return await this.commentAssignmentRepository.findMany({
+        where: {
+          studentOnAssignmentId: dto.studentOnAssignmentId,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
