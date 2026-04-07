@@ -142,7 +142,7 @@ export class SubscriptionService {
               price: priceId,
             },
           ],
-          cancel_at_period_end: true,
+          cancel_at_period_end: false,
           proration_behavior: 'always_invoice',
           collection_method: 'send_invoice',
           days_until_due: 0,
@@ -261,7 +261,7 @@ export class SubscriptionService {
         ],
         collection_method: 'send_invoice',
         days_until_due: 0,
-        cancel_at_period_end: true,
+        cancel_at_period_end: false,
         payment_settings: {
           save_default_payment_method: 'on_subscription',
           payment_method_types: ['promptpay', 'card'],

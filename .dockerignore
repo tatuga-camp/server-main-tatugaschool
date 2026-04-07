@@ -118,3 +118,5 @@ survery-data.json
 send-emails.ts
 send-survey.ts
 summit-form.ts
+# TypeScript cache
+*.tsbuildinfo
