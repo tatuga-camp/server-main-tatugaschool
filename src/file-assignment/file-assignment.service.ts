@@ -83,8 +83,10 @@ export class FileAssignmentService {
         );
       }
 
-      return await this.fileAssignmentRepository.getByAssignmentId({
-        assignmentId: dto.assignmentId,
+      return await this.fileAssignmentRepository.findMany({
+        where: {
+          assignmentId: dto.assignmentId,
+        },
       });
     } catch (error) {
       this.logger.error(error);

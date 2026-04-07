@@ -18,9 +18,6 @@ import { RedisService } from '../redis/redis.service';
 
 type Repository = {
   getById(request: RequestGetFileById): Promise<FileOnAssignment>;
-  getByAssignmentId(
-    request: RequestGetFilesByAssignmentId,
-  ): Promise<FileOnAssignment[]>;
   create(request: RequestCreateFileAssignment): Promise<FileOnAssignment>;
   delete(request: RequestDeleteFileAssignment): Promise<FileOnAssignment>;
   deleteByAssignmentId(request: {
@@ -45,17 +42,11 @@ export class FileAssignmentRepository implements Repository {
   ): Promise<FileOnAssignment> {
     try {
       const result = await this.prisma.fileOnAssignment.update(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        } else if (result.subjectId) {
-          await this.redisService?.del(this.getCacheKey(result.subjectId));
-        }
+
+      if (result.subjectId && this.redisService) {
+        await this.redisService.del(this.getCacheKey(result.subjectId));
       }
+
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -105,26 +96,6 @@ export class FileAssignmentRepository implements Repository {
       return await this.prisma.fileOnAssignment.findUnique({
         where: {
           id: request.fileOnAssignmentId,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getByAssignmentId(
-    request: RequestGetFilesByAssignmentId,
-  ): Promise<FileOnAssignment[]> {
-    try {
-      return await this.prisma.fileOnAssignment.findMany({
-        where: {
-          assignmentId: request.assignmentId,
         },
       });
     } catch (error) {

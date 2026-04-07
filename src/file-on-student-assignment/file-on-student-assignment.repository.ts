@@ -18,9 +18,6 @@ type FileOnStudentAssignmentRepositoryType = {
   getById(
     request: RequestGetFileOnStudentAssignmentById,
   ): Promise<FileOnStudentAssignment>;
-  getByStudentOnAssignmentId(
-    request: RequestGetFileOnStudentAssignmentByStudentOnAssignmentId,
-  ): Promise<FileOnStudentAssignment[]>;
   create(
     request: Prisma.FileOnStudentAssignmentCreateArgs,
   ): Promise<FileOnStudentAssignment>;
@@ -54,8 +51,8 @@ export class FileOnStudentAssignmentRepository
   ): Promise<FileOnStudentAssignment> {
     try {
       const result = await this.prisma.fileOnStudentAssignment.update(request);
-      if (result && result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+      if (result && result.subjectId && this.redisService) {
+        await this.redisService.del(this.getCacheKey(result.subjectId));
       }
       return result;
     } catch (error) {
@@ -110,26 +107,6 @@ export class FileOnStudentAssignmentRepository
       return await this.prisma.fileOnStudentAssignment.findUnique({
         where: {
           id: request.fileOnStudentAssignmentId,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getByStudentOnAssignmentId(
-    request: RequestGetFileOnStudentAssignmentByStudentOnAssignmentId,
-  ): Promise<FileOnStudentAssignment[]> {
-    try {
-      return await this.prisma.fileOnStudentAssignment.findMany({
-        where: {
-          studentOnAssignmentId: request.studentOnAssignmentId,
         },
       });
     } catch (error) {
