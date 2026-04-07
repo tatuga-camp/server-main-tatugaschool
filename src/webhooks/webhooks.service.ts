@@ -84,6 +84,15 @@ export class WebhooksService {
               return;
             }
 
+            if (subject.isVerifyLine === true) {
+              await this.line.replyMessage({
+                replyToken: event.replyToken,
+                message:
+                  'รหัสวิชานี้ถูกใช้ไปแล้วกับลายกลุ่มอื่น กรุณาพิมพ์รหัสวิชาใหม่อีกครั้ง\n(This code has already been used, please try another code)',
+              });
+              return;
+            }
+
             const verifyLineToken = crypto.randomBytes(32).toString('hex');
 
             await this.prisma.subject.update({
