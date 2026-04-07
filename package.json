@@ -41,7 +41,7 @@
     "test:debug": "bun run --inspect-brk node_modules/.bin/jest --runInBand",
     "test:e2e": "bun run jest --config ./test/jest-e2e.json",
     "clean": "rimraf dist",
-    "start:tsgo": "bun run clean && bunx concurrently \"bunx tsgo -p tsconfig.build.json --watch\" \"bunx nodemon --watch dist dist/main.js\""
+    "start:tsgo": "bun run clean && bunx tsgo -p tsconfig.build.json && bunx concurrently \"bunx tsgo -p tsconfig.build.json --watch\" \"bunx nodemon --watch dist --exec bun dist/main.js\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.968.0",
