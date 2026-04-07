@@ -24,9 +24,6 @@ type CommentAssignmentRepositoryType = {
   getById(
     request: RequestGetCommentAssignmentById,
   ): Promise<CommentOnAssignment>;
-  getByStudentOnAssignmentId(
-    request: RequestGetCommentByStudentOnAssignmentId,
-  ): Promise<CommentOnAssignment[]>;
   create(request: RequestCreateCommentAssignment): Promise<CommentOnAssignment>;
   update(request: RequestUpdateCommentAssignment): Promise<CommentOnAssignment>;
   delete(request: RequestDeleteCommentAssignment): Promise<CommentOnAssignment>;
@@ -80,26 +77,6 @@ export class CommentAssignmentRepository
       return await this.prisma.commentOnAssignment.findUnique({
         where: {
           id: request.commentOnAssignmentId,
-        },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      if (error instanceof PrismaClientKnownRequestError) {
-        throw new InternalServerErrorException(
-          `message: ${error.message} - codeError: ${error.code}`,
-        );
-      }
-      throw error;
-    }
-  }
-
-  async getByStudentOnAssignmentId(
-    request: RequestGetCommentByStudentOnAssignmentId,
-  ): Promise<CommentOnAssignment[]> {
-    try {
-      return await this.prisma.commentOnAssignment.findMany({
-        where: {
-          studentOnAssignmentId: request.studentOnAssignmentId,
         },
       });
     } catch (error) {
