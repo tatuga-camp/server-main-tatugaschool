@@ -59,8 +59,8 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 20 seconds for server to start..."
-          sleep 20
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
 
           # Add this new step here
       - name: View Server Startup Logs
@@ -97,8 +97,8 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 20 seconds for server to start..."
-          sleep 20
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
 
           # Add this new step here
       - name: View Server Startup Logs
@@ -135,8 +135,8 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 20 seconds for server to start..."
-          sleep 20
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
 
           # Add this new step here
       - name: View Server Startup Logs
@@ -173,8 +173,8 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 20 seconds for server to start..."
-          sleep 20
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
 
           # Add this new step here
       - name: View Server Startup Logs
@@ -211,8 +211,8 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 20 seconds for server to start..."
-          sleep 20
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
 
           # Add this new step here
       - name: View Server Startup Logs
@@ -249,8 +249,8 @@ jobs:
 
       - name: Wait for server to be ready
         run: |
-          echo "Waiting 20 seconds for server to start..."
-          sleep 20
+          echo "Waiting 10 seconds for server to start..."
+          sleep 10
 
           # Add this new step here
       - name: View Server Startup Logs
