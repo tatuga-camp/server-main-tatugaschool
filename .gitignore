@@ -45,3 +45,4 @@ yarn.
 
 # TypeScript cache
 *.tsbuildinfo
+tsconfig.build.tsbuildinfo
