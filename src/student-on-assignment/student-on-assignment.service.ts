@@ -405,7 +405,7 @@ export class StudentOnAssignmentService {
               `🌟 ปิ๊งป่อง! มีเด็กดีส่งการบ้านค่ะ \n` +
               `👨‍🎓 นักเรียน: ${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}\n` +
               `📕 ชิ้นงาน: ${assignment.title}\n` +
-              `✅ สถานะ: ส่งงานเป็นคนที่ ${totalSummits.length} 🎉\n` +
+              `✅ สถานะ: ส่งงานเป็นคนที่ ${totalSummits.length + 1} 🎉\n` +
               `เข้าไปตรวจผลงานได้ที่นี่เลย / Check it out here 👇\n${newUrl}`,
           });
         }
