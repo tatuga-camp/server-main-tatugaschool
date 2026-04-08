@@ -98,7 +98,9 @@ export class AssignmentService {
   async getAssignmentById(
     dto: GetAssignmentByIdDto,
     user: User,
-  ): Promise<Assignment & { files: FileOnAssignment[]; skills: Skill[] }> {
+  ): Promise<
+    Omit<Assignment, 'vector'> & { files: FileOnAssignment[]; skills: Skill[] }
+  > {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
@@ -123,6 +125,8 @@ export class AssignmentService {
         { assignmentId: assignment.id },
         user,
       );
+
+      assignment.vector = undefined;
       return { ...assignment, files, skills: skills.map((s) => s.skill) };
     } catch (error) {
       this.logger.error(error);
