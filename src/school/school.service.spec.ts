@@ -1,3 +1,4 @@
+import { PrismaReadService } from './../prisma/prisma-read.service';
 import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import { HttpService } from '@nestjs/axios';
 import {
@@ -46,6 +47,14 @@ import { RedisService } from '../redis/redis.service';
 
 describe('School Service', () => {
   let schoolService: SchoolService;
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   const prismaService = new PrismaService();
   const configService = new ConfigService();
   const httpService = new HttpService();
@@ -53,6 +62,7 @@ describe('School Service', () => {
   const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
+  const prismaReadService = new PrismaReadService(configService);
 
   const emailService = new EmailService(configService);
 
@@ -64,6 +74,8 @@ describe('School Service', () => {
     prismaService,
     storageService,
     schoolService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const userService = new UsersService(prismaService, authService);
@@ -75,19 +87,13 @@ describe('School Service', () => {
   );
 
   const wheelOfNameService = new WheelOfNameService(httpService, configService);
-  const mockRedisService = {
-    del: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    hget: jest.fn(),
-    hset: jest.fn(),
-    expire: jest.fn(),
-  } as any as RedisService;
+
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
     storageService,
     mockRedisService,
+    prismaReadService,
   );
 
   let memberOnSchoolService: MemberOnSchoolService;
@@ -115,6 +121,8 @@ describe('School Service', () => {
     memberOnSchoolService,
     storageService,
     classroomService,
+    mockRedisService,
+    prismaReadService,
   );
 
   classroomService = new ClassService(
@@ -125,6 +133,8 @@ describe('School Service', () => {
     storageService,
     userService,
     schoolService,
+    prismaReadService,
+    mockRedisService,
   );
   const lineService = new LineBotService(configService);
   subjectService = new SubjectService(
@@ -141,16 +151,21 @@ describe('School Service', () => {
     fileAssignmentService,
     attendanceStatusListService,
     lineService,
+    prismaReadService,
+    mockRedisService,
   );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
     storageService,
+    mockRedisService,
+    prismaReadService,
   );
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
     storageService,
     teacherOnSubjectService,
+    prismaReadService,
   );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
@@ -162,6 +177,7 @@ describe('School Service', () => {
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
     mockRedisService,
+    prismaReadService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -185,6 +201,8 @@ describe('School Service', () => {
     prismaService,
     storageService,
     teacherOnSubjectService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
@@ -201,6 +219,8 @@ describe('School Service', () => {
     skillOnStudentAssignmentService,
     notificationService,
     lineService,
+    prismaReadService,
+    mockRedisService,
   );
 
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
@@ -224,6 +244,8 @@ describe('School Service', () => {
     studentService,
     schoolService,
     lineService,
+    mockRedisService,
+    prismaReadService,
   );
   beforeEach(async () => {
     schoolService = new SchoolService(
@@ -317,7 +339,7 @@ describe('School Service', () => {
         expect(foundMember.role).toBe('ADMIN');
         expect(foundMember.status).toBe('ACCEPT');
         expect(foundMember.schoolId).toBe(created.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -392,7 +414,7 @@ describe('School Service', () => {
         const ids = result.map((s) => s.id);
         expect(ids).toContain(school1.id);
         expect(ids).toContain(school2.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -411,7 +433,7 @@ describe('School Service', () => {
         const result = await schoolService.getSchools(fakeUser);
         expect(Array.isArray(result)).toBe(true);
         expect(result.length).toBe(0);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -476,7 +498,7 @@ describe('School Service', () => {
         expect(result.totalTeacher).toBeGreaterThanOrEqual(1);
         expect(result.user).toBeDefined();
         expect(result.user.id).toBe(user.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -489,7 +511,7 @@ describe('School Service', () => {
 
         await schoolService.getSchoolById(dto, mockUser);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('School not found or It has been deleted');
       }
@@ -527,7 +549,7 @@ describe('School Service', () => {
 
         await schoolService.getSchoolById(dto, fakeUser);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
       }
     });
@@ -574,7 +596,7 @@ describe('School Service', () => {
         );
 
         expect(result.plan).toBe('FREE'); // ถูก downgrade ถูกจัดการจาก webhooks
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -624,7 +646,7 @@ describe('School Service', () => {
         await expect(
           schoolService.ValidateLimit(baseSchool, 'totalStorage', 50),
         ).resolves.not.toThrow();
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -637,7 +659,7 @@ describe('School Service', () => {
         await expect(
           schoolService.ValidateLimit(baseSchool, 'totalStorage', 200),
         ).rejects.toThrow('Your storage size is reaching the limit');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -647,7 +669,7 @@ describe('School Service', () => {
         await expect(
           schoolService.ValidateLimit(baseSchool, 'classes', 20),
         ).rejects.toThrow('Class number has reached the limit');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -657,7 +679,7 @@ describe('School Service', () => {
         await expect(
           schoolService.ValidateLimit(baseSchool, 'members', 10),
         ).rejects.toThrow('Members on school has reached limit');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -667,7 +689,7 @@ describe('School Service', () => {
         await expect(
           schoolService.ValidateLimit(baseSchool, 'subjects', 10),
         ).rejects.toThrow('Subject number has reached limit');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -718,7 +740,7 @@ describe('School Service', () => {
         expect(upgraded.limitClassNumber).toBe(20);
         expect(upgraded.limitSubjectNumber).toBe(30);
         expect(upgraded.limitTotalStorage).toBe(10737418240000);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -770,7 +792,7 @@ describe('School Service', () => {
         expect(result.stripe_subscription_expireAt.toISOString()).toBe(
           subscriptionExpire.toISOString(),
         );
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -817,7 +839,7 @@ describe('School Service', () => {
         expect(downgraded.limitClassNumber).toBe(3);
         expect(downgraded.limitSubjectNumber).toBe(3);
         expect(downgraded.limitTotalStorage).toBe(16106127360);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -858,7 +880,7 @@ describe('School Service', () => {
           role: 'ADMIN',
           status: 'ACCEPT',
         });
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -880,7 +902,7 @@ describe('School Service', () => {
         expect(updated.title).toBe(dto.body.title);
         expect(updated.description).toBe(dto.body.description);
         expect(updated.phoneNumber).toBe(dto.body.phoneNumber);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -916,7 +938,7 @@ describe('School Service', () => {
         await expect(schoolService.updateSchool(dto, notAdmin)).rejects.toThrow(
           ForbiddenException,
         );
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -931,7 +953,7 @@ describe('School Service', () => {
         await expect(schoolService.updateSchool(dto, mockUser)).rejects.toThrow(
           NotFoundException,
         );
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -987,7 +1009,7 @@ describe('School Service', () => {
         await expect(schoolService.updateSchool(dto, user)).rejects.toThrow(
           BadRequestException,
         );
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1035,7 +1057,7 @@ describe('School Service', () => {
         const result = await schoolService.deleteSchool(dto, mockUser);
         expect(result).toBeDefined();
         expect(result.id).toBe(school.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1046,7 +1068,7 @@ describe('School Service', () => {
 
         await schoolService.deleteSchool(dto, mockUser);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('school not found');
       }
@@ -1086,7 +1108,7 @@ describe('School Service', () => {
 
         await schoolService.deleteSchool(dto, mockUser);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("You're not an admin");
       }
@@ -1138,7 +1160,7 @@ describe('School Service', () => {
 
         await schoolService.deleteSchool(dto, mockUser);
         fail('Expected BadRequestException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toBe(
           'You are not allow to delete school until you delete every members from the school first',

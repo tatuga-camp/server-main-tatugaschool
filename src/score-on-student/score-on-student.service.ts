@@ -1,3 +1,4 @@
+import { PrismaReadService } from './../prisma/prisma-read.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { StudentRepository } from './../student/student.repository';
 import { ScoreOnStudentRepository } from './score-on-student.repository';
@@ -17,6 +18,7 @@ import {
 import { ScoreOnStudent, User } from '@prisma/client';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ScoreOnStudentService {
@@ -27,10 +29,14 @@ export class ScoreOnStudentService {
     private prisma: PrismaService,
     private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
   }

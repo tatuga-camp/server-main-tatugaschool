@@ -1,3 +1,4 @@
+import { RedisService } from './../redis/redis.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -32,6 +33,7 @@ import {
 } from './dto';
 import { StudentOnAssignmentRepository } from './student-on-assignment.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -52,14 +54,20 @@ export class StudentOnAssignmentService {
     private skillOnStudentAssignmentService: SkillOnStudentAssignmentService,
     private notificationService: NotificationService,
     private line: LineBotService,
+    private prismaReadService: PrismaReadService,
+    private redisService: RedisService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,

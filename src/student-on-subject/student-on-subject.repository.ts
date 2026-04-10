@@ -17,6 +17,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 export type StudentOnSubjectRepositoryType = {
   getStudentOnSubjectsBySubjectId(
@@ -54,14 +55,15 @@ export class StudentOnSubjectRepository
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-    private redisService?: RedisService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {}
 
   async findFirst(
     request: Prisma.StudentOnSubjectFindFirstArgs,
   ): Promise<StudentOnSubject | null> {
     try {
-      return await this.prisma.studentOnSubject.findFirst(request);
+      return await this.prismaReadService.studentOnSubject.findFirst(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -77,7 +79,7 @@ export class StudentOnSubjectRepository
     request: RequestGetStudentOnSubjectBySubjectId,
   ): Promise<StudentOnSubject[]> {
     try {
-      return await this.prisma.studentOnSubject.findMany({
+      return await this.prismaReadService.studentOnSubject.findMany({
         where: {
           subjectId: request.subjectId,
         },
@@ -97,7 +99,7 @@ export class StudentOnSubjectRepository
     request: RequestGetStudentOnSubjectByStudentId,
   ): Promise<StudentOnSubject[]> {
     try {
-      return await this.prisma.studentOnSubject.findMany({
+      return await this.prismaReadService.studentOnSubject.findMany({
         where: {
           studentId: request.studentId,
         },
@@ -126,14 +128,15 @@ export class StudentOnSubjectRepository
           return JSON.parse(cached);
         }
 
-        const result = await this.prisma.studentOnSubject.findMany(request);
+        const result =
+          await this.prismaReadService.studentOnSubject.findMany(request);
         if (result && Array.isArray(result) && result.length > 0) {
           await this.redisService.hset(cacheKey, field, JSON.stringify(result));
           await this.redisService.expire(cacheKey, 3600);
         }
         return result;
       }
-      return await this.prisma.studentOnSubject.findMany(request);
+      return await this.prismaReadService.studentOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

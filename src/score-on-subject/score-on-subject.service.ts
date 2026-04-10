@@ -17,6 +17,7 @@ import {
 import { ScoreOnSubject, User } from '@prisma/client';
 import { SubjectRepository } from '../subject/subject.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class ScoreOnSubjectService {
@@ -28,10 +29,12 @@ export class ScoreOnSubjectService {
     private prisma: PrismaService,
     private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
+      this.prismaReadService,
     );
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
   }

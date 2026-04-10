@@ -32,6 +32,8 @@ import {
 import { GoogleProfile } from './strategy/google-oauth.strategy';
 import { SchoolService } from '../school/school.service';
 import { forwardRef, Inject } from '@nestjs/common';
+import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class AuthService {
@@ -48,6 +50,8 @@ export class AuthService {
     private storageService: StorageService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
@@ -55,6 +59,8 @@ export class AuthService {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
   }
 

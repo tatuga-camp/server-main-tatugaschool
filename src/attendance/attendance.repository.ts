@@ -11,6 +11,7 @@ import { Attendance, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 export type AttendanceRepositoryType = {
   getAttendanceById(request: RequestGetAttendanceById): Promise<Attendance>;
@@ -26,6 +27,7 @@ export class AttendanceRepository implements AttendanceRepositoryType {
   constructor(
     private prisma: PrismaService,
     private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.logger = new Logger(AttendanceRepository.name);
   }
@@ -65,7 +67,8 @@ export class AttendanceRepository implements AttendanceRepositoryType {
           return JSON.parse(cached);
         }
 
-        const result = await this.prisma.attendance.findMany(request);
+        const result =
+          await this.prismaReadService.attendance.findMany(request);
         if (result && result.length > 0) {
           await this.redisService.hset(cacheKey, field, JSON.stringify(result));
           await this.redisService.expire(cacheKey, 3600);
@@ -73,7 +76,7 @@ export class AttendanceRepository implements AttendanceRepositoryType {
         return result;
       }
 
-      return await this.prisma.attendance.findMany(request);
+      return await this.prismaReadService.attendance.findMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

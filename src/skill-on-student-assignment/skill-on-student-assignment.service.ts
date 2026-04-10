@@ -23,6 +23,8 @@ import {
 } from './dto';
 import { Skill, SkillOnStudentAssignment, User } from '@prisma/client';
 import { StudentOnAssignmentRepository } from '../student-on-assignment/student-on-assignment.repository';
+import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class SkillOnStudentAssignmentService {
@@ -41,12 +43,16 @@ export class SkillOnStudentAssignmentService {
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private storageService: StorageService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.skillOnStudentAssignmentRepository =
       new SkillOnStudentAssignmentRepository(this.prisma);
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
@@ -62,6 +68,8 @@ export class SkillOnStudentAssignmentService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
   }
 

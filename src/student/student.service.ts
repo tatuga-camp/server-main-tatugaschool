@@ -18,6 +18,8 @@ import { GetAllStudentsDto, GetStudentDto } from './dto/get-student.dto';
 import { UpdateStudentDto } from './dto/patch-student.dto';
 import { CreateStudentDto } from './dto/post-student.dto';
 import { StudentRepository } from './student.repository';
+import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class StudentService {
@@ -30,10 +32,14 @@ export class StudentService {
     private memberOnSchoolService: MemberOnSchoolService,
     private storageService: StorageService,
     private classroomService: ClassService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
   }
 

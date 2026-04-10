@@ -50,6 +50,7 @@ import { NotificationService } from '../notification/notification.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 describe('Attendance Service', () => {
   let attendanceService: AttendanceService;
@@ -70,6 +71,7 @@ describe('Attendance Service', () => {
     disconnect: jest.fn(),
   } as unknown as RedisService;
   const emailService = new EmailService(configService);
+  const prismaReadService = new PrismaReadService(configService);
 
   let memberOnSchoolService: MemberOnSchoolService;
   let studentService: StudentService;
@@ -89,6 +91,8 @@ describe('Attendance Service', () => {
     storageService,
     userService,
     schoolService,
+    prismaReadService,
+    redisService,
   );
   const lineService = new LineBotService(configService);
 
@@ -111,6 +115,8 @@ describe('Attendance Service', () => {
     prismaService,
     storageService,
     schoolService,
+    redisService,
+    prismaReadService,
   );
   (userService as any).authService = authService;
   const aiService = new AiService(configService, httpService, authService);
@@ -134,17 +140,23 @@ describe('Attendance Service', () => {
     memberOnSchoolService,
     storageService,
     classroomService,
+    redisService,
+    prismaReadService,
   );
 
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
     storageService,
+
+    redisService,
+    prismaReadService,
   );
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
     storageService,
     teacherOnSubjectService,
+    prismaReadService,
   );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
@@ -156,6 +168,7 @@ describe('Attendance Service', () => {
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
     redisService,
+    prismaReadService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -179,6 +192,8 @@ describe('Attendance Service', () => {
     prismaService,
     storageService,
     teacherOnSubjectService,
+    redisService,
+    prismaReadService,
   );
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
     prismaService,
@@ -200,6 +215,8 @@ describe('Attendance Service', () => {
     studentService,
     schoolService,
     lineService,
+    redisService,
+    prismaReadService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
@@ -216,6 +233,8 @@ describe('Attendance Service', () => {
     skillOnStudentAssignmentService,
     notificationService,
     lineService,
+    prismaReadService,
+    redisService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -229,6 +248,8 @@ describe('Attendance Service', () => {
   const attendanceStatusListService = new AttendanceStatusListService(
     prismaService,
     teacherOnSubjectService,
+    redisService,
+    prismaReadService,
   );
 
   const attendanceTableService = new AttendanceTableService(
@@ -236,6 +257,7 @@ describe('Attendance Service', () => {
     teacherOnSubjectService,
     storageService,
     redisService,
+    prismaReadService,
   );
 
   subjectService = new SubjectService(
@@ -252,6 +274,8 @@ describe('Attendance Service', () => {
     fileAssignmentService,
     attendanceStatusListService,
     lineService,
+    prismaReadService,
+    redisService,
   );
 
   const attendanceRowService = new AttendanceRowService(
@@ -261,6 +285,7 @@ describe('Attendance Service', () => {
     attendanceStatusListService,
     teacherOnSubjectService,
     redisService,
+    prismaReadService,
   );
 
   beforeEach(async () => {
@@ -271,6 +296,7 @@ describe('Attendance Service', () => {
       attendanceTableService,
       attendanceRowService,
       redisService,
+      prismaReadService,
     );
   });
 
@@ -441,7 +467,7 @@ describe('Attendance Service', () => {
         expect(result.subjectId).toBe(subject.id);
         expect(result.attendanceRowId).toBe(row.id);
         expect(result.attendanceTableId).toBe(table.id);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -593,7 +619,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toContain('Student not found');
@@ -746,7 +772,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toContain('attendancerowId is not found');
@@ -899,7 +925,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain('Status not found');
@@ -1046,7 +1072,7 @@ describe('Attendance Service', () => {
         });
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1207,7 +1233,7 @@ describe('Attendance Service', () => {
         });
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1355,7 +1381,7 @@ describe('Attendance Service', () => {
         });
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1516,7 +1542,7 @@ describe('Attendance Service', () => {
         });
 
         await attendanceService.create(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1596,7 +1622,7 @@ describe('Attendance Service', () => {
         });
 
         expect(true).toBe(true); // ผ่าน = ไม่ throw
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -1619,7 +1645,7 @@ describe('Attendance Service', () => {
           userId: user.id,
           subjectId: '123456789012345678901234',
         });
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Subject not found');
@@ -1680,7 +1706,7 @@ describe('Attendance Service', () => {
           userId: user.id,
           subjectId: subject.id,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1753,7 +1779,7 @@ describe('Attendance Service', () => {
           userId: user.id,
           subjectId: subject.id,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1829,7 +1855,7 @@ describe('Attendance Service', () => {
           userId: user.id,
           subjectId: subject.id,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -1917,7 +1943,7 @@ describe('Attendance Service', () => {
           userId: user.id,
           subjectId: subject.id,
         });
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -2078,7 +2104,7 @@ describe('Attendance Service', () => {
         expect(result.attendanceTableId).toBe(table.id);
         expect(result.studentId).toBe(student.id);
         expect(result.status).toBe('UNKNOW');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -2166,7 +2192,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.getAttendanceById(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Attendance not found');
@@ -2300,7 +2326,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.getAttendanceById(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -2447,7 +2473,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.getAttendanceById(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -2582,7 +2608,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.getAttendanceById(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -2730,7 +2756,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.getAttendanceById(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -2923,7 +2949,7 @@ describe('Attendance Service', () => {
         expect(result.attendanceTableId).toBe(table.id);
         expect(result.studentId).toBe(student.id);
         expect(result.subjectId).toBe(subject.id);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -3015,7 +3041,7 @@ describe('Attendance Service', () => {
           },
         };
         await attendanceService.update(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Attendance not found');
@@ -3161,7 +3187,7 @@ describe('Attendance Service', () => {
 
         // ไม่ใส่ user เพื่อให้ทดสอบ expired
         await attendanceService.update(dto, undefined);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(BadRequestException);
         expect(error.message).toBe("Time's up! for update attendance");
@@ -3308,7 +3334,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.update(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Status not found');
       }
@@ -3541,7 +3567,7 @@ describe('Attendance Service', () => {
         expect(result[1].status).toBe('มา');
         expect(result[0].note).toBe('มากะทันหัน');
         expect(result[1].note).toBe('มากับเพื่อน');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -3694,7 +3720,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.updateMany(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Attendance not found');
@@ -3871,7 +3897,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.updateMany(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Status not found');
@@ -4087,7 +4113,7 @@ describe('Attendance Service', () => {
         expect(result[0].id).toBe(attendance1.id);
         expect(result[0].status).toBe('มา');
         expect(result[0].note).toBe('นักเรียนมาเรียนแล้ว');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -4296,7 +4322,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.updateMany(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -4520,7 +4546,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.updateMany(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -4730,7 +4756,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.updateMany(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -4953,7 +4979,7 @@ describe('Attendance Service', () => {
         };
 
         await attendanceService.updateMany(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
@@ -5207,7 +5233,7 @@ describe('Attendance Service', () => {
         expect(result).toMatch(
           /^data:application\/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,/,
         );
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeUndefined();
         throw error;

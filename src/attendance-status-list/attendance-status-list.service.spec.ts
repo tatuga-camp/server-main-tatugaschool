@@ -47,6 +47,7 @@ import { NotificationRepository } from '../notification/notification.repository'
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 describe('Attendance-status-list Service', () => {
   let attendanceStatusListService: AttendanceStatusListService;
@@ -57,9 +58,18 @@ describe('Attendance-status-list Service', () => {
   const storageService = new StorageService(configService, prismaService);
   const jwtService = new JwtService();
   const base64ImageService = new ImageService();
-
+  const prismaReadService = new PrismaReadService(configService);
   const emailService = new EmailService(configService);
   const lineService = new LineBotService(configService);
+
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
 
   let memberOnSchoolService: MemberOnSchoolService;
   let studentService: StudentService;
@@ -79,6 +89,8 @@ describe('Attendance-status-list Service', () => {
     storageService,
     userService,
     schoolService,
+    prismaReadService,
+    mockRedisService,
   );
 
   schoolService = new SchoolService(
@@ -100,6 +112,8 @@ describe('Attendance-status-list Service', () => {
     prismaService,
     storageService,
     schoolService,
+    mockRedisService,
+    prismaReadService,
   );
 
   (userService as any).authService = authService;
@@ -111,19 +125,13 @@ describe('Attendance-status-list Service', () => {
   );
 
   const wheelOfNameService = new WheelOfNameService(httpService, configService);
-  const mockRedisService = {
-    del: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    hget: jest.fn(),
-    hset: jest.fn(),
-    expire: jest.fn(),
-  } as any as RedisService;
+
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
     storageService,
     mockRedisService,
+    prismaReadService,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
@@ -138,17 +146,22 @@ describe('Attendance-status-list Service', () => {
     memberOnSchoolService,
     storageService,
     classroomService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
     storageService,
+    mockRedisService,
+    prismaReadService,
   );
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
     storageService,
     teacherOnSubjectService,
+    prismaReadService,
   );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
@@ -160,6 +173,7 @@ describe('Attendance-status-list Service', () => {
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
     mockRedisService,
+    prismaReadService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -183,6 +197,8 @@ describe('Attendance-status-list Service', () => {
     prismaService,
     storageService,
     teacherOnSubjectService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
@@ -205,6 +221,8 @@ describe('Attendance-status-list Service', () => {
     studentService,
     schoolService,
     lineService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
@@ -221,6 +239,8 @@ describe('Attendance-status-list Service', () => {
     skillOnStudentAssignmentService,
     notificationService,
     lineService,
+    prismaReadService,
+    mockRedisService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -245,12 +265,16 @@ describe('Attendance-status-list Service', () => {
     fileAssignmentService,
     attendanceStatusListService,
     lineService,
+    prismaReadService,
+    mockRedisService,
   );
 
   beforeEach(async () => {
     attendanceStatusListService = new AttendanceStatusListService(
       prismaService,
       teacherOnSubjectService,
+      mockRedisService,
+      prismaReadService,
     );
   });
 

@@ -12,6 +12,7 @@ import {
   RequestDeleteAttendanceTable,
   RequestUpdateAttendanceTable,
 } from './interfaces';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 type Repository = {
   createAttendanceTable(
@@ -36,6 +37,7 @@ export class AttendanceTableRepository implements Repository {
   constructor(
     private prisma: PrismaService,
     private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.logger = new Logger(AttendanceTableRepository.name);
   }
@@ -73,7 +75,8 @@ export class AttendanceTableRepository implements Repository {
           return JSON.parse(cached);
         }
 
-        const result = await this.prisma.attendanceTable.findMany(request);
+        const result =
+          await this.prismaReadService.attendanceTable.findMany(request);
         if (result && result.length > 0) {
           await this.redisService.hset(cacheKey, field, JSON.stringify(result));
           await this.redisService.expire(cacheKey, 3600);
@@ -81,7 +84,7 @@ export class AttendanceTableRepository implements Repository {
         return result;
       }
 
-      return await this.prisma.attendanceTable.findMany(request);
+      return await this.prismaReadService.attendanceTable.findMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

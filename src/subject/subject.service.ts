@@ -1,3 +1,5 @@
+import { RedisService } from './../redis/redis.service';
+import { PrismaReadService } from './../prisma/prisma-read.service';
 import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
 import { GradeService } from './../grade/grade.service';
 import { SchoolService } from './../school/school.service';
@@ -86,19 +88,26 @@ export class SubjectService {
     private fileAssignmentService: FileAssignmentService,
     private attendanceStatusListService: AttendanceStatusListService,
     private line: LineBotService,
+    private prismaReadService: PrismaReadService,
+    private redisService: RedisService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
+      this.prismaReadService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
