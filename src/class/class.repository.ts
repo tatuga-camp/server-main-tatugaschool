@@ -156,6 +156,14 @@ export class ClassRepository implements Repository {
 
   async delete(request: RequestDeleteClass): Promise<Class> {
     try {
+      const subjects = await this.subjectRepositry.findMany({
+        where: { classId: request.classId },
+      });
+
+      for (const subject of subjects) {
+        await this.subjectRepositry.deleteSubject({ subjectId: subject.id });
+      }
+
       const students = await this.studentRepository.findByClassId({
         classId: request.classId,
       });
