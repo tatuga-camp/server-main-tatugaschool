@@ -14,6 +14,8 @@ import {
   RequestDeleteClass,
   RequestGetClass,
 } from './interfaces/class.interface';
+import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 
 export type Repository = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -33,14 +35,19 @@ export class ClassRepository implements Repository {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.subjectRepositry = new SubjectRepository(
       this.prisma,
       this.storageService,
+      this.prismaReadService,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
   }
 

@@ -16,6 +16,7 @@ import {
   UpdateStatusDto,
 } from './dto';
 import { AttendanceStatusList, User } from '@prisma/client';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class AttendanceStatusListService {
@@ -25,13 +26,18 @@ export class AttendanceStatusListService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-    private redisService?: RedisService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.logger = new Logger(AttendanceStatusListService.name);
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       this.prisma,
     );
-    this.attendanceTableRepository = new AttendanceTableRepository(this.prisma, this.redisService);
+    this.attendanceTableRepository = new AttendanceTableRepository(
+      this.prisma,
+      this.redisService,
+      this.prismaReadService,
+    );
   }
 
   async create(
@@ -39,13 +45,11 @@ export class AttendanceStatusListService {
     user: User,
   ): Promise<AttendanceStatusList> {
     try {
-      const table = await this.attendanceTableRepository.findUnique(
-        {
-          where: {
-            id: dto.attendanceTableId,
-          }
+      const table = await this.attendanceTableRepository.findUnique({
+        where: {
+          id: dto.attendanceTableId,
         },
-      );
+      });
 
       if (!table) {
         throw new NotFoundException('Attendance Table not found');

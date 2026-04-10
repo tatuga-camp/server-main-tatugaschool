@@ -3,6 +3,7 @@ name: Automated API tests on Postman
 
 env:
   DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DATABASE_URL_READ: ${{ secrets.DATABASE_URL }}
   CLIENT_URL: ${{ secrets.CLIENT_URL }}
   EMAIL_NAME_SERVICE: ${{ secrets.EMAIL_NAME_SERVICE }}
   EMAIL_PASSWORD_SERVICE: ${{ secrets.EMAIL_PASSWORD_SERVICE }}

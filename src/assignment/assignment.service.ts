@@ -1,3 +1,4 @@
+import { RedisService } from './../redis/redis.service';
 import { SchoolService } from './../school/school.service';
 import {
   BadRequestException,
@@ -50,6 +51,7 @@ import { StudentService } from '../student/student.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { AiService } from '../ai/ai.service';
 import { LineBotService } from '../line-bot/line-bot.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class AssignmentService {
@@ -77,10 +79,14 @@ export class AssignmentService {
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
     private linebotService: LineBotService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,

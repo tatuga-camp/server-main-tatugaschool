@@ -21,6 +21,8 @@ import { StudentOnAssignmentRepository } from './../student-on-assignment/studen
 import { PushService } from './../web-push/push.service';
 import { ClassRepository } from './class.repository';
 import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
+import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ClassService {
@@ -41,18 +43,25 @@ export class ClassService {
     private userService: UsersService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
+    private prismaReadService: PrismaReadService,
+    private redisService: RedisService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
+      this.prismaReadService,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,

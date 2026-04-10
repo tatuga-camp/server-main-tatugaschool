@@ -1,3 +1,4 @@
+import { RedisService } from './../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
 
 import { Logger } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 type Repository = {
   create(request: RequestCreateStudent): Promise<Student>;
@@ -31,10 +33,14 @@ export class StudentRepository implements Repository {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
   }
 

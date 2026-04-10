@@ -43,6 +43,7 @@ import { NotificationRepository } from '../notification/notification.repository'
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 describe('Subject Service', () => {
   let subjectService: SubjectService;
@@ -63,6 +64,7 @@ describe('Subject Service', () => {
     disconnect: jest.fn(),
   } as unknown as RedisService;
   const emailService = new EmailService(configService);
+  const prismaReadservice = new PrismaReadService(configService);
 
   let memberOnSchoolService: MemberOnSchoolService;
   let studentService: StudentService;
@@ -83,6 +85,8 @@ describe('Subject Service', () => {
     storageService,
     userService,
     schoolService,
+    prismaReadservice,
+    redisService,
   );
 
   schoolService = new SchoolService(
@@ -106,6 +110,8 @@ describe('Subject Service', () => {
     prismaService,
     storageService,
     schoolService,
+    redisService,
+    prismaReadservice,
   );
 
   (userService as any).authService = authService;
@@ -122,6 +128,7 @@ describe('Subject Service', () => {
     teacherOnSubjectService,
     storageService,
     redisService,
+    prismaReadservice,
   );
 
   memberOnSchoolService = new MemberOnSchoolService(
@@ -136,18 +143,23 @@ describe('Subject Service', () => {
     memberOnSchoolService,
     storageService,
     classroomService,
+    redisService,
+    prismaReadservice,
   );
 
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
     storageService,
+    redisService,
+    prismaReadservice,
   );
 
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
     storageService,
     teacherOnSubjectService,
+    prismaReadservice,
   );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
@@ -159,6 +171,7 @@ describe('Subject Service', () => {
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
     redisService,
+    prismaReadservice,
   );
   const skillService = new SkillService(
     prismaService,
@@ -181,6 +194,8 @@ describe('Subject Service', () => {
     prismaService,
     storageService,
     teacherOnSubjectService,
+    redisService,
+    prismaReadservice,
   );
 
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
@@ -204,6 +219,8 @@ describe('Subject Service', () => {
     studentService,
     schoolService,
     lineService,
+    redisService,
+    prismaReadservice,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
@@ -220,6 +237,8 @@ describe('Subject Service', () => {
     skillOnStudentAssignmentService,
     notificationService,
     lineService,
+    prismaReadservice,
+    redisService,
   );
 
   const fileAssignmentService = new FileAssignmentService(
@@ -233,6 +252,8 @@ describe('Subject Service', () => {
   const attendanceStatusListService = new AttendanceStatusListService(
     prismaService,
     teacherOnSubjectService,
+    redisService,
+    prismaReadservice,
   );
 
   beforeEach(async () => {
@@ -250,6 +271,8 @@ describe('Subject Service', () => {
       fileAssignmentService,
       attendanceStatusListService,
       lineService,
+      prismaReadservice,
+      redisService,
     );
   });
 
@@ -337,7 +360,7 @@ describe('Subject Service', () => {
         expect(result.classId).toBe(dto.classId);
         expect(result.userId).toBe(user.id);
         expect(result.backgroundImage).toBe(dto.backgroundImage);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -366,7 +389,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('School not found');
       }
@@ -425,7 +448,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Class not found');
       }
@@ -479,7 +502,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
       }
@@ -546,7 +569,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
 
         expect(error).toBeInstanceOf(ForbiddenException);
@@ -631,7 +654,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("Class doesn't belong to this school");
       }
@@ -713,7 +736,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Subject number has reached limit');
       }
@@ -783,7 +806,7 @@ describe('Subject Service', () => {
         expect(result).toBeDefined();
         expect(result.title).toBe(dto.title);
         expect(result.schoolId).toBe(school.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -857,7 +880,7 @@ describe('Subject Service', () => {
 
         await subjectService.createSubject(dto, user);
         fail('Expected Error');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(Error);
         expect(error.message).toBe('Force fail attendance creation');
 
@@ -961,7 +984,7 @@ describe('Subject Service', () => {
         );
         expect(result).toBeDefined();
         expect(result.id).toBe(subject.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1078,7 +1101,7 @@ describe('Subject Service', () => {
         );
         expect(result).toBeDefined();
         expect(result.id).toBe(subject.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1161,7 +1184,7 @@ describe('Subject Service', () => {
 
         await subjectService.getSubjectById(dto, undefined, student);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe("Student doesn't belong to this subject");
       }
@@ -1265,7 +1288,7 @@ describe('Subject Service', () => {
         const teacher = target?.teachers.find((t) => t.userId === user.id);
         expect(teacher).toBeDefined();
         expect(teacher?.role).toBe('ADMIN');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1364,7 +1387,7 @@ describe('Subject Service', () => {
 
         await subjectService.getBySchoolId(dto, user_no_access);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Access denied');
       }
@@ -1491,7 +1514,7 @@ describe('Subject Service', () => {
         const found = result.find((s) => s.id === subject.id);
         expect(found).toBeDefined();
         expect(found?.educationYear).toBe('2/2025');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1564,7 +1587,7 @@ describe('Subject Service', () => {
 
         await subjectService.getSubjectsThatStudentBelongTo(dto, studentUser);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Student not found');
       }
@@ -1649,7 +1672,7 @@ describe('Subject Service', () => {
 
         await subjectService.getSubjectsThatStudentBelongTo(dto, fakeStudent);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Forbidden access');
       }
@@ -1863,7 +1886,7 @@ describe('Subject Service', () => {
         const dto = { subjectId: '123456789012345678901234' };
         await subjectService.getSubjectWithTeacherAndStudent(dto);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Subject not found');
       }
@@ -1875,7 +1898,7 @@ describe('Subject Service', () => {
         const dto = { code: 'invalid-code' };
         await subjectService.getSubjectWithTeacherAndStudent(dto);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Subject not found');
       }
@@ -1978,7 +2001,7 @@ describe('Subject Service', () => {
         expect(updated.educationYear).toBe('1/2026');
         expect(updated.description).toBe('Updated Description');
         expect(updated.backgroundImage).toBe('new-img.png');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -2003,7 +2026,7 @@ describe('Subject Service', () => {
 
         await subjectService.updateSubject(dto, user);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Subject Not Found');
       }
@@ -2066,7 +2089,7 @@ describe('Subject Service', () => {
 
         await subjectService.updateSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
       }
     });
@@ -2165,7 +2188,7 @@ describe('Subject Service', () => {
 
         await subjectService.updateSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain('read-only');
       }
@@ -2263,7 +2286,7 @@ describe('Subject Service', () => {
         const updatedScience = result.find((s) => s.id === subject2.id);
         expect(updatedMath?.order).toBe(1);
         expect(updatedScience?.order).toBe(0);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -2287,7 +2310,7 @@ describe('Subject Service', () => {
 
         await subjectService.reorderSubjects(dto, user);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Subject not found');
       }
@@ -2349,7 +2372,7 @@ describe('Subject Service', () => {
 
         await subjectService.reorderSubjects(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain('Access denied');
       }
@@ -2423,7 +2446,7 @@ describe('Subject Service', () => {
 
         await subjectService.reorderSubjects(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain('Access denied');
       }
@@ -2514,7 +2537,7 @@ describe('Subject Service', () => {
         };
 
         await subjectService.deleteSubject(dto, user);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -2601,7 +2624,7 @@ describe('Subject Service', () => {
 
         await subjectService.deleteSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain(
           'Only admin of this school and admin of this subject can delete',
@@ -2627,7 +2650,7 @@ describe('Subject Service', () => {
 
         await subjectService.deleteSubject(dto, user);
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toContain('Subject not found');
       }
@@ -2701,7 +2724,7 @@ describe('Subject Service', () => {
         };
         await subjectService.deleteSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain("You're not a member of this school");
       }
@@ -2788,7 +2811,7 @@ describe('Subject Service', () => {
         };
         await subjectService.deleteSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain("You're not a member of this school");
@@ -2862,7 +2885,7 @@ describe('Subject Service', () => {
         };
         await subjectService.deleteSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain("You're not a teacher on this subject");
       }
@@ -2949,7 +2972,7 @@ describe('Subject Service', () => {
         };
         await subjectService.deleteSubject(dto, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain("You're not a teacher on this subject");
       }

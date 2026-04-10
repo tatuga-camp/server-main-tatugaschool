@@ -30,6 +30,7 @@ import {
   UpdateAttendanceRowDto,
 } from './dto';
 import { ResponseGetAttendanceRowById } from './interfaces';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class AttendanceRowService {
@@ -45,16 +46,19 @@ export class AttendanceRowService {
     private attendanceStatusListService: AttendanceStatusListService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.logger = new Logger(AttendanceRowService.name);
     this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
     this.attendanceRepository = new AttendanceRepository(
       this.prisma,
       this.redisService,
+      this.prismaReadService,
     );
     this.attendanceTableRepository = new AttendanceTableRepository(
       this.prisma,
       this.redisService,
+      this.prismaReadService,
     );
   }
 
