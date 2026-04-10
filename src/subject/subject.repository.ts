@@ -15,6 +15,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.repository';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 type Repository = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
@@ -40,6 +41,7 @@ export class SubjectRepository implements Repository {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.groupOnSubjectRepository = new GroupOnSubjectRepository(this.prisma);
     this.assignmentRepository = new AssignmentRepository(
@@ -80,7 +82,7 @@ export class SubjectRepository implements Repository {
 
   async findMany(request: Prisma.SubjectFindManyArgs): Promise<Subject[]> {
     try {
-      return await this.prisma.subject.findMany(request);
+      return await this.prismaReadService.subject.findMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

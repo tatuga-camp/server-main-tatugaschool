@@ -25,6 +25,7 @@ import { AttendanceTableService } from '../attendance-table/attendance-table.ser
 import { AttendanceRowService } from '../attendance-row/attendance-row.service';
 import { Request, Response } from 'express';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
@@ -40,11 +41,13 @@ export class AttendanceService {
     private attendanceTableService: AttendanceTableService,
     private attendanceRowService: AttendanceRowService,
     private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.logger = new Logger(AttendanceService.name);
     this.attendanceRepository = new AttendanceRepository(
       this.prisma,
       this.redisService,
+      this.prismaReadService,
     );
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       this.prisma,
@@ -52,11 +55,14 @@ export class AttendanceService {
     this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
-      storageService,
+      this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
+      this.prismaReadService,
     );
   }
 

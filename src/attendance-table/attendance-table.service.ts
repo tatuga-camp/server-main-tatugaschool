@@ -29,6 +29,7 @@ import { ResponseGetAttendanceTableById } from './interfaces';
 import { AttendanceStatusListSRepository } from '../attendance-status-list/attendance-status-list.repository';
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
 import { AttendanceRowRepository } from '../attendance-row/attendance-row.repository';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 @Injectable()
 export class AttendanceTableService {
@@ -43,20 +44,25 @@ export class AttendanceTableService {
     private teacherOnSubjectService: TeacherOnSubjectService,
     private storageService: StorageService,
     private redisService: RedisService,
+    private prismaReadService: PrismaReadService,
   ) {
     this.logger = new Logger(AttendanceTableService.name);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
+      this.redisService,
+      this.prismaReadService,
     );
     this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
     this.attendanceTableRepository = new AttendanceTableRepository(
       this.prisma,
       this.redisService,
+      this.prismaReadService,
     );
     this.attendanceRepository = new AttendanceRepository(
       this.prisma,
       this.redisService,
+      this.prismaReadService,
     );
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       this.prisma,

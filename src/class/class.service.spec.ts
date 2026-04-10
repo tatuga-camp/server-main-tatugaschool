@@ -39,8 +39,17 @@ import { NotificationRepository } from '../notification/notification.repository'
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
 
 describe('Class Service', () => {
+  const mockRedisService = {
+    del: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    hget: jest.fn(),
+    hset: jest.fn(),
+    expire: jest.fn(),
+  } as any as RedisService;
   let classroomService: ClassService;
   const prismaService = new PrismaService();
   const configService = new ConfigService();
@@ -51,6 +60,8 @@ describe('Class Service', () => {
   const base64ImageService = new ImageService();
   let schoolService: SchoolService;
   const emailService = new EmailService(configService);
+  const prismaReadService = new PrismaReadService(configService);
+
   const authService = new AuthService(
     emailService,
     jwtService,
@@ -59,6 +70,8 @@ describe('Class Service', () => {
     prismaService,
     storageService,
     schoolService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const userService = new UsersService(prismaService, authService);
@@ -70,19 +83,13 @@ describe('Class Service', () => {
   );
 
   const wheelOfNameService = new WheelOfNameService(httpService, configService);
-  const mockRedisService = {
-    del: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    hget: jest.fn(),
-    hset: jest.fn(),
-    expire: jest.fn(),
-  } as any as RedisService;
+
   const attendanceTableService = new AttendanceTableService(
     prismaService,
     teacherOnSubjectService,
     storageService,
     mockRedisService,
+    prismaReadService,
   );
   const lineService = new LineBotService(configService);
 
@@ -121,6 +128,8 @@ describe('Class Service', () => {
     memberOnSchoolService,
     storageService,
     classroomService,
+    mockRedisService,
+    prismaReadService,
   );
 
   subjectService = new SubjectService(
@@ -137,17 +146,22 @@ describe('Class Service', () => {
     fileAssignmentService,
     attendanceStatusListService,
     lineService,
+    prismaReadService,
+    mockRedisService,
   );
   const skillOnStudentAssignmentService = new SkillOnStudentAssignmentService(
     prismaService,
     memberOnSchoolService,
     storageService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const scoreOnSubjectService = new ScoreOnSubjectService(
     prismaService,
     storageService,
     teacherOnSubjectService,
+    prismaReadService,
   );
   const studentOnSubjectService = new StudentOnSubjectService(
     prismaService,
@@ -159,6 +173,7 @@ describe('Class Service', () => {
     skillOnStudentAssignmentService,
     scoreOnSubjectService,
     mockRedisService,
+    prismaReadService,
   );
   const skillService = new SkillService(
     prismaService,
@@ -182,6 +197,8 @@ describe('Class Service', () => {
     prismaService,
     storageService,
     teacherOnSubjectService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
@@ -204,6 +221,8 @@ describe('Class Service', () => {
     studentService,
     schoolService,
     lineService,
+    mockRedisService,
+    prismaReadService,
   );
 
   const notificationRepository = new NotificationRepository(prismaService);
@@ -220,6 +239,9 @@ describe('Class Service', () => {
     skillOnStudentAssignmentService,
     notificationService,
     lineService,
+
+    prismaReadService,
+    mockRedisService,
   );
 
   beforeEach(async () => {
@@ -231,6 +253,8 @@ describe('Class Service', () => {
       storageService,
       userService,
       schoolService,
+      prismaReadService,
+      mockRedisService,
     );
   });
 
@@ -293,7 +317,7 @@ describe('Class Service', () => {
         expect(result.description).toBe('Mock class for testing');
         expect(result.schoolId).toBe(school.id);
         expect(result.userId).toBe(user.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -335,7 +359,7 @@ describe('Class Service', () => {
 
         await classroomService.createClass(dto, user);
         fail('Expected ForbiddenException to be thrown');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
       }
     });
@@ -391,7 +415,7 @@ describe('Class Service', () => {
 
         await classroomService.createClass(dto, user);
         fail('Expected ForbiddenException due to PENDING membership');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toContain('Access denied');
       }
@@ -417,7 +441,7 @@ describe('Class Service', () => {
 
         await schoolService.ValidateLimit(school, 'totalStorage', 200);
         fail('Expected ForbiddenException due to totalStorage limit');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Your storage size is reaching the limit, please upgrade a plamn',
@@ -445,7 +469,7 @@ describe('Class Service', () => {
 
         await schoolService.ValidateLimit(school, 'classes', 2);
         fail('Expected ForbiddenException due to class limit');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Class number has reached the limit');
       }
@@ -471,7 +495,7 @@ describe('Class Service', () => {
 
         await schoolService.ValidateLimit(school, 'members', 3);
         fail('Expected ForbiddenException due to member limit');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Members on school has reached limit');
       }
@@ -497,7 +521,7 @@ describe('Class Service', () => {
 
         await schoolService.ValidateLimit(school, 'subjects', 5);
         fail('Expected ForbiddenException due to subject limit');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe('Subject number has reached limit');
       }
@@ -523,7 +547,7 @@ describe('Class Service', () => {
         });
 
         expect(result).toEqual(createdClass);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -544,7 +568,7 @@ describe('Class Service', () => {
 
         expect(result.id).toBe(createdClass.id);
         expect(result.isAchieved).toBe(false);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -569,7 +593,7 @@ describe('Class Service', () => {
         });
 
         fail('Expected ForbiddenException for achieved class');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Class is achieved, It is read-only not allowed to update or make any changes',
@@ -657,7 +681,7 @@ describe('Class Service', () => {
         expect(matchedStudent?.firstName).toBe('สมชาย');
         expect(matchedStudent?.lastName).toBe('ใจดี');
         expect(matchedStudent?.number).toBe('12');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -679,7 +703,7 @@ describe('Class Service', () => {
           user,
         );
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Class not found');
       }
@@ -723,7 +747,7 @@ describe('Class Service', () => {
 
         await classroomService.getById({ classId: classroom.id }, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -782,7 +806,7 @@ describe('Class Service', () => {
 
         await classroomService.getById({ classId: classroom.id }, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -874,7 +898,7 @@ describe('Class Service', () => {
         expect(matched?.title).toBe(classroom.title);
         expect(matched?.studentNumbers).toBe(1);
         expect(matched?.creator?.id).toBe(user.id);
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -916,7 +940,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected ForbiddenException to be thrown');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -974,7 +998,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected ForbiddenException to be thrown');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -1071,7 +1095,7 @@ describe('Class Service', () => {
         expect(updatedC?.order).toBe(1);
         expect(updatedA?.order).toBe(2);
         expect(updatedB?.order).toBe(3);
-      } catch (error) {
+      } catch (error: any) {
         console.log(error);
         throw error;
       }
@@ -1097,7 +1121,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Class not found');
       }
@@ -1147,7 +1171,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -1212,7 +1236,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -1287,7 +1311,7 @@ describe('Class Service', () => {
         expect(updated.id).toBe(createdClass.id);
         expect(updated.title).toBe('Updated Title');
         expect(updated.description).toBe('Updated description');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1313,7 +1337,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Class not found');
       }
@@ -1364,7 +1388,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -1430,7 +1454,7 @@ describe('Class Service', () => {
         );
 
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Access denied: User is not a member of the school',
@@ -1459,7 +1483,7 @@ describe('Class Service', () => {
           user,
         );
         fail('Expected NotFoundException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(NotFoundException);
         expect(error.message).toBe('Class not found');
       }
@@ -1521,7 +1545,7 @@ describe('Class Service', () => {
 
         expect(deleted.id).toBe(classroom.id);
         expect(deleted.title).toBe('Class to Delete');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1582,7 +1606,7 @@ describe('Class Service', () => {
 
         expect(deleted.id).toBe(classroom.id);
         expect(deleted.title).toBe('Creator Class');
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -1648,7 +1672,7 @@ describe('Class Service', () => {
       try {
         await classroomService.delete({ classId: classroom.id }, outsider);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Only admin of this school and the creator of this classroom can delete',
@@ -1707,7 +1731,7 @@ describe('Class Service', () => {
       try {
         await classroomService.delete({ classId: classroom.id }, user);
         fail('Expected ForbiddenException');
-      } catch (error) {
+      } catch (error: any) {
         expect(error).toBeInstanceOf(ForbiddenException);
         expect(error.message).toBe(
           'Only admin of this school and the creator of this classroom can delete',
@@ -1883,7 +1907,7 @@ describe('Class Service', () => {
             }),
           );
         }
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
@@ -2095,7 +2119,7 @@ describe('Class Service', () => {
 
         expect(s1.totalScore).toBeCloseTo((8 / 10) * 5); // 4
         expect(s2.totalScore).toBeCloseTo((6 / 10) * 5); // 3
-      } catch (error) {
+      } catch (error: any) {
         throw error;
       }
     });
