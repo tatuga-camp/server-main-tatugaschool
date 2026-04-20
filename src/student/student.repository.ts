@@ -60,6 +60,11 @@ export class StudentRepository implements Repository {
       };
 
       delete request.body.password;
+      const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
+        where: {
+          studentId: student.id,
+        },
+      });
       await Promise.allSettled([
         this.prisma.studentOnAssignment.updateMany({
           where: {
@@ -67,12 +72,14 @@ export class StudentRepository implements Repository {
           },
           data: data,
         }),
-        this.prisma.studentOnSubject.updateMany({
-          where: {
-            studentId: student.id,
-          },
-          data: data,
-        }),
+        ...studentOnSubjects.map((studentOnSubject) =>
+          this.studentOnSubjectRepository.update({
+            where: {
+              id: studentOnSubject.id,
+            },
+            data: data,
+          }),
+        ),
         this.prisma.commentOnAssignment.updateMany({
           where: {
             studentId: student.id,
