@@ -128,19 +128,17 @@ export class StudentRepository implements Repository {
 
       const studentOnSubjects = await Promise.allSettled(
         subjects.map(async (subject) => {
-          return this.prisma.studentOnSubject.create({
-            data: {
-              studentId: student.id,
-              subjectId: subject.id,
-              schoolId: student.schoolId,
-              classId: student.classId,
-              title: student.title,
-              firstName: student.firstName,
-              lastName: student.lastName,
-              photo: student.photo,
-              blurHash: student.blurHash,
-              number: student.number,
-            },
+          return this.studentOnSubjectRepository.createStudentOnSubject({
+            studentId: student.id,
+            subjectId: subject.id,
+            schoolId: student.schoolId,
+            classId: student.classId,
+            title: student.title,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            photo: student.photo,
+            blurHash: student.blurHash,
+            number: student.number,
           });
         }),
       ).then((result) =>
