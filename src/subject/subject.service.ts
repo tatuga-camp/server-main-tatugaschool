@@ -499,7 +499,7 @@ export class SubjectService {
   async getSubjectsThatStudentBelongTo(
     dto: { studentId: string; educationYear: string },
     studentUser: Student,
-  ): Promise<Subject[]> {
+  ): Promise<(Subject & { status: 'complete' | 'uncomplete' })[]> {
     try {
       const student = await this.studentRepository.findById({
         studentId: dto.studentId,
@@ -532,7 +532,52 @@ export class SubjectService {
             })
           : [];
 
-      return subjects;
+      const assignments =
+        await this.assignmentService.assignmentRepository.findMany({
+          where: {
+            OR: subjects.flatMap((subject) => {
+              return [
+                {
+                  subjectId: subject.id,
+                  type: 'Assignment',
+                },
+                {
+                  subjectId: subject.id,
+                  type: 'VideoQuiz',
+                },
+              ];
+            }),
+          },
+        });
+
+      const studentOnAssignments =
+        await this.studentOnAssignmentRepository.findMany({
+          where: {
+            OR: assignments.map((assignment) => {
+              return {
+                assignmentId: assignment.id,
+                studentId: student.id,
+                isAssigned: true,
+              };
+            }),
+          },
+        });
+
+      return subjects.map((subject) => {
+        const totalAssignment = studentOnAssignments.filter(
+          (s) => s.subjectId === subject.id,
+        ).length;
+        const completeAssignment = studentOnAssignments.filter(
+          (s) =>
+            s.subjectId === subject.id &&
+            (s.status === 'REVIEWD' || s.status === 'SUBMITTED'),
+        ).length;
+        return {
+          ...subject,
+          status:
+            totalAssignment === completeAssignment ? 'complete' : 'uncomplete',
+        };
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;
