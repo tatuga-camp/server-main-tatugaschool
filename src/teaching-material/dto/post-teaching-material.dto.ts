@@ -19,6 +19,10 @@ export class CreateTeachingMaterialDto {
 
   @IsNotEmpty()
   @IsString()
+  titleTH: string;
+
+  @IsNotEmpty()
+  @IsString()
   description: string;
 
   @IsArray()

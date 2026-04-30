@@ -973,6 +973,7 @@ model TeachingMaterial {
   updateAt DateTime @updatedAt
 
   title                   String
+  titleTH                 String?
   description             String
   thumbnail               String?
   blurHash                String?
