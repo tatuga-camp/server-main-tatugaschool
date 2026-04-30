@@ -26,6 +26,10 @@ class UpdateTeachingMaterialBody {
 
   @IsOptional()
   @IsString()
+  titleTH?: string;
+
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @IsOptional()
