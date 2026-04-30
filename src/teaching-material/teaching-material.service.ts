@@ -179,6 +179,9 @@ export class TeachingMaterialService {
           orderBy: {
             createAt: 'desc',
           },
+          omit: {
+            vector: true,
+          },
         });
       }
 
