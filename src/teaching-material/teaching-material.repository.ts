@@ -61,6 +61,7 @@ export class TeachingMaterialRepository implements Repository {
                 createAt: 1,
                 updateAt: 1, // Add current timestamp
                 title: 1,
+                titleTH: 1,
                 description: 1,
                 tags: 1,
                 accessLevel: 1,
@@ -82,6 +83,7 @@ export class TeachingMaterialRepository implements Repository {
             $date: Date;
           };
           title: string;
+          titleTH: string;
           description: string;
           thumbnail: string | null;
           tags: string[];
@@ -96,6 +98,7 @@ export class TeachingMaterialRepository implements Repository {
         createAt: teachingMaterial.createAt.$date,
         updateAt: teachingMaterial.updateAt.$date,
         title: teachingMaterial.title as string,
+        titleTH: teachingMaterial.titleTH as string,
         description: teachingMaterial.description as string,
         tags: teachingMaterial.tags as string[],
         accessLevel: teachingMaterial.accessLevel,
