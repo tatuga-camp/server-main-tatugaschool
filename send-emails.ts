@@ -44,33 +44,22 @@ const main = async () => {
 
       for (const user of users) {
         const emailHTML = `
-         <body style="background-color: #f8f9fa;">
+       <body style="background-color: #f8f9fa;">
        <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png" />
+         <img class="ax-center" style="display: block; width: 600px" src="https://bucket.mailersendapp.com/z3m5jgr8emldpyo6/r9084zvk1oegw63d/images/a1a88788-ac1e-4530-a4f3-5cb7cba4e751.png" />
          <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
            <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
-           อัปเดตราคาแพ็กเกจรายปีสุดคุ้ม!
+            เริ่มเทอมใหม่กับ Tatuga School - ลงทะเบียน Tatuga School Online Workshop ฟรีแถม Package Enterprise 6 เดือน!
            </h1>
            <p style="margin: 0 0 16px;">
            สวัสดีคุณครู ${user.firstName},<br>
-           ทาง Tatuga School ได้มีการปรับปรุงแพ็กเกจรายปีใหม่ เพื่อให้คุ้มค่ายิ่งขึ้น สำหรับคุณครูและโรงเรียน
+           Tatuga School ขอเชิญคุณครู โรงเรียน บุคคลหรือหน่วยงานที่สนใจ ร่วมกิจกรรม Online Workshop พร้อมถ่ายทอด เทคนิคการใช้งาน Tatuga School **ฟรี! ไม่มีค่าใช้จ่ายตลอดการจัดกิจกรรมและแถม Package Enterprise 6 เดือน! หมดเขตวันที่ 31 พฤษภาคม 2569 เท่านั้น!! <a href="https://www.facebook.com/share/p/185rD95YXj/">รายละเอียดเพิ่มเติม</a>           
            </p>
-           
-           <div style="background-color: #f0f9ff; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #bae6fd;">
-            <p style="margin: 0 0 8px; font-weight: bold; color: #0284c7; font-size: 18px;">Basic Plan (พื้นฐาน)</p>
-            <p style="margin: 0; font-size: 16px;">ราคาเพียง 590 บาท/ปี <span style="font-size: 14px; color: #0284c7;">(ตกเดือนละ 49 บาท)</span></p>
-           </div>
-           
-           <div style="background-color: #f3e8ff; padding: 16px; border-radius: 8px; margin-bottom: 16px; border: 1px solid #d8b4fe;">
-            <p style="margin: 0 0 8px; font-weight: bold; color: #7e22ce; font-size: 18px;">Premium Plan (พรีเมียม)</p>
-            <p style="margin: 0; font-size: 16px;">ราคาเพียง 1,490 บาท/ปี <span style="font-size: 14px; color: #7e22ce;">(ตกเดือนละ 124 บาท)</span></p>
-           </div>
-
             <p style="margin: 0 0 16px; color: #6c757d">
             Do not reply to this email, this email is automatically generated.
             If you have any questions, please contact this email permlap@tatugacamp.com or the address below
            </p>
-           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="https://tatugaschool.com/price">ดูรายละเอียดแพ็กเกจ</a>
+           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="https://docs.google.com/forms/d/e/1FAIpQLSds3dB6zzO_QrCAd3_Z0o65dWTtNd3vdBqxCH1VU0HCXSOH9g/viewform?usp=dialog">คลิกเพื่อลงทะเบียน</a>
          </div>
          <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/public-tatugaschool/banner-tatugaschool.jpg" />
          <div style="color: #6c757d; text-align: center; margin: 24px 0;">
@@ -87,7 +76,7 @@ const main = async () => {
           .setTo([
             new Recipient(user.email, `${user.firstName} ${user.lastName}`),
           ])
-          .setSubject('อัปเดตราคาแพ็กเกจรายปีใหม่! เริ่มต้นเพียง 590 บาท')
+          .setSubject(' เริ่มเทอมใหม่กับ Tatuga School!')
           .setHtml(emailHTML);
         bulkEmails.push(emailParams);
       }

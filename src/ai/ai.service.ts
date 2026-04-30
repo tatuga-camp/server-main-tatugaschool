@@ -28,7 +28,12 @@ type AiType = {
   suggestTeachingMaterialMetadata(dto: {
     imageURLs: { url: string; type: string }[];
     accessToken: string;
-  }): Promise<{ title: string; keywords: string[]; description: string }>;
+  }): Promise<{
+    title: string;
+    titleTH: string;
+    keywords: string[];
+    description: string;
+  }>;
   generateLineBotSummary(userInput: string, serverData: any): Promise<string>;
 };
 
@@ -224,7 +229,12 @@ export class AiService implements AiType {
   async suggestTeachingMaterialMetadata(dto: {
     imageURLs: { url: string; type: string }[];
     accessToken: string;
-  }): Promise<{ title: string; keywords: string[]; description: string }> {
+  }): Promise<{
+    title: string;
+    titleTH: string;
+    keywords: string[];
+    description: string;
+  }> {
     try {
       const supportFilesType = [
         'image/jpeg',
@@ -255,6 +265,7 @@ export class AiService implements AiType {
       if (supportedFiles.length === 0) {
         return {
           title: '',
+          titleTH: '',
           keywords: [],
           description: '',
         };
@@ -288,7 +299,7 @@ export class AiService implements AiType {
           parts: [
             ...parts,
             {
-              text: 'Analyze the content of this teaching material. Return ONLY a valid JSON object with the following properties: "title" (a concise, descriptive title for the material), "keywords" (an array of 5-10 relevant keywords or tags), and "description" (Analyze the content and purpose of this teaching material. Include the subject, topic, activity types, target grade level in Thai Education System and grade level on US, and relevant 21st-century skills and it should be longer than 200 words). Do not include any markdown formatting or extra text outside the JSON object.',
+              text: 'Analyze the content of this teaching material. Return ONLY a valid JSON object with the following properties: "title" (English title. 1. Determine if the material is a "worksheet", a "presentation", or "other". 2. Identify the education level and the main topic. The topic must be meaningful and specific, describing the objective, not just the subject e.g. use \'English Skills Practice about animal (Prepositions)\' instead of just \'English Skills Practice\'. 3. Format: for worksheet use "worksheet: [Topic] for [Education Level]", for presentation use "presentation: [Topic] for [Education Level]". If no education level is found, omit the "for [Education Level]" part.), "titleTH" (Thai title. Follow the same rules as the English title but in Thai. Format: for worksheet use "ใบงานเรื่อง [Topic] สำหรับ [Education Level]", for presentation use "พรีเซนเทชันเรื่อง [Topic] สำหรับ [Education Level]". If no education level is found, omit the "สำหรับ [Education Level]" part. Ensure it naturally incorporates the original intent.), "keywords" (an array of 5-10 relevant keywords or tags), and "description" (Analyze the content and purpose of this teaching material. Include the subject, topic, activity types, target grade level in Thai Education System and grade level on US, and relevant 21st-century skills and it should be longer than 200 words). Do not include any markdown formatting or extra text outside the JSON object.',
             },
           ],
         },
@@ -302,6 +313,7 @@ export class AiService implements AiType {
         const parsed = JSON.parse(cleanResponse);
         return {
           title: parsed.title || '',
+          titleTH: parsed.titleTH || '',
           keywords: parsed.keywords || [],
           description: parsed.description || '',
         };
@@ -309,6 +321,7 @@ export class AiService implements AiType {
         this.logger.error('Failed to parse JSON response from Gemini', e);
         return {
           title: '',
+          titleTH: '',
           keywords: [],
           description: response,
         };
