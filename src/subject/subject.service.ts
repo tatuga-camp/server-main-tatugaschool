@@ -331,7 +331,7 @@ export class SubjectService {
             if (questionsOnVideo.length > 0) {
               await Promise.allSettled(
                 questionsOnVideo.map((question) =>
-                  this.prisma.questionOnVideo.create({
+                  this.assignmentVideoQuizRepository.create({
                     data: {
                       assignmentId: newAssignment.id,
                       question: question.question,
