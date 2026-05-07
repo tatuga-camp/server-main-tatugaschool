@@ -24,6 +24,7 @@ export type Repository = {
     args: Prisma.QuestionOnVideoCreateManyArgs,
   ): Promise<Prisma.BatchPayload>;
   delete(args: Prisma.QuestionOnVideoDeleteArgs): Promise<QuestionOnVideo>;
+  deleteMany(args: { assignmentId: string }): Promise<void>;
 };
 
 @Injectable()
@@ -174,6 +175,24 @@ export class AssignmentVideoQuizRepository implements Repository {
       }
 
       return result;
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async deleteMany(args: { assignmentId: string }): Promise<void> {
+    try {
+      await this.prisma.questionOnVideo.deleteMany({
+        where: {
+          assignmentId: args.assignmentId,
+        },
+      });
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

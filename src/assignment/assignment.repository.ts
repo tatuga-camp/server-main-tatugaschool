@@ -17,6 +17,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { StorageService } from '../storage/storage.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 import { RedisService } from '../redis/redis.service';
+import { AssignmentVideoQuizRepository } from 'src/assignment-video-quiz/assignment-video-quiz.repository';
 
 type AssignmentRepositoryType = {
   getById(request: RequestGetAssignmentById): Promise<Assignment>;
@@ -35,6 +36,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   fileAssignmentRepository: FileAssignmentRepository;
   studentOnAssignmentRepository: StudentOnAssignmentRepository;
   skillOnAssignmentRepository: SkillOnAssignmentRepository;
+  assignmentVideoQuizRepository: AssignmentVideoQuizRepository;
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -52,6 +54,10 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     );
     this.fileOnStudentAssignmentRepository =
       new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
+    this.assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
+      this.prisma,
+      this.redisService,
+    );
   }
 
   async getById(request: RequestGetAssignmentById): Promise<Assignment> {
@@ -227,11 +233,10 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         },
       });
 
-      await this.prisma.questionOnVideo.deleteMany({
-        where: {
-          assignmentId: request.assignmentId,
-        },
+      await this.assignmentVideoQuizRepository.deleteMany({
+        assignmentId: request.assignmentId,
       });
+
       const fileOnStudentAssignments =
         await this.prisma.fileOnStudentAssignment.findMany({
           where: {
