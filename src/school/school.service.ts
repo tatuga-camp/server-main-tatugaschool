@@ -497,7 +497,7 @@ export class SchoolService {
           throw new BadRequestException('User is already a billing manager');
         }
 
-      await this.stripe.UpdateCustomer({
+        await this.stripe.UpdateCustomer({
           query: {
             stripeCustomerId: school.stripe_customer_id,
           },
@@ -530,6 +530,7 @@ export class SchoolService {
       if (school.isDeleted === true) {
         throw new NotFoundException('School is flagged as deleted');
       }
+
       const member = await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: school.id,
@@ -551,6 +552,17 @@ export class SchoolService {
         throw new BadRequestException(
           'You are not allow to delete school until you delete every members from the school first',
         );
+      }
+
+      const userFavorite = await this.userService.userRepository.findById({
+        id: user.id,
+      });
+
+      if (userFavorite.favoritSchool === school.id) {
+        await this.userService.userRepository.update({
+          where: { id: userFavorite.id },
+          data: { favoritSchool: null },
+        });
       }
 
       return await this.schoolRepository.update({
