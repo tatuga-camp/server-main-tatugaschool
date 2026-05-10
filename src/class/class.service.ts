@@ -136,7 +136,8 @@ export class ClassService {
       const school = await this.schoolService.schoolRepository.getById({
         schoolId: createClassDto.schoolId,
       });
-      const member = await this.memberOnSchoolService.validateAccess({
+
+      await this.memberOnSchoolService.validateAccess({
         user: user,
         schoolId: createClassDto.schoolId,
       });
@@ -144,6 +145,7 @@ export class ClassService {
       const exsitingClasses = await this.classRepository.findMany({
         where: {
           schoolId: createClassDto.schoolId,
+          isDeleted: false,
         },
       });
 
