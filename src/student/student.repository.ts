@@ -16,6 +16,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { AssignmentRepository } from '../assignment/assignment.repository';
 
 type Repository = {
   create(request: RequestCreateStudent): Promise<Student>;
@@ -30,6 +31,7 @@ type Repository = {
 export class StudentRepository implements Repository {
   private logger = new Logger(StudentRepository.name);
   private studentOnSubjectRepository: StudentOnSubjectRepository;
+  private assignmentRepository: AssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -41,6 +43,11 @@ export class StudentRepository implements Repository {
       this.storageService,
       this.redisService,
       this.prismaReadService,
+    );
+    this.assignmentRepository = new AssignmentRepository(
+      this.prisma,
+      this.storageService,
+      this.redisService,
     );
   }
 
@@ -126,6 +133,10 @@ export class StudentRepository implements Repository {
         },
       });
 
+      if (subjects.length === 0) {
+        return student;
+      }
+
       const studentOnSubjects = await Promise.allSettled(
         subjects.map(async (subject) => {
           return this.studentOnSubjectRepository.createStudentOnSubject({
@@ -145,13 +156,17 @@ export class StudentRepository implements Repository {
         result.filter((r) => r.status === 'fulfilled').map((r) => r.value),
       );
 
-      const assignments = await this.prisma.assignment.findMany({
+      const assignments = await this.assignmentRepository.findMany({
         where: {
           OR: subjects.map((subject) => ({
             subjectId: subject.id,
           })),
         },
       });
+
+      if (assignments.length === 0) {
+        return student;
+      }
 
       await Promise.allSettled(
         assignments.map(async (assignment) => {

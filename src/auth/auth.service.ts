@@ -184,8 +184,14 @@ export class AuthService {
         password: hashedPassword,
       });
 
-      const accessToken = await this.GenerateAccessToken(user);
-      const refreshToken = await this.GenerateRefreshToken(user);
+      const accessToken = await this.GenerateAccessToken({
+        userId: user.id,
+        email: user.email,
+      });
+      const refreshToken = await this.GenerateRefreshToken({
+        userId: user.id,
+        email: user.email,
+      });
       const token = await this.sendVerifyEmail(user);
       this.setCookieAccessToken(res, accessToken);
       this.setCookieRefreshToken(res, refreshToken);
@@ -279,8 +285,14 @@ export class AuthService {
         throw new BadRequestException('Please sign in with google');
       }
 
-      const accessToken = await this.GenerateAccessToken(user);
-      const refreshToken = await this.GenerateRefreshToken(user);
+      const accessToken = await this.GenerateAccessToken({
+        userId: user.id,
+        email: user.email,
+      });
+      const refreshToken = await this.GenerateRefreshToken({
+        userId: user.id,
+        email: user.email,
+      });
 
       const isMatch = await bcrypt.compare(dto.password, user.password);
       if (!isMatch) {
@@ -332,8 +344,14 @@ export class AuthService {
       }
 
       return {
-        accessToken: await this.GenerateStudentAccessToken(student),
-        refreshToken: await this.GenerateStudentRefreshToken(student),
+        accessToken: await this.GenerateStudentAccessToken({
+          studentId: student.id,
+          schoolId: student.schoolId,
+        }),
+        refreshToken: await this.GenerateStudentRefreshToken({
+          studentId: student.id,
+          schoolId: student.schoolId,
+        }),
       };
     } catch (error) {
       this.logger.error(error);
@@ -344,20 +362,20 @@ export class AuthService {
   async UserRefreshToken(dto: RefreshTokenDto, res: Response) {
     try {
       const verify = await this.jwtService
-        .verifyAsync<User>(dto.refreshToken, {
+        .verifyAsync<{
+          id: string;
+          email: string;
+        }>(dto.refreshToken, {
           secret: this.config.get('JWT_REFRESH_SECRET'),
         })
         .catch(() => {
           throw new BadRequestException('Refresh token is Expired or Invalid');
         });
 
-      const user = await this.usersRepository.findById({
-        id: verify.id,
+      const accessToken = await this.GenerateAccessToken({
+        userId: verify.id,
+        email: verify.email,
       });
-      if (!user) {
-        throw new BadRequestException('Refresh token is invalid');
-      }
-      const accessToken = await this.GenerateAccessToken(user);
       return res.json({ accessToken: accessToken });
     } catch (error) {
       this.logger.error(error);
@@ -385,7 +403,10 @@ export class AuthService {
       }
 
       return {
-        accessToken: await this.GenerateStudentAccessToken(student),
+        accessToken: await this.GenerateStudentAccessToken({
+          studentId: student.id,
+          schoolId: student.schoolId,
+        }),
       };
     } catch (error) {
       this.logger.error(error);
@@ -410,8 +431,14 @@ export class AuthService {
           );
         }
 
-        const accessToken = await this.GenerateAccessToken(user);
-        const refreshToken = await this.GenerateRefreshToken(user);
+        const accessToken = await this.GenerateAccessToken({
+          userId: user.id,
+          email: user.email,
+        });
+        const refreshToken = await this.GenerateRefreshToken({
+          userId: user.id,
+          email: user.email,
+        });
 
         this.setCookieAccessToken(res, accessToken);
         this.setCookieRefreshToken(res, refreshToken);
@@ -524,11 +551,14 @@ export class AuthService {
     }
   }
 
-  async GenerateAccessToken(user: User): Promise<string> {
+  async GenerateAccessToken(input: {
+    userId: string;
+    email: string;
+  }): Promise<string> {
     try {
       const payload = {
-        id: user.id,
-        email: user.email,
+        id: input.userId,
+        email: input.email,
       };
 
       return await this.jwtService.signAsync(payload, {
@@ -546,11 +576,14 @@ export class AuthService {
     }
   }
 
-  async GenerateStudentAccessToken(student: Student): Promise<string> {
+  async GenerateStudentAccessToken(input: {
+    studentId: string;
+    schoolId: string;
+  }): Promise<string> {
     try {
       const payload = {
-        id: student.id,
-        schoolId: student.schoolId,
+        id: input.studentId,
+        schoolId: input.schoolId,
       };
 
       return await this.jwtService.signAsync(payload, {
@@ -568,11 +601,14 @@ export class AuthService {
     }
   }
 
-  async GenerateRefreshToken(user: User): Promise<string> {
+  async GenerateRefreshToken(input: {
+    userId: string;
+    email: string;
+  }): Promise<string> {
     try {
       const payload = {
-        id: user.id,
-        email: user.email,
+        id: input.userId,
+        email: input.email,
       };
       return await this.jwtService.signAsync(payload, {
         secret: this.config.get('JWT_REFRESH_SECRET'),
@@ -606,11 +642,14 @@ export class AuthService {
     });
   }
 
-  async GenerateStudentRefreshToken(student: Student): Promise<string> {
+  async GenerateStudentRefreshToken(input: {
+    studentId: string;
+    schoolId: string;
+  }): Promise<string> {
     try {
       const payload = {
-        id: student.id,
-        schoolId: student.schoolId,
+        id: input.studentId,
+        schoolId: input.schoolId,
       };
       return await this.jwtService.signAsync(payload, {
         secret: this.config.get('STUDENT_JWT_REFRESH_SECRET'),
