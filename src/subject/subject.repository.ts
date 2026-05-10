@@ -207,7 +207,7 @@ export class SubjectRepository implements Repository {
     try {
       let totalDeleteSize: number = 0;
 
-      const assignments = await this.prisma.assignment.findMany({
+      const assignments = await this.assignmentRepository.findMany({
         where: {
           subjectId: request.subjectId,
         },
@@ -249,7 +249,7 @@ export class SubjectRepository implements Repository {
         },
       });
 
-      const assignments = await this.prisma.assignment.findMany({
+      const assignments = await this.assignmentRepository.findMany({
         where: {
           subjectId: request.subjectId,
         },

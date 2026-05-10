@@ -629,6 +629,7 @@ model FileOnStudentAssignment {
   studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
 
   @@index([studentOnAssignmentId])
+  @@index([assignmentId])
 }
 
 enum StudentAssignmentContentType {
@@ -871,6 +872,7 @@ model SkillOnStudentAssignment {
   @@unique([skillId, studentOnAssignmentId])
   @@index([studentOnAssignmentId])
   @@index([subjectId])
+  @@index([studentId])
 }
 
 model Career {
