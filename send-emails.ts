@@ -76,7 +76,9 @@ const main = async () => {
           .setTo([
             new Recipient(user.email, `${user.firstName} ${user.lastName}`),
           ])
-          .setSubject(' เริ่มเทอมใหม่กับ Tatuga School!')
+          .setSubject(
+            ' เริ่มเทอมใหม่กับ Tatuga School - ลงทะเบียน Online Workshop',
+          )
           .setHtml(emailHTML);
         bulkEmails.push(emailParams);
       }

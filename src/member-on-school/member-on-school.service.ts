@@ -480,6 +480,17 @@ export class MemberOnSchoolService {
         ),
       });
 
+      const userFavorite = await this.userRepository.findById({
+        id: targetDeleteMember.userId,
+      });
+
+      if (userFavorite.favoritSchool === targetDeleteMember.schoolId) {
+        await this.userRepository.update({
+          where: { id: targetDeleteMember.userId },
+          data: { favoritSchool: null },
+        });
+      }
+
       return deleteMemberOnSchool;
     } catch (error) {
       this.logger.error(error);

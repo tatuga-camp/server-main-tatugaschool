@@ -46,3 +46,4 @@ yarn.
 # TypeScript cache
 *.tsbuildinfo
 tsconfig.build.tsbuildinfo
+favorite-school.ts
