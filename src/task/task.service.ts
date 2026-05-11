@@ -32,6 +32,7 @@ export class TaskService {
           take,
           where: {
             isVerifyLine: true,
+            allowSendNotificationMorningSummaryToLine: true,
             lineGroupId: { not: null },
             school: {
               plan: {

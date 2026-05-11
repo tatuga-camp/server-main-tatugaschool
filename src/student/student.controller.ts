@@ -36,7 +36,13 @@ export class StudentController {
   @UseGuards(StudentGuard)
   @Get('student/get-as-user')
   async studentGetStudentById(@GetStudent() student: Student) {
-    return student;
+    return this.studentService.getStudentById(
+      {
+        studentId: student.id,
+      },
+      undefined,
+      student,
+    );
   }
 
   @UseGuards(UserGuard)

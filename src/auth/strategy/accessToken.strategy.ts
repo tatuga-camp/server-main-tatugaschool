@@ -23,19 +23,9 @@ export class UserAccessTokenStrategy extends PassportStrategy(
     this.logger = new Logger(UserAccessTokenStrategy.name);
   }
 
-  async validate(payload: User) {
+  async validate(payload: { id: string }) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: {
-          id: payload.id,
-        },
-      });
-      delete user.password;
-      delete user.verifyEmailToken;
-      delete user.verifyEmailTokenExpiresAt;
-      delete user.resetPasswordToken;
-      delete user.resetPasswordTokenExpiresAt;
-      return user;
+      return payload;
     } catch (err) {
       this.logger.error(err);
       throw new UnauthorizedException();
@@ -63,13 +53,7 @@ export class StudentAccessTokenStrategy extends PassportStrategy(
 
   async validate(payload: Student) {
     try {
-      const student = await this.prisma.student.findUnique({
-        where: {
-          id: payload.id,
-        },
-      });
-
-      return student;
+      return payload;
     } catch (err) {
       this.logger.error(err);
       throw new UnauthorizedException();

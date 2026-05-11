@@ -548,7 +548,8 @@ export class AssignmentService {
       if (
         dto.status === 'Published' &&
         subject.isVerifyLine === true &&
-        subject.lineGroupId
+        subject.lineGroupId &&
+        subject.allowSendNotificationOnAssignmentToLine == true
       ) {
         const school = await this.schoolService.schoolRepository.findUnique({
           where: {

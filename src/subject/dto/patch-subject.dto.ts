@@ -87,6 +87,18 @@ class UpdateSubjectBody {
   @IsOptional()
   @IsBoolean()
   allowHideStudentList?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowSendNotificationOnStudentOnAssignmentToLine?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowSendNotificationOnAssignmentToLine?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowSendNotificationMorningSummaryToLine?: boolean;
 }
 
 export class UpdateSubjectDto {
