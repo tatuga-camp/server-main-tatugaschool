@@ -150,24 +150,6 @@ export class SchoolRepository implements SchoolRepositoryType {
         });
       }
 
-      await this.prisma.task.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.colum.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.board.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
       await this.prisma.memberOnSchool.deleteMany({
         where: {
           schoolId: schoolId,
