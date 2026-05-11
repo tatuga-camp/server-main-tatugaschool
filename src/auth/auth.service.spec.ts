@@ -1,0 +1,261 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthService } from './auth.service';
+import { EmailService } from '../email/email.service';
+import { JwtService } from '@nestjs/jwt';
+import { ImageService } from '../image/image.service';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
+import { SchoolService } from '../school/school.service';
+import { RedisService } from '../redis/redis.service';
+import { PrismaReadService } from '../prisma/prisma-read.service';
+import {
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('web-push', () => ({}));
+jest.mock('@google/genai', () => ({
+  GoogleGenAI: jest.fn(),
+  ThinkingLevel: {},
+  HarmCategory: {},
+  HarmBlockThreshold: {},
+}));
+jest.mock('googleapis', () => ({
+  google: {
+    auth: {
+      GoogleAuth: jest.fn().mockImplementation(() => ({
+        getClient: jest.fn().mockResolvedValue({
+          getAccessToken: jest
+            .fn()
+            .mockResolvedValue({ token: 'mock-google-token' }),
+        }),
+      })),
+    },
+  },
+}));
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  const mockEmailService = {
+    sendMail: jest.fn(),
+  };
+
+  const mockJwtService = {
+    signAsync: jest.fn(),
+    verifyAsync: jest.fn(),
+  };
+
+  const mockImageService = {
+    generateBase64Image: jest.fn(),
+  };
+
+  const mockConfigService = {
+    get: jest.fn((key: string) => {
+      if (key === 'GOOGLE_CLOUD_PRIVATE_KEY_ENCODE')
+        return Buffer.from('mockKey').toString('base64');
+      if (key === 'NODE_ENV') return 'test';
+      return 'mock-value';
+    }),
+  };
+
+  const mockPrismaService = {
+    memberOnSchool: {
+      findMany: jest.fn(),
+    },
+  };
+
+  const mockSchoolService = {
+    createSchool: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: ImageService, useValue: mockImageService },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: StorageService, useValue: {} },
+        { provide: SchoolService, useValue: mockSchoolService },
+        { provide: RedisService, useValue: {} },
+        { provide: PrismaReadService, useValue: {} },
+      ],
+    }).compile();
+
+    service = module.get<AuthService>(AuthService);
+
+    // Mock internal repositories
+    service.usersRepository = {
+      findByEmail: jest.fn(),
+      updateResetToken: jest.fn(),
+      createUser: jest.fn(),
+      findByVerifyToken: jest.fn(),
+      updateVerified: jest.fn(),
+      findByResetToken: jest.fn(),
+      updatePassword: jest.fn(),
+      updateLastActiveAt: jest.fn(),
+      update: jest.fn(),
+    } as any;
+
+    service.studentRepository = {
+      findById: jest.fn(),
+    } as any;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be defined', () => {
+    expect(service).toBeDefined();
+  });
+
+  describe('forgotPassword', () => {
+    it('should send reset password email successfully', async () => {
+      const mockUser = {
+        email: 'test@example.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        isDeleted: false,
+        isVerifyEmail: true,
+        updateAt: new Date(Date.now() - 120000), // Updated 2 minutes ago
+        provider: 'LOCAL',
+      };
+
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
+        mockUser,
+      );
+      (service.usersRepository.updateResetToken as jest.Mock).mockResolvedValue(
+        {},
+      );
+      mockEmailService.sendMail.mockResolvedValue({});
+
+      await service.forgotPassword({ email: 'test@example.com' });
+
+      expect(service.usersRepository.updateResetToken).toHaveBeenCalled();
+      expect(mockEmailService.sendMail).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.forgotPassword({ email: 'test@example.com' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('signup', () => {
+    it('should sign up a user successfully', async () => {
+      const dto = {
+        email: 'test@example.com',
+        password: 'password123',
+        provider: 'LOCAL',
+        firstName: 'John',
+        lastName: 'Doe',
+      } as any;
+      const mockUser = {
+        id: 'u1',
+        email: 'test@example.com',
+        firstName: 'John',
+      };
+
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
+        null,
+      );
+      mockImageService.generateBase64Image.mockReturnValue('base64image');
+      (service.usersRepository.createUser as jest.Mock).mockResolvedValue(
+        mockUser,
+      );
+      mockJwtService.signAsync.mockResolvedValue('token');
+
+      jest
+        .spyOn(service, 'sendVerifyEmail')
+        .mockResolvedValue({ token: 'verify-token' });
+
+      const mockRes = {
+        cookie: jest.fn(),
+        json: jest.fn((data) => data),
+      } as any;
+
+      const result = await service.signup(dto, mockRes);
+
+      expect(service.usersRepository.createUser).toHaveBeenCalled();
+      expect(mockRes.cookie).toHaveBeenCalledTimes(2);
+      expect(result).toEqual({
+        redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+        token: 'verify-token',
+      });
+    });
+
+    it('should throw ConflictException if email exists', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u1',
+      });
+
+      await expect(
+        service.signup({ email: 'test@example.com' } as any, {} as any),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('signIn', () => {
+    it('should sign in successfully', async () => {
+      const mockUser = {
+        id: 'u1',
+        email: 'test@example.com',
+        provider: 'LOCAL',
+        password: await bcrypt.hash('password123', 10),
+        isVerifyEmail: true,
+      };
+
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
+        mockUser,
+      );
+      mockJwtService.signAsync.mockResolvedValue('token');
+      (
+        service.usersRepository.updateLastActiveAt as jest.Mock
+      ).mockResolvedValue({});
+
+      const mockRes = {
+        cookie: jest.fn(),
+        json: jest.fn((data) => data),
+      } as any;
+
+      const result = await service.signIn(
+        { email: 'test@example.com', password: 'password123' },
+        mockRes,
+      );
+
+      expect(mockRes.cookie).toHaveBeenCalledTimes(2);
+      expect(result).toEqual({
+        redirectUrl: process.env.CLIENT_URL,
+        refreshToken: 'token',
+        accessToken: 'token',
+      });
+    });
+
+    it('should throw NotFoundException if user not found', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
+        null,
+      );
+
+      await expect(
+        service.signIn(
+          { email: 'test@example.com', password: 'password123' },
+          {} as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+});
