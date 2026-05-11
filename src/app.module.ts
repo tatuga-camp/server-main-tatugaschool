@@ -19,7 +19,6 @@ import { FileOnTeachingMaterialModule } from './file-on-teaching-material/file-o
 import { GradeModule } from './grade/grade.module';
 import { GroupOnSubjectModule } from './group-on-subject/group-on-subject.module';
 import { MemberOnSchoolModule } from './member-on-school/member-on-school.module';
-import { MemberOnTeamModule } from './member-on-team/member-on-team.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SchoolModule } from './school/school.module';
 import { ScoreOnStudentModule } from './score-on-student/score-on-student.module';
@@ -37,7 +36,6 @@ import { SubjectModule } from './subject/subject.module';
 import { SubscriptionModule } from './subscription/subscription.module';
 import { TeacherOnSubjectModule } from './teacher-on-subject/teacher-on-subject.module';
 import { TeachingMaterialModule } from './teaching-material/teaching-material.module';
-import { TeamModule } from './team/team.module';
 import { UnitOnGroupModule } from './unit-on-group/unit-on-group.module';
 import { UsersModule } from './users/users.module';
 import { PushModule } from './web-push/push.module';
@@ -60,7 +58,6 @@ import { RedisModule } from './redis/redis.module';
     PrismaModule,
     EmailModule,
     MemberOnSchoolModule,
-    TeamModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -87,7 +84,6 @@ import { RedisModule } from './redis/redis.module';
     SkillOnAssignmentModule,
     SkillOnStudentAssignmentModule,
     CareerModule,
-    MemberOnTeamModule,
     SkillOnCareerModule,
     WheelOfNameModule,
     AttendanceStatusListModule,

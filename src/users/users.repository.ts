@@ -114,12 +114,6 @@ export class UserRepository implements Repository {
           },
           data: data,
         }),
-        this.prisma.memberOnTeam.updateMany({
-          where: {
-            userId: user.id,
-          },
-          data: data,
-        }),
         this.prisma.teacherOnSubject.updateMany({
           where: {
             userId: user.id,
