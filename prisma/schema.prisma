@@ -38,7 +38,6 @@ model User {
 
   memberOnSchools           MemberOnSchool[]
   subjects                  Subject[]
-  memberOnTeams             MemberOnTeam[]
   teacherOnSubjects         TeacherOnSubject[]
   schools                   School[]
   assignments               Assignment[]
@@ -107,10 +106,8 @@ model School {
 
   memberOnSchools          MemberOnSchool[]
   classes                  Class[]
-  teams                    Team[]
   students                 Student[]
   subjects                 Subject[]
-  memberOnTeams            MemberOnTeam[]
   assignments              Assignment[]
   studentOnAssignments     StudentOnAssignment[]
   attendanceRows           AttendanceRow[]
@@ -121,9 +118,6 @@ model School {
   scoreOnSubjects          ScoreOnSubject[]
   fileOnAssignments        FileOnAssignment[]
   studentOnSubjects        StudentOnSubject[]
-  boards                   Board[]
-  colums                   Colum[]
-  tasks                    Task[]
   fileOnStudentAssignments FileOnStudentAssignment[]
   commentOnAssignments     CommentOnAssignment[]
   attendanceStatusLists    AttendanceStatusList[]
@@ -153,8 +147,6 @@ model MemberOnSchool {
 
   user   User   @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
-
-  memberOnTeams MemberOnTeam[]
 
   @@unique([userId, schoolId])
 }
@@ -216,50 +208,7 @@ model Student {
   @@index([classId])
 }
 
-model Team {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
 
-  title       String
-  description String?
-  icon        String
-
-  schoolId      String         @db.ObjectId
-  school        School         @relation(fields: [schoolId], references: [id])
-  memberOnTeams MemberOnTeam[]
-  boards        Board[]
-  colums        Colum[]
-  tasks         Task[]
-}
-
-model MemberOnTeam {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
-  status    Status     @default(PENDDING)
-  role      MemberRole @default(TEACHER)
-  firstName String
-  lastName  String
-  email     String
-  photo     String
-  blurHash  String?
-  phone     String
-
-  userId           String @db.ObjectId
-  memberOnSchoolId String @db.ObjectId
-  teamId           String @db.ObjectId
-  schoolId         String @db.ObjectId
-
-  user           User           @relation(fields: [userId], references: [id])
-  memberOnSchool MemberOnSchool @relation(fields: [memberOnSchoolId], references: [id])
-  team           Team           @relation(fields: [teamId], references: [id])
-  school         School         @relation(fields: [schoolId], references: [id])
-  tasks          Task[]
-
-  @@unique([userId, teamId])
-}
 
 model Subject {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -914,69 +863,6 @@ model SkillOnCareer {
   @@unique([skillId, careerId, reference])
 }
 
-model Board {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
-  title       String
-  description String
-  isCompleted Boolean @default(false)
-
-  teamId String @db.ObjectId
-  team   Team   @relation(fields: [teamId], references: [id])
-
-  schoolId String @db.ObjectId
-  school   School @relation(fields: [schoolId], references: [id])
-
-  colums Colum[]
-  tasks  Task[]
-}
-
-model Colum {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
-  title       String
-  description String?
-  color       String
-
-  teamId   String @db.ObjectId
-  team     Team   @relation(fields: [teamId], references: [id])
-  schoolId String @db.ObjectId
-  school   School @relation(fields: [schoolId], references: [id])
-  boardId  String @db.ObjectId
-  board    Board  @relation(fields: [boardId], references: [id])
-
-  tasks Task[]
-}
-
-model Task {
-  id       String   @id @default(auto()) @map("_id") @db.ObjectId
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
-
-  title       String
-  description String?
-  deadline    DateTime?
-  isCompleted Boolean   @default(false)
-
-  assigneeId String?       @db.ObjectId
-  assignee   MemberOnTeam? @relation(fields: [assigneeId], references: [id])
-
-  teamId String @db.ObjectId
-  team   Team   @relation(fields: [teamId], references: [id])
-
-  schoolId String @db.ObjectId
-  school   School @relation(fields: [schoolId], references: [id])
-
-  boardId String @db.ObjectId
-  board   Board  @relation(fields: [boardId], references: [id])
-
-  columId String @db.ObjectId
-  colum   Colum  @relation(fields: [columId], references: [id])
-}
 
 model TeachingMaterial {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
