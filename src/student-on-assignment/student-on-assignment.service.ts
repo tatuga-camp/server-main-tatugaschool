@@ -390,7 +390,8 @@ export class StudentOnAssignmentService {
         if (
           (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE') &&
           subject.isVerifyLine === true &&
-          subject.lineGroupId
+          subject.lineGroupId &&
+          subject.allowSendNotificationOnStudentOnAssignmentToLine == true
         ) {
           const totalSummits =
             await this.studentOnAssignmentRepository.findMany({

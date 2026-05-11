@@ -901,6 +901,9 @@ export class SubjectService {
         data: {
           isVerifyLine: true,
           verifyLineToken: null,
+          allowSendNotificationOnStudentOnAssignmentToLine: true,
+          allowSendNotificationMorningSummaryToLine: true,
+          allowSendNotificationOnAssignmentToLine: true,
         },
       });
 
@@ -1215,7 +1218,7 @@ export class SubjectService {
         },
         studentOnAssignments: {
           description:
-            'This data contains the assignments assigned to students, including their submission status and earned scores.',
+            'This data contains the assignments assigned to students, including their submission status and earned scores. Student status can be "PEDDING" (assigned but not submitted), "SUBMITTED" (submitted but not reviewed), "IMPROVED" (summited but teacher ask to improve) or "REVIEWD" (submitted and reviewed with score).',
           data: studentOnAssignments,
         },
         fileOnStudentAssignments: {

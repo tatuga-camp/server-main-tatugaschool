@@ -23,7 +23,14 @@ export class UsersService {
 
   async GetUser(user: User): Promise<User> {
     try {
-      return user;
+      return await this.userRepository
+        .findById({ id: user.id })
+        .then((user) => {
+          delete user.password;
+          delete user.resetPasswordToken;
+          delete user.verifyEmailToken;
+          return user;
+        });
     } catch (error) {
       this.logger.error(error);
       throw error;
