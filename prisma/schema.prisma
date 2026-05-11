@@ -324,6 +324,7 @@ model Subject {
   questionOnVideos          QuestionOnVideo[]
 
   @@index([educationYear, schoolId])
+  @@index([isVerifyLine, lineGroupId])
 }
 
 model TeacherOnSubject {
@@ -634,6 +635,7 @@ model FileOnStudentAssignment {
 
   @@index([studentOnAssignmentId])
   @@index([assignmentId])
+  @@index([studentId])
 }
 
 enum StudentAssignmentContentType {
@@ -721,6 +723,7 @@ model ScoreOnStudent {
   studentOnSubject   StudentOnSubject @relation(fields: [studentOnSubjectId], references: [id])
 
   @@index([subjectId, studentOnSubjectId])
+  @@index([studentId])
 }
 
 model AttendanceTable {
@@ -855,6 +858,8 @@ model SkillOnAssignment {
   assignment Assignment @relation(fields: [assignmentId], references: [id])
 
   @@unique([skillId, assignmentId])
+
+  @@index([assignmentId])
 }
 
 model SkillOnStudentAssignment {

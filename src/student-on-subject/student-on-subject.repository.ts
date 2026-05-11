@@ -18,6 +18,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { StudentOnAssignmentRepository } from '../student-on-assignment/student-on-assignment.repository';
 
 export type StudentOnSubjectRepositoryType = {
   getStudentOnSubjectsBySubjectId(
@@ -52,12 +53,18 @@ export class StudentOnSubjectRepository
   implements StudentOnSubjectRepositoryType
 {
   logger: Logger = new Logger(StudentOnSubjectRepository.name);
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
-  ) {}
+  ) {
+    this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
+      prisma,
+      redisService,
+    );
+  }
 
   async findFirst(
     request: Prisma.StudentOnSubjectFindFirstArgs,
@@ -269,7 +276,7 @@ export class StudentOnSubjectRepository
       const { studentOnSubjectId } = request;
 
       const studentOnAssignments =
-        await this.prisma.studentOnAssignment.findMany({
+        await this.studentOnAssignmentRepository.findMany({
           where: {
             studentOnSubjectId: studentOnSubjectId,
           },
@@ -338,16 +345,17 @@ export class StudentOnSubjectRepository
             }),
           ),
       );
+      const studentOnAssignmentIds = studentOnAssignments.map((s) => s.id);
 
-      await this.prisma.skillOnStudentAssignment.deleteMany({
-        where: {
-          OR: studentOnAssignments.map((s) => {
-            return {
-              studentOnAssignmentId: s.id,
-            };
-          }),
-        },
-      });
+      if (studentOnAssignmentIds.length > 0) {
+        await this.prisma.skillOnStudentAssignment.deleteMany({
+          where: {
+            studentOnAssignmentId: {
+              in: studentOnAssignmentIds,
+            },
+          },
+        });
+      }
 
       // Delete related studentOnAssignments records
       await this.prisma.studentOnAssignment.deleteMany({
