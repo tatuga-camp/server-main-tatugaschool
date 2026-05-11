@@ -479,24 +479,36 @@ export class ClassService {
         },
       });
 
+      const subjectIds = subjects.map((s) => s.id);
+
+      // 🛑 1. THE EARLY GUARD: Stop the collection scans!
+      if (subjectIds.length === 0) {
+        return subjects.map((subject) => ({ ...subject, students: [] }));
+      }
+
+      // 🚀 2. OPTIMIZED QUERIES: Use 'in' for both queries
       const [studentAssignments, assignments] = await Promise.all([
         this.studentOnAssignmentRepository.findMany({
           where: {
-            OR: subjects.map((s) => ({ subjectId: s.id, isAssigned: true })),
+            subjectId: { in: subjectIds },
+            isAssigned: true,
           },
         }),
         this.assignmentRepository.findMany({
           where: {
-            OR: subjects.map((s) => ({ subjectId: s.id, status: 'Published' })),
+            subjectId: { in: subjectIds },
+            status: 'Published',
           },
         }),
       ]);
 
+      // ⚡ 3. THE LOOKUP MAP: Turn an O(N^2) operation into O(1)
+      // This prevents the server from freezing on large classes
+      const assignmentMap = new Map(assignments.map((a) => [a.id, a]));
+
       const groups = subjects.map((subject) => {
         const students = studentAssignments
-          .filter(
-            (studentAssignment) => studentAssignment.subjectId === subject.id,
-          )
+          .filter((sa) => sa.subjectId === subject.id)
           .reduce<
             Record<
               string,
@@ -510,16 +522,27 @@ export class ClassService {
               }
             >
           >((acc, studentAssignment) => {
-            const assignment = assignments.find(
-              (a) => a.id === studentAssignment.assignmentId,
+            // Look up the assignment instantly using the Map
+            const assignment = assignmentMap.get(
+              studentAssignment.assignmentId,
             );
-            let score = studentAssignment.score;
 
-            if (assignment.weight && assignment.weight !== null) {
-              const originalScore =
-                studentAssignment.score / assignment.maxScore;
+            // 🛡️ 4. FATAL CRASH GUARD: Skip if the assignment isn't 'Published'
+            if (!assignment) {
+              return acc;
+            }
+
+            let score = studentAssignment.score || 0; // Fallback to 0 if null
+
+            if (
+              assignment.weight &&
+              assignment.weight !== null &&
+              assignment.maxScore
+            ) {
+              const originalScore = score / assignment.maxScore;
               score = originalScore * assignment.weight;
             }
+
             if (!acc[studentAssignment.studentId]) {
               acc[studentAssignment.studentId] = {
                 id: studentAssignment.studentId,
