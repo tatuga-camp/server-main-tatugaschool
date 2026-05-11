@@ -188,12 +188,6 @@ export class MemberOnSchoolRepository implements Repository {
           id: request.memberOnSchoolId,
         },
       });
-      // Delete related MemberOnTeam records first
-      await this.prisma.memberOnTeam.deleteMany({
-        where: {
-          memberOnSchoolId: request.memberOnSchoolId,
-        },
-      });
 
       await this.prisma.teacherOnSubject.deleteMany({
         where: {

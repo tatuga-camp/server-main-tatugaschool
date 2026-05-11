@@ -156,12 +156,6 @@ export class SchoolRepository implements SchoolRepositoryType {
         },
       });
 
-      await this.prisma.memberOnTeam.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
       await this.prisma.colum.deleteMany({
         where: {
           schoolId: schoolId,
@@ -169,12 +163,6 @@ export class SchoolRepository implements SchoolRepositoryType {
       });
 
       await this.prisma.board.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-
-      await this.prisma.team.deleteMany({
         where: {
           schoolId: schoolId,
         },
