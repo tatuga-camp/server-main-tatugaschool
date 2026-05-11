@@ -206,32 +206,4 @@ export class UsersService {
       throw error;
     }
   }
-
-  async isMemberOfTeam({
-    userId,
-    teamId,
-  }: {
-    userId: string;
-    teamId: string;
-  }): Promise<boolean> {
-    try {
-      const memberOnTeam = await this.prisma.memberOnTeam.findFirst({
-        where: {
-          userId,
-          teamId,
-        },
-      });
-
-      if (!memberOnTeam) {
-        throw new ForbiddenException(
-          'Access denied: User is not a member of the team',
-        );
-      }
-
-      return true;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
 }

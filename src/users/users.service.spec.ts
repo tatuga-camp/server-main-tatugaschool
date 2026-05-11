@@ -206,17 +206,4 @@ describe('UsersService', () => {
       expect(result.role).toBe('TEACHER');
     });
   });
-
-  describe('isMemberOfTeam', () => {
-    it('should return true if member of team', async () => {
-      mockPrismaService.memberOnTeam.findFirst.mockResolvedValue({ id: 'mt1' });
-
-      const result = await service.isMemberOfTeam({
-        userId: 'u1',
-        teamId: 't1',
-      });
-
-      expect(result).toBe(true);
-    });
-  });
 });
