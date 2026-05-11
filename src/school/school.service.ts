@@ -558,7 +558,7 @@ export class SchoolService {
         id: user.id,
       });
 
-      if (userFavorite.favoritSchool === school.id) {
+      if (userFavorite && userFavorite.favoritSchool === school.id) {
         await this.userService.userRepository.update({
           where: { id: userFavorite.id },
           data: { favoritSchool: null },

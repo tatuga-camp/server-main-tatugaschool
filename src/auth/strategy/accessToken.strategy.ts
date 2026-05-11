@@ -25,7 +25,14 @@ export class UserAccessTokenStrategy extends PassportStrategy(
 
   async validate(payload: { id: string }) {
     try {
-      return payload;
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.id },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException();
+      }
+      return user;
     } catch (err) {
       this.logger.error(err);
       throw new UnauthorizedException();
@@ -53,7 +60,15 @@ export class StudentAccessTokenStrategy extends PassportStrategy(
 
   async validate(payload: Student) {
     try {
-      return payload;
+      const student = await this.prisma.student.findUnique({
+        where: { id: payload.id },
+      });
+
+      if (!student) {
+        throw new UnauthorizedException();
+      }
+
+      return student;
     } catch (err) {
       this.logger.error(err);
       throw new UnauthorizedException();
