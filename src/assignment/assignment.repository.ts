@@ -207,25 +207,23 @@ export class AssignmentRepository implements AssignmentRepositoryType {
           },
         });
 
-      await this.prisma.skillOnStudentAssignment.deleteMany({
-        where: {
-          OR: studentOnAssignments.map((s) => {
-            return {
-              studentOnAssignmentId: s.id,
-            };
+      const studentOnAssignmentIds = studentOnAssignments.map((s) => s.id);
+      if (studentOnAssignmentIds.length > 0) {
+        // 🚀 3. PARALLEL DELETES + IN OPERATOR:
+        // Run both queries at the same time using the highly optimized 'in' operator
+        await Promise.all([
+          this.prisma.skillOnStudentAssignment.deleteMany({
+            where: {
+              studentOnAssignmentId: { in: studentOnAssignmentIds },
+            },
           }),
-        },
-      });
-
-      await this.prisma.commentOnAssignment.deleteMany({
-        where: {
-          OR: studentOnAssignments.map((s) => {
-            return {
-              studentOnAssignmentId: s.id,
-            };
+          this.prisma.commentOnAssignment.deleteMany({
+            where: {
+              studentOnAssignmentId: { in: studentOnAssignmentIds },
+            },
           }),
-        },
-      });
+        ]);
+      }
 
       await this.prisma.questionOnVideo.deleteMany({
         where: {
