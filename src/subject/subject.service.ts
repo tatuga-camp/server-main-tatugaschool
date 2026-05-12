@@ -517,49 +517,51 @@ export class SubjectService {
           studentId: student.id,
         },
       });
-      const subjects =
-        studentOnSubjects.length > 0
-          ? await this.subjectRepository.findMany({
-              where: {
-                id: {
-                  in: studentOnSubjects.map(
-                    (studentOnSubject) => studentOnSubject.subjectId,
-                  ),
-                },
-                educationYear: dto.educationYear,
-                isDeleted: false,
-              },
-            })
-          : [];
 
+      // 🛑 GUARD 1: If student is in no subjects, return empty instantly.
+      if (studentOnSubjects.length === 0) {
+        return [];
+      }
+
+      const subjects = await this.subjectRepository.findMany({
+        where: {
+          id: {
+            in: studentOnSubjects.map((s) => s.subjectId),
+          },
+          educationYear: dto.educationYear,
+          isDeleted: false,
+        },
+      });
+
+      // 🛑 GUARD 2: If no active subjects match the year, stop here.
+      if (subjects.length === 0) {
+        return [];
+      }
+
+      const subjectIds = subjects.map((s) => s.id);
+      // 🚀 OPTIMIZATION 1: Clean 'in' query instead of a massive OR array
       const assignments =
         await this.assignmentService.assignmentRepository.findMany({
           where: {
-            OR: subjects.flatMap((subject) => {
-              return [
-                {
-                  subjectId: subject.id,
-                  type: 'Assignment',
-                },
-                {
-                  subjectId: subject.id,
-                  type: 'VideoQuiz',
-                },
-              ];
-            }),
+            subjectId: { in: subjectIds },
+            type: { in: ['Assignment', 'VideoQuiz'] },
           },
         });
 
+      // 🛑 GUARD 3: If there are no assignments, all subjects are technically "complete" (0/0)
+      if (assignments.length === 0) {
+        return subjects.map((subject) => ({ ...subject, status: 'complete' }));
+      }
+
+      const assignmentIds = assignments.map((a) => a.id);
+
+      // 🚀 OPTIMIZATION 2: Lift static conditions to the top level
       const studentOnAssignments =
         await this.studentOnAssignmentRepository.findMany({
           where: {
-            OR: assignments.map((assignment) => {
-              return {
-                assignmentId: assignment.id,
-                studentId: student.id,
-                isAssigned: true,
-              };
-            }),
+            assignmentId: { in: assignmentIds },
+            studentId: student.id,
+            isAssigned: true,
           },
         });
 
