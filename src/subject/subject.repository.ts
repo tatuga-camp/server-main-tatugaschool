@@ -237,118 +237,87 @@ export class SubjectRepository implements Repository {
   ): Promise<Subject & { totalDeleteSize: number }> {
     try {
       const { subjectId } = request;
-      await this.prisma.skillOnStudentAssignment.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
 
-      const groupOnSubjects = await this.groupOnSubjectRepository.findMany({
-        where: {
-          subjectId: request.subjectId,
-        },
-      });
-
-      const assignments = await this.assignmentRepository.findMany({
-        where: {
-          subjectId: request.subjectId,
-        },
-      });
-
-      if (assignments.length > 0) {
-        await Promise.allSettled(
-          assignments.map((a) =>
-            this.assignmentRepository.delete({
-              assignmentId: a.id,
-            }),
-          ),
-        );
-      }
-
-      if (groupOnSubjects.length > 0) {
-        await Promise.allSettled(
-          groupOnSubjects.map((group) =>
-            this.groupOnSubjectRepository.delete({
-              groupOnSubjectId: group.id,
-            }),
-          ),
-        );
-      }
-
-      // Delete related attendance records
-      await this.prisma.attendance.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-      await this.prisma.attendanceStatusList.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related attendanceRow records
-      await this.prisma.attendanceRow.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related attendanceTable records
-      await this.prisma.attendanceTable.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related scoreOnStudent records
-      await this.prisma.scoreOnStudent.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related scoreOnSubject records
-      await this.prisma.scoreOnSubject.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related studentOnSubjects records
-      await this.prisma.studentOnSubject.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete related teacherOnSubjects records
-      await this.prisma.teacherOnSubject.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      await this.prisma.gradeRange.deleteMany({
-        where: {
-          subjectId: subjectId,
-        },
-      });
-
-      // Delete the subject
-      const subject = await this.prisma.subject.delete({
-        where: {
-          id: subjectId,
-        },
-      });
-
+      // 1. Compute totalDeleteSize BEFORE any cascading deletes happen,
+      //    while child records (FileOnAssignment / FileOnStudentAssignment) still exist.
+      //    Doing it after deletion would always return 0 — pre-existing bug, fixed here.
       const totalDeleteSize = await this.getTotalDeleteSize({
         subjectId: subjectId,
       });
 
+      // 2. Fetch children we need to cascade through in parallel.
+      const [groupOnSubjects, assignments] = await Promise.all([
+        this.groupOnSubjectRepository.findMany({
+          where: { subjectId: subjectId },
+        }),
+        this.assignmentRepository.findMany({
+          where: { subjectId: subjectId },
+        }),
+      ]);
+
+      // 3. Independent leaf deletions can all run concurrently.
+      //    SkillOnStudentAssignment, Attendance, AttendanceStatusList,
+      //    AttendanceRow, AttendanceTable, ScoreOnStudent, ScoreOnSubject,
+      //    StudentOnSubject, TeacherOnSubject, GradeRange — none of these reference
+      //    each other, so deleting them in parallel is safe AND now uses the new
+      //    `@@index([subjectId])` we just added, so each runs in O(matching docs).
+      const baseLeafDeletes = Promise.all([
+        this.prisma.skillOnStudentAssignment.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.attendance.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.attendanceStatusList.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.attendanceRow.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.attendanceTable.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.scoreOnStudent.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.scoreOnSubject.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.teacherOnSubject.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+        this.prisma.gradeRange.deleteMany({
+          where: { subjectId: subjectId },
+        }),
+      ]);
+
+      // 4. Assignments + groups have their own nested cascade logic, run those
+      //    in parallel with the leaf deletes above. Each entity is independent.
+      const cascades = Promise.allSettled([
+        ...assignments.map((a) =>
+          this.assignmentRepository.delete({ assignmentId: a.id }),
+        ),
+        ...groupOnSubjects.map((g) =>
+          this.groupOnSubjectRepository.delete({ groupOnSubjectId: g.id }),
+        ),
+      ]);
+
+      await Promise.all([baseLeafDeletes, cascades]);
+
+      // 5. studentOnSubject must run AFTER scoreOnStudent / attendance / studentOnGroups
+      //    have been cleared, because Prisma's mongo connector does referential
+      //    checks on those relations when deleting StudentOnSubject docs.
+      await this.prisma.studentOnSubject.deleteMany({
+        where: { subjectId: subjectId },
+      });
+
+      // 6. Finally remove the Subject parent itself.
+      const subject = await this.prisma.subject.delete({
+        where: { id: subjectId },
+      });
+
       return { ...subject, totalDeleteSize };
     } catch (error) {
-      console.log(error);
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
         throw new InternalServerErrorException(
