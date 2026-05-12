@@ -126,44 +126,60 @@ export class SchoolRepository implements SchoolRepositoryType {
   async delete(request: { schoolId: string }): Promise<School> {
     try {
       const { schoolId } = request;
-      // Delete related records in reverse order of their dependencies
-      const subjects = await this.subjectService.subjectRepository.findMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
 
-      const classrooms = await this.classService.classRepository.findMany({
-        where: {
-          schoolId: schoolId,
-        },
-      });
-      for (const subject of subjects) {
-        await this.subjectService.subjectRepository.deleteSubject({
-          subjectId: subject.id,
-        });
+      // 1. Fetch the list of subjects + classes we need to cascade through in parallel.
+      const [subjects, classrooms] = await Promise.all([
+        this.subjectService.subjectRepository.findMany({
+          where: { schoolId: schoolId },
+        }),
+        this.classService.classRepository.findMany({
+          where: { schoolId: schoolId },
+        }),
+      ]);
+
+      // 2. Cascade-delete every subject in parallel.
+      //    Each subjectRepository.deleteSubject() is itself internally parallelised,
+      //    and each subject's child data is disjoint (filtered by its own subjectId)
+      //    so there is no contention between them.
+      //    Using allSettled so one failing subject can't block the whole cascade.
+      if (subjects.length > 0) {
+        await Promise.allSettled(
+          subjects.map((subject) =>
+            this.subjectService.subjectRepository.deleteSubject({
+              subjectId: subject.id,
+            }),
+          ),
+        );
       }
 
-      for (const classroom of classrooms) {
-        await this.classService.classRepository.delete({
-          classId: classroom.id,
-        });
+      // 3. After subjects (and their nested Students/StudentOnSubjects/…) are gone,
+      //    we can safely delete classes in parallel — they no longer have referential
+      //    dependents within the school.
+      if (classrooms.length > 0) {
+        await Promise.allSettled(
+          classrooms.map((classroom) =>
+            this.classService.classRepository.delete({
+              classId: classroom.id,
+            }),
+          ),
+        );
       }
 
+      // 4. memberOnSchool is independent of subjects/classes, so it could even run
+      //    earlier — but keep it here to preserve previous ordering semantics.
       await this.prisma.memberOnSchool.deleteMany({
-        where: {
-          schoolId: schoolId,
-        },
+        where: { schoolId: schoolId },
       });
 
       const school = await this.prisma.school.delete({
-        where: {
-          id: schoolId,
-        },
+        where: { id: schoolId },
       });
-      await this.stripe.customers
+
+      // 5. Fire-and-forget Stripe cleanup; don't block the response on a 3rd-party call.
+      this.stripe.customers
         .del(school.stripe_customer_id)
         .catch((e) => this.logger.error(e));
+
       return school;
     } catch (error) {
       this.logger.error(error);

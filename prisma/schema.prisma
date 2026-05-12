@@ -149,6 +149,7 @@ model MemberOnSchool {
   school School @relation(fields: [schoolId], references: [id])
 
   @@unique([userId, schoolId])
+  @@index([schoolId]) // speed up Prisma referential checks / school-scoped queries
 }
 
 model Class {
@@ -207,8 +208,6 @@ model Student {
   @@index([schoolId, classId])
   @@index([classId])
 }
-
-
 
 model Subject {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -274,6 +273,8 @@ model Subject {
 
   @@index([educationYear, schoolId])
   @@index([isVerifyLine, lineGroupId])
+  @@index([schoolId]) // standalone lookups (compound prefix `educationYear` cannot be used alone)
+  @@index([classId])
 }
 
 model TeacherOnSubject {
@@ -301,6 +302,7 @@ model TeacherOnSubject {
 
   @@unique([userId, subjectId])
   @@index([subjectId, status]) // <-- Add this new index
+  @@index([schoolId])
 }
 
 model StudentOnSubject {
@@ -337,6 +339,8 @@ model StudentOnSubject {
 
   @@unique([studentId, subjectId])
   @@index([subjectId])
+  @@index([schoolId])
+  @@index([classId])
 }
 
 model GroupOnSubject {
@@ -353,6 +357,9 @@ model GroupOnSubject {
   school          School           @relation(fields: [schoolId], references: [id])
   unitOnGroups    UnitOnGroup[]
   studentOnGroups StudentOnGroup[]
+
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 model UnitOnGroup {
@@ -373,6 +380,10 @@ model UnitOnGroup {
   schoolId         String           @db.ObjectId
   school           School           @relation(fields: [schoolId], references: [id])
   studentOnGroups  StudentOnGroup[]
+
+  @@index([groupOnSubjectId])
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 model StudentOnGroup {
@@ -403,6 +414,11 @@ model StudentOnGroup {
 
   @@unique([studentOnSubjectId, unitOnGroupId])
   @@unique([studentOnSubjectId, groupOnSubjectId])
+  @@index([unitOnGroupId])
+  @@index([groupOnSubjectId])
+  @@index([studentId])
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 model Assignment {
@@ -445,6 +461,7 @@ model Assignment {
   questionOnVideos         QuestionOnVideo[]
 
   @@index([subjectId])
+  @@index([schoolId])
 }
 
 enum AssignmentType {
@@ -478,6 +495,8 @@ model FileOnAssignment {
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
 
   @@index([assignmentId, url])
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 model QuestionOnVideo {
@@ -496,6 +515,9 @@ model QuestionOnVideo {
 
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
+
+  @@index([assignmentId])
+  @@index([subjectId])
 }
 
 model StudentOnAssignment {
@@ -538,6 +560,8 @@ model StudentOnAssignment {
   @@index([assignmentId])
   @@index([subjectId])
   @@index([studentId])
+  @@index([schoolId])
+  @@index([studentOnSubjectId])
 }
 
 enum StudentAssignmentStatus {
@@ -557,6 +581,8 @@ model GradeRange {
   subject    Subject @relation(fields: [subjectId], references: [id])
   schoolId   String  @db.ObjectId
   school     School  @relation(fields: [schoolId], references: [id])
+
+  @@index([schoolId])
 }
 
 model FileOnStudentAssignment {
@@ -586,6 +612,7 @@ model FileOnStudentAssignment {
   @@index([assignmentId])
   @@index([studentId])
   @@index([subjectId])
+  @@index([schoolId])
 }
 
 enum StudentAssignmentContentType {
@@ -626,6 +653,10 @@ model CommentOnAssignment {
   user                  User?               @relation(fields: [userId], references: [id])
 
   @@index([studentOnAssignmentId])
+  @@index([subjectId])
+  @@index([schoolId])
+  @@index([teacherOnSubjectId])
+  @@index([userId])
 }
 
 model ScoreOnSubject {
@@ -649,6 +680,7 @@ model ScoreOnSubject {
   scoreOnStudents ScoreOnStudent[]
 
   @@index([subjectId])
+  @@index([schoolId])
 }
 
 model ScoreOnStudent {
@@ -674,6 +706,9 @@ model ScoreOnStudent {
 
   @@index([subjectId, studentOnSubjectId])
   @@index([studentId])
+  @@index([schoolId])
+  @@index([scoreOnSubjectId])
+  @@index([studentOnSubjectId])
 }
 
 model AttendanceTable {
@@ -693,6 +728,7 @@ model AttendanceTable {
   attendanceStatusLists AttendanceStatusList[]
 
   @@index([subjectId])
+  @@index([schoolId])
 }
 
 model AttendanceStatusList {
@@ -714,6 +750,9 @@ model AttendanceStatusList {
   subject           Subject         @relation(fields: [subjectId], references: [id])
 
   @@unique([title, attendanceTableId])
+  @@index([attendanceTableId])
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 model AttendanceRow {
@@ -740,6 +779,9 @@ model AttendanceRow {
   attendances Attendance[]
 
   @@index([subjectId, attendanceTableId])
+  @@index([attendanceTableId])
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 enum AttendanceType {
@@ -777,6 +819,7 @@ model Attendance {
   @@index([attendanceRowId])
   @@index([studentId])
   @@index([subjectId])
+  @@index([schoolId]) // fixes COLLSCAN on Attendance when Prisma checks the School relation
 }
 
 model Skill {
@@ -808,8 +851,9 @@ model SkillOnAssignment {
   assignment Assignment @relation(fields: [assignmentId], references: [id])
 
   @@unique([skillId, assignmentId])
-
   @@index([assignmentId])
+  @@index([subjectId])
+  @@index([skillId])
 }
 
 model SkillOnStudentAssignment {
@@ -832,6 +876,7 @@ model SkillOnStudentAssignment {
   @@index([studentOnAssignmentId])
   @@index([subjectId])
   @@index([studentId])
+  @@index([skillId])
 }
 
 model Career {
@@ -863,7 +908,6 @@ model SkillOnCareer {
 
   @@unique([skillId, careerId, reference])
 }
-
 
 model TeachingMaterial {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -941,6 +985,9 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([createAt])
+  @@index([userId, createAt]) // listing per user, newest first
+  @@index([schoolId])
+  @@index([subjectId])
 }
 
 enum NotificationType {
