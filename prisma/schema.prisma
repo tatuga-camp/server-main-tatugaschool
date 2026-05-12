@@ -585,6 +585,7 @@ model FileOnStudentAssignment {
   @@index([studentOnAssignmentId])
   @@index([assignmentId])
   @@index([studentId])
+  @@index([subjectId])
 }
 
 enum StudentAssignmentContentType {
