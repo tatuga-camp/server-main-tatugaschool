@@ -199,7 +199,8 @@ export class ClassService {
 
       const uniqueUserIds = Array.from(
         new Set(classes.filter((c) => c.userId).map((c) => c.userId)),
-      );
+      ).filter((v): v is string => !!v);
+
       const creators = await Promise.all(
         uniqueUserIds.map((c) =>
           this.userService.userRepository.findById({
