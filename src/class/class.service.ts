@@ -196,15 +196,17 @@ export class ClassService {
           return { ...c, studentNumbers };
         }),
       );
-      const creators = await Promise.all([
-        ...classes
-          .filter((c) => c.userId)
-          .map((c) =>
-            this.userService.userRepository.findById({
-              id: c.userId,
-            }),
-          ),
-      ]);
+
+      const uniqueUserIds = Array.from(
+        new Set(classes.filter((c) => c.userId).map((c) => c.userId)),
+      );
+      const creators = await Promise.all(
+        uniqueUserIds.map((c) =>
+          this.userService.userRepository.findById({
+            id: c,
+          }),
+        ),
+      );
 
       return classesWithStudetNumber.map((c) => {
         return {
