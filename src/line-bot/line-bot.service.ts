@@ -13,11 +13,10 @@ export class LineBotService {
 
   async sendMessage(request: { groupId: string; message: string }) {
     try {
-
-      if(!request.message) {
+      if (!request.message) {
         throw new BadRequestException('Message is required');
       }
-      
+
       const message: TextMessage = {
         type: 'text',
         text: request.message,
@@ -33,7 +32,7 @@ export class LineBotService {
 
   async replyMessage(request: { replyToken: string; message: string }) {
     try {
-         if(!request.message) {
+      if (!request.message) {
         throw new BadRequestException('Message is required');
       }
       const message: TextMessage = {
