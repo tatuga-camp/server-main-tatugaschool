@@ -11,6 +11,7 @@ import {
 import { StripeService } from '../stripe/stripe.service';
 import { School, User } from '@prisma/client';
 import Stripe from 'stripe';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class SubscriptionService {
@@ -25,7 +26,7 @@ export class SubscriptionService {
 
   async manageSubscription(
     dto: { schoolId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{ url: string }> {
     try {
       const school = await this.schoolService.schoolRepository.findUnique({
@@ -179,7 +180,7 @@ export class SubscriptionService {
 
   async subscription(
     dto: { priceId: string; schoolId: string; members: number },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{
     subscriptionId: string;
     clientSecret: string | null;

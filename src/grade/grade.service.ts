@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GradeRange, User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 export type GradeRule = {
   min: number;
@@ -102,7 +103,7 @@ export class GradeService {
       subjectId: string;
       gradeRanges: GradeRule[];
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<GradeRange> {
     try {
       const subject = await this.subjectService.subjectRepository.findUnique({
@@ -144,7 +145,7 @@ export class GradeService {
       gradeRangeId: string;
       gradeRange: GradeRule[];
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<GradeRange> {
     try {
       const gradeRange = await this.gradeRepository.findUnique({

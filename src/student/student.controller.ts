@@ -19,6 +19,7 @@ import {
   UpdateStudentDto,
 } from './dto';
 import { StudentService } from './student.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/students')
 export class StudentController {
@@ -27,7 +28,7 @@ export class StudentController {
   @UseGuards(UserGuard)
   @Get('class/:classId')
   async getAllStudentsInClass(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Param() dto: GetAllStudentsDto,
   ) {
     return this.studentService.getAllStudents(dto, user);
@@ -35,7 +36,7 @@ export class StudentController {
 
   @UseGuards(StudentGuard)
   @Get('student/get-as-user')
-  async studentGetStudentById(@GetStudent() student: Student) {
+  async studentGetStudentById(@GetStudent() student: StudentJwtPayload) {
     return this.studentService.getStudentById(
       {
         studentId: student.id,
@@ -47,20 +48,26 @@ export class StudentController {
 
   @UseGuards(UserGuard)
   @Get(':studentId')
-  async getStudentById(@GetUser() user: User, @Param() dto: GetStudentDto) {
+  async getStudentById(
+    @GetUser() user: UserJwtPayload,
+    @Param() dto: GetStudentDto,
+  ) {
     return this.studentService.getStudentById(dto, user);
   }
-
+  user: UserJwtPayload;
   @UseGuards(UserGuard)
   @Post()
-  async createStudent(@GetUser() user: User, @Body() dto: CreateStudentDto) {
+  async createStudent(
+    @GetUser() user: UserJwtPayload,
+    @Body() dto: CreateStudentDto,
+  ) {
     return this.studentService.createStudent(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Patch()
   async updateStudent(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Body() updateStudentDto: UpdateStudentDto,
   ) {
     return this.studentService.updateStudent(updateStudentDto, user);
@@ -68,14 +75,17 @@ export class StudentController {
 
   @UseGuards(UserGuard)
   @Patch(':studentId/reset-password')
-  async resetPassword(@GetUser() user: User, @Param() dto: GetStudentDto) {
+  async resetPassword(
+    @GetUser() user: UserJwtPayload,
+    @Param() dto: GetStudentDto,
+  ) {
     return this.studentService.resetStudnetPassword(dto, user);
   }
 
   @UseGuards(StudentGuard)
   @Patch('student')
   async studentUpdateStudent(
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
     @Body() updateStudentDto: UpdateStudentDto,
   ) {
     return this.studentService.updateStudent(
@@ -87,7 +97,10 @@ export class StudentController {
 
   @UseGuards(UserGuard)
   @Delete(':studentId')
-  async deleteStudent(@Param() dto: DeleteStudentDto, @GetUser() user: User) {
+  async deleteStudent(
+    @Param() dto: DeleteStudentDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.studentService.deleteStudent(dto, user);
   }
 }

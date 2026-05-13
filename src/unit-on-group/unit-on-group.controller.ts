@@ -17,6 +17,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/unit-on-groups')
 export class UnitOnGroupController {
@@ -24,25 +25,37 @@ export class UnitOnGroupController {
 
   @Post()
   @UseGuards(UserGuard)
-  async create(@Body() dto: CreateUnitOnGroupDto, @GetUser() user: User) {
+  async create(
+    @Body() dto: CreateUnitOnGroupDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.unitOnGroupService.create(dto, user);
   }
 
   @Patch()
   @UseGuards(UserGuard)
-  async update(@Body() dto: UpdateUnitOnGroupDto, @GetUser() user: User) {
+  async update(
+    @Body() dto: UpdateUnitOnGroupDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.unitOnGroupService.update(dto, user);
   }
 
   @Patch('reorder')
   @UseGuards(UserGuard)
-  async reorder(@Body() dto: ReorderUnitOnGroupDto, @GetUser() user: User) {
+  async reorder(
+    @Body() dto: ReorderUnitOnGroupDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.unitOnGroupService.reorder(dto, user);
   }
 
   @Delete(':unitOnGroupId')
   @UseGuards(UserGuard)
-  async delete(@Param() dto: DeleteUnitOnGroupDto, @GetUser() user: User) {
+  async delete(
+    @Param() dto: DeleteUnitOnGroupDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.unitOnGroupService.delete(dto, user);
   }
 }

@@ -27,7 +27,7 @@ export class ScoreOnStudentController {
   @Get('subject')
   getAllScoreOnStudentBySubjectId(
     @Query() dto: GetAllScoreOnStudentBySubjectIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnStudentService.getAllScoreOnStudentBySubjectId(
       dto,
@@ -38,7 +38,7 @@ export class ScoreOnStudentController {
   @Get('studentOnSubject/:studentOnSubjectId')
   getAllScoreOnStudentByStudentId(
     @Param() dto: GetAllScoreOnStudentByStudentIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnStudentService.getAllScoreOnStudentByStudentId(
       dto,
@@ -49,7 +49,7 @@ export class ScoreOnStudentController {
   @Post()
   createScoreOnStudent(
     @Body() dto: CreateScoreOnStudentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnStudentService.createScoreOnStudent(dto, user);
   }
@@ -57,7 +57,7 @@ export class ScoreOnStudentController {
   @Post('custom')
   customCreateScore(
     @Body() dto: CreateScoreOnStudentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnStudentService.customScore(dto, user);
   }
@@ -65,7 +65,7 @@ export class ScoreOnStudentController {
   @Delete(':scoreOnStudentId')
   deleteScoreOnStudent(
     @Param() dto: DeleteScoreOnStudentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnStudentService.deleteScoreOnStudent(dto, user);
   }

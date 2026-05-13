@@ -4,6 +4,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
 import { GetStudent, GetUser } from '../auth/decorators';
 import { StorageService } from './storage.service';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/google-storage')
 export class StorageController {
@@ -11,7 +12,7 @@ export class StorageController {
 
   @UseGuards(UserGuard)
   @Get('get-signURL/teacher')
-  UserGetSignURL(@Query() dto: GetSignURLDto, @GetUser() user: User) {
+  UserGetSignURL(@Query() dto: GetSignURLDto, @GetUser() user: UserJwtPayload) {
     return this.StorageService.getUploadSignedUrl(
       {
         userId: user.id,
@@ -28,7 +29,7 @@ export class StorageController {
   @Get('get-signURL/student')
   UserGetSignURLStudent(
     @Query() dto: GetSignURLDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.StorageService.getUploadSignedUrl(
       {

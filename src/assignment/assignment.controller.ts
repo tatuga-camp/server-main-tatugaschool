@@ -23,6 +23,7 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/assignments')
 export class AssignmentController {
@@ -32,7 +33,7 @@ export class AssignmentController {
   @Get('export-excel')
   exportExcel(
     @Query() dto: GetAssignmentExportExcelDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.assignmentService.exportExcel(dto.subjectId, user);
   }
@@ -41,7 +42,7 @@ export class AssignmentController {
   @Post()
   async createAssignment(
     @Body() dto: CreateAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.createAssignment(dto, user);
   }
@@ -50,7 +51,7 @@ export class AssignmentController {
   @Get('subject/:subjectId')
   async getAssignments(
     @Param() dto: GetAssignmentBySubjectIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.getAssignmentBySubjectId(dto, user);
   }
@@ -59,7 +60,7 @@ export class AssignmentController {
   @Get('subject/:subjectId/overview')
   async getAssignmentOverviews(
     @Param() dto: GetAssignmentBySubjectIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.getOverviewScoreOnAssignments(
       dto,
@@ -70,7 +71,7 @@ export class AssignmentController {
   @Get('subject/:subjectId/student/:studentId/overview')
   async getAssignmentOverview(
     @Param() dto: GetAssignmentOverviewByStudentOnSubjectId,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return await this.assignmentService.getOverviewScoreOnAssignment(
       dto,
@@ -82,7 +83,7 @@ export class AssignmentController {
   @Get('student/subject/:subjectId')
   async studentGetAssignments(
     @Param() dto: GetAssignmentBySubjectIdDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return await this.assignmentService.getAssignmentBySubjectId(
       dto,
@@ -95,7 +96,7 @@ export class AssignmentController {
   @Patch('embeding/:assignmentId')
   async updateEmbeding(
     @Param() dto: GetAssignmentByIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.EmbedingAssignment(dto.assignmentId);
   }
@@ -104,7 +105,7 @@ export class AssignmentController {
   @Get(':assignmentId')
   async getAssignmentById(
     @Param() dto: GetAssignmentByIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.getAssignmentById(dto, user);
   }
@@ -113,7 +114,7 @@ export class AssignmentController {
   @Patch('update-skills/:assignmentId')
   async updateSkills(
     @Param() dto: GetAssignmentByIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.BackgroudEmbedingAssignment(
       dto.assignmentId,
@@ -125,7 +126,7 @@ export class AssignmentController {
   @Patch()
   async updateAssignment(
     @Body() dto: UpdateAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.updateAssignment(dto, user);
   }
@@ -134,7 +135,7 @@ export class AssignmentController {
   @Patch('reorder')
   async reorderAssignment(
     @Body() dto: ReorderAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.reorder(dto, user);
   }
@@ -143,7 +144,7 @@ export class AssignmentController {
   @Delete(':assignmentId')
   async deleteAssignment(
     @Param() dto: DeleteAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.assignmentService.deleteAssignment(dto, user);
   }

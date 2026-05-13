@@ -12,6 +12,7 @@ import { GetUser } from '../auth/decorators';
 import { NoVerifyUserGuard, UserGuard } from '../auth/guard';
 import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
 import { UsersService } from './users.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/users')
 export class UsersController {
@@ -19,19 +20,19 @@ export class UsersController {
 
   @UseGuards(UserGuard)
   @Get('me')
-  GetUser(@GetUser() user: User) {
+  GetUser(@GetUser() user: UserJwtPayload) {
     return this.usersService.GetUser(user);
   }
 
   @UseGuards(NoVerifyUserGuard)
   @Post('resend-verify-email')
-  ResendVerifyEmail(@GetUser() user: User) {
+  ResendVerifyEmail(@GetUser() user: UserJwtPayload) {
     return this.usersService.ResendVerifyEmail(user);
   }
 
   @UseGuards(NoVerifyUserGuard)
   @Get('noverify-user')
-  GetUserNoVerify(@GetUser() user: User) {
+  GetUserNoVerify(@GetUser() user: UserJwtPayload) {
     return this.usersService.GetUser(user);
   }
 
@@ -43,13 +44,16 @@ export class UsersController {
 
   @UseGuards(UserGuard)
   @Patch('password')
-  UpdatePassword(@Body() dto: UpdatePasswordDto, @GetUser() user: User) {
+  UpdatePassword(
+    @Body() dto: UpdatePasswordDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.usersService.updatePassword(dto, user);
   }
 
   @UseGuards(NoVerifyUserGuard)
   @Patch()
-  UpdateUser(@Body() dto: UpdateUserDto, @GetUser() user: User) {
+  UpdateUser(@Body() dto: UpdateUserDto, @GetUser() user: UserJwtPayload) {
     return this.usersService.updateUser(dto, user);
   }
 }

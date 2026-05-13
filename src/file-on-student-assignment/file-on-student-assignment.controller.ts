@@ -21,6 +21,7 @@ import {
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
 import { GetStudent, GetUser } from '../auth/decorators';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/file-on-student-assignments')
 export class FileOnStudentAssignmentController {
@@ -32,7 +33,7 @@ export class FileOnStudentAssignmentController {
   @Get('student-on-assignment/:studentOnAssignmentId/student')
   getByStudentOnAssignmentIdFromStudnet(
     @Param() dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.getFileByStudentOnAssignmentIdFromStudent(
       dto,
@@ -44,7 +45,7 @@ export class FileOnStudentAssignmentController {
   @Get('student-on-assignment/:studentOnAssignmentId/teacher')
   getByStudentOnAssignmentIdFromTeacher(
     @Param() dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.getFileByStudentOnAssignmentIdFromTeacher(
       dto,
@@ -56,7 +57,7 @@ export class FileOnStudentAssignmentController {
   @Post('download-all')
   async downloadAllFiles(
     @Body() dto: DowloadAllFilesDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Res() res: Response,
   ) {
     const archive = await this.fileOnStudentAssignmentService.downloadAllFiles(
@@ -71,7 +72,7 @@ export class FileOnStudentAssignmentController {
   @Post('student')
   createFileOnStudentAssignmentFromStudent(
     @Body() dto: CreateFileOnStudentAssignmentDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.createFileOnStudentAssignmentFromStudent(
       dto,
@@ -83,7 +84,7 @@ export class FileOnStudentAssignmentController {
   @Delete(':fileOnStudentAssignmentId/student')
   deleteFileOnStudentAssignmentFromStudnet(
     @Param() dto: DeleteFileOnStudentAssignmentDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.delete(dto, null, student);
   }
@@ -92,7 +93,7 @@ export class FileOnStudentAssignmentController {
   @Patch('student')
   updateFileOnStudentAssignmentFromStudent(
     @Body() dto: UpdateFileDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.updateFile(dto, null, student);
   }
@@ -100,7 +101,7 @@ export class FileOnStudentAssignmentController {
   @Patch('teacher')
   updateFileOnStudentAssignmentFromTeachers(
     @Body() dto: UpdateFileDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.updateFile(dto, user, null);
   }
@@ -109,7 +110,7 @@ export class FileOnStudentAssignmentController {
   @Delete(':fileOnStudentAssignmentId/teacher')
   deleteFileOnStudentAssignmentFromTeacher(
     @Param() dto: DeleteFileOnStudentAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.fileOnStudentAssignmentService.delete(dto, user);
   }

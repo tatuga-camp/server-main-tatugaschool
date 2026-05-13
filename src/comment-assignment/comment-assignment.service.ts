@@ -16,12 +16,16 @@ import {
   GetCommentAssignmentByStudentOnAssignmentIdDto,
   UpdateCommentOnAssignmentDto,
 } from './dto';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { UserRepository } from '../users/users.repository';
 
 @Injectable()
 export class CommentAssignmentService {
   logger: Logger = new Logger(CommentAssignmentService.name);
-  studentOnAssignmentRepository: StudentOnAssignmentRepository;
-  commentAssignmentRepository: CommentAssignmentRepository;
+  private studentOnAssignmentRepository: StudentOnAssignmentRepository;
+  private commentAssignmentRepository: CommentAssignmentRepository;
+  private userRepository: UserRepository;
+
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
@@ -33,12 +37,13 @@ export class CommentAssignmentService {
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
     );
+    this.userRepository = new UserRepository(this.prisma);
   }
 
   async getByStudentOnAssignment(
     dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
-    user: User | null,
-    student: Student | null,
+    user: UserJwtPayload | null,
+    student: StudentJwtPayload | null,
   ) {
     try {
       const studentOnAssignment =
@@ -72,7 +77,10 @@ export class CommentAssignmentService {
     }
   }
 
-  async createFromStudent(dto: CreateCommentOnAssignmentDto, student: Student) {
+  async createFromStudent(
+    dto: CreateCommentOnAssignmentDto,
+    student: StudentJwtPayload,
+  ) {
     try {
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
@@ -94,13 +102,13 @@ export class CommentAssignmentService {
       const create = await this.commentAssignmentRepository.create({
         ...dto,
         studentOnAssignmentId: studentOnAssignment.id,
-        studentId: student.id,
-        title: student.title,
-        firstName: student.firstName,
-        lastName: student.lastName,
-        photo: student.photo,
+        studentId: studentOnAssignment.id,
+        title: studentOnAssignment.title,
+        firstName: studentOnAssignment.firstName,
+        lastName: studentOnAssignment.lastName,
+        photo: studentOnAssignment.photo,
         subjectId: studentOnAssignment.subjectId,
-        schoolId: student.schoolId,
+        schoolId: studentOnAssignment.schoolId,
       });
 
       const teachers =
@@ -130,8 +138,19 @@ export class CommentAssignmentService {
     }
   }
 
-  async createFromTeacher(dto: CreateCommentOnAssignmentDto, user: User) {
+  async createFromTeacher(
+    dto: CreateCommentOnAssignmentDto,
+    user: UserJwtPayload,
+  ) {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,
@@ -175,13 +194,13 @@ export class CommentAssignmentService {
         ...dto,
         studentOnAssignmentId: studentOnAssignment.id,
         title: 'Teacher',
-        firstName: user.firstName,
-        lastName: user.lastName,
-        photo: user.photo,
-        userId: user.id,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
+        photo: userInfo.photo,
+        userId: userInfo.id,
         teacherOnSubjectId: teacherOnSubject.id,
         role: teacherOnSubject.role,
-        email: user.email,
+        email: userInfo.email,
         subjectId: studentOnAssignment.subjectId,
         schoolId: teacherOnSubject.schoolId,
       });
@@ -191,7 +210,10 @@ export class CommentAssignmentService {
     }
   }
 
-  async updateFromStudent(dto: UpdateCommentOnAssignmentDto, student: Student) {
+  async updateFromStudent(
+    dto: UpdateCommentOnAssignmentDto,
+    student: StudentJwtPayload,
+  ) {
     try {
       const commentAssignment = await this.commentAssignmentRepository.getById({
         commentOnAssignmentId: dto.query.commentOnAssignmentId,
@@ -206,7 +228,10 @@ export class CommentAssignmentService {
     }
   }
 
-  async updateFromTeacher(dto: UpdateCommentOnAssignmentDto, user: User) {
+  async updateFromTeacher(
+    dto: UpdateCommentOnAssignmentDto,
+    user: UserJwtPayload,
+  ) {
     try {
       const commentAssignment = await this.commentAssignmentRepository.getById({
         commentOnAssignmentId: dto.query.commentOnAssignmentId,
@@ -223,7 +248,10 @@ export class CommentAssignmentService {
     }
   }
 
-  async deleteFromStudent(dto: DeleteCommentAssignmentDto, student: Student) {
+  async deleteFromStudent(
+    dto: DeleteCommentAssignmentDto,
+    student: StudentJwtPayload,
+  ) {
     try {
       const commentAssignment = await this.commentAssignmentRepository.getById({
         commentOnAssignmentId: dto.commentOnAssignmentId,
@@ -243,7 +271,10 @@ export class CommentAssignmentService {
     }
   }
 
-  async deleteFromTeacher(dto: DeleteCommentAssignmentDto, user: User) {
+  async deleteFromTeacher(
+    dto: DeleteCommentAssignmentDto,
+    user: UserJwtPayload,
+  ) {
     try {
       const commentAssignment = await this.commentAssignmentRepository.getById({
         commentOnAssignmentId: dto.commentOnAssignmentId,

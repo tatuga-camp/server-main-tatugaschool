@@ -8,6 +8,7 @@ import { AssignmentRepository } from './../assignment/assignment.repository';
 import { SkillRepository } from './../skill/skill.repository';
 import { CreateSkillOnAssignmentDto, DeleteSkillOnAssignmentDto } from './dto';
 import { SkillOnAssignmentRepository } from './skill-on-assignment.repository';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class SkillOnAssignmentService {
@@ -32,7 +33,7 @@ export class SkillOnAssignmentService {
 
   async getByAssignmentId(
     dto: GetAssignmentByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(SkillOnAssignment & { skill: Skill })[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -80,7 +81,7 @@ export class SkillOnAssignmentService {
 
   async create(
     dto: CreateSkillOnAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<SkillOnAssignment> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -108,7 +109,7 @@ export class SkillOnAssignmentService {
 
   async delete(
     dto: DeleteSkillOnAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{ message: string }> {
     try {
       const skillOnAssingment = await this.skillOnAssignmentRepository.getById({

@@ -14,6 +14,7 @@ import { QueryFeedbackDto } from './dto/query-feedback.dto';
 import { AdminGuard, UserGuard } from '../auth/guard';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/feedbacks')
 export class FeedbackController {
@@ -21,7 +22,7 @@ export class FeedbackController {
 
   @Post()
   @UseGuards(UserGuard)
-  create(@GetUser() user: User, @Body() dto: CreateFeedbackDto) {
+  create(@GetUser() user: UserJwtPayload, @Body() dto: CreateFeedbackDto) {
     return this.feedbackService.create(user, dto);
   }
 

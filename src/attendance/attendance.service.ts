@@ -26,6 +26,7 @@ import { AttendanceRowService } from '../attendance-row/attendance-row.service';
 import { Request, Response } from 'express';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
@@ -111,7 +112,7 @@ export class AttendanceService {
 
   async getAttendanceById(
     dto: GetAttendanceByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Attendance> {
     try {
       const attendance = await this.attendanceRepository.getAttendanceById({
@@ -134,7 +135,10 @@ export class AttendanceService {
     }
   }
 
-  async create(dto: CreateAttendanceDto, user: User): Promise<Attendance> {
+  async create(
+    dto: CreateAttendanceDto,
+    user: UserJwtPayload,
+  ): Promise<Attendance> {
     try {
       const [attendanceRow, studentOnSubject] = await Promise.all([
         this.attendanceRowRepository.getAttendanceRowById({
@@ -201,7 +205,7 @@ export class AttendanceService {
 
   async update(
     dto: UpdateAttendanceDto,
-    user?: User | undefined,
+    user?: UserJwtPayload | undefined,
   ): Promise<Attendance> {
     try {
       const attendance = await this.attendanceRepository.getAttendanceById({
@@ -265,7 +269,10 @@ export class AttendanceService {
     }
   }
 
-  async updateMany(dto: UpdateManyDto, user: User): Promise<Attendance[]> {
+  async updateMany(
+    dto: UpdateManyDto,
+    user: UserJwtPayload,
+  ): Promise<Attendance[]> {
     try {
       const attendance = await this.attendanceRepository.getAttendanceById({
         attendanceId: dto.data[0].query.attendanceId,
@@ -329,7 +336,7 @@ export class AttendanceService {
 
   async exportExcel(
     dto: { subjectId: string; startDate?: string; endDate?: string },
-    user: User,
+    user: UserJwtPayload,
     req: Request,
   ) {
     const userLang = req.headers['accept-language']?.split(',')[0] || 'en-US';

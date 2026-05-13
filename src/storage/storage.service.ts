@@ -20,6 +20,7 @@ import {
   S3ClientConfig,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class StorageService {
@@ -96,7 +97,7 @@ export class StorageService {
     user,
     schoolId,
   }: {
-    user: User;
+    user: UserJwtPayload;
     schoolId: string;
   }): Promise<MemberOnSchool> {
     try {
@@ -146,8 +147,8 @@ export class StorageService {
       userId?: string;
       schoolId?: string;
     },
-    user?: User,
-    student?: Student,
+    user?: UserJwtPayload,
+    student?: StudentJwtPayload,
   ) {
     try {
       const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB in bytes

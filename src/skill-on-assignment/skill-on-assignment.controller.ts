@@ -16,6 +16,7 @@ import {
 } from './dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/skill-on-assignments')
@@ -25,22 +26,25 @@ export class SkillOnAssignmentController {
   ) {}
 
   @Get('/assignment/:assignmentId')
-   getByAssignmentId(
+  getByAssignmentId(
     @Param() dto: GetSkillOnAssignmentByAssignmentId,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.skillOnAssignmentService.getByAssignmentId(dto, user);
   }
 
   @Post()
-   create(@Body() dto: CreateSkillOnAssignmentDto, @GetUser() user: User) {
+  create(
+    @Body() dto: CreateSkillOnAssignmentDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.skillOnAssignmentService.create(dto, user);
   }
 
   @Delete('/:skillOnAssignmentId')
-   delete(
+  delete(
     @Param() dto: DeleteSkillOnAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.skillOnAssignmentService.delete(dto, user);
   }

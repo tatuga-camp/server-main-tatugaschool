@@ -20,6 +20,7 @@ import {
 } from './dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/attendance-rows')
 export class AttendanceRowController {
@@ -27,7 +28,10 @@ export class AttendanceRowController {
 
   @UseGuards(UserGuard)
   @Get('/attendance-table/:attendanceTableId')
-  getAttendanceRows(@Param() dto: GetAttendanceRowsDto, @GetUser() user: User) {
+  getAttendanceRows(
+    @Param() dto: GetAttendanceRowsDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.attendanceRowService.GetAttendanceRows(dto, user);
   }
 
@@ -35,7 +39,7 @@ export class AttendanceRowController {
   @Get(':attendanceRowId')
   getAttendanceRowById(
     @Param() dto: GetAttendanceRowByIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceRowService.GetAttendanceRowById(dto, user);
   }
@@ -49,7 +53,7 @@ export class AttendanceRowController {
   @Post()
   createAttendanceRow(
     @Body() dto: CreateAttendanceRowDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceRowService.CreateAttendanceRow(dto, user);
   }
@@ -58,7 +62,7 @@ export class AttendanceRowController {
   @Patch()
   updateAttendanceRow(
     @Body() dto: UpdateAttendanceRowDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceRowService.UpdateAttendanceRow(dto, user);
   }
@@ -67,7 +71,7 @@ export class AttendanceRowController {
   @Delete(':attendanceRowId')
   deleteAttendanceRow(
     @Param() dto: DeleteAttendanceRowDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceRowService.DeleteAttendanceRow(dto, user);
   }

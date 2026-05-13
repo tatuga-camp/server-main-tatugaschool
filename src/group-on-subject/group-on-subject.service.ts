@@ -19,6 +19,7 @@ import {
 } from '@prisma/client';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { CreateGroupOnSubjectDto } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class GroupOnSubjectService {
@@ -40,7 +41,7 @@ export class GroupOnSubjectService {
 
   async getGroupOnSubjects(
     dto: { subjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<GroupOnSubject[]> {
     try {
       const subject = await this.subjectService.subjectRepository.findUnique({
@@ -71,7 +72,7 @@ export class GroupOnSubjectService {
 
   async getGroupOnSubject(
     dto: { groupOnSubjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     GroupOnSubject & {
       units: (UnitOnGroup & { students: StudentOnGroup[] })[];
@@ -122,7 +123,7 @@ export class GroupOnSubjectService {
 
   async refetchGroup(
     dto: { groupOnSubjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     GroupOnSubject & {
       units: (UnitOnGroup & { students: StudentOnGroup[] })[];
@@ -211,7 +212,7 @@ export class GroupOnSubjectService {
 
   async create(
     dto: CreateGroupOnSubjectDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     GroupOnSubject & {
       units: (UnitOnGroup & { students: StudentOnGroup[] })[];
@@ -383,7 +384,7 @@ export class GroupOnSubjectService {
       };
       body: { title: string; description?: string };
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<GroupOnSubject> {
     try {
       const groupOnSubject = await this.groupOnSubjectRepository.findUnique({
@@ -415,7 +416,7 @@ export class GroupOnSubjectService {
 
   async delete(
     dto: { groupOnSubjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<GroupOnSubject> {
     try {
       const groupOnSubject = await this.groupOnSubjectRepository.findUnique({

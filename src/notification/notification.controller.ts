@@ -4,6 +4,7 @@ import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
 import { Notification, User } from '@prisma/client';
 import { MarkAsReadeNotificationDto } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/notifications')
 export class NotificationController {
@@ -11,20 +12,22 @@ export class NotificationController {
 
   @Get()
   @UseGuards(UserGuard)
-  async getMyNotifications(@GetUser() user: User): Promise<Notification[]> {
+  async getMyNotifications(
+    @GetUser() user: UserJwtPayload,
+  ): Promise<Notification[]> {
     return await this.notificationService.getNotificationsForUser(user);
   }
 
   @Patch('mark-as-read')
   @UseGuards(UserGuard)
-  async markAllAsRead(@GetUser() user: User) {
+  async markAllAsRead(@GetUser() user: UserJwtPayload) {
     return await this.notificationService.markAllNotificationsAsRead(user);
   }
 
   @Patch('mark-as-read/:id')
   @UseGuards(UserGuard)
   async markAsRead(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Param() dto: MarkAsReadeNotificationDto,
   ) {
     return await this.notificationService.markNotificationAsRead(dto.id, user);

@@ -20,6 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/student-on-assignments')
 export class StudentOnAssignmentController {
@@ -27,7 +28,7 @@ export class StudentOnAssignmentController {
 
   @UseGuards(StudentGuard)
   @Get(':id')
-  getById(@Param() dto: GetByIdDto, @GetStudent() student: Student) {
+  getById(@Param() dto: GetByIdDto, @GetStudent() student: StudentJwtPayload) {
     return this.studentOnAssignmentService.getById(dto, student);
   }
 
@@ -35,7 +36,7 @@ export class StudentOnAssignmentController {
   @Get('assignment/:assignmentId')
   getByAssignmentId(
     @Param() dto: GetStudentOnAssignmentByAssignmentIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.studentOnAssignmentService.getByAssignmentId(dto, user);
   }
@@ -44,7 +45,7 @@ export class StudentOnAssignmentController {
   @Get('student/:studentId')
   getByStudentId(
     @Param() dto: GetStudentOnAssignmentByStudentIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.studentOnAssignmentService.getByStudentId(dto, user);
   }
@@ -52,7 +53,7 @@ export class StudentOnAssignmentController {
   @UseGuards(UserGuard)
   @Post()
   createStudentOnAssignment(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Body() dto: CreateStudentOnAssignmentDto,
   ) {
     return this.studentOnAssignmentService.create(dto, user);
@@ -61,7 +62,7 @@ export class StudentOnAssignmentController {
   @UseGuards(UserGuard)
   @Patch()
   updateStudentOnAssignment(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Body() dto: UpdateStudentOnAssignmentDto,
   ) {
     return this.studentOnAssignmentService.update(dto, user);
@@ -70,7 +71,7 @@ export class StudentOnAssignmentController {
   @UseGuards(StudentGuard)
   @Patch('student')
   studentUpdateStudentOnAssignment(
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
     @Body() dto: UpdateStudentOnAssignmentDto,
   ) {
     return this.studentOnAssignmentService.update(dto, undefined, student);
@@ -79,7 +80,7 @@ export class StudentOnAssignmentController {
   @Delete(':studentOnAssignmentId')
   deleteStudentOnAssignment(
     @Param() dto: DeleteStudentOnAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.studentOnAssignmentService.delete(dto, user);
   }

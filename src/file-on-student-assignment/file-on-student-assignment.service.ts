@@ -24,6 +24,7 @@ import {
 } from './dto';
 import { FileOnStudentAssignment, Student, User } from '@prisma/client';
 import * as archiver from 'archiver';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class FileOnStudentAssignmentService {
@@ -62,7 +63,7 @@ export class FileOnStudentAssignmentService {
     );
   }
 
-  async downloadAllFiles(dto: { assignmentId: string }, user: User) {
+  async downloadAllFiles(dto: { assignmentId: string }, user: UserJwtPayload) {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
@@ -152,7 +153,7 @@ export class FileOnStudentAssignmentService {
 
   async getFileByStudentOnAssignmentIdFromStudent(
     dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
-    student: Student,
+    student: StudentJwtPayload,
   ) {
     try {
       const studentOnAssignment =
@@ -176,7 +177,7 @@ export class FileOnStudentAssignmentService {
 
   async getFileByStudentOnAssignmentIdFromTeacher(
     dto: GetFileOnStudentAssignmentByStudentOnAssignmentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ) {
     try {
       const studentOnAssignment =
@@ -210,7 +211,7 @@ export class FileOnStudentAssignmentService {
 
   async createFileOnStudentAssignmentFromStudent(
     dto: CreateFileOnStudentAssignmentDto,
-    student: Student,
+    student: StudentJwtPayload,
   ) {
     try {
       const type = dto.type.split('/')[0];
@@ -268,8 +269,8 @@ export class FileOnStudentAssignmentService {
 
   async updateFile(
     dto: { query: { id: string }; body: { body?: string; name?: string } },
-    user: User | null,
-    student: Student | null,
+    user: UserJwtPayload | null,
+    student: StudentJwtPayload | null,
   ) {
     try {
       const file = await this.fileOnStudentAssignmentRepository.getById({
@@ -316,8 +317,8 @@ export class FileOnStudentAssignmentService {
 
   async delete(
     dto: DeleteFileOnStudentAssignmentDto,
-    user?: User | null,
-    student?: Student,
+    user?: UserJwtPayload | null,
+    student?: StudentJwtPayload | null,
   ): Promise<FileOnStudentAssignment> {
     try {
       const fileOnStudentAssignment =

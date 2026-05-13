@@ -3,6 +3,7 @@ import { NotificationRepository } from './notification.repository';
 import { Notification, NotificationType, Prisma, User } from '@prisma/client';
 import { PushService } from '../web-push/push.service';
 import { PushSubscription } from '../web-push/interfaces';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class NotificationService {
@@ -97,7 +98,7 @@ export class NotificationService {
     }
   }
 
-  async getNotificationsForUser(user: User): Promise<Notification[]> {
+  async getNotificationsForUser(user: UserJwtPayload): Promise<Notification[]> {
     try {
       return await this.repository.findManyForUser({ userId: user.id });
     } catch (error) {
@@ -105,7 +106,7 @@ export class NotificationService {
     }
   }
 
-  async getUnreadCount(user: User) {
+  async getUnreadCount(user: UserJwtPayload) {
     try {
       const count = await this.repository.getUnreadCount({ userId: user.id });
       return { count };
@@ -114,7 +115,10 @@ export class NotificationService {
     }
   }
 
-  async markNotificationAsRead(id: string, user: User): Promise<Notification> {
+  async markNotificationAsRead(
+    id: string,
+    user: UserJwtPayload,
+  ): Promise<Notification> {
     try {
       const notification = await this.repository.findById({
         id,
@@ -129,7 +133,9 @@ export class NotificationService {
     }
   }
 
-  async markAllNotificationsAsRead(user: User): Promise<{ count: number }> {
+  async markAllNotificationsAsRead(
+    user: UserJwtPayload,
+  ): Promise<{ count: number }> {
     try {
       return await this.repository.markAllAsRead({
         userId: user.id,

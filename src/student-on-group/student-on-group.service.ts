@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { StudentOnGroup, User } from '@prisma/client';
 import { ReorderStudentOnGroupDto, UpdateStudentOnGroupDto } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class StudentOnGroupService {
@@ -29,7 +30,7 @@ export class StudentOnGroupService {
 
   async create(
     dto: { unitOnGroupId: string; studentOnSubjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnGroup> {
     try {
       const [unit, studentOnSubject] = await Promise.all([
@@ -83,7 +84,7 @@ export class StudentOnGroupService {
 
   async reorder(
     dto: ReorderStudentOnGroupDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnGroup[]> {
     try {
       const studentOnGroup = await this.studentOnGroupRepository.findUnique({
@@ -122,7 +123,7 @@ export class StudentOnGroupService {
 
   async update(
     dto: UpdateStudentOnGroupDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnGroup> {
     try {
       const studentOnGroup = await this.studentOnGroupRepository.findUnique({
@@ -167,7 +168,7 @@ export class StudentOnGroupService {
   }
   async delete(
     dto: { studentOnGroupId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnGroup> {
     try {
       const studentOnGroup = await this.studentOnGroupRepository.findUnique({

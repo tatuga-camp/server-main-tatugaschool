@@ -30,6 +30,7 @@ import { AttendanceStatusListSRepository } from '../attendance-status-list/atten
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
 import { AttendanceRowRepository } from '../attendance-row/attendance-row.repository';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AttendanceTableService {
@@ -71,7 +72,7 @@ export class AttendanceTableService {
 
   async getBySubjectId(
     dto: GetAttendanceTablesDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(AttendanceTable & { statusLists: AttendanceStatusList[] })[]> {
     try {
       const subject = await this.prisma.subject.findUnique({
@@ -119,7 +120,7 @@ export class AttendanceTableService {
 
   async getBySubjectIdOnStudentOnSubject(
     dto: { subjectId: string; studentId: string },
-    student: Student,
+    student: StudentJwtPayload,
   ): Promise<
     (AttendanceTable & {
       statusLists: AttendanceStatusList[];
@@ -197,7 +198,7 @@ export class AttendanceTableService {
 
   async getAttendanceTableById(
     dto: GetAttendanceTableById,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ResponseGetAttendanceTableById> {
     try {
       const table = await this.attendanceTableRepository.findUnique({
@@ -257,7 +258,7 @@ export class AttendanceTableService {
 
   async createAttendanceTable(
     dto: CreateAttendanceTableDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceTable & { statusLists: AttendanceStatusList[] }> {
     try {
       const subject = await this.prisma.subject.findUnique({
@@ -340,7 +341,7 @@ export class AttendanceTableService {
 
   async updateAttendanceTable(
     dto: UpdateAttendanceTableDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceTable> {
     try {
       const table = await this.prisma.attendanceTable.findUnique({
@@ -383,7 +384,7 @@ export class AttendanceTableService {
 
   async deleteAttendanceTable(
     dto: DeleteAttendanceTableDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceTable> {
     try {
       const table = await this.prisma.attendanceTable.findUnique({

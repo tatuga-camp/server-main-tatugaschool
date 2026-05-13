@@ -17,6 +17,7 @@ import {
 } from './dto';
 import { AttendanceStatusList, User } from '@prisma/client';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AttendanceStatusListService {
@@ -42,7 +43,7 @@ export class AttendanceStatusListService {
 
   async create(
     dto: CreateStatusAttendanceDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceStatusList> {
     try {
       const table = await this.attendanceTableRepository.findUnique({
@@ -102,7 +103,7 @@ export class AttendanceStatusListService {
 
   async update(
     dto: UpdateStatusDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceStatusList> {
     try {
       const status = await this.attendanceStatusListSRepository.findUnique({
@@ -178,7 +179,7 @@ export class AttendanceStatusListService {
 
   async delete(
     dto: DeleteStatusDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceStatusList> {
     try {
       const status = await this.attendanceStatusListSRepository.findUnique({

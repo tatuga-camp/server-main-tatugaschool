@@ -20,6 +20,7 @@ import { AdminGuard, UserGuard } from '../auth/guard';
 import { CareerService } from './career.service';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/careers')
 export class CareerController {
@@ -33,7 +34,7 @@ export class CareerController {
 
   @UseGuards(UserGuard)
   @Get('suggest/:studentId')
-  suggestCarrer(@Param() dto: GetSuggestDto, @GetUser() user: User) {
+  suggestCarrer(@Param() dto: GetSuggestDto, @GetUser() user: UserJwtPayload) {
     return this.careerService.suggest(dto, user);
   }
 

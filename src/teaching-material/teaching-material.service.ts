@@ -26,11 +26,14 @@ import { firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
 import { AiService } from '../ai/ai.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { UserRepository } from '../users/users.repository';
 
 @Injectable()
 export class TeachingMaterialService {
   private logger: Logger;
   teachingMaterialRepository: TeachingMaterialRepository;
+  private userRepository: UserRepository;
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -46,11 +49,12 @@ export class TeachingMaterialService {
       this.prisma,
       this.storageService,
     );
+    this.userRepository = new UserRepository(this.prisma);
   }
 
   async get(
     dto: { teachingMaterialId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     TeachingMaterial & {
       files: FileOnTeachingMaterial[];
@@ -251,10 +255,15 @@ export class TeachingMaterialService {
       creatorURL: string;
       canvaURL?: string;
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<TeachingMaterial> {
     try {
-      if (user.role !== 'ADMIN') {
+      const userInfo = await this.userRepository.findById({ id: user.id });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+      if (userInfo.role !== 'ADMIN') {
         throw new ForbiddenException('Only Admin can access');
       }
 
@@ -281,10 +290,14 @@ export class TeachingMaterialService {
     dto: {
       teachingMaterialId: string;
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<TeachingMaterial> {
     try {
-      if (user.role !== 'ADMIN') {
+      const userInfo = await this.userRepository.findById({ id: user.id });
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+      if (userInfo.role !== 'ADMIN') {
         throw new ForbiddenException('Only Admin is allowed');
       }
       const teachingMaterial = await this.teachingMaterialRepository.findUnique(
@@ -357,10 +370,15 @@ export class TeachingMaterialService {
         creatorURL?: string;
       };
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<TeachingMaterial> {
     try {
-      if (user.role !== 'ADMIN') {
+      const userInfo = await this.userRepository.findById({ id: user.id });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+      if (userInfo.role !== 'ADMIN') {
         throw new ForbiddenException('Only Admin can access');
       }
       const accessToken = await this.authService.getGoogleAccessToken();

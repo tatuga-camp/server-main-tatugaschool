@@ -20,6 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/group-on-subjects')
 export class GroupOnSubjectController {
@@ -29,38 +30,53 @@ export class GroupOnSubjectController {
   @UseGuards(UserGuard)
   async getBySubjectId(
     @Param() dto: GetGroupOnSubjectsDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.groupOnSubjectService.getGroupOnSubjects(dto, user);
   }
 
   @Get(':groupOnSubjectId')
   @UseGuards(UserGuard)
-  async get(@Param() dto: GetGroupOnSubjectDto, @GetUser() user: User) {
+  async get(
+    @Param() dto: GetGroupOnSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.groupOnSubjectService.getGroupOnSubject(dto, user);
   }
 
   @Post()
   @UseGuards(UserGuard)
-  async create(@Body() dto: CreateGroupOnSubjectDto, @GetUser() user: User) {
+  async create(
+    @Body() dto: CreateGroupOnSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.groupOnSubjectService.create(dto, user);
   }
 
   @Patch()
   @UseGuards(UserGuard)
-  async update(@Body() dto: UpdateGroupOnSubjectDto, @GetUser() user: User) {
+  async update(
+    @Body() dto: UpdateGroupOnSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.groupOnSubjectService.update(dto, user);
   }
 
   @Patch('refetch')
   @UseGuards(UserGuard)
-  async refetch(@Body() dto: RefetchGroupOnSubjectDto, @GetUser() user: User) {
+  async refetch(
+    @Body() dto: RefetchGroupOnSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.groupOnSubjectService.refetchGroup(dto, user);
   }
 
   @Delete(':groupOnSubjectId')
   @UseGuards(UserGuard)
-  async delete(@Param() dto: DeleteGroupOnSubjectDto, @GetUser() user: User) {
+  async delete(
+    @Param() dto: DeleteGroupOnSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.groupOnSubjectService.delete(dto, user);
   }
 }

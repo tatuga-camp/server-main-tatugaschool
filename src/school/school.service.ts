@@ -23,11 +23,14 @@ import {
 } from './dto';
 import { SchoolRepository } from './school.repository';
 import { UsersService } from '../users/users.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { UserRepository } from '../users/users.repository';
 
 @Injectable()
 export class SchoolService {
   private logger: Logger;
-  schoolRepository: SchoolRepository;
+  public schoolRepository: SchoolRepository;
+  private userRepository: UserRepository;
 
   constructor(
     private prisma: PrismaService,
@@ -51,9 +54,10 @@ export class SchoolService {
       this.classService,
       this.stripe,
     );
+    this.userRepository = new UserRepository(this.prisma);
   }
 
-  async getSchools(user: User): Promise<School[]> {
+  async getSchools(user: UserJwtPayload): Promise<School[]> {
     try {
       const memberOnSchools =
         await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
@@ -81,10 +85,10 @@ export class SchoolService {
 
   async getSchoolById(
     dto: GetSchoolByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     School & {
-      user: User;
+      user: UserJwtPayload;
       totalClass: number;
       totalTeacher: number;
       totalSubject: number;
@@ -144,8 +148,18 @@ export class SchoolService {
     }
   }
 
-  async createSchool(dto: CreateSchoolDto, user: User): Promise<School> {
+  async createSchool(
+    dto: CreateSchoolDto,
+    user: UserJwtPayload,
+  ): Promise<School> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
       const memeberOnSchools =
         await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
           where: {
@@ -185,13 +199,13 @@ export class SchoolService {
       }
 
       await this.memberOnSchoolService.memberOnSchoolRepository.create({
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        photo: user.photo,
-        phone: user.phone,
-        blurHash: user.blurHash,
-        userId: user.id,
+        email: userInfo.email,
+        firstName: userInfo.firstName,
+        lastName: userInfo.lastName,
+        photo: userInfo.photo,
+        phone: userInfo.phone,
+        blurHash: userInfo.blurHash,
+        userId: userInfo.id,
         role: MemberRole.ADMIN,
         status: Status.ACCEPT,
         schoolId: school.id,
@@ -464,7 +478,10 @@ export class SchoolService {
     }
   }
 
-  async updateSchool(dto: UpdateSchoolDto, user: User): Promise<School> {
+  async updateSchool(
+    dto: UpdateSchoolDto,
+    user: UserJwtPayload,
+  ): Promise<School> {
     try {
       const school = await this.schoolRepository.getSchoolById({
         schoolId: dto.query.schoolId,
@@ -518,7 +535,10 @@ export class SchoolService {
       throw error;
     }
   }
-  async deleteSchool(dto: DeleteSchoolDto, user: User): Promise<School> {
+  async deleteSchool(
+    dto: DeleteSchoolDto,
+    user: UserJwtPayload,
+  ): Promise<School> {
     try {
       const school = await this.schoolRepository.getSchoolById({
         schoolId: dto.schoolId,

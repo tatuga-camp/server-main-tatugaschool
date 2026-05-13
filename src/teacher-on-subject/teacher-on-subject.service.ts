@@ -19,6 +19,7 @@ import {
 } from './dto';
 import { TeacherOnSubject, User } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class TeacherOnSubjectService {
@@ -85,7 +86,10 @@ export class TeacherOnSubjectService {
     }
   }
 
-  async getTeacherOnSubjectById(dto: GetTeacherOnSubjectByIdDto, user: User) {
+  async getTeacherOnSubjectById(
+    dto: GetTeacherOnSubjectByIdDto,
+    user: UserJwtPayload,
+  ) {
     try {
       const teacherOnSubject = await this.teacherOnSubjectRepository.getById({
         teacherOnSubjectId: dto.teacherOnSubjectId,
@@ -105,7 +109,7 @@ export class TeacherOnSubjectService {
 
   async getTeacherOnSubjectBySubjectId(
     dto: GetTeacherOnSubjectsBySubjectIdDto,
-    user: User,
+    user: UserJwtPayload,
   ) {
     try {
       const teacherOnSubject =
@@ -126,7 +130,7 @@ export class TeacherOnSubjectService {
 
   async getTeacherOnSubjectByUserId(
     dto: GetTeacherOnSubjectsByTeacherIdDto,
-    user: User,
+    user: UserJwtPayload,
   ) {
     try {
       if (user.id !== dto.teacherId) {
@@ -142,7 +146,10 @@ export class TeacherOnSubjectService {
     }
   }
 
-  async createTeacherOnSubject(dto: CreateTeacherOnSubjectDto, user: User) {
+  async createTeacherOnSubject(
+    dto: CreateTeacherOnSubjectDto,
+    user: UserJwtPayload,
+  ) {
     try {
       const subject = await this.prisma.subject.findUnique({
         where: {
@@ -234,10 +241,10 @@ export class TeacherOnSubjectService {
         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png" />
         <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
           <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
-          Invitation on subject ${subject.title} by ${user.firstName} ${user.lastName}
+          Invitation on subject ${subject.title} by ${memberOnSchool.firstName} ${memberOnSchool.lastName}
           </h1>
           <p style="margin: 0 0 16px;">
-            You have been invited to teach <span style="font-weight: 500">${subject.title}</span> by ${user.firstName} ${user.lastName}
+            You have been invited to teach <span style="font-weight: 500">${subject.title}</span> by ${memberOnSchool.firstName} ${memberOnSchool.lastName}
             Please check the invitation by clicking the button below
           </p>
            <p style="margin: 0 0 16px; color: #6c757d">
@@ -268,7 +275,10 @@ export class TeacherOnSubjectService {
     }
   }
 
-  async updateTeacherOnSubject(dto: UpdateTeacherOnSubjectDto, user: User) {
+  async updateTeacherOnSubject(
+    dto: UpdateTeacherOnSubjectDto,
+    user: UserJwtPayload,
+  ) {
     try {
       const teacherOnSubject = await this.teacherOnSubjectRepository.getById({
         teacherOnSubjectId: dto.query.teacherOnSubjectId,
@@ -327,7 +337,10 @@ export class TeacherOnSubjectService {
     }
   }
 
-  async DeleteTeacherOnSubject(dto: DeleteTeacherOnSubjectDto, user: User) {
+  async DeleteTeacherOnSubject(
+    dto: DeleteTeacherOnSubjectDto,
+    user: UserJwtPayload,
+  ) {
     try {
       const teacherOnSubject = await this.teacherOnSubjectRepository.getById({
         teacherOnSubjectId: dto.teacherOnSubjectId,

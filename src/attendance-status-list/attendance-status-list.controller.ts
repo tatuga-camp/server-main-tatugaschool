@@ -16,6 +16,7 @@ import {
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/attendance-status-lists')
@@ -25,17 +26,20 @@ export class AttendanceStatusListController {
   ) {}
 
   @Post()
-  async create(@Body() dto: CreateStatusAttendanceDto, @GetUser() user: User) {
+  async create(
+    @Body() dto: CreateStatusAttendanceDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.attendanceStatusListService.create(dto, user);
   }
 
   @Patch()
-  async update(@Body() dto: UpdateStatusDto, @GetUser() user: User) {
+  async update(@Body() dto: UpdateStatusDto, @GetUser() user: UserJwtPayload) {
     return this.attendanceStatusListService.update(dto, user);
   }
 
   @Delete(':id')
-  async delete(@Param() dto: DeleteStatusDto, @GetUser() user: User) {
+  async delete(@Param() dto: DeleteStatusDto, @GetUser() user: UserJwtPayload) {
     return this.attendanceStatusListService.delete(dto, user);
   }
 }

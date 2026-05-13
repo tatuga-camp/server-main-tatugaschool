@@ -21,6 +21,7 @@ import {
 } from './dto';
 import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/attendance-tables')
 export class AttendanceTableController {
@@ -30,7 +31,7 @@ export class AttendanceTableController {
   @Get('subject/:subjectId')
   GetAttendanceTables(
     @Param() dto: GetAttendanceTablesDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceTableService.getBySubjectId(dto, user);
   }
@@ -39,7 +40,7 @@ export class AttendanceTableController {
   @Get(':attendanceTableId')
   GetAttendanceTableById(
     @Param() dto: GetAttendanceTableById,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceTableService.getAttendanceTableById(dto, user);
   }
@@ -48,7 +49,7 @@ export class AttendanceTableController {
   @Get('student/:studentId/subject/:subjectId')
   GetAttendanceTableByStudentId(
     @Param() dto: GetAttendanceTableBySubjectIdDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.attendanceTableService.getBySubjectIdOnStudentOnSubject(
       dto,
@@ -60,7 +61,7 @@ export class AttendanceTableController {
   @Post()
   CreateAttendanceTable(
     @Body() dto: CreateAttendanceTableDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceTableService.createAttendanceTable(dto, user);
   }
@@ -69,7 +70,7 @@ export class AttendanceTableController {
   @Patch()
   UpdateAttendanceTable(
     @Body() dto: UpdateAttendanceTableDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceTableService.updateAttendanceTable(dto, user);
   }
@@ -78,7 +79,7 @@ export class AttendanceTableController {
   @Delete(':attendanceTableId')
   DeleteAttendanceTable(
     @Param() dto: DeleteAttendanceTableDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.attendanceTableService.deleteAttendanceTable(dto, user);
   }

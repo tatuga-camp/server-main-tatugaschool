@@ -11,6 +11,7 @@ import { StudentService } from './../student/student.service';
 import { CareerRepository } from './career.repository';
 import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 import { AiService } from '../ai/ai.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class CareerService {
@@ -33,7 +34,7 @@ export class CareerService {
 
   async suggest(
     dto: { studentId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{
     student: {
       skills: (Skill & { avg: number })[];

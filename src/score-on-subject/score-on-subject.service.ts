@@ -18,6 +18,7 @@ import { ScoreOnSubject, User } from '@prisma/client';
 import { SubjectRepository } from '../subject/subject.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class ScoreOnSubjectService {
@@ -41,7 +42,7 @@ export class ScoreOnSubjectService {
 
   async GetAllScoreOnSubjectBySubjectId(
     dto: GetAllScoreOnSubjectBySujectIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnSubject[]> {
     try {
       const subject = await this.subjectRepository.getSubjectById({
@@ -71,7 +72,7 @@ export class ScoreOnSubjectService {
 
   async createScoreOnSubject(
     dto: CreateScoreOnSubjectDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnSubject> {
     try {
       const subject = await this.subjectRepository.getSubjectById({
@@ -106,7 +107,7 @@ export class ScoreOnSubjectService {
 
   async updateScoreOnSubject(
     dto: UpdateScoreOnSubjectDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnSubject> {
     try {
       if (dto.body.icon && !dto.body.blurHash) {
@@ -153,7 +154,7 @@ export class ScoreOnSubjectService {
     }
   }
 
-  async delete(dto: { scoreOnSubjectId: string }, user: User) {
+  async delete(dto: { scoreOnSubjectId: string }, user: UserJwtPayload) {
     try {
       const scoreOnSubject = await this.scoreOnSubjectRepository.findUnique({
         where: {

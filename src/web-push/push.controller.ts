@@ -12,7 +12,10 @@ export class PushController {
   constructor(private readonly pushService: PushService) {}
 
   @Post('subscribe')
-  subscribe(@GetUser() user: User, @Body() data: SubscribeNotificationDto) {
+  subscribe(
+    @GetUser() user: UserJwtPayload,
+    @Body() data: SubscribeNotificationDto,
+  ) {
     return this.pushService.subscribe(data, user);
   }
 }

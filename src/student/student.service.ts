@@ -20,6 +20,7 @@ import { CreateStudentDto } from './dto/post-student.dto';
 import { StudentRepository } from './student.repository';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class StudentService {
@@ -43,7 +44,10 @@ export class StudentService {
     );
   }
 
-  async createStudent(dto: CreateStudentDto, user: User): Promise<Student> {
+  async createStudent(
+    dto: CreateStudentDto,
+    user: UserJwtPayload,
+  ): Promise<Student> {
     try {
       let photo = dto.photo;
       const classroom = await this.classroomService.classRepository.findById({
@@ -106,8 +110,8 @@ export class StudentService {
 
   async getStudentById(
     getStudentDto: GetStudentDto,
-    user?: User | undefined,
-    student?: Student | undefined,
+    user?: UserJwtPayload | undefined,
+    student?: StudentJwtPayload | undefined,
   ): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({
@@ -136,7 +140,10 @@ export class StudentService {
     }
   }
 
-  async getAllStudents(dto: GetAllStudentsDto, user: User): Promise<Student[]> {
+  async getAllStudents(
+    dto: GetAllStudentsDto,
+    user: UserJwtPayload,
+  ): Promise<Student[]> {
     try {
       const classroom = await this.classroomService.classRepository.findById({
         classId: dto.classId,
@@ -158,10 +165,10 @@ export class StudentService {
       throw error;
     }
   }
-
+  user: UserJwtPayload;
   async resetStudnetPassword(
     dto: { studentId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({
@@ -193,8 +200,8 @@ export class StudentService {
 
   async updateStudent(
     dto: UpdateStudentDto,
-    user?: User | undefined,
-    student?: Student | undefined,
+    user?: UserJwtPayload | undefined,
+    student?: StudentJwtPayload | undefined,
   ): Promise<Student> {
     try {
       if (dto.body.photo && !dto.body.blurHash) {
@@ -249,7 +256,7 @@ export class StudentService {
 
   async deleteStudent(
     deleteStudentDto: DeleteStudentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Student> {
     try {
       const student = await this.studentRepository.findById({

@@ -23,6 +23,7 @@ import { ClassRepository } from './class.repository';
 import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class ClassService {
@@ -103,7 +104,7 @@ export class ClassService {
 
   async getById(
     dto: { classId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Class & { students: Student[] }> {
     try {
       const classroom = await this.classRepository.findById({
@@ -131,7 +132,7 @@ export class ClassService {
     }
   }
 
-  async createClass(createClassDto: CreateClassDto, user: User) {
+  async createClass(createClassDto: CreateClassDto, user: UserJwtPayload) {
     try {
       const school = await this.schoolService.schoolRepository.getById({
         schoolId: createClassDto.schoolId,
@@ -170,7 +171,7 @@ export class ClassService {
       schoolId: string;
       isAchieved: boolean;
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(Class & { studentNumbers: number; creator: User | null })[]> {
     try {
       await this.memberOnSchoolService.validateAccess({
@@ -217,7 +218,10 @@ export class ClassService {
     }
   }
 
-  async reorder(dto: { classIds: string[] }, user: User): Promise<Class[]> {
+  async reorder(
+    dto: { classIds: string[] },
+    user: UserJwtPayload,
+  ): Promise<Class[]> {
     try {
       const classroom = await this.classRepository.findById({
         classId: dto.classIds[0],
@@ -252,7 +256,7 @@ export class ClassService {
     }
   }
 
-  async update(dto: UpdateClassDto, user: User) {
+  async update(dto: UpdateClassDto, user: UserJwtPayload) {
     try {
       const classroom = await this.classRepository.findById({
         classId: dto.query.classId,
@@ -277,7 +281,7 @@ export class ClassService {
     }
   }
 
-  async delete(dto: DeleteClassDto, user: User) {
+  async delete(dto: DeleteClassDto, user: UserJwtPayload) {
     try {
       const classroom = await this.classRepository.findById({
         classId: dto.classId,
@@ -445,7 +449,7 @@ export class ClassService {
 
   async getGradeSummaryReport(
     dto: { classId: string; educationYear: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     (Subject & {
       students: {

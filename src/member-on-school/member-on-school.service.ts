@@ -23,6 +23,7 @@ import {
   UpdateMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchoolRepository } from './member-on-school.repository';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class MemberOnSchoolService {
@@ -46,7 +47,7 @@ export class MemberOnSchoolService {
     user,
     schoolId,
   }: {
-    user: User;
+    user: UserJwtPayload;
     schoolId: string;
   }): Promise<MemberOnSchool> {
     try {
@@ -115,7 +116,7 @@ export class MemberOnSchoolService {
   }
 
   async getMemberOnSchoolByUserId(
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(MemberOnSchool & { school: School })[]> {
     try {
       const memberOnSchools = await this.memberOnSchoolRepository.getByUserId({
@@ -142,7 +143,7 @@ export class MemberOnSchoolService {
 
   async getSchoolByMemberOnSchoolById(
     dto: GetMemberOnSchoolByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ) {
     try {
       const memberOnSchool =
@@ -168,7 +169,7 @@ export class MemberOnSchoolService {
 
   async getAllMemberOnSchools(
     dto: GetMemberOnSchoolsDto & QueryMemberOnSchoolDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<MemberOnSchool[]> {
     try {
       await this.validateAccess({
@@ -188,7 +189,7 @@ export class MemberOnSchoolService {
 
   async createMemberOnSchool(
     dto: CreateMemberOnSchoolDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<MemberOnSchool> {
     try {
       const school = await this.schoolService.schoolRepository.getSchoolById({
@@ -305,7 +306,7 @@ export class MemberOnSchoolService {
   }
   async updateMemberOnSchool(
     dto: UpdateMemberOnSchoolDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<MemberOnSchool> {
     try {
       delete dto.body.status;
@@ -354,7 +355,7 @@ export class MemberOnSchoolService {
 
   async AcceptMemberOnSchool(
     dto: UpdateMemberOnSchoolDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{
     message: string;
   }> {
@@ -424,7 +425,7 @@ export class MemberOnSchoolService {
 
   async deleteMemberOnSchool(
     dto: DeleteMemberOnSchoolDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<MemberOnSchool> {
     try {
       const targetDeleteMember =
