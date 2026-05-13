@@ -201,13 +201,11 @@ export class ClassService {
         new Set(classes.filter((c) => c.userId).map((c) => c.userId)),
       ).filter((v): v is string => !!v);
 
-      const creators = await Promise.all(
-        uniqueUserIds.map((c) =>
-          this.userService.userRepository.findById({
-            id: c,
-          }),
-        ),
-      );
+      const creators = await this.userService.userRepository.findMany({
+        where: {
+          id: { in: uniqueUserIds },
+        },
+      });
 
       return classesWithStudetNumber.map((c) => {
         return {
