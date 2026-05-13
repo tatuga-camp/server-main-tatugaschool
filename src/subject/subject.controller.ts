@@ -27,7 +27,7 @@ import {
   UpdateverifyLineToken,
 } from './dto';
 import { SubjectService } from './subject.service';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/subjects')
 export class SubjectController {

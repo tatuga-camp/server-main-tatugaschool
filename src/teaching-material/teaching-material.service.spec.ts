@@ -26,7 +26,11 @@ jest.mock('googleapis', () => ({}));
 describe('TeachingMaterialService', () => {
   let service: TeachingMaterialService;
 
-  const mockPrismaService = {};
+  const mockPrismaService = {
+    user: {
+      findUnique: jest.fn(),
+    },
+  };
 
   const mockStorageService = {
     uploadFile: jest.fn(),
@@ -236,6 +240,10 @@ describe('TeachingMaterialService', () => {
 
   describe('create', () => {
     it('should create material if admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       mockAuthService.getGoogleAccessToken.mockResolvedValue('token');
       mockAiService.embbedingText.mockResolvedValue({
         predictions: [{ embeddings: { values: [0.1] } }],
@@ -259,6 +267,10 @@ describe('TeachingMaterialService', () => {
     });
 
     it('should throw ForbiddenException if not admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'USER',
+      });
       await expect(
         service.create({} as any, { role: 'USER' } as any),
       ).rejects.toThrow(ForbiddenException);
@@ -267,6 +279,10 @@ describe('TeachingMaterialService', () => {
 
   describe('createThumnail', () => {
     it('should create thumbnail from pdf', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       (
         service.teachingMaterialRepository.findUnique as jest.Mock
       ).mockResolvedValue({ id: 'tm1' });
@@ -289,6 +305,10 @@ describe('TeachingMaterialService', () => {
     });
 
     it('should create thumbnail from image if no pdf', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       (
         service.teachingMaterialRepository.findUnique as jest.Mock
       ).mockResolvedValue({ id: 'tm1' });
@@ -309,6 +329,10 @@ describe('TeachingMaterialService', () => {
     });
 
     it('should throw ForbiddenException if not admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'USER',
+      });
       await expect(
         service.createThumnail({ teachingMaterialId: 'tm1' }, {
           role: 'USER',
@@ -319,6 +343,10 @@ describe('TeachingMaterialService', () => {
 
   describe('update', () => {
     it('should update material if admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       mockAuthService.getGoogleAccessToken.mockResolvedValue('token');
       mockAiService.embbedingText.mockResolvedValue({
         predictions: [{ embeddings: { values: [0.1] } }],

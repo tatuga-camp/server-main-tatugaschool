@@ -18,6 +18,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/score-on-students')

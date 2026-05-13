@@ -17,7 +17,11 @@ jest.mock('googleapis', () => ({}));
 describe('FileOnTeachingMaterialService', () => {
   let service: FileOnTeachingMaterialService;
 
-  const mockPrismaService = {};
+  const mockPrismaService = {
+    user: {
+      findUnique: jest.fn(),
+    },
+  };
   const mockStorageService = {};
 
   const mockTeachingMaterialService = {
@@ -60,6 +64,10 @@ describe('FileOnTeachingMaterialService', () => {
 
   describe('create', () => {
     it('should create file successfully if admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       const dto = {
         teachingMaterialId: 'tm1',
         url: 'pic.jpg',
@@ -85,13 +93,30 @@ describe('FileOnTeachingMaterialService', () => {
 
     it('should throw ForbiddenException if user is not admin', async () => {
       const user = { id: 'u1', role: 'USER' } as any;
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'USER',
+      });
 
       await expect(service.create({} as any, user)).rejects.toThrow(
         ForbiddenException,
       );
     });
 
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      const user = { id: 'u1', role: 'ADMIN' } as any;
+
+      await expect(service.create({} as any, user)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
     it('should throw NotFoundException if teaching material not found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       const dto = {
         teachingMaterialId: 'tm1',
         url: 'pic.jpg',
@@ -112,6 +137,10 @@ describe('FileOnTeachingMaterialService', () => {
 
   describe('delete', () => {
     it('should delete file successfully if admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'ADMIN',
+      });
       const user = { id: 'u1', role: 'ADMIN' } as any;
       (
         service.fileOnTeachingMaterialRepository.delete as jest.Mock
@@ -128,7 +157,20 @@ describe('FileOnTeachingMaterialService', () => {
       expect(result.id).toBe('f1');
     });
 
+    it('should throw NotFoundException if user not found', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      const user = { id: 'u1', role: 'ADMIN' } as any;
+
+      await expect(
+        service.delete({ fileOnTeachingMaterialId: 'f1' }, user),
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it('should throw ForbiddenException if user is not admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        role: 'USER',
+      });
       const user = { id: 'u1', role: 'USER' } as any;
 
       await expect(

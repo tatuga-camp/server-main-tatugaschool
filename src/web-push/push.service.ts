@@ -4,6 +4,7 @@ import { PushRepository } from './push.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionNotification, User } from '@prisma/client';
 import { PushSubscription } from './interfaces';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class PushService {

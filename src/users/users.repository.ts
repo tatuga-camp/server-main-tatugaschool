@@ -36,7 +36,7 @@ type Repository = {
 
 @Injectable()
 export class UserRepository implements Repository {
-  logger: Logger = new Logger(UserRepository.name);
+  private logger: Logger = new Logger(UserRepository.name);
   constructor(private prisma: PrismaService) {}
 
   async findMany(request: Prisma.UserFindManyArgs): Promise<User[]> {
@@ -57,7 +57,7 @@ export class UserRepository implements Repository {
     try {
       return await this.prisma.user.findUnique({
         where: {
-          ...request,
+          id: request.id,
         },
       });
     } catch (error) {

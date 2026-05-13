@@ -18,7 +18,7 @@ import {
 import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
 import { StudentGuard, UserGuard } from '../auth/guard';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/comment-assignments')
 export class CommentAssignmentController {

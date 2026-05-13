@@ -23,7 +23,7 @@ import {
   ReorderAssignmentDto,
   UpdateAssignmentDto,
 } from './dto';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/assignments')
 export class AssignmentController {

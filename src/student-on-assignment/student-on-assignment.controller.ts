@@ -20,7 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/student-on-assignments')
 export class StudentOnAssignmentController {

@@ -23,7 +23,7 @@ import { UserRepository } from '../users/users.repository';
 export class CommentAssignmentService {
   logger: Logger = new Logger(CommentAssignmentService.name);
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
-  private commentAssignmentRepository: CommentAssignmentRepository;
+  public commentAssignmentRepository: CommentAssignmentRepository;
   private userRepository: UserRepository;
 
   constructor(
@@ -123,10 +123,10 @@ export class CommentAssignmentService {
       await this.notificationService.createNotifications({
         type: 'STUDENT_COMMENT',
         userIds: teachers.map((t) => t.userId),
-        actorId: student.id,
-        actorName: `${student.firstName} ${student.lastName}`,
-        actorImage: student.photo,
-        message: `New comment on assignment from ${student.firstName} ${student.lastName}`,
+        actorId: studentOnAssignment.id,
+        actorName: `${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
+        actorImage: studentOnAssignment.photo,
+        message: `New comment on assignment from ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
         link: url,
         schoolId: student.schoolId,
         subjectId: studentOnAssignment.subjectId,

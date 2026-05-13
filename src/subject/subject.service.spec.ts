@@ -186,6 +186,9 @@ describe('SubjectService', () => {
     (service as any).unitOnGroupRepository = { findMany: jest.fn() };
     (service as any).studentOnGroupRepository = { findMany: jest.fn() };
     (service as any).assignmentVideoQuizRepository = { findMany: jest.fn() };
+    service['userRepository'] = {
+      findById: jest.fn(),
+    } as any;
   });
 
   afterEach(() => {
@@ -521,7 +524,14 @@ describe('SubjectService', () => {
   describe('createSubject', () => {
     it('should throw NotFoundException if school not found', async () => {
       mockSchoolService.schoolRepository.getById.mockResolvedValue(null);
-
+      service['userRepository'].findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        photo: 'pic.jpg',
+        email: 'jane.doe@example.com',
+        phone: '1234567890',
+      });
       await expect(
         service.createSubject({ schoolId: 'sch1' } as any, {} as any),
       ).rejects.toThrow(NotFoundException);
@@ -530,6 +540,14 @@ describe('SubjectService', () => {
     it('should create subject', async () => {
       mockSchoolService.schoolRepository.getById.mockResolvedValue({
         id: 'sch1',
+      });
+      service['userRepository'].findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        photo: 'pic.jpg',
+        email: 'jane.doe@example.com',
+        phone: '1234567890',
       });
       (service.subjectRepository.findMany as jest.Mock).mockResolvedValue([]);
       mockSchoolService.ValidateLimit.mockResolvedValue(true);

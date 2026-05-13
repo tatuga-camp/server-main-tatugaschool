@@ -82,16 +82,24 @@ describe('UsersService', () => {
 
   describe('ResendVerifyEmail', () => {
     it('should throw BadRequestException if requested too soon', async () => {
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        updateAt: new Date(Date.now() - 30000), // 30 seconds ago
+      });
       await expect(
         service.ResendVerifyEmail({
-          updateAt: new Date(Date.now() - 30000),
+          id: 'u1',
         } as any),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should send email if allowed', async () => {
-      await service.ResendVerifyEmail({
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
         updateAt: new Date(Date.now() - 120000),
+      });
+      await service.ResendVerifyEmail({
+        id: 'u1',
       } as any);
 
       expect(mockAuthService.sendVerifyEmail).toHaveBeenCalled();
@@ -119,6 +127,8 @@ describe('UsersService', () => {
         email: 'old@example.com',
         provider: 'LOCAL',
       };
+
+      service.userRepository.findById = jest.fn().mockResolvedValue(mockUser);
       (service.userRepository.update as jest.Mock).mockResolvedValue({
         id: 'u1',
         email: 'new@example.com',

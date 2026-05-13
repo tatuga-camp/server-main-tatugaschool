@@ -19,6 +19,7 @@ import { ScoreOnStudent, User } from '@prisma/client';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { RedisService } from '../redis/redis.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class ScoreOnStudentService {
