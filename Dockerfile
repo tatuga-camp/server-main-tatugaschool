@@ -1,29 +1,49 @@
-# Base image
-FROM oven/bun:latest
+# Stage 1: Build the application
+FROM oven/bun:1-slim AS builder
 
-# Create app directory
 WORKDIR /usr/src/app
 
-# A wildcard is used to ensure both package.json AND bun.lock are copied
+# Copy package management files
 COPY package*.json bun.lock* ./
-
-# Install app dependencies
-ENV NODE_ENV=production
-RUN bun install --ci
 COPY prisma ./prisma/
+
+# Install all dependencies (including dev dependencies for building)
+RUN bun install --ci
+
+# Generate Prisma client
 RUN bunx prisma generate
-RUN bun install -g @nestjs/cli
-# Bundle app source
+
+# Copy the rest of the application code
 COPY . .
 
-# Copy the .env and .env.development files
-
-
-
-# Creates a "dist" folder with the production build
+# Build the NestJS application
 RUN bun run build
 
+# Stage 2: Create the production image
+FROM oven/bun:1-slim AS production
 
+WORKDIR /usr/src/app
+
+# Set environment variable to production
+ENV NODE_ENV=production
+
+# Copy package management files
+COPY package*.json bun.lock* ./
+COPY prisma ./prisma/
+
+# Install only production dependencies and clear cache to reduce image size
+RUN bun install --ci --production --no-cache && \
+    rm -rf /root/.bun/install/cache
+
+# Generate Prisma client
+RUN bunx prisma generate && \
+    rm -rf /root/.bun/install/cache
+
+# Copy built application from builder stage
+COPY --from=builder /usr/src/app/dist ./dist
+
+# Change ownership to the non-root 'bun' user for better security
+USER bun
 
 # Start the server using the production build
 CMD ["bun", "run", "start:prod"]
