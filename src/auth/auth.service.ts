@@ -279,13 +279,12 @@ export class AuthService {
       const user = await this.usersRepository.findByEmail({
         email: dto.email,
       });
-      // if (!user) {
-      //   throw new NotFoundException('No user found with this email');
-      // }
-
-      // if (user.provider !== 'LOCAL') {
-      //   throw new BadRequestException('Please sign in with google');
-      // }
+      if (!user) {
+        throw new NotFoundException('No user found with this email');
+      }
+      if (user.provider !== 'LOCAL') {
+        throw new BadRequestException('Please sign in with google');
+      }
 
       const accessToken = await this.GenerateAccessToken({
         userId: user.id,
@@ -296,10 +295,10 @@ export class AuthService {
         email: user.email,
       });
 
-      // const isMatch = await bcrypt.compare(dto.password, user.password);
-      // if (!isMatch) {
-      //   throw new BadRequestException('Password is NOT Correct');
-      // }
+      const isMatch = await bcrypt.compare(dto.password, user.password);
+      if (!isMatch) {
+        throw new BadRequestException('Password is NOT Correct');
+      }
 
       await this.usersRepository.updateLastActiveAt({
         email: user.email,
