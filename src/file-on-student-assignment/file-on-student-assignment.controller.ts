@@ -21,7 +21,7 @@ import {
 } from '@nestjs/common';
 import { StudentGuard, UserGuard } from '../auth/guard';
 import { GetStudent, GetUser } from '../auth/decorators';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/file-on-student-assignments')
 export class FileOnStudentAssignmentController {

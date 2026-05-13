@@ -34,6 +34,7 @@ import { SchoolService } from '../school/school.service';
 import { forwardRef, Inject } from '@nestjs/common';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AuthService {

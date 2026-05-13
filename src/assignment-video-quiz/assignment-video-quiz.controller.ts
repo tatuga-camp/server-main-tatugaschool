@@ -13,6 +13,7 @@ import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
 import { AssignmentVideoQuizService } from './assignment-video-quiz.service';
 import { CreateQuestionOnVideoDto, UpdateQuestionOnVideoDto } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/assignment-video-quiz')

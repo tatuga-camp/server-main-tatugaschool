@@ -58,8 +58,12 @@ describe('CommentAssignmentService', () => {
       getById: jest.fn(),
     } as any;
 
-    service.studentOnAssignmentRepository = {
+    service['studentOnAssignmentRepository'] = {
       getById: jest.fn(),
+    } as any;
+
+    service['userRepository'] = {
+      findById: jest.fn(),
     } as any;
   });
 
@@ -79,7 +83,7 @@ describe('CommentAssignmentService', () => {
         studentId: 'st1',
       };
       (
-        service.studentOnAssignmentRepository.getById as jest.Mock
+        service['studentOnAssignmentRepository'].getById as jest.Mock
       ).mockResolvedValue(mockStudentOnAssignment);
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       (
@@ -105,7 +109,7 @@ describe('CommentAssignmentService', () => {
         studentId: 'st1',
       };
       (
-        service.studentOnAssignmentRepository.getById as jest.Mock
+        service['studentOnAssignmentRepository'].getById as jest.Mock
       ).mockResolvedValue(mockStudentOnAssignment);
 
       await expect(
@@ -134,7 +138,7 @@ describe('CommentAssignmentService', () => {
       };
 
       (
-        service.studentOnAssignmentRepository.getById as jest.Mock
+        service['studentOnAssignmentRepository'].getById as jest.Mock
       ).mockResolvedValue(mockStudentOnAssignment);
       (
         service.commentAssignmentRepository.create as jest.Mock
@@ -172,8 +176,12 @@ describe('CommentAssignmentService', () => {
       };
 
       (
-        service.studentOnAssignmentRepository.getById as jest.Mock
+        service['studentOnAssignmentRepository'].getById as jest.Mock
       ).mockResolvedValue(mockStudentOnAssignment);
+
+      service['userRepository'].findById = jest
+        .fn()
+        .mockResolvedValue(mockUser);
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       mockTeacherOnSubjectService.teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
         mockTeacher,
@@ -195,8 +203,18 @@ describe('CommentAssignmentService', () => {
     });
 
     it('should throw ForbiddenException if teacher is not in subject', async () => {
+      const mockUser = {
+        id: 'u1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        photo: 'pic.jpg',
+        email: 'test@example.com',
+      };
+      service['userRepository'].findById = jest
+        .fn()
+        .mockResolvedValue(mockUser);
       (
-        service.studentOnAssignmentRepository.getById as jest.Mock
+        service['studentOnAssignmentRepository'].getById as jest.Mock
       ).mockResolvedValue({ subjectId: 's1' });
       mockTeacherOnSubjectService.teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
         null,

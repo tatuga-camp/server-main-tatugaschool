@@ -30,7 +30,7 @@ import { AttendanceStatusListSRepository } from '../attendance-status-list/atten
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
 import { AttendanceRowRepository } from '../attendance-row/attendance-row.repository';
 import { PrismaReadService } from '../prisma/prisma-read.service';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AttendanceTableService {

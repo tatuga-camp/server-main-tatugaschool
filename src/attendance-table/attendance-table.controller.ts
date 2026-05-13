@@ -21,7 +21,7 @@ import {
 } from './dto';
 import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/attendance-tables')
 export class AttendanceTableController {

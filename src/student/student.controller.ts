@@ -19,7 +19,7 @@ import {
   UpdateStudentDto,
 } from './dto';
 import { StudentService } from './student.service';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/students')
 export class StudentController {

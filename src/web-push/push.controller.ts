@@ -5,6 +5,7 @@ import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { PushSubscription } from './interfaces';
 import { SubscribeNotificationDto } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/push')
