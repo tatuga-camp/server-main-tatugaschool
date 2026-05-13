@@ -11,11 +11,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileOnTeachingMaterial, User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { UserRepository } from '../users/users.repository';
 
 @Injectable()
 export class FileOnTeachingMaterialService {
   private logger: Logger;
-  fileOnTeachingMaterialRepository: FileOnTeachingMaterialRepository;
+  public fileOnTeachingMaterialRepository: FileOnTeachingMaterialRepository;
+  private userRepository: UserRepository;
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -25,6 +28,7 @@ export class FileOnTeachingMaterialService {
     this.logger = new Logger(FileOnTeachingMaterialService.name);
     this.fileOnTeachingMaterialRepository =
       new FileOnTeachingMaterialRepository(this.prisma, this.storageService);
+    this.userRepository = new UserRepository(this.prisma);
   }
 
   async create(
@@ -34,10 +38,17 @@ export class FileOnTeachingMaterialService {
       size: number;
       type: string;
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<FileOnTeachingMaterial> {
     try {
-      if (user.role !== 'ADMIN') {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+      if (userInfo.role !== 'ADMIN') {
         throw new ForbiddenException('Only Admin Is Allow');
       }
       const teachingMaterial =
@@ -68,10 +79,16 @@ export class FileOnTeachingMaterialService {
     dto: {
       fileOnTeachingMaterialId: string;
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<FileOnTeachingMaterial> {
     try {
-      if (user.role !== 'ADMIN') {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+      if (userInfo.role !== 'ADMIN') {
         throw new ForbiddenException('Only Admin Is Allow');
       }
       return await this.fileOnTeachingMaterialRepository.delete({

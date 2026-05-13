@@ -27,6 +27,7 @@ import {
   UpdateverifyLineToken,
 } from './dto';
 import { SubjectService } from './subject.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/subjects')
 export class SubjectController {
@@ -34,7 +35,10 @@ export class SubjectController {
 
   @UseGuards(UserGuard)
   @Get(':subjectId')
-  async getSubjectById(@Param() dto: GetSubjectByIdDto, @GetUser() user: User) {
+  async getSubjectById(
+    @Param() dto: GetSubjectByIdDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.subjectService.getSubjectById(dto, user);
   }
 
@@ -42,7 +46,7 @@ export class SubjectController {
   @Patch('/line/verify')
   async verifyLineToken(
     @Body() dto: UpdateverifyLineToken,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.subjectService.verifyLineToken(
       {
@@ -56,7 +60,7 @@ export class SubjectController {
   @Get('student/subject/:subjectId')
   async getSubjectByIdFromStudnet(
     @Param() dto: GetSubjectByIdDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.subjectService.getSubjectWithTeacherAndStudent(dto);
   }
@@ -71,7 +75,7 @@ export class SubjectController {
   getSubjectFromSchool(
     @Param() param: ParamGetSubjectFromSchool,
     @Query() query: QueryGetSubjectFromSchool,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     const dto = { ...param, ...query };
     return this.subjectService.getBySchoolId(dto, user);
@@ -82,7 +86,7 @@ export class SubjectController {
   async getSubjectThatStudentBelongto(
     @Param() param: ParamSubjectThatStudentBelongto,
     @Query() query: QuerySubjectThatStudentBelongto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     const dto = { ...param, ...query };
     return this.subjectService.getSubjectsThatStudentBelongTo(dto, student);
@@ -90,7 +94,10 @@ export class SubjectController {
 
   @UseGuards(UserGuard)
   @Post()
-  async createSubject(@Body() dto: CreateSubjectDto, @GetUser() user: User) {
+  async createSubject(
+    @Body() dto: CreateSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.subjectService.createSubject(dto, user);
   }
 
@@ -98,14 +105,17 @@ export class SubjectController {
   @Post('duplicate')
   async duplicateSubject(
     @Body() dto: DuplicateSubjectDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.subjectService.duplicateSubject(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Patch()
-  async updateSubject(@Body() dto: UpdateSubjectDto, @GetUser() user: User) {
+  async updateSubject(
+    @Body() dto: UpdateSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.subjectService.updateSubject(dto, user);
   }
 
@@ -113,14 +123,17 @@ export class SubjectController {
   @Patch('reorder')
   async reorderSubjects(
     @Body() dto: ReorderSubjectsDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.subjectService.reorderSubjects(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Delete(':subjectId')
-  async deleteSubject(@Param() dto: DeleteSubjectDto, @GetUser() user: User) {
+  async deleteSubject(
+    @Param() dto: DeleteSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.subjectService.deleteSubject(dto, user);
   }
 }

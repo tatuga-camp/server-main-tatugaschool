@@ -19,6 +19,7 @@ import {
 } from './dto';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/skills')
 export class SkillController {
@@ -33,7 +34,7 @@ export class SkillController {
   @Get('assignment/:assignmentId')
   async findByAssignment(
     @Param() dto: GetSkillByAssignmentDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.skillService.findByVectorSearch(dto);
   }

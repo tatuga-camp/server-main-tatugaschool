@@ -52,10 +52,12 @@ import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.r
 import { UnitOnGroupRepository } from '../unit-on-group/unit-on-group.repository';
 import { StudentOnGroupRepository } from '../student-on-group/student-on-group.repository';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { UserRepository } from '../users/users.repository';
 
 @Injectable()
 export class SubjectService {
-  logger: Logger = new Logger(SubjectService.name);
+  private logger: Logger = new Logger(SubjectService.name);
   subjectRepository: SubjectRepository;
   private scoreOnSubjectRepository: ScoreOnSubjectRepository;
   private studentRepository: StudentRepository;
@@ -70,6 +72,8 @@ export class SubjectService {
   private unitOnGroupRepository: UnitOnGroupRepository;
   private studentOnGroupRepository: StudentOnGroupRepository;
   private assignmentVideoQuizRepository: AssignmentVideoQuizRepository;
+  private userRepository: UserRepository;
+
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
@@ -129,6 +133,7 @@ export class SubjectService {
     this.assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
       this.prisma,
     );
+    this.userRepository = new UserRepository(this.prisma);
   }
 
   async leaveGroupLine(request: { groupId: string }): Promise<Subject | void> {
@@ -163,7 +168,7 @@ export class SubjectService {
       description: string;
       educationYear: string;
     },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Subject> {
     try {
       const subject = await this.subjectRepository.findUnique({
@@ -357,7 +362,7 @@ export class SubjectService {
 
   async getSubjectById(
     dto: GetSubjectByIdDto,
-    user?: User,
+    user?: UserJwtPayload,
     student?: Student,
   ): Promise<Subject> {
     try {
@@ -436,7 +441,7 @@ export class SubjectService {
 
   async getBySchoolId(
     dto: { schoolId: string; educationYear: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(Subject & { teachers: TeacherOnSubject[]; class: Class })[]> {
     try {
       const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
@@ -498,7 +503,7 @@ export class SubjectService {
 
   async getSubjectsThatStudentBelongTo(
     dto: { studentId: string; educationYear: string },
-    studentUser: Student,
+    studentUser: StudentJwtPayload,
   ): Promise<(Subject & { status: 'complete' | 'uncomplete' })[]> {
     try {
       const student = await this.studentRepository.findById({
@@ -630,9 +635,20 @@ export class SubjectService {
     }
   }
 
-  async createSubject(dto: CreateSubjectDto, user: User): Promise<Subject> {
+  async createSubject(
+    dto: CreateSubjectDto,
+    user: UserJwtPayload,
+  ): Promise<Subject> {
     let subjectId: string;
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+
       const school = await this.schoolService.schoolRepository.getById({
         schoolId: dto.schoolId,
       });
@@ -640,6 +656,7 @@ export class SubjectService {
       if (!school) {
         throw new NotFoundException('School not found');
       }
+
       const educationYear = dto.educationYear;
       delete dto.educationYear;
 
@@ -799,14 +816,14 @@ export class SubjectService {
 
       await this.prisma.teacherOnSubject.create({
         data: {
-          userId: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          phone: user.phone,
-          email: user.email,
+          userId: userInfo.id,
+          firstName: userInfo.firstName,
+          lastName: userInfo.lastName,
+          phone: userInfo.phone,
+          email: userInfo.email,
           role: 'ADMIN',
           status: 'ACCEPT',
-          photo: user.photo,
+          photo: userInfo.photo,
           subjectId: subject.id,
           schoolId: dto.schoolId,
         },
@@ -875,7 +892,7 @@ export class SubjectService {
     }
   }
 
-  async verifyLineToken(dto: UpdateverifyLineToken, user: User) {
+  async verifyLineToken(dto: UpdateverifyLineToken, user: UserJwtPayload) {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
@@ -933,7 +950,10 @@ export class SubjectService {
     }
   }
 
-  async updateSubject(dto: UpdateSubjectDto, user: User): Promise<Subject> {
+  async updateSubject(
+    dto: UpdateSubjectDto,
+    user: UserJwtPayload,
+  ): Promise<Subject> {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
@@ -978,7 +998,7 @@ export class SubjectService {
 
   async reorderSubjects(
     dto: ReorderSubjectsDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Subject[]> {
     try {
       const getRandomIdFromArray =
@@ -1008,7 +1028,10 @@ export class SubjectService {
     }
   }
 
-  async deleteSubject(dto: DeleteSubjectDto, user: User): Promise<Subject> {
+  async deleteSubject(
+    dto: DeleteSubjectDto,
+    user: UserJwtPayload,
+  ): Promise<Subject> {
     try {
       const subject = await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,

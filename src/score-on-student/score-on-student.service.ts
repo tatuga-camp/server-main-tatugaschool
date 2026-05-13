@@ -43,7 +43,7 @@ export class ScoreOnStudentService {
 
   async getAllScoreOnStudentBySubjectId(
     dto: GetAllScoreOnStudentBySubjectIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnStudent[]> {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
@@ -71,7 +71,7 @@ export class ScoreOnStudentService {
 
   async getAllScoreOnStudentByStudentId(
     dto: GetAllScoreOnStudentByStudentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnStudent[]> {
     try {
       const student = await this.prisma.studentOnSubject.findUnique({
@@ -102,7 +102,7 @@ export class ScoreOnStudentService {
 
   async customScore(
     dto: CreateScoreOnStudentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnStudent> {
     try {
       const targetScore = dto.score;
@@ -192,7 +192,7 @@ export class ScoreOnStudentService {
 
   async createScoreOnStudent(
     dto: CreateScoreOnStudentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ScoreOnStudent> {
     try {
       const [studentOnSubject, scoreOnSubject] = await Promise.all([
@@ -266,7 +266,7 @@ export class ScoreOnStudentService {
 
   async deleteScoreOnStudent(
     dto: DeleteScoreOnStudentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{ message: string }> {
     try {
       const scoreOnStudent = await this.prisma.scoreOnStudent.findUnique({

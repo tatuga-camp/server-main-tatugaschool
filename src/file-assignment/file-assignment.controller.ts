@@ -18,6 +18,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/file-assignments')
@@ -27,23 +28,29 @@ export class FileAssignmentController {
   @Get('assignment/:assignmentId')
   getByAssignmentId(
     @Param() dto: GetFileOnAssignmentByAssignmentIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.fileAssignmentService.getFilesByAssignmentId(dto, user);
   }
 
   @Post()
-  create(@Body() dto: CreateFileOnAssignmentDto, @GetUser() user: User) {
+  create(
+    @Body() dto: CreateFileOnAssignmentDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.fileAssignmentService.createFileAssignment(dto, user);
   }
 
   @Delete(':fileOnAssignmentId')
-  delete(@Param() dto: DeleteFileAssignmentDto, @GetUser() user: User) {
+  delete(
+    @Param() dto: DeleteFileAssignmentDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.fileAssignmentService.deleteFileAssignment(dto, user);
   }
 
   @Patch()
-  update(@Body() dto: UpdateFileDto, @GetUser() user: User) {
+  update(@Body() dto: UpdateFileDto, @GetUser() user: UserJwtPayload) {
     return this.fileAssignmentService.updateFile(dto, user);
   }
 }

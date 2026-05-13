@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AssignmentVideoQuizRepository } from './assignment-video-quiz.repository';
 import { CreateQuestionOnVideoDto, UpdateQuestionOnVideoDto } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AssignmentVideoQuizService {
@@ -20,7 +21,7 @@ export class AssignmentVideoQuizService {
 
   async create(
     dto: CreateQuestionOnVideoDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<QuestionOnVideo> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -50,7 +51,7 @@ export class AssignmentVideoQuizService {
 
   async getManyByAssignmentId(
     assignmentId: string,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<QuestionOnVideo[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -79,7 +80,7 @@ export class AssignmentVideoQuizService {
   async update(
     id: string,
     dto: UpdateQuestionOnVideoDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<QuestionOnVideo> {
     try {
       const question = await this.repository.findUnique({
@@ -103,7 +104,7 @@ export class AssignmentVideoQuizService {
     }
   }
 
-  async delete(id: string, user: User): Promise<QuestionOnVideo> {
+  async delete(id: string, user: UserJwtPayload): Promise<QuestionOnVideo> {
     try {
       const question = await this.repository.findUnique({
         where: { id },

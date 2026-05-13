@@ -18,6 +18,7 @@ import {
 import { GetStudent, GetUser } from '../auth/decorators';
 import { Student, User } from '@prisma/client';
 import { StudentGuard, UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/comment-assignments')
 export class CommentAssignmentController {
@@ -27,7 +28,7 @@ export class CommentAssignmentController {
   @Get('studentOnAssignmentId/:studentOnAssignmentId/student')
   getByStudentOnAssignmentIdFromStudent(
     @Param() dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
   ) {
     return this.commentAssignmentService.getByStudentOnAssignment(
       dto,
@@ -40,7 +41,7 @@ export class CommentAssignmentController {
   @Get('studentOnAssignmentId/:studentOnAssignmentId/teacher')
   getByStudentOnAssignmentIdFromTeacher(
     @Param() dto: GetCommentAssignmentByStudentOnAssignmentIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.commentAssignmentService.getByStudentOnAssignment(
       dto,
@@ -52,7 +53,7 @@ export class CommentAssignmentController {
   @UseGuards(StudentGuard)
   @Post('student')
   createCommentOnAssignmentFromStudent(
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
     @Body() dto: CreateCommentOnAssignmentDto,
   ) {
     return this.commentAssignmentService.createFromStudent(dto, student);
@@ -61,7 +62,7 @@ export class CommentAssignmentController {
   @UseGuards(UserGuard)
   @Post('teacher')
   createCommentOnAssignmentFromTeacher(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Body() dto: CreateCommentOnAssignmentDto,
   ) {
     return this.commentAssignmentService.createFromTeacher(dto, user);
@@ -70,7 +71,7 @@ export class CommentAssignmentController {
   @UseGuards(StudentGuard)
   @Patch('student')
   updateCommentOnAssignmentFromStudent(
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
     @Body() dto: UpdateCommentOnAssignmentDto,
   ) {
     return this.commentAssignmentService.updateFromStudent(dto, student);
@@ -79,7 +80,7 @@ export class CommentAssignmentController {
   @UseGuards(UserGuard)
   @Patch('teacher')
   updateCommentOnAssignmentFromTeacher(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Body() dto: UpdateCommentOnAssignmentDto,
   ) {
     return this.commentAssignmentService.updateFromTeacher(dto, user);
@@ -88,7 +89,7 @@ export class CommentAssignmentController {
   @UseGuards(StudentGuard)
   @Delete(':commentOnAssignmentId/student')
   deleteCommentOnAssignmentFromStudent(
-    @GetStudent() student: Student,
+    @GetStudent() student: StudentJwtPayload,
     @Param() dto: DeleteCommentAssignmentDto,
   ) {
     return this.commentAssignmentService.deleteFromStudent(dto, student);
@@ -97,7 +98,7 @@ export class CommentAssignmentController {
   @UseGuards(UserGuard)
   @Delete(':commentOnAssignmentId/teacher')
   deleteCommentOnAssignmentFromTeacher(
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Param() dto: DeleteCommentAssignmentDto,
   ) {
     return this.commentAssignmentService.deleteFromTeacher(dto, user);

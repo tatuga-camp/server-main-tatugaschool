@@ -34,6 +34,7 @@ import {
 import { StudentOnAssignmentRepository } from './student-on-assignment.repository';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -86,7 +87,7 @@ export class StudentOnAssignmentService {
 
   async getById(
     dto: { id: string },
-    student: Student,
+    student: StudentJwtPayload,
   ): Promise<StudentOnAssignment> {
     try {
       const studentOnAssignment =
@@ -113,7 +114,7 @@ export class StudentOnAssignmentService {
 
   async getByAssignmentId(
     dto: GetStudentOnAssignmentByAssignmentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(StudentOnAssignment & { files: FileOnStudentAssignment[] })[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -171,7 +172,7 @@ export class StudentOnAssignmentService {
 
   async getByStudentId(
     dto: GetStudentOnAssignmentByStudentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnAssignment[]> {
     try {
       const student = await this.studentRepository.findById({
@@ -203,7 +204,7 @@ export class StudentOnAssignmentService {
 
   async create(
     dto: CreateStudentOnAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnAssignment> {
     try {
       const [assignment, studentOnSubject] = await Promise.all([
@@ -276,8 +277,8 @@ export class StudentOnAssignmentService {
 
   async update(
     dto: UpdateStudentOnAssignmentDto,
-    user?: User | undefined,
-    student?: Student | undefined,
+    user?: UserJwtPayload | undefined,
+    student?: StudentJwtPayload | undefined,
   ): Promise<StudentOnAssignment> {
     try {
       const studentOnAssignment =
@@ -458,7 +459,7 @@ export class StudentOnAssignmentService {
 
   async delete(
     dto: DeleteStudentOnAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{ message: string }> {
     try {
       const studentOnAssignment =

@@ -49,6 +49,7 @@ import {
   StudentOnSubjectRepositoryType,
 } from './student-on-subject.repository';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class StudentOnSubjectService {
@@ -119,7 +120,7 @@ export class StudentOnSubjectService {
 
   async getSummaryData(
     dto: { studentOnSubjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubjectReport> {
     try {
       const studentOnSubject =
@@ -453,7 +454,7 @@ export class StudentOnSubjectService {
 
   async getStudentOnSubjectsBySubjectId(
     dto: GetStudentOnSubjectsBySubjectIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject[]> {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
@@ -479,7 +480,7 @@ export class StudentOnSubjectService {
 
   async update(
     dto: UpdateStudentOnSubjectDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject> {
     try {
       const studentOnSubject =
@@ -553,7 +554,7 @@ export class StudentOnSubjectService {
 
   async getStudentOnSubjectsByStudentId(
     dto: GetStudentOnSubjectsByStudentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject[]> {
     try {
       const studentOnSubject =
@@ -578,7 +579,7 @@ export class StudentOnSubjectService {
 
   async getStudentOnSubjectById(
     dto: GetStudentOnSubjectByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject> {
     try {
       const studentOnSubject =
@@ -603,7 +604,7 @@ export class StudentOnSubjectService {
 
   async createStudentOnSubject(
     dto: CreateStudentOnSubjectDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject> {
     try {
       await this.teacherOnSubjectService.ValidateAccess({
@@ -641,7 +642,7 @@ export class StudentOnSubjectService {
 
   async sortStudentOnSubjects(
     dto: SortDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject[]> {
     try {
       const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
@@ -686,7 +687,7 @@ export class StudentOnSubjectService {
 
   async deleteStudentOnSubject(
     dto: DeleteStudentOnSubjectDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<StudentOnSubject> {
     try {
       const studentOnSubject =

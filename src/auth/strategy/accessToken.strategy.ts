@@ -4,6 +4,10 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Student, User } from '@prisma/client';
+import {
+  StudentJwtPayload,
+  UserJwtPayload,
+} from '../../interfaces/jwt-payload';
 
 @Injectable()
 export class UserAccessTokenStrategy extends PassportStrategy(
@@ -23,16 +27,9 @@ export class UserAccessTokenStrategy extends PassportStrategy(
     this.logger = new Logger(UserAccessTokenStrategy.name);
   }
 
-  async validate(payload: { id: string }) {
+  async validate(payload: UserJwtPayload) {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: payload.id },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException();
-      }
-      return user;
+      return payload;
     } catch (err) {
       this.logger.error(err);
       throw new UnauthorizedException();
@@ -58,17 +55,9 @@ export class StudentAccessTokenStrategy extends PassportStrategy(
     this.logger = new Logger(UserAccessTokenStrategy.name);
   }
 
-  async validate(payload: Student) {
+  async validate(payload: StudentJwtPayload) {
     try {
-      const student = await this.prisma.student.findUnique({
-        where: { id: payload.id },
-      });
-
-      if (!student) {
-        throw new UnauthorizedException();
-      }
-
-      return student;
+      return payload;
     } catch (err) {
       this.logger.error(err);
       throw new UnauthorizedException();

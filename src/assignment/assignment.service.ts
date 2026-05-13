@@ -52,6 +52,7 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
 import { AiService } from '../ai/ai.service';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AssignmentService {
@@ -103,7 +104,7 @@ export class AssignmentService {
 
   async getAssignmentById(
     dto: GetAssignmentByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<
     Omit<Assignment, 'vector'> & { files: FileOnAssignment[]; skills: Skill[] }
   > {
@@ -142,8 +143,8 @@ export class AssignmentService {
 
   async getAssignmentBySubjectId(
     dto: GetAssignmentBySubjectIdDto,
-    user?: User | undefined,
-    student?: Student | undefined,
+    user?: UserJwtPayload | undefined,
+    student?: StudentJwtPayload | undefined,
   ): Promise<
     (Assignment & {
       files: FileOnAssignment[];
@@ -276,7 +277,7 @@ export class AssignmentService {
 
   async getOverviewScoreOnAssignment(
     dto: { subjectId: string; studentId: string },
-    student_request: Student,
+    student_request: StudentJwtPayload,
   ): Promise<{
     grade: GradeRange | null;
     assignments: {
@@ -387,7 +388,7 @@ export class AssignmentService {
 
   async getOverviewScoreOnAssignments(
     dto: { subjectId: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<{
     grade: GradeRange | null;
     assignments: { assignment: Assignment; students: StudentOnAssignment[] }[];
@@ -475,7 +476,7 @@ export class AssignmentService {
 
   async createAssignment(
     dto: CreateAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Assignment> {
     try {
       const assignDefultAll = !!dto.assignAll;
@@ -572,7 +573,10 @@ export class AssignmentService {
     }
   }
 
-  async BackgroudEmbedingAssignment(assignmentId: string, user: User) {
+  async BackgroudEmbedingAssignment(
+    assignmentId: string,
+    user: UserJwtPayload,
+  ) {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: assignmentId,
@@ -713,7 +717,10 @@ export class AssignmentService {
     }
   }
 
-  async reorder(dto: ReorderAssignmentDto, user: User): Promise<Assignment[]> {
+  async reorder(
+    dto: ReorderAssignmentDto,
+    user: UserJwtPayload,
+  ): Promise<Assignment[]> {
     try {
       const assignments = await this.assignmentRepository.findMany({
         where: { id: { in: dto.assignmentIds } },
@@ -753,7 +760,7 @@ export class AssignmentService {
 
   async updateAssignment(
     dto: UpdateAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Assignment> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -814,7 +821,7 @@ export class AssignmentService {
 
   async deleteAssignment(
     dto: DeleteAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<Assignment> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -876,7 +883,7 @@ export class AssignmentService {
     }
   }
 
-  async exportExcel(subjectId: string, user: User) {
+  async exportExcel(subjectId: string, user: UserJwtPayload) {
     const subject = await this.prisma.subject.findUnique({
       where: {
         id: subjectId,

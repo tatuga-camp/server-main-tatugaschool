@@ -18,6 +18,7 @@ import {
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/score-on-subjects')
@@ -27,7 +28,7 @@ export class ScoreOnSubjectController {
   @Get('subject/:subjectId')
   getScoreOnSubject(
     @Param() dto: GetAllScoreOnSubjectBySujectIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnSubjectService.GetAllScoreOnSubjectBySubjectId(
       dto,
@@ -38,7 +39,7 @@ export class ScoreOnSubjectController {
   @Post()
   createScoreOnSubject(
     @Body() dto: CreateScoreOnSubjectDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnSubjectService.createScoreOnSubject(dto, user);
   }
@@ -46,13 +47,16 @@ export class ScoreOnSubjectController {
   @Patch()
   updateScoreOnSubject(
     @Body() dto: UpdateScoreOnSubjectDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.scoreOnSubjectService.updateScoreOnSubject(dto, user);
   }
 
   @Delete(':scoreOnSubjectId')
-  delete(@Param() dto: DeleteScoreOnSubjectDto, @GetUser() user: User) {
+  delete(
+    @Param() dto: DeleteScoreOnSubjectDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.scoreOnSubjectService.delete(dto, user);
   }
 }

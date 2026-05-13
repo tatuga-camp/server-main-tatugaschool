@@ -24,6 +24,7 @@ import {
   GernearteThumnailDto,
   UpdateTeachingMaterialDto,
 } from './dto/patch-teaching-material.dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/teaching-materials')
 export class TeachingMaterialController {
@@ -43,7 +44,7 @@ export class TeachingMaterialController {
 
   @UseGuards(UserGuard)
   @Get(':teachingMaterialId')
-  get(@Param() dto: GetTeachingMaterialDto, @GetUser() user: User) {
+  get(@Param() dto: GetTeachingMaterialDto, @GetUser() user: UserJwtPayload) {
     return this.teachingMaterialService.get(dto, user);
   }
 
@@ -55,19 +56,28 @@ export class TeachingMaterialController {
 
   @UseGuards(UserGuard)
   @Post()
-  Create(@Body() dto: CreateTeachingMaterialDto, @GetUser() user: User) {
+  Create(
+    @Body() dto: CreateTeachingMaterialDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.teachingMaterialService.create(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Patch()
-  Update(@Body() dto: UpdateTeachingMaterialDto, @GetUser() user: User) {
+  Update(
+    @Body() dto: UpdateTeachingMaterialDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.teachingMaterialService.update(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Patch('thumnail/:teachingMaterialId')
-  GenerateThumnail(@Param() dto: GernearteThumnailDto, @GetUser() user: User) {
+  GenerateThumnail(
+    @Param() dto: GernearteThumnailDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.teachingMaterialService.createThumnail(dto, user);
   }
 }

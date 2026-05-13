@@ -15,6 +15,7 @@ import {
   UpdateUnitOnGroupDto,
 } from './dto';
 import { UnitOnGroup, User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class UnitOnGroupService {
@@ -30,7 +31,10 @@ export class UnitOnGroupService {
     this.unitOnGroupRepository = new UnitOnGroupRepository(this.prisma);
   }
 
-  async create(dto: CreateUnitOnGroupDto, user: User): Promise<UnitOnGroup> {
+  async create(
+    dto: CreateUnitOnGroupDto,
+    user: UserJwtPayload,
+  ): Promise<UnitOnGroup> {
     try {
       const groupOnSubject =
         await this.groupOnSubjectService.groupOnSubjectRepository.findUnique({
@@ -76,7 +80,10 @@ export class UnitOnGroupService {
     }
   }
 
-  async update(dto: UpdateUnitOnGroupDto, user: User): Promise<UnitOnGroup> {
+  async update(
+    dto: UpdateUnitOnGroupDto,
+    user: UserJwtPayload,
+  ): Promise<UnitOnGroup> {
     try {
       const unitOnGroup = await this.unitOnGroupRepository.findUnique({
         where: {
@@ -129,7 +136,7 @@ export class UnitOnGroupService {
 
   async reorder(
     dto: ReorderUnitOnGroupDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<UnitOnGroup[]> {
     try {
       const unitOnGroup = await this.unitOnGroupRepository.findUnique({
@@ -167,7 +174,10 @@ export class UnitOnGroupService {
     }
   }
 
-  async delete(dto: DeleteUnitOnGroupDto, user: User): Promise<UnitOnGroup> {
+  async delete(
+    dto: DeleteUnitOnGroupDto,
+    user: UserJwtPayload,
+  ): Promise<UnitOnGroup> {
     try {
       const unitOnGroup = await this.unitOnGroupRepository.findUnique({
         where: {

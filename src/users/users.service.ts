@@ -10,9 +10,10 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './users.repository';
 import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 @Injectable()
 export class UsersService {
-  logger: Logger = new Logger(UsersService.name);
+  private logger: Logger = new Logger(UsersService.name);
   userRepository: UserRepository;
   constructor(
     private prisma: PrismaService,
@@ -21,7 +22,7 @@ export class UsersService {
     this.userRepository = new UserRepository(this.prisma);
   }
 
-  async GetUser(user: User): Promise<User> {
+  async GetUser(user: UserJwtPayload): Promise<User> {
     try {
       return await this.userRepository
         .findById({ id: user.id })
@@ -37,9 +38,14 @@ export class UsersService {
     }
   }
 
-  async ResendVerifyEmail(user: User): Promise<void> {
+  async ResendVerifyEmail(user: UserJwtPayload): Promise<void> {
     try {
-      const lastUpdate = new Date(user.updateAt).getTime();
+      const userInfo = await this.userRepository.findById({ id: user.id });
+
+      if (!userInfo) {
+        throw new ForbiddenException('User not found');
+      }
+      const lastUpdate = new Date(userInfo.updateAt).getTime();
 
       if (new Date().getTime() - lastUpdate < 60000) {
         throw new BadRequestException(
@@ -80,7 +86,7 @@ export class UsersService {
     }
   }
 
-  async updateUser(dto: UpdateUserDto, user: User): Promise<User> {
+  async updateUser(dto: UpdateUserDto, user: UserJwtPayload): Promise<User> {
     try {
       if (dto.photo && !dto.blurHash) {
         throw new BadRequestException(
@@ -91,7 +97,13 @@ export class UsersService {
         throw new BadRequestException("Can't update email to the same email");
       }
 
-      if (dto.email && user.provider === 'GOOGLE') {
+      const userInfo = await this.userRepository.findById({ id: user.id });
+
+      if (!userInfo) {
+        throw new ForbiddenException('User not found');
+      }
+
+      if (dto.email && userInfo.provider === 'GOOGLE') {
         throw new BadRequestException("Can't update email for Google provider");
       }
 
@@ -116,7 +128,10 @@ export class UsersService {
     }
   }
 
-  async updatePassword(dto: UpdatePasswordDto, user: User): Promise<User> {
+  async updatePassword(
+    dto: UpdatePasswordDto,
+    user: UserJwtPayload,
+  ): Promise<User> {
     try {
       const getUser = await this.prisma.user.findUnique({
         where: {

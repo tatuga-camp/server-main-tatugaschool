@@ -20,6 +20,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/teacher-on-subjects')
@@ -29,7 +30,7 @@ export class TeacherOnSubjectController {
   @Get(':teacherOnSubjectId')
   getTeacerOnSubjectById(
     @Param() dto: GetTeacherOnSubjectByIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.teacherOnSubjectService.getTeacherOnSubjectById(dto, user);
   }
@@ -38,7 +39,7 @@ export class TeacherOnSubjectController {
   getTeacherOnSubjectBySubjectId(
     @Param() dto: GetTeacherOnSubjectsBySubjectIdDto,
 
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.teacherOnSubjectService.getTeacherOnSubjectBySubjectId(
       dto,
@@ -49,7 +50,7 @@ export class TeacherOnSubjectController {
   @Get('teacher/:teacherId')
   getTeacherOnSubjectByTeacherId(
     @Param() dto: GetTeacherOnSubjectsByTeacherIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.teacherOnSubjectService.getTeacherOnSubjectByUserId(dto, user);
   }
@@ -57,7 +58,7 @@ export class TeacherOnSubjectController {
   @Post()
   createTeacherOnSubject(
     @Body() dto: CreateTeacherOnSubjectDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.teacherOnSubjectService.createTeacherOnSubject(dto, user);
   }
@@ -65,7 +66,7 @@ export class TeacherOnSubjectController {
   @Patch()
   updateTeacherOnSubject(
     @Body() dto: UpdateTeacherOnSubjectDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.teacherOnSubjectService.updateTeacherOnSubject(dto, user);
   }
@@ -73,7 +74,7 @@ export class TeacherOnSubjectController {
   @Delete(':teacherOnSubjectId')
   deleteTeacherOnSubject(
     @Param() dto: DeleteTeacherOnSubjectDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.teacherOnSubjectService.DeleteTeacherOnSubject(dto, user);
   }

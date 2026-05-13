@@ -25,6 +25,7 @@ import { Skill, SkillOnStudentAssignment, User } from '@prisma/client';
 import { StudentOnAssignmentRepository } from '../student-on-assignment/student-on-assignment.repository';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class SkillOnStudentAssignmentService {
@@ -75,7 +76,7 @@ export class SkillOnStudentAssignmentService {
 
   async getByStudentId(
     dto: GetByStudentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<SkillOnStudentAssignment[]> {
     try {
       const student = await this.studentRepository.findById({
@@ -242,7 +243,10 @@ export class SkillOnStudentAssignmentService {
     }
   }
 
-  async create(dto: CreateDto, user: User): Promise<SkillOnStudentAssignment> {
+  async create(
+    dto: CreateDto,
+    user: UserJwtPayload,
+  ): Promise<SkillOnStudentAssignment> {
     try {
       const [studentOnAssignment, skill] = await Promise.all([
         this.studentOnAssignmentRepository.getById({
@@ -280,7 +284,10 @@ export class SkillOnStudentAssignmentService {
     }
   }
 
-  async delete(dto: DeleteDto, user: User): Promise<{ message: string }> {
+  async delete(
+    dto: DeleteDto,
+    user: UserJwtPayload,
+  ): Promise<{ message: string }> {
     try {
       const skillOnStudentAssignment =
         await this.skillOnStudentAssignmentRepository.findUnique({

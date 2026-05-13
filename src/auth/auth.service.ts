@@ -464,7 +464,7 @@ export class AuthService {
     }
   }
 
-  async sendVerifyEmail(user: User): Promise<{ token: string }> {
+  async sendVerifyEmail(user: UserJwtPayload): Promise<{ token: string }> {
     try {
       const token = crypto.randomBytes(32).toString('hex');
       const expiration = new Date();

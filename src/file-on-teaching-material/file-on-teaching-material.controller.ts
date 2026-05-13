@@ -14,6 +14,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/file-on-teaching-materials')
 export class FileOnTeachingMaterialController {
@@ -25,7 +26,7 @@ export class FileOnTeachingMaterialController {
   @Post()
   CreateFile(
     @Body() dto: CreateFileOnTeachingMaterialDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.fileOnTeachingMaterialService.create(dto, user);
   }
@@ -34,7 +35,7 @@ export class FileOnTeachingMaterialController {
   @Delete(':fileOnTeachingMaterialId')
   DeleteFile(
     @Param() dto: DeleteFileOnTeachingMaterialDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.fileOnTeachingMaterialService.delete(dto, user);
   }

@@ -53,7 +53,7 @@ export class PushService {
 
   async subscribe(
     dto: { payload: PushSubscription; userAgent: string },
-    user: User,
+    user: UserJwtPayload,
   ): Promise<SubscriptionNotification> {
     try {
       if (!dto.payload.endpoint) {

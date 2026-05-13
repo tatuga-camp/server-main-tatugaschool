@@ -4,6 +4,7 @@ import { QueryFeedbackDto } from './dto/query-feedback.dto';
 import { FeedbackRepository } from './feedback.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class FeedbackService {
@@ -12,7 +13,7 @@ export class FeedbackService {
     private prisma: PrismaService,
   ) {}
 
-  async create(user: User, dto: CreateFeedbackDto) {
+  async create(user: UserJwtPayload, dto: CreateFeedbackDto) {
     const private_mode = dto.private;
 
     delete dto.private;

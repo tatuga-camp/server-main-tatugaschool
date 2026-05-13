@@ -31,6 +31,7 @@ import {
 } from './dto';
 import { ResponseGetAttendanceRowById } from './interfaces';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class AttendanceRowService {
@@ -64,7 +65,7 @@ export class AttendanceRowService {
 
   async GetAttendanceRows(
     dto: GetAttendanceRowsDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<(AttendanceRow & { attendances: Attendance[] })[]> {
     try {
       const table = await this.prisma.attendanceTable.findUnique({
@@ -113,7 +114,7 @@ export class AttendanceRowService {
 
   async GetAttendanceRowById(
     dto: GetAttendanceRowByIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<ResponseGetAttendanceRowById> {
     try {
       const row = await this.attendanceRowRepository.getAttendanceRowById({
@@ -197,7 +198,7 @@ export class AttendanceRowService {
 
   async CreateAttendanceRow(
     dto: CreateAttendanceRowDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceRow & { attendances: Attendance[] }> {
     try {
       const table = await this.attendanceTableRepository.findUnique({
@@ -258,7 +259,7 @@ export class AttendanceRowService {
 
   async UpdateAttendanceRow(
     dto: UpdateAttendanceRowDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceRow> {
     try {
       const row = await this.prisma.attendanceRow.findUnique({
@@ -300,7 +301,7 @@ export class AttendanceRowService {
 
   async DeleteAttendanceRow(
     dto: DeleteAttendanceRowDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<AttendanceRow> {
     try {
       const row = await this.prisma.attendanceRow.findUnique({

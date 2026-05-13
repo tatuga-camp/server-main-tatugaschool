@@ -28,6 +28,7 @@ import {
 } from './dto';
 import { UserGuard } from '../auth/guard';
 import { Request, Response } from 'express';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/attendances')
 export class AttendanceController {
@@ -37,7 +38,7 @@ export class AttendanceController {
   @Get('export-excel')
   exportExcel(
     @Query() dto: GetAttendanceExportExcelDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
     @Req() req: Request,
   ) {
     return this.attendanceService.exportExcel(dto, user, req);
@@ -45,19 +46,28 @@ export class AttendanceController {
 
   @UseGuards(UserGuard)
   @Get(':attendanceId')
-  getAttendanceById(@Param() dto: GetAttendanceByIdDto, @GetUser() user: User) {
+  getAttendanceById(
+    @Param() dto: GetAttendanceByIdDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.attendanceService.getAttendanceById(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Post()
-  createAttendance(@Body() dto: CreateAttendanceDto, @GetUser() user: User) {
+  createAttendance(
+    @Body() dto: CreateAttendanceDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.attendanceService.create(dto, user);
   }
 
   @UseGuards(UserGuard)
   @Patch()
-  updateAttendance(@Body() dto: UpdateAttendanceDto, @GetUser() user: User) {
+  updateAttendance(
+    @Body() dto: UpdateAttendanceDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.attendanceService.update(dto, user);
   }
 
@@ -68,7 +78,7 @@ export class AttendanceController {
 
   @UseGuards(UserGuard)
   @Patch('many')
-  updateMany(@Body() dto: UpdateManyDto, @GetUser() user: User) {
+  updateMany(@Body() dto: UpdateManyDto, @GetUser() user: UserJwtPayload) {
     return this.attendanceService.updateMany(dto, user);
   }
 }

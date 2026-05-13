@@ -22,6 +22,7 @@ import {
   GetClassBySchoolIdDto,
   GetOverviewScoreQuery,
 } from './dto';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @UseGuards(UserGuard)
 @Controller('v1/classes')
@@ -31,7 +32,7 @@ export class ClassController {
   @Get(':classId')
   async getClassById(
     @Param() dto: GetClassByClassIdDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.classService.getById(dto, user);
   }
@@ -40,7 +41,7 @@ export class ClassController {
   async getGradeSummaryReport(
     @Param() dto: GetClassByClassIdDto,
     @Query() query: GetOverviewScoreQuery,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.classService.getGradeSummaryReport(
       { ...dto, ...query },
@@ -52,7 +53,7 @@ export class ClassController {
   getClassBySchool(
     @Param() param: GetClassBySchoolIdDto,
     @Query() query: GetClassByQueryDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.classService.getBySchool(
       { schoolId: param.schoolId, isAchieved: query.isAchieved },
@@ -63,7 +64,7 @@ export class ClassController {
   @Patch('reorder')
   async reorderClasses(
     @Body() reorderClassDto: ReorderClassDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.classService.reorder(reorderClassDto, user);
   }
@@ -71,7 +72,7 @@ export class ClassController {
   @Post()
   async createClass(
     @Body() createClassDto: CreateClassDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.classService.createClass(createClassDto, user);
   }
@@ -79,13 +80,16 @@ export class ClassController {
   @Patch()
   async updateClass(
     @Body() updateClassDto: UpdateClassDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return await this.classService.update(updateClassDto, user);
   }
 
   @Delete(':classId')
-  async deleteClass(@Param() dto: DeleteClassDto, @GetUser() user: User) {
+  async deleteClass(
+    @Param() dto: DeleteClassDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return await this.classService.delete(dto, user);
   }
 }

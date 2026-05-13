@@ -23,6 +23,7 @@ import { FileOnAssignment, User } from '@prisma/client';
 import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-subject.repository';
 import { SchoolRepository } from '../school/school.repository';
 import { StripeService } from '../stripe/stripe.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class FileAssignmentService {
@@ -61,7 +62,7 @@ export class FileAssignmentService {
 
   async getFilesByAssignmentId(
     dto: GetFileOnAssignmentByAssignmentIdDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<FileOnAssignment[]> {
     try {
       const assignment = await this.assignmentRepository.getById({
@@ -94,7 +95,10 @@ export class FileAssignmentService {
     }
   }
 
-  async updateFile(dto: UpdateFileDto, user: User): Promise<FileOnAssignment> {
+  async updateFile(
+    dto: UpdateFileDto,
+    user: UserJwtPayload,
+  ): Promise<FileOnAssignment> {
     try {
       const file = await this.fileAssignmentRepository.getById({
         fileOnAssignmentId: dto.id,
@@ -130,7 +134,7 @@ export class FileAssignmentService {
 
   async createFileAssignment(
     dto: CreateFileOnAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<FileOnAssignment> {
     try {
       const type = dto.type.split('/')[0];
@@ -189,7 +193,7 @@ export class FileAssignmentService {
 
   async deleteFileAssignment(
     dto: DeleteFileAssignmentDto,
-    user: User,
+    user: UserJwtPayload,
   ): Promise<FileOnAssignment> {
     try {
       const fileOnAssignment = await this.fileAssignmentRepository.getById({

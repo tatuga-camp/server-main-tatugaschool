@@ -20,14 +20,17 @@ export class AssignmentVideoQuizController {
   constructor(private service: AssignmentVideoQuizService) {}
 
   @Post()
-  create(@Body() dto: CreateQuestionOnVideoDto, @GetUser() user: User) {
+  create(
+    @Body() dto: CreateQuestionOnVideoDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.service.create(dto, user);
   }
 
   @Get('assignment/:assignmentId')
   getManyByAssignmentId(
     @Param('assignmentId') assignmentId: string,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.service.getManyByAssignmentId(assignmentId, user);
   }
@@ -36,13 +39,13 @@ export class AssignmentVideoQuizController {
   update(
     @Param('id') id: string,
     @Body() dto: UpdateQuestionOnVideoDto,
-    @GetUser() user: User,
+    @GetUser() user: UserJwtPayload,
   ) {
     return this.service.update(id, dto, user);
   }
 
   @Delete(':id')
-  delete(@Param('id') id: string, @GetUser() user: User) {
+  delete(@Param('id') id: string, @GetUser() user: UserJwtPayload) {
     return this.service.delete(id, user);
   }
 }
