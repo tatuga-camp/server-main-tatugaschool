@@ -10,6 +10,7 @@ import { SchoolService } from '../school/school.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { find } from 'rxjs';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -50,6 +51,7 @@ describe('ClassService', () => {
   const mockUsersService = {
     userRepository: {
       findById: jest.fn(),
+      findMany: jest.fn(),
     },
   };
 
@@ -207,10 +209,12 @@ describe('ClassService', () => {
         { id: 'c1', userId: 'u1' },
       ]);
       (service as any).studentRepository.count.mockResolvedValue(5);
-      mockUsersService.userRepository.findById.mockResolvedValue({
-        id: 'u1',
-        name: 'Test',
-      });
+      mockUsersService.userRepository.findMany.mockResolvedValue([
+        {
+          id: 'u1',
+          name: 'Test',
+        },
+      ]);
 
       const result = await service.getBySchool(
         { schoolId: 's1', isAchieved: false },
