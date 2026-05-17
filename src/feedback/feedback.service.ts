@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { UserRepository } from './../users/users.repository';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { CreateFeedbackDto } from './dto/create-feedback.dto';
 import { QueryFeedbackDto } from './dto/query-feedback.dto';
 import { FeedbackRepository } from './feedback.repository';
@@ -8,10 +9,13 @@ import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class FeedbackService {
+  private userRepository: UserRepository;
   constructor(
     private feedbackRepository: FeedbackRepository,
     private prisma: PrismaService,
-  ) {}
+  ) {
+    this.userRepository = new UserRepository(this.prisma);
+  }
 
   async create(user: UserJwtPayload, dto: CreateFeedbackDto) {
     const private_mode = dto.private;
@@ -37,7 +41,14 @@ export class FeedbackService {
     });
   }
 
-  async findAll(query: QueryFeedbackDto) {
+  async findAll(query: QueryFeedbackDto, user: UserJwtPayload) {
+    const userInfo = await this.userRepository.findById({
+      id: user.id,
+    });
+
+    if (!userInfo || userInfo.role !== 'ADMIN') {
+      throw new ForbiddenException('Access deny');
+    }
     const { page = 1, limit = 10, tag } = query;
     const skip = (page - 1) * limit;
 
@@ -68,8 +79,14 @@ export class FeedbackService {
     };
   }
 
-  async remove(id: string) {
-    // Delete associated files first to avoid orphan records
+  async remove(id: string, user: UserJwtPayload) {
+    const userInfo = await this.userRepository.findById({
+      id: user.id,
+    });
+
+    if (!userInfo || userInfo.role !== 'ADMIN') {
+      throw new ForbiddenException('Access deny');
+    }
     await this.prisma.fileOnFeedback.deleteMany({
       where: { feedbackId: id },
     });

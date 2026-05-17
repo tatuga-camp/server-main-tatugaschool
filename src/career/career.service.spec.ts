@@ -7,7 +7,7 @@ import { SkillService } from '../skill/skill.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { StudentService } from '../student/student.service';
 import { AuthService } from '../auth/auth.service';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -74,7 +74,14 @@ describe('CareerService', () => {
     (service as any).skillOnCareerRepository = {
       findMany: jest.fn(),
     };
+
+    (service as any).userRepository = {
+      findById: jest.fn(),
+    };
   });
+
+  const adminUser = { id: 'u-admin', email: 'a@a.com' } as any;
+  const nonAdminUser = { id: 'u-user', email: 'u@a.com' } as any;
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -145,36 +152,64 @@ describe('CareerService', () => {
   });
 
   describe('create', () => {
-    it('should create career', async () => {
+    it('should create career when user is ADMIN', async () => {
       const dto: any = { title: 'Engineer' };
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       (service.careerRepository.create as jest.Mock).mockResolvedValue({
         id: 'c1',
         title: 'Engineer',
       });
 
-      const result = await service.create(dto);
+      const result = await service.create(dto, adminUser);
 
       expect(service.careerRepository.create).toHaveBeenCalledWith({
         data: dto,
       });
       expect(result.id).toBe('c1');
     });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.create({ title: 'X' } as any, nonAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.careerRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when user not found', async () => {
+      (service as any).userRepository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.create({ title: 'X' } as any, nonAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('update', () => {
-    it('should update career and embed text', async () => {
+    it('should update career and embed text when user is ADMIN', async () => {
       const dto: any = {
         query: { id: 'c1' },
         body: { title: 'Title', description: 'Desc', keywords: 'K' },
       };
 
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       mockAuthService.getGoogleAccessToken.mockResolvedValue('token');
       mockAiService.embbedingText.mockResolvedValue({});
       (service.careerRepository.update as jest.Mock).mockResolvedValue({
         id: 'c1',
       });
 
-      const result = await service.update(dto);
+      const result = await service.update(dto, adminUser);
 
       expect(mockAuthService.getGoogleAccessToken).toHaveBeenCalled();
       expect(mockAiService.embbedingText).toHaveBeenCalled();
@@ -184,18 +219,49 @@ describe('CareerService', () => {
       });
       expect(result.id).toBe('c1');
     });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.update(
+          { query: { id: 'c1' }, body: {} } as any,
+          nonAdminUser,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockAuthService.getGoogleAccessToken).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {
-    it('should delete career', async () => {
+    it('should delete career when user is ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       (service.careerRepository.delete as jest.Mock).mockResolvedValue({});
 
-      const result = await service.delete({ id: 'c1' });
+      const result = await service.delete({ id: 'c1' }, adminUser);
 
       expect(service.careerRepository.delete).toHaveBeenCalledWith({
         where: { id: 'c1' },
       });
       expect(result.message).toBe('Career deleted successfully');
+    });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.delete({ id: 'c1' }, nonAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.careerRepository.delete).not.toHaveBeenCalled();
     });
   });
 });

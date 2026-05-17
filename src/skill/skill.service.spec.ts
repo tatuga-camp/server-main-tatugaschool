@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { StorageService } from '../storage/storage.service';
 import { AuthService } from '../auth/auth.service';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -52,10 +52,17 @@ describe('SkillService', () => {
       delete: jest.fn(),
     } as any;
 
-    service.assignmentRepository = {
+    (service as any).assignmentRepository = {
       getById: jest.fn(),
-    } as any;
+    };
+
+    (service as any).userRepository = {
+      findById: jest.fn(),
+    };
   });
+
+  const adminUser = { id: 'u-admin', email: 'a@a.com' } as any;
+  const nonAdminUser = { id: 'u-user', email: 'u@a.com' } as any;
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -82,7 +89,9 @@ describe('SkillService', () => {
 
   describe('findByVectorSearch', () => {
     it('should return skills based on assignment vector', async () => {
-      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue({
+      (
+        (service as any).assignmentRepository.getById as jest.Mock
+      ).mockResolvedValue({
         id: 'a1',
         vector: [0.1, 0.2],
       });
@@ -99,9 +108,9 @@ describe('SkillService', () => {
     });
 
     it('should throw NotFoundException if assignment not found', async () => {
-      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
-        null,
-      );
+      (
+        (service as any).assignmentRepository.getById as jest.Mock
+      ).mockResolvedValue(null);
 
       await expect(
         service.findByVectorSearch({ assignmentId: 'a1' }),
@@ -110,7 +119,11 @@ describe('SkillService', () => {
   });
 
   describe('create', () => {
-    it('should create skill with embedded text', async () => {
+    it('should create skill with embedded text when user is ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       mockAuthService.getGoogleAccessToken.mockResolvedValue('token');
       mockAiService.embbedingText.mockResolvedValue({
         predictions: [{ embeddings: { values: [0.1, 0.2] } }],
@@ -119,11 +132,10 @@ describe('SkillService', () => {
         id: 'sk1',
       });
 
-      const result = await service.create({
-        title: 'Skill',
-        description: 'Desc',
-        keywords: 'Key',
-      } as any);
+      const result = await service.create(
+        { title: 'Skill', description: 'Desc', keywords: 'Key' } as any,
+        adminUser,
+      );
 
       expect(mockAiService.embbedingText).toHaveBeenCalledWith(
         'Skill Desc Key',
@@ -134,10 +146,27 @@ describe('SkillService', () => {
       );
       expect(result.id).toBe('sk1');
     });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.create({ title: 'X' } as any, nonAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockAuthService.getGoogleAccessToken).not.toHaveBeenCalled();
+      expect(service.skillRepository.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('update', () => {
-    it('should update skill and recalculate embedded text', async () => {
+    it('should update skill and recalculate embedded text when user is ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       mockAuthService.getGoogleAccessToken.mockResolvedValue('token');
       (service.skillRepository.findById as jest.Mock).mockResolvedValue({
         title: 'OldTitle',
@@ -151,10 +180,10 @@ describe('SkillService', () => {
         id: 'sk1',
       });
 
-      const result = await service.update({
-        query: { skillId: 'sk1' },
-        body: { title: 'NewTitle' },
-      } as any);
+      const result = await service.update(
+        { query: { skillId: 'sk1' }, body: { title: 'NewTitle' } } as any,
+        adminUser,
+      );
 
       // description and keywords should fallback to old
       expect(mockAiService.embbedingText).toHaveBeenCalledWith(
@@ -172,26 +201,65 @@ describe('SkillService', () => {
     });
 
     it('should throw NotFoundException if skill not found', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
+      mockAuthService.getGoogleAccessToken.mockResolvedValue('token');
       (service.skillRepository.findById as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        service.update({ query: { skillId: 'sk1' }, body: {} } as any),
+        service.update(
+          { query: { skillId: 'sk1' }, body: {} } as any,
+          adminUser,
+        ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.update(
+          { query: { skillId: 'sk1' }, body: {} } as any,
+          nonAdminUser,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockAuthService.getGoogleAccessToken).not.toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
-    it('should delete skill', async () => {
+    it('should delete skill when user is ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       (service.skillRepository.delete as jest.Mock).mockResolvedValue({
         message: 'Deleted',
       });
 
-      const result = await service.delete({ skillId: 'sk1' });
+      const result = await service.delete({ skillId: 'sk1' }, adminUser);
 
       expect(service.skillRepository.delete).toHaveBeenCalledWith({
         skillId: 'sk1',
       });
       expect(result.message).toBe('Deleted');
+    });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.delete({ skillId: 'sk1' }, nonAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.skillRepository.delete).not.toHaveBeenCalled();
     });
   });
 });

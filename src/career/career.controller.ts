@@ -16,7 +16,7 @@ import {
   GetSuggestDto,
   UpdateCareerDto,
 } from './dto';
-import { AdminGuard, UserGuard } from '../auth/guard';
+import { UserGuard } from '../auth/guard';
 import { CareerService } from './career.service';
 import { GetUser } from '../auth/decorators';
 import { User } from '@prisma/client';
@@ -38,21 +38,21 @@ export class CareerController {
     return this.careerService.suggest(dto, user);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   @Post()
-  create(@Body() dto: CreateCareerDto) {
-    return this.careerService.create(dto);
+  create(@Body() dto: CreateCareerDto, @GetUser() user: UserJwtPayload) {
+    return this.careerService.create(dto, user);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   @Patch()
-  update(@Body() dto: UpdateCareerDto) {
-    return this.careerService.update(dto);
+  update(@Body() dto: UpdateCareerDto, @GetUser() user: UserJwtPayload) {
+    return this.careerService.update(dto, user);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   @Delete(':id')
-  delete(@Param() dto: DeleteCareerDto) {
-    return this.careerService.delete(dto);
+  delete(@Param() dto: DeleteCareerDto, @GetUser() user: UserJwtPayload) {
+    return this.careerService.delete(dto, user);
   }
 }
