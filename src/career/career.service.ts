@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { UserRepository } from './../users/users.repository';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { Career, Skill, SkillOnCareer, User } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -18,6 +24,7 @@ export class CareerService {
   private logger: Logger = new Logger(CareerService.name);
   careerRepository: CareerRepository;
   private skillOnCareerRepository: SkillOnCareerRepository;
+  private userRepository: UserRepository;
 
   constructor(
     private prisma: PrismaService,
@@ -30,6 +37,7 @@ export class CareerService {
   ) {
     this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
     this.careerRepository = new CareerRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma);
   }
 
   async suggest(
@@ -203,8 +211,15 @@ export class CareerService {
     }
   }
 
-  async create(dto: CreateCareerDto): Promise<Career> {
+  async create(dto: CreateCareerDto, user: UserJwtPayload): Promise<Career> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo || userInfo.role !== 'ADMIN') {
+        throw new ForbiddenException('Access deny');
+      }
       return await this.careerRepository.create({
         data: {
           ...dto,
@@ -216,8 +231,15 @@ export class CareerService {
     }
   }
 
-  async update(dto: UpdateCareerDto): Promise<Career> {
+  async update(dto: UpdateCareerDto, user: UserJwtPayload): Promise<Career> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo || userInfo.role !== 'ADMIN') {
+        throw new ForbiddenException('Access deny');
+      }
       const accessToken = await this.authService.getGoogleAccessToken();
 
       const text = `
@@ -241,8 +263,18 @@ export class CareerService {
     }
   }
 
-  async delete(dto: DeleteCareerDto): Promise<{ message: string }> {
+  async delete(
+    dto: DeleteCareerDto,
+    user: UserJwtPayload,
+  ): Promise<{ message: string }> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo || userInfo.role !== 'ADMIN') {
+        throw new ForbiddenException('Access deny');
+      }
       await this.careerRepository.delete({
         where: { id: dto.id },
       });

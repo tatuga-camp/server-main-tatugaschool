@@ -8,8 +8,9 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { AdminGuard, UserGuard } from '../auth/guard';
-import { SkillService } from './skill.service';
+import { GetUser } from '../auth/decorators';
+import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 import {
   CreateSkillDto,
   DeleteSkillDto,
@@ -17,9 +18,7 @@ import {
   GetSkillDto,
   UpdateSkillDto,
 } from './dto';
-import { GetUser } from '../auth/decorators';
-import { User } from '@prisma/client';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { SkillService } from './skill.service';
 
 @Controller('v1/skills')
 export class SkillController {
@@ -39,21 +38,21 @@ export class SkillController {
     return this.skillService.findByVectorSearch(dto);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   @Post()
-  async create(@Body() dto: CreateSkillDto) {
-    return this.skillService.create(dto);
+  async create(@Body() dto: CreateSkillDto, @GetUser() user: UserJwtPayload) {
+    return this.skillService.create(dto, user);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   @Patch()
-  async update(@Body() dto: UpdateSkillDto) {
-    return this.skillService.update(dto);
+  async update(@Body() dto: UpdateSkillDto, @GetUser() user: UserJwtPayload) {
+    return this.skillService.update(dto, user);
   }
 
-  @UseGuards(AdminGuard)
+  @UseGuards(UserGuard)
   @Delete(':skillId')
-  async delete(@Param() dto: DeleteSkillDto) {
-    return this.skillService.delete(dto);
+  async delete(@Param() dto: DeleteSkillDto, @GetUser() user: UserJwtPayload) {
+    return this.skillService.delete(dto, user);
   }
 }

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FeedbackService } from './feedback.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FeedbackRepository } from './feedback.repository';
+import { ForbiddenException } from '@nestjs/common';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -38,7 +39,14 @@ describe('FeedbackService', () => {
     }).compile();
 
     service = module.get<FeedbackService>(FeedbackService);
+
+    (service as any).userRepository = {
+      findById: jest.fn(),
+    };
   });
+
+  const adminUser = { id: 'u-admin', email: 'a@a.com' } as any;
+  const nonAdminUser = { id: 'u-user', email: 'u@a.com' } as any;
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -97,15 +105,18 @@ describe('FeedbackService', () => {
   });
 
   describe('findAll', () => {
-    it('should paginate and return items', async () => {
+    it('should paginate and return items when user is ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       mockFeedbackRepository.count.mockResolvedValue(15);
       mockFeedbackRepository.findMany.mockResolvedValue([{ id: 'f1' }]);
 
-      const result = await service.findAll({
-        page: 2,
-        limit: 10,
-        tag: 'BUG',
-      } as any);
+      const result = await service.findAll(
+        { page: 2, limit: 10, tag: 'BUG' } as any,
+        adminUser,
+      );
 
       expect(mockFeedbackRepository.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -122,16 +133,32 @@ describe('FeedbackService', () => {
         totalPages: 2,
       });
     });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.findAll({ page: 1, limit: 10 } as any, nonAdminUser),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockFeedbackRepository.findMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('remove', () => {
-    it('should remove files and feedback', async () => {
+    it('should remove files and feedback when user is ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-admin',
+        role: 'ADMIN',
+      });
       mockPrismaService.fileOnFeedback.deleteMany.mockResolvedValue({
         count: 1,
       });
       mockFeedbackRepository.delete.mockResolvedValue({ id: 'f1' });
 
-      const result = await service.remove('f1');
+      const result = await service.remove('f1', adminUser);
 
       expect(mockPrismaService.fileOnFeedback.deleteMany).toHaveBeenCalledWith({
         where: { feedbackId: 'f1' },
@@ -140,6 +167,19 @@ describe('FeedbackService', () => {
         where: { id: 'f1' },
       });
       expect(result.id).toBe('f1');
+    });
+
+    it('should throw ForbiddenException when user is not ADMIN', async () => {
+      (service as any).userRepository.findById.mockResolvedValue({
+        id: 'u-user',
+        role: 'TEACHER',
+      });
+
+      await expect(service.remove('f1', nonAdminUser)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockFeedbackRepository.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.fileOnFeedback.deleteMany).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,3 +1,4 @@
+import { UserRepository } from './../users/users.repository';
 import { TeacherOnSubjectRepository } from './../teacher-on-subject/teacher-on-subject.repository';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { SkillRepository } from './skill.repository';
@@ -19,12 +20,14 @@ import { Skill, User } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { StorageService } from '../storage/storage.service';
 import { AiService } from '../ai/ai.service';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class SkillService {
-  logger: Logger = new Logger(SkillService.name);
-  assignmentRepository: AssignmentRepository;
-  teacherOnSubjectRepository: TeacherOnSubjectRepository;
+  private logger: Logger = new Logger(SkillService.name);
+  private assignmentRepository: AssignmentRepository;
+  private teacherOnSubjectRepository: TeacherOnSubjectRepository;
+  private userRepository: UserRepository;
   skillRepository: SkillRepository;
   constructor(
     private prisma: PrismaService,
@@ -40,6 +43,7 @@ export class SkillService {
       this.prisma,
       this.googleStorageService,
     );
+    this.userRepository = new UserRepository(this.prisma);
   }
 
   async getOne(dto: { skillId: string }) {
@@ -70,8 +74,15 @@ export class SkillService {
     }
   }
 
-  async create(dto: CreateSkillDto): Promise<Skill> {
+  async create(dto: CreateSkillDto, user: UserJwtPayload): Promise<Skill> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo || userInfo.role !== 'ADMIN') {
+        throw new ForbiddenException('Access deny');
+      }
       const accessToken = await this.authService.getGoogleAccessToken();
       const text = `${dto.title} ${dto.description} ${dto.keywords}`;
       const vectors = await this.aiService.embbedingText(text, accessToken);
@@ -87,8 +98,15 @@ export class SkillService {
     }
   }
 
-  async update(dto: UpdateSkillDto): Promise<Skill> {
+  async update(dto: UpdateSkillDto, user: UserJwtPayload): Promise<Skill> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo || userInfo.role !== 'ADMIN') {
+        throw new ForbiddenException('Access deny');
+      }
       const accessToken = await this.authService.getGoogleAccessToken();
 
       const skill = await this.skillRepository.findById({
@@ -129,8 +147,18 @@ export class SkillService {
     }
   }
 
-  async delete(dto: DeleteSkillDto): Promise<{ message: string }> {
+  async delete(
+    dto: DeleteSkillDto,
+    user: UserJwtPayload,
+  ): Promise<{ message: string }> {
     try {
+      const userInfo = await this.userRepository.findById({
+        id: user.id,
+      });
+
+      if (!userInfo || userInfo.role !== 'ADMIN') {
+        throw new ForbiddenException('Access deny');
+      }
       return await this.skillRepository.delete({ skillId: dto.skillId });
     } catch (error) {
       this.logger.error(error);
