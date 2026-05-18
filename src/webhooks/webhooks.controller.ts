@@ -1,5 +1,3 @@
-import { Request, Response } from 'express';
-import { WebhooksService } from './webhooks.service';
 import {
   Body,
   Controller,
@@ -11,8 +9,10 @@ import {
   Res,
   UnauthorizedException,
 } from '@nestjs/common';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { validateSignature, WebhookRequestBody } from '@line/bot-sdk';
 import { ConfigService } from '@nestjs/config';
+import { WebhooksService } from './webhooks.service';
 
 @Controller('webhooks')
 export class WebhooksController {
@@ -23,25 +23,25 @@ export class WebhooksController {
 
   @Post('stripe')
   handleStripeWebhook(
-    @Req() req: RawBodyRequest<Request>,
-    @Res() res: Response,
+    @Req() req: RawBodyRequest<FastifyRequest>,
+    @Res() reply: FastifyReply,
   ) {
-    return this.webhooksService.handleStripeWebhook(req, res);
+    return this.webhooksService.handleStripeWebhook(req, reply);
   }
+
   @Post('line')
   @HttpCode(HttpStatus.OK)
-  async handleLineWebhook(@Req() req: Request) {
+  async handleLineWebhook(@Req() req: RawBodyRequest<FastifyRequest>) {
     const signature = req.headers['x-line-signature'] as string;
-    const channelSecret = this.config.get('LINE_CHANNEL_SECRET');
+    const channelSecret = this.config.get<string>('LINE_CHANNEL_SECRET');
 
     if (!signature) {
       throw new UnauthorizedException('Missing LINE signature');
     }
 
-    const rawBodyBuffer = req.body;
+    const rawBodyBuffer = req.rawBody;
 
     const isValid = validateSignature(rawBodyBuffer, channelSecret, signature);
-
     if (!isValid) {
       throw new UnauthorizedException('Invalid LINE signature');
     }
@@ -52,6 +52,6 @@ export class WebhooksController {
 
     await this.webhooksService.handleLineWebhook(parsedBody);
 
-    return 'OK'; // Always return 200 OK
+    return 'OK';
   }
 }

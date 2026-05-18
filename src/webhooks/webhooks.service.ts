@@ -1,5 +1,5 @@
 import { Injectable, RawBodyRequest } from '@nestjs/common';
-import { Request, Response } from 'express';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import Stripe from 'stripe';
 import { StripeService } from '../stripe/stripe.service';
 import { SchoolService } from './../school/school.service';
@@ -160,12 +160,15 @@ export class WebhooksService {
     }
   }
 
-  async handleStripeWebhook(req: RawBodyRequest<Request>, res: Response) {
+  async handleStripeWebhook(
+    req: RawBodyRequest<FastifyRequest>,
+    reply: FastifyReply,
+  ) {
     let event: any;
     try {
       event = this.stripe.webhooks.constructEvent(
-        req.body,
-        req.headers['stripe-signature'],
+        req.rawBody,
+        req.headers['stripe-signature'] as string,
         process.env.STRIPE_WEBHOOK_SECRET,
       );
     } catch (err) {
@@ -187,7 +190,7 @@ export class WebhooksService {
         });
 
         if (!school) {
-          res.status(400).send('stripe_customer_id not found on School');
+          reply.status(400).send('stripe_customer_id not found on School');
           break;
         }
 
@@ -237,7 +240,7 @@ export class WebhooksService {
           await this.stripe.subscriptions.cancel(oldSub.id);
         }
 
-        res.status(200).send(school);
+        reply.status(200).send(school);
         break;
 
       case 'customer.subscription.deleted':
@@ -260,14 +263,14 @@ export class WebhooksService {
           });
 
         if (!school_subscription_delete) {
-          res.status(200).send('stripe_subscription_id not found on School');
+          reply.status(200).send('stripe_subscription_id not found on School');
           break;
         }
 
         school_subscription_delete = await this.schoolService.upgradePlanFree(
           school_subscription_delete.id,
         );
-        res.status(200).send(school_subscription_delete);
+        reply.status(200).send(school_subscription_delete);
         break;
 
       case 'invoice.updated':
@@ -275,7 +278,7 @@ export class WebhooksService {
         if (invoiceUpdate.status === 'uncollectible') {
           await this.stripe.invoices.voidInvoice(invoiceUpdate.id);
         }
-        res.status(200).send('Updated Invoice');
+        reply.status(200).send('Updated Invoice');
 
         break;
       default:
