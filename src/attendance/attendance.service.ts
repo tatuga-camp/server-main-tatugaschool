@@ -23,7 +23,7 @@ import { Workbook } from 'exceljs';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AttendanceRowService } from '../attendance-row/attendance-row.service';
-import { Request, Response } from 'express';
+import { FastifyRequest } from 'fastify';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
@@ -337,7 +337,7 @@ export class AttendanceService {
   async exportExcel(
     dto: { subjectId: string; startDate?: string; endDate?: string },
     user: UserJwtPayload,
-    req: Request,
+    req: FastifyRequest,
   ) {
     const userLang = req.headers['accept-language']?.split(',')[0] || 'en-US';
     const subject = await this.prisma.subject.findUnique({
