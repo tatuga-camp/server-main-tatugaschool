@@ -12,7 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { Request, Response } from 'express';
+import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import {
   ForgotPasswordDto,
@@ -31,11 +31,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('sign-up')
   signup(
-    @Body()
-    dto: SignUpDto,
-    @Res() res: Response,
+    @Body() dto: SignUpDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
   ) {
-    return this.authService.signup(dto, res);
+    return this.authService.signup(dto, reply);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -58,8 +57,11 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('sign-in')
-  async signIn(@Body() dto: SignInDto, @Res() res: Response) {
-    return await this.authService.signIn(dto, res);
+  async signIn(
+    @Body() dto: SignInDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return await this.authService.signIn(dto, reply);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -72,8 +74,11 @@ export class AuthController {
 
   @HttpCode(HttpStatus.OK)
   @Post('refresh-token')
-  async refreshToken(@Body() dto: RefreshTokenDto, @Res() res: Response) {
-    return await this.authService.UserRefreshToken(dto, res);
+  async refreshToken(
+    @Body() dto: RefreshTokenDto,
+    @Res({ passthrough: true }) reply: FastifyReply,
+  ) {
+    return await this.authService.UserRefreshToken(dto, reply);
   }
 
   @HttpCode(HttpStatus.OK)
@@ -90,7 +95,7 @@ export class AuthController {
 
   @Get('google/redirect')
   @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    return this.authService.googleLogin(req, res);
+  googleAuthRedirect(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
+    return this.authService.googleLogin(req, reply);
   }
 }
