@@ -47,6 +47,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.968.0",
     "@aws-sdk/s3-request-presigner": "^3.922.0",
+    "@fastify/cookie": "^11",
     "@google/genai": "^1.40.0",
     "@line/bot-sdk": "^10.6.0",
     "@nestjs-modules/mailer": "^2.3.4",
