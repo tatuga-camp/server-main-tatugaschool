@@ -168,8 +168,14 @@ describe('WebhooksService', () => {
         type: 'invoice.paid',
         data: { object: { customer: 'cus_1', subscription: 'sub_1' } },
       };
-      const req: any = { body: 'body', headers: { 'stripe-signature': 'sig' } };
-      const res: any = { status: jest.fn().mockReturnThis(), send: jest.fn() };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
 
       mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
       mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
@@ -189,10 +195,10 @@ describe('WebhooksService', () => {
       mockSchoolService.upgradePlanBasic.mockResolvedValue({ id: 'sch1' });
       mockStripeService.subscriptions.list.mockResolvedValue({ data: [] });
 
-      await service.handleStripeWebhook(req, res);
+      await service.handleStripeWebhook(req, reply);
 
       expect(mockSchoolService.upgradePlanBasic).toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(reply.status).toHaveBeenCalledWith(200);
     });
 
     it('should handle customer.subscription.deleted', async () => {
@@ -200,8 +206,14 @@ describe('WebhooksService', () => {
         type: 'customer.subscription.deleted',
         data: { object: { id: 'sub_1' } },
       };
-      const req: any = { body: 'body', headers: { 'stripe-signature': 'sig' } };
-      const res: any = { status: jest.fn().mockReturnThis(), send: jest.fn() };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
 
       mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
       mockStripeService.invoices.list.mockResolvedValue({
@@ -212,13 +224,13 @@ describe('WebhooksService', () => {
       });
       mockSchoolService.upgradePlanFree.mockResolvedValue({ id: 'sch1' });
 
-      await service.handleStripeWebhook(req, res);
+      await service.handleStripeWebhook(req, reply);
 
       expect(mockStripeService.invoices.voidInvoice).toHaveBeenCalledWith(
         'inv_1',
       );
       expect(mockSchoolService.upgradePlanFree).toHaveBeenCalledWith('sch1');
-      expect(res.status).toHaveBeenCalledWith(200);
+      expect(reply.status).toHaveBeenCalledWith(200);
     });
   });
 });
