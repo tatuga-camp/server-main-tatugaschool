@@ -27,7 +27,7 @@ import {
   UpdateManyDto,
 } from './dto';
 import { UserGuard } from '../auth/guard';
-import { Request, Response } from 'express';
+import { FastifyRequest } from 'fastify';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/attendances')
@@ -39,7 +39,7 @@ export class AttendanceController {
   exportExcel(
     @Query() dto: GetAttendanceExportExcelDto,
     @GetUser() user: UserJwtPayload,
-    @Req() req: Request,
+    @Req() req: FastifyRequest,
   ) {
     return this.attendanceService.exportExcel(dto, user, req);
   }
