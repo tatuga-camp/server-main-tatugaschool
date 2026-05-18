@@ -23,6 +23,7 @@ import { AssignmentModule } from '../assignment/assignment.module';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { ClassModule } from '../class/class.module';
 
 @Module({
   imports: [
@@ -31,13 +32,13 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     forwardRef(() => MemberOnSchoolModule),
     forwardRef(() => GradeModule),
     forwardRef(() => AssignmentModule),
+    forwardRef(() => ClassModule),
   ],
   providers: [
     SubjectService,
     WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
-    ClassService,
     StudentService,
     GradeService,
     UsersService,
@@ -53,5 +54,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     AssignmentVideoQuizRepository,
   ],
   controllers: [SubjectController],
+  exports: [SubjectService],
 })
 export class SubjectModule {}

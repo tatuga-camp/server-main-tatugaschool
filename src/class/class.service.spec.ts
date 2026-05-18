@@ -7,6 +7,7 @@ import { PushService } from '../web-push/push.service';
 import { StorageService } from '../storage/storage.service';
 import { UsersService } from '../users/users.service';
 import { SchoolService } from '../school/school.service';
+import { SubjectService } from '../subject/subject.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
@@ -65,6 +66,13 @@ describe('ClassService', () => {
     unlockFeatures: jest.fn(),
   };
 
+  const mockSubjectService = {
+    subjectRepository: {
+      findMany: jest.fn(),
+    },
+    deleteSubject: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +84,7 @@ describe('ClassService', () => {
         { provide: StorageService, useValue: {} },
         { provide: UsersService, useValue: mockUsersService },
         { provide: SchoolService, useValue: mockSchoolService },
+        { provide: SubjectService, useValue: mockSubjectService },
         { provide: PrismaReadService, useValue: {} },
         { provide: RedisService, useValue: {} },
       ],
@@ -96,11 +105,6 @@ describe('ClassService', () => {
       update: jest.fn(),
       getTotalDeleteSize: jest.fn(),
     } as any;
-
-    (service as any).subjectRepository = {
-      updateMany: jest.fn(),
-      findMany: jest.fn(),
-    };
 
     (service as any).assignmentRepository = {
       findMany: jest.fn(),
@@ -292,14 +296,14 @@ describe('ClassService', () => {
       (service.classRepository.update as jest.Mock).mockResolvedValue({
         id: 'c1',
       });
-      (service as any).subjectRepository.updateMany.mockResolvedValue({});
+      mockSubjectService.subjectRepository.findMany
+        .mockResolvedValueOnce([{ id: 'sub1' }])
+        .mockResolvedValueOnce([{ id: 'sub1', isLocked: true }]);
+      mockSubjectService.deleteSubject.mockResolvedValue({});
       (
         service.classRepository.getTotalDeleteSize as jest.Mock
       ).mockResolvedValue(100);
       mockSchoolService.schoolRepository.update.mockResolvedValue({});
-      (service as any).subjectRepository.findMany.mockResolvedValue([
-        { id: 'sub1', isLocked: true },
-      ]);
       mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
         limitSubjectNumber: 10,
       });
@@ -314,9 +318,69 @@ describe('ClassService', () => {
         where: { id: 'c1' },
         data: { isDeleted: true },
       });
+      expect(mockSubjectService.deleteSubject).toHaveBeenCalledWith(
+        { subjectId: 'sub1' },
+        { id: 'u1' },
+      );
       expect(mockSchoolService.schoolRepository.update).toHaveBeenCalled();
       expect(mockSchoolService.unlockFeatures).toHaveBeenCalled();
       expect(result.id).toBe('c1');
+    });
+
+    it('should delete class successfully if creator (non-admin)', async () => {
+      (service.classRepository.findById as jest.Mock).mockResolvedValue({
+        id: 'c1',
+        schoolId: 's1',
+        isDeleted: false,
+        userId: 'u1',
+      });
+      mockMemberOnSchoolService.validateAccess.mockResolvedValue({
+        role: 'TEACHER',
+      });
+
+      (service.classRepository.update as jest.Mock).mockResolvedValue({
+        id: 'c1',
+      });
+      mockSubjectService.subjectRepository.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      (
+        service.classRepository.getTotalDeleteSize as jest.Mock
+      ).mockResolvedValue(0);
+      mockSchoolService.schoolRepository.update.mockResolvedValue({});
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        limitSubjectNumber: 10,
+      });
+      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([]);
+
+      const result = await service.delete({ classId: 'c1' }, {
+        id: 'u1',
+      } as any);
+
+      expect(mockSubjectService.deleteSubject).not.toHaveBeenCalled();
+      expect(mockSchoolService.unlockFeatures).not.toHaveBeenCalled();
+      expect(result.id).toBe('c1');
+    });
+
+    it('should throw NotFoundException if class not found', async () => {
+      (service.classRepository.findById as jest.Mock).mockResolvedValue(null);
+
+      await expect(
+        service.delete({ classId: 'c1' }, { id: 'u1' } as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if class is already deleted', async () => {
+      (service.classRepository.findById as jest.Mock).mockResolvedValue({
+        id: 'c1',
+        schoolId: 's1',
+        isDeleted: true,
+        userId: 'u2',
+      });
+
+      await expect(
+        service.delete({ classId: 'c1' }, { id: 'u1' } as any),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException if user is not admin and not creator', async () => {
@@ -334,6 +398,55 @@ describe('ClassService', () => {
         service.delete({ classId: 'c1' }, { id: 'u1' } as any),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should throw ForbiddenException if class has no creator and user is not admin', async () => {
+      (service.classRepository.findById as jest.Mock).mockResolvedValue({
+        id: 'c1',
+        schoolId: 's1',
+        isDeleted: false,
+        userId: null,
+      });
+      mockMemberOnSchoolService.validateAccess.mockResolvedValue({
+        role: 'TEACHER',
+      });
+
+      await expect(
+        service.delete({ classId: 'c1' }, { id: 'u1' } as any),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should delete class with no creator if user is admin', async () => {
+      (service.classRepository.findById as jest.Mock).mockResolvedValue({
+        id: 'c1',
+        schoolId: 's1',
+        isDeleted: false,
+        userId: null,
+      });
+      mockMemberOnSchoolService.validateAccess.mockResolvedValue({
+        role: 'ADMIN',
+      });
+
+      (service.classRepository.update as jest.Mock).mockResolvedValue({
+        id: 'c1',
+      });
+      mockSubjectService.subjectRepository.findMany
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([]);
+      (
+        service.classRepository.getTotalDeleteSize as jest.Mock
+      ).mockResolvedValue(0);
+      mockSchoolService.schoolRepository.update.mockResolvedValue({});
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        limitSubjectNumber: 10,
+      });
+      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([]);
+
+      const result = await service.delete({ classId: 'c1' }, {
+        id: 'u1',
+      } as any);
+
+      expect(result.id).toBe('c1');
+    });
   });
 
   describe('getGradeSummaryReport', () => {
@@ -345,7 +458,7 @@ describe('ClassService', () => {
       mockMemberOnSchoolService.validateAccess.mockResolvedValue(true);
 
       const mockSubjects = [{ id: 'sub1' }];
-      (service as any).subjectRepository.findMany.mockResolvedValue(
+      mockSubjectService.subjectRepository.findMany.mockResolvedValue(
         mockSubjects,
       );
 

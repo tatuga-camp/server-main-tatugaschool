@@ -23,16 +23,20 @@ import { SubjectModule } from '../subject/subject.module';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { SubscriptionService } from '../subscription/subscription.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
+import { ClassModule } from '../class/class.module';
 
 @Module({
-  imports: [HttpModule, forwardRef(() => SubjectModule)],
+  imports: [
+    HttpModule,
+    forwardRef(() => SubjectModule),
+    forwardRef(() => ClassModule),
+  ],
   providers: [
     FileAssignmentService,
     SubjectService,
     WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
-    ClassService,
     MemberOnSchoolService,
     SchoolService,
     StudentService,

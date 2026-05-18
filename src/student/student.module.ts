@@ -7,11 +7,13 @@ import { UsersService } from '../users/users.service';
 import { ClassService } from '../class/class.service';
 import { SchoolModule } from '../school/school.module';
 import { MemberOnSchoolModule } from '../member-on-school/member-on-school.module';
+import { SubjectModule } from '../subject/subject.module';
 
 @Module({
   imports: [
     forwardRef(() => SchoolModule),
     forwardRef(() => MemberOnSchoolModule),
+    forwardRef(() => SubjectModule),
   ],
   providers: [StudentService, StudentRepository, UsersService, ClassService],
   controllers: [StudentController],
