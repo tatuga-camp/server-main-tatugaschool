@@ -17,6 +17,7 @@ import { AuthService } from '../src/auth/auth.service';
 import { FileOnStudentAssignmentService } from '../src/file-on-student-assignment/file-on-student-assignment.service';
 import { WebhooksService } from '../src/webhooks/webhooks.service';
 import { UserGuard } from '../src/auth/guard';
+import { SchoolService } from '../src/school/school.service';
 
 jest.mock('web-push', () => ({
   setVapidDetails: jest.fn(),
@@ -59,6 +60,9 @@ describe('Fastify adapter (e2e)', () => {
     handleStripeWebhook: jest.fn(),
     handleLineWebhook: jest.fn(),
   } as any;
+  const mockSchool = {
+    deleteSchool: jest.fn().mockResolvedValue({ ok: true }),
+  } as any;
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
@@ -73,6 +77,7 @@ describe('Fastify adapter (e2e)', () => {
       .overrideProvider(AuthService).useValue(mockAuth)
       .overrideProvider(FileOnStudentAssignmentService).useValue(mockFileOnStudent)
       .overrideProvider(WebhooksService).useValue(mockWebhooks)
+      .overrideProvider(SchoolService).useValue(mockSchool)
       .overrideGuard(UserGuard).useValue({ canActivate: () => true })
       .overrideGuard(AuthGuard('google')).useValue({
         canActivate: (ctx: ExecutionContext) => {
@@ -97,6 +102,29 @@ describe('Fastify adapter (e2e)', () => {
       { rawBody: true },
     );
     await app.register(fastifyCookie);
+
+    // Override Fastify's default JSON parser to accept empty bodies.
+    // useBodyParser sets _isParserRegistered = true, preventing NestJS from
+    // re-registering its own parser during app.init().
+    const adapter = app.getHttpAdapter() as any;
+    adapter.registerUrlencodedContentParser(true);
+    adapter.useBodyParser(
+      'application/json',
+      true,
+      {},
+      (_req: any, body: Buffer, done: (err: Error | null, body?: unknown) => void) => {
+        if (!body || body.length === 0) {
+          done(null, undefined);
+          return;
+        }
+        try {
+          done(null, JSON.parse(body.toString('utf8')));
+        } catch (err) {
+          done(err as Error, undefined);
+        }
+      },
+    );
+
     app.enableCors({
       origin: true,
       methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
@@ -280,4 +308,13 @@ describe('Fastify adapter (e2e)', () => {
     });
     expect(res.statusCode).toBe(413);
   }, 30000);
+
+  it('DELETE with Content-Type application/json and no body is not rejected', async () => {
+    const res = await app.inject({
+      method: 'DELETE',
+      url: '/v1/schools/507f1f77bcf86cd799439011',
+      headers: { 'content-type': 'application/json' },
+    });
+    expect(res.statusCode).not.toBe(400);
+  });
 });
