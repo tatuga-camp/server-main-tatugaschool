@@ -522,6 +522,18 @@ export class StudentOnSubjectService {
         });
       }
 
+      if (dto.data.photo && dto.data.blurHash) {
+        await this.studentRepository.update({
+          query: {
+            studentId: studentOnSubject.studentId,
+          },
+          body: {
+            photo: dto.data.photo,
+            blurHash: dto.data.blurHash,
+          },
+        });
+      }
+
       if (subject.wheelOfNamePath && dto.data.isActive) {
         const studentActives = await this.studentOnSubjectRepository.findMany({
           where: {
