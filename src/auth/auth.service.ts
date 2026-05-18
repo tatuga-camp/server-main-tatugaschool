@@ -436,6 +436,7 @@ export class AuthService {
         if (user.provider !== 'GOOGLE') {
           return reply.redirect(
             `${process.env.CLIENT_URL}/auth/sign-in?error=Please sign in with email and password`,
+            302,
           );
         }
 
@@ -454,17 +455,19 @@ export class AuthService {
         if (!user.isVerifyEmail) {
           return reply.redirect(
             `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+            302,
           );
         }
         await this.usersRepository.updateLastActiveAt({ email: user.email });
         const url = user.favoritSchool
           ? `${process.env.CLIENT_URL}/school/${user.favoritSchool}`
           : `${process.env.CLIENT_URL}`;
-        return reply.redirect(url);
+        return reply.redirect(url, 302);
       }
 
       return reply.redirect(
         `${process.env.CLIENT_URL}/auth/sign-up?email=${data.email}&firstName=${data.firstName}&lastName=${data.lastName}&provider=google&providerId=${data.providerId}&photo=${data.photo}`,
+        302,
       );
     } catch (error) {
       this.logger.error(error);
