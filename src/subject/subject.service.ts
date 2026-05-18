@@ -1046,12 +1046,6 @@ export class SubjectService {
         throw new NotFoundException('Subject is flagged as deleted');
       }
 
-      if (subject.isLocked === true) {
-        throw new ForbiddenException(
-          'Subject is locked. Cannot make any changes!',
-        );
-      }
-
       const tracherOnSubject =
         await this.teacherOnSubjectService.ValidateAccess({
           userId: user.id,
