@@ -12,7 +12,14 @@ import { JwtService } from '@nestjs/jwt';
 import { School, Student, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { Request, Response } from 'express';
+import '@fastify/cookie';
+import { FastifyReply, FastifyRequest } from 'fastify';
+
+declare module 'fastify' {
+  interface FastifyRequest {
+    user?: unknown;
+  }
+}
 import { Auth, google } from 'googleapis';
 import { EmailService } from '../email/email.service';
 import { StorageService } from '../storage/storage.service';
@@ -147,7 +154,7 @@ export class AuthService {
     }
   }
 
-  async signup(dto: SignUpDto, res: Response): Promise<Response> {
+  async signup(dto: SignUpDto, reply: FastifyReply) {
     try {
       const existingUser = await this.usersRepository.findByEmail({
         email: dto.email,
@@ -194,13 +201,13 @@ export class AuthService {
         email: user.email,
       });
       const token = await this.sendVerifyEmail(user);
-      this.setCookieAccessToken(res, accessToken);
-      this.setCookieRefreshToken(res, refreshToken);
+      this.setCookieAccessToken(reply, accessToken);
+      this.setCookieRefreshToken(reply, refreshToken);
 
-      return res.json({
+      return {
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         token: token.token,
-      });
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -274,7 +281,7 @@ export class AuthService {
     }
   }
 
-  async signIn(dto: SignInDto, res: Response) {
+  async signIn(dto: SignInDto, reply: FastifyReply) {
     try {
       const user = await this.usersRepository.findByEmail({
         email: dto.email,
@@ -304,20 +311,20 @@ export class AuthService {
         email: user.email,
       });
 
-      this.setCookieAccessToken(res, accessToken);
-      this.setCookieRefreshToken(res, refreshToken);
+      this.setCookieAccessToken(reply, accessToken);
+      this.setCookieRefreshToken(reply, refreshToken);
 
       if (!user.isVerifyEmail) {
-        return res.json({
+        return {
           redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
-        });
+        };
       }
 
-      return res.json({
+      return {
         redirectUrl: process.env.CLIENT_URL,
         refreshToken: refreshToken,
         accessToken: accessToken,
-      });
+      };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -360,7 +367,7 @@ export class AuthService {
     }
   }
 
-  async UserRefreshToken(dto: RefreshTokenDto, res: Response) {
+  async UserRefreshToken(dto: RefreshTokenDto, _reply: FastifyReply) {
     try {
       const verify = await this.jwtService
         .verifyAsync<{
@@ -377,7 +384,7 @@ export class AuthService {
         userId: verify.id,
         email: verify.email,
       });
-      return res.json({ accessToken: accessToken });
+      return { accessToken };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -414,7 +421,7 @@ export class AuthService {
       throw error;
     }
   }
-  async googleLogin(req: Request, res: Response) {
+  async googleLogin(req: FastifyRequest, reply: FastifyReply) {
     try {
       if (!req.user) {
         throw new NotFoundException('ไม่พบผู้ใช้งานนี้ใน google');
@@ -427,7 +434,7 @@ export class AuthService {
 
       if (user) {
         if (user.provider !== 'GOOGLE') {
-          return res.redirect(
+          return reply.redirect(
             `${process.env.CLIENT_URL}/auth/sign-in?error=Please sign in with email and password`,
           );
         }
@@ -441,11 +448,11 @@ export class AuthService {
           email: user.email,
         });
 
-        this.setCookieAccessToken(res, accessToken);
-        this.setCookieRefreshToken(res, refreshToken);
+        this.setCookieAccessToken(reply, accessToken);
+        this.setCookieRefreshToken(reply, refreshToken);
 
         if (!user.isVerifyEmail) {
-          return res.redirect(
+          return reply.redirect(
             `${process.env.CLIENT_URL}/auth/wait-verify-email`,
           );
         }
@@ -453,10 +460,10 @@ export class AuthService {
         const url = user.favoritSchool
           ? `${process.env.CLIENT_URL}/school/${user.favoritSchool}`
           : `${process.env.CLIENT_URL}`;
-        return res.redirect(url);
+        return reply.redirect(url);
       }
 
-      return res.redirect(
+      return reply.redirect(
         `${process.env.CLIENT_URL}/auth/sign-up?email=${data.email}&firstName=${data.firstName}&lastName=${data.lastName}&provider=google&providerId=${data.providerId}&photo=${data.photo}`,
       );
     } catch (error) {
@@ -621,22 +628,24 @@ export class AuthService {
     }
   }
 
-  setCookieAccessToken(res: Response, accessToken: string) {
-    res.cookie('access_token', accessToken, {
-      maxAge: 1000 * 60 * 60 * 24 * 3,
+  setCookieAccessToken(reply: FastifyReply, accessToken: string) {
+    reply.setCookie('access_token', accessToken, {
+      maxAge: 60 * 60 * 24 * 3,
       secure: true,
       sameSite: 'none',
+      path: '/',
       ...(this.config.get('NODE_ENV') === 'production' && {
         domain: '.tatugaschool.com',
       }),
     });
   }
 
-  setCookieRefreshToken(res: Response, refreshToken: string) {
-    res.cookie('refresh_token', refreshToken, {
-      maxAge: 1000 * 60 * 60 * 24 * 3,
+  setCookieRefreshToken(reply: FastifyReply, refreshToken: string) {
+    reply.setCookie('refresh_token', refreshToken, {
+      maxAge: 60 * 60 * 24 * 3,
       secure: true,
       sameSite: 'none',
+      path: '/',
       ...(this.config.get('NODE_ENV') === 'production' && {
         domain: '.tatugaschool.com',
       }),

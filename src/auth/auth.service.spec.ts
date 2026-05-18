@@ -183,15 +183,14 @@ describe('AuthService', () => {
         .spyOn(service, 'sendVerifyEmail')
         .mockResolvedValue({ token: 'verify-token' });
 
-      const mockRes = {
-        cookie: jest.fn(),
-        json: jest.fn((data) => data),
+      const mockReply = {
+        setCookie: jest.fn(),
       } as any;
 
-      const result = await service.signup(dto, mockRes);
+      const result = await service.signup(dto, mockReply);
 
       expect(service.usersRepository.createUser).toHaveBeenCalled();
-      expect(mockRes.cookie).toHaveBeenCalledTimes(2);
+      expect(mockReply.setCookie).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         token: 'verify-token',
@@ -227,17 +226,16 @@ describe('AuthService', () => {
         service.usersRepository.updateLastActiveAt as jest.Mock
       ).mockResolvedValue({});
 
-      const mockRes = {
-        cookie: jest.fn(),
-        json: jest.fn((data) => data),
+      const mockReply = {
+        setCookie: jest.fn(),
       } as any;
 
       const result = await service.signIn(
         { email: 'test@example.com', password: 'password123' },
-        mockRes,
+        mockReply,
       );
 
-      expect(mockRes.cookie).toHaveBeenCalledTimes(2);
+      expect(mockReply.setCookie).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
         redirectUrl: process.env.CLIENT_URL,
         refreshToken: 'token',
