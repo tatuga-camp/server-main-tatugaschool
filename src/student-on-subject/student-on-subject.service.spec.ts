@@ -95,6 +95,7 @@ describe('StudentOnSubjectService', () => {
 
     (service as any).studentRepository = {
       findById: jest.fn(),
+      update: jest.fn(),
     };
 
     (service as any).classRepository = {
@@ -188,6 +189,187 @@ describe('StudentOnSubjectService', () => {
       await expect(
         service.update({ query: { id: 'sos1' }, data: {} } as any, {} as any),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update student photo and blurHash when both are provided', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', subjectId: 's1', studentId: 'st1' });
+      (service as any).subjectRepository.getSubjectById.mockResolvedValue({
+        id: 's1',
+        wheelOfNamePath: null,
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (
+        service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
+      ).mockResolvedValue({ id: 'sos1' });
+      (service as any).studentRepository.update.mockResolvedValue({ id: 'st1' });
+
+      await service.update(
+        {
+          query: { id: 'sos1' },
+          data: { photo: 'https://example.com/p.png', blurHash: 'LKO2?U%2Tw=w' },
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect((service as any).studentRepository.update).toHaveBeenCalledWith({
+        query: { studentId: 'st1' },
+        body: {
+          photo: 'https://example.com/p.png',
+          blurHash: 'LKO2?U%2Tw=w',
+        },
+      });
+    });
+
+    it('should not update student when only photo is provided', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', subjectId: 's1', studentId: 'st1' });
+      (service as any).subjectRepository.getSubjectById.mockResolvedValue({
+        id: 's1',
+        wheelOfNamePath: null,
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (
+        service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
+      ).mockResolvedValue({ id: 'sos1' });
+
+      await service.update(
+        {
+          query: { id: 'sos1' },
+          data: { photo: 'https://example.com/p.png' },
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect((service as any).studentRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('should refresh wheel of name when subject has wheelOfNamePath and isActive is true', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', subjectId: 's1' });
+      (service as any).subjectRepository.getSubjectById.mockResolvedValue({
+        id: 's1',
+        title: 'Math',
+        description: 'desc',
+        wheelOfNamePath: '/wheel/abc',
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (
+        service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', isActive: true });
+      (
+        service.studentOnSubjectRepository.findMany as jest.Mock
+      ).mockResolvedValue([
+        { title: 'Mr.', firstName: 'John', lastName: 'Doe' },
+      ]);
+
+      await service.update(
+        { query: { id: 'sos1' }, data: { isActive: true } } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(mockWheelOfNameService.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          path: '/wheel/abc',
+          title: 'Math',
+          description: 'desc',
+          texts: [{ text: 'Mr. John Doe' }],
+        }),
+      );
+    });
+
+    it('should not refresh wheel of name when subject has no wheelOfNamePath', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', subjectId: 's1' });
+      (service as any).subjectRepository.getSubjectById.mockResolvedValue({
+        id: 's1',
+        wheelOfNamePath: null,
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (
+        service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', isActive: true });
+
+      await service.update(
+        { query: { id: 'sos1' }, data: { isActive: true } } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(mockWheelOfNameService.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getStudentOnSubjectById', () => {
+    it('should return the student on subject', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
+      ).mockResolvedValue({ id: 'sos1', subjectId: 's1' });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+
+      const result = await service.getStudentOnSubjectById(
+        { studentOnSubjectId: 'sos1' },
+        { id: 'u1' } as any,
+      );
+
+      expect(result.id).toBe('sos1');
+      expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+        userId: 'u1',
+        subjectId: 's1',
+      });
+    });
+
+    it('should throw NotFoundException if not found', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
+      ).mockResolvedValue(null);
+
+      await expect(
+        service.getStudentOnSubjectById(
+          { studentOnSubjectId: 'sos1' },
+          { id: 'u1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getStudentOnSubjectsByStudentId', () => {
+    it('should return [] when student has no subjects', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectsByStudentId as jest.Mock
+      ).mockResolvedValue([]);
+
+      const result = await service.getStudentOnSubjectsByStudentId(
+        { studentId: 'st1' } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(result).toEqual([]);
+      expect(mockTeacherOnSubjectService.ValidateAccess).not.toHaveBeenCalled();
+    });
+
+    it('should validate access against the first subject and return results', async () => {
+      (
+        service.studentOnSubjectRepository.getStudentOnSubjectsByStudentId as jest.Mock
+      ).mockResolvedValue([
+        { id: 'sos1', subjectId: 's1' },
+        { id: 'sos2', subjectId: 's2' },
+      ]);
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+
+      const result = await service.getStudentOnSubjectsByStudentId(
+        { studentId: 'st1' } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+        userId: 'u1',
+        subjectId: 's1',
+      });
+      expect(result).toHaveLength(2);
     });
   });
 
