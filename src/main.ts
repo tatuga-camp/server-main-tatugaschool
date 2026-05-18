@@ -19,6 +19,29 @@ async function bootstrap() {
 
   await app.register(fastifyCookie);
 
+  // Override Fastify's default JSON parser to accept empty bodies.
+  // useBodyParser sets _isParserRegistered = true, preventing NestJS from
+  // re-registering its own parser during app.init() / app.listen().
+  // We also register urlencoded manually since we're taking over parser setup.
+  const adapter = app.getHttpAdapter() as any;
+  adapter.registerUrlencodedContentParser(true);
+  adapter.useBodyParser(
+    'application/json',
+    true,
+    {},
+    (req: any, body: Buffer, done: (err: Error | null, body?: unknown) => void) => {
+      if (!body || body.length === 0) {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body.toString('utf8')));
+      } catch (err) {
+        done(err as Error, undefined);
+      }
+    },
+  );
+
   const isDevelopment = process.env.NODE_ENV !== 'production';
 
   const allowedOrigins = isDevelopment
