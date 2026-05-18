@@ -1,3 +1,4 @@
+import { SubjectService } from './../subject/subject.service';
 import {
   ForbiddenException,
   forwardRef,
@@ -29,7 +30,6 @@ import { UserJwtPayload } from '../interfaces/jwt-payload';
 export class ClassService {
   private logger = new Logger(ClassService.name);
   private studentRepository: StudentRepository;
-  private subjectRepository: SubjectRepository;
   private assignmentRepository: AssignmentRepository;
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   classRepository: ClassRepository;
@@ -46,6 +46,8 @@ export class ClassService {
     private schoolService: SchoolService,
     private prismaReadService: PrismaReadService,
     private redisService: RedisService,
+    @Inject(forwardRef(() => SubjectService))
+    private subjectService: SubjectService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
@@ -59,11 +61,7 @@ export class ClassService {
       this.redisService,
       this.prismaReadService,
     );
-    this.subjectRepository = new SubjectRepository(
-      this.prisma,
-      this.storageService,
-      this.prismaReadService,
-    );
+
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
@@ -325,14 +323,24 @@ export class ClassService {
         },
       });
 
-      await this.subjectRepository.updateMany({
-        where: {
-          classId: classroom.id,
-        },
-        data: {
-          isDeleted: true,
-        },
-      });
+      const subjectsInClass =
+        await this.subjectService.subjectRepository.findMany({
+          where: {
+            classId: classroom.id,
+            isDeleted: false,
+          },
+        });
+
+      await Promise.all(
+        subjectsInClass.map((s) =>
+          this.subjectService.deleteSubject(
+            {
+              subjectId: s.id,
+            },
+            user,
+          ),
+        ),
+      );
 
       const totalDeleteSize = await this.classRepository.getTotalDeleteSize({
         classroomId: classroom.id,
@@ -350,7 +358,7 @@ export class ClassService {
       });
 
       const [subjects, school] = await Promise.all([
-        this.subjectRepository.findMany({
+        this.subjectService.subjectRepository.findMany({
           where: {
             schoolId: classroom.schoolId,
             isDeleted: false,
@@ -477,7 +485,7 @@ export class ClassService {
         schoolId: classroom.schoolId,
       });
 
-      const subjects = await this.subjectRepository.findMany({
+      const subjects = await this.subjectService.subjectRepository.findMany({
         where: {
           classId: dto.classId,
           educationYear: dto.educationYear,

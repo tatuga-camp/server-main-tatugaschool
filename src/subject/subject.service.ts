@@ -80,6 +80,7 @@ export class SubjectService {
     private wheelOfNameService: WheelOfNameService,
     private attendanceTableService: AttendanceTableService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    @Inject(forwardRef(() => ClassService))
     private classroomService: ClassService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,

@@ -37,6 +37,7 @@ export class FileAssignmentService {
     private storageService: StorageService,
     @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
+    @Inject(forwardRef(() => ClassService))
     private classService: ClassService,
     private stripe: StripeService,
   ) {
