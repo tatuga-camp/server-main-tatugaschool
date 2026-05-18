@@ -1,21 +1,26 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import * as bodyParser from 'body-parser';
+import {
+  FastifyAdapter,
+  NestFastifyApplication,
+} from '@nestjs/platform-fastify';
+import fastifyCookie from '@fastify/cookie';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    rawBody: true,
-  });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({
+      bodyLimit: 100 * 1024 * 1024,
+      trustProxy: true,
+    }),
+    { rawBody: true },
+  );
 
-  app.use('/webhooks', bodyParser.raw({ type: 'application/json' }));
-  app.use(bodyParser.json({ limit: '100mb' }));
-  app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+  await app.register(fastifyCookie);
 
   const isDevelopment = process.env.NODE_ENV !== 'production';
 
-  // Determine the allowed origins
   const allowedOrigins = isDevelopment
     ? true
     : [
@@ -30,6 +35,7 @@ async function bootstrap() {
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
+
   const logger = new Logger('NestApplication');
   app.useGlobalPipes(
     new ValidationPipe({
@@ -38,16 +44,15 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.PORT || 3000;
-  await app.listen(port, () => {
-    logger.log(`Hello world listening on port : ${port}`);
-    logger.log(`Allowed origins: ${allowedOrigins}`);
-    logger.log(`Environment: ${process.env.NODE_ENV}`);
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port, '0.0.0.0');
+  logger.log(`Hello world listening on port : ${port}`);
+  logger.log(`Allowed origins: ${allowedOrigins}`);
+  logger.log(`Environment: ${process.env.NODE_ENV}`);
 
-    const isBun = typeof Bun !== 'undefined';
-    logger.log(`Runtime: ${isBun ? 'Bun' : 'Node.js'}`);
-    logger.log(`Version: ${isBun ? Bun.version : process.version}`);
-  });
+  const isBun = typeof Bun !== 'undefined';
+  logger.log(`Runtime: ${isBun ? 'Bun' : 'Node.js'}`);
+  logger.log(`Version: ${isBun ? Bun.version : process.version}`);
 }
 
 bootstrap();
