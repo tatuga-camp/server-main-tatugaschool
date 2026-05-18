@@ -1,5 +1,5 @@
 import { Student, User } from '@prisma/client';
-import { Response } from 'express';
+import { FastifyReply } from 'fastify';
 import {
   CreateFileOnStudentAssignmentDto,
   DeleteFileOnStudentAssignmentDto,
@@ -58,14 +58,16 @@ export class FileOnStudentAssignmentController {
   async downloadAllFiles(
     @Body() dto: DowloadAllFilesDto,
     @GetUser() user: UserJwtPayload,
-    @Res() res: Response,
+    @Res() reply: FastifyReply,
   ) {
     const archive = await this.fileOnStudentAssignmentService.downloadAllFiles(
       dto,
       user,
     );
-    res.attachment('assignments.zip');
-    archive.pipe(res);
+    return reply
+      .header('Content-Disposition', 'attachment; filename="assignments.zip"')
+      .type('application/zip')
+      .send(archive);
   }
 
   @UseGuards(StudentGuard)
