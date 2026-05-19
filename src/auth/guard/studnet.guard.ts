@@ -1,22 +1,10 @@
-import {
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { AuthGuard } from '@nestjs/passport';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { createFastifyPassportGuard } from './fastify-passport.guard';
 
 @Injectable()
-export class StudentGuard extends AuthGuard('student-jwt') {
-  canActivate(context: ExecutionContext) {
-    return super.canActivate(context);
-  }
-
-  handleRequest(err, student, info) {
-    if (err || !student) {
-      throw new UnauthorizedException('Access denied');
-    } else {
-      return student;
-    }
+export class StudentGuard extends createFastifyPassportGuard('student-jwt') {
+  handleRequest(err: unknown, student: any): any {
+    if (err || !student) throw new UnauthorizedException('Access denied');
+    return student;
   }
 }

@@ -1,24 +1,19 @@
 import {
-  ExecutionContext,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { createFastifyPassportGuard } from './fastify-passport.guard';
 
 @Injectable()
-export class UserGuard extends AuthGuard('user-jwt') {
-  canActivate(context: ExecutionContext) {
-    return super.canActivate(context);
-  }
-
-  handleRequest(err, user, info) {
+export class UserGuard extends createFastifyPassportGuard('user-jwt') {
+  handleRequest(err: unknown, user: any): any {
     if (err || !user) {
       throw new UnauthorizedException('Access denied');
-    } else if (user.isVerifyEmail === false) {
-      throw new ForbiddenException('Email not verified');
-    } else {
-      return user;
     }
+    if (user.isVerifyEmail === false) {
+      throw new ForbiddenException('Email not verified');
+    }
+    return user;
   }
 }

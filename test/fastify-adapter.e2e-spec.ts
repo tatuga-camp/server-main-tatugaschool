@@ -11,6 +11,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { PrismaReadService } from '../src/prisma/prisma-read.service';
@@ -79,6 +80,7 @@ type BuildAppOptions = {
   corsOrigin: boolean | string[];
   realAuth?: boolean;
   realGoogleGuard?: boolean;
+  realUserGuard?: boolean;
   prisma?: any;
   jwt?: any;
   config?: any;
@@ -103,9 +105,12 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
   if (opts.jwt) builder = builder.overrideProvider(JwtService).useValue(opts.jwt);
   if (opts.config) builder = builder.overrideProvider(ConfigService).useValue(opts.config);
 
-  let guardedBuilder = builder.overrideGuard(UserGuard).useValue({
-    canActivate: () => true,
-  });
+  let guardedBuilder = builder;
+  if (!opts.realUserGuard) {
+    guardedBuilder = guardedBuilder.overrideGuard(UserGuard).useValue({
+      canActivate: () => true,
+    });
+  }
   if (!opts.realGoogleGuard) {
     guardedBuilder = guardedBuilder
       .overrideGuard(AuthGuard('google'))
@@ -583,5 +588,55 @@ describe('Fastify adapter — real AuthGuard(google) initial redirect', () => {
       /^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/,
     );
     expect(res.headers['location']).toContain('client_id=gid');
+  });
+});
+
+describe('Fastify adapter — UserGuard via fastify-passport', () => {
+  let app: NestFastifyApplication;
+  // The JWT secret must match what UserAccessTokenStrategy reads from config.
+  // mockConfig below returns 'access' for JWT_ACCESS_SECRET, so we sign with
+  // the same string.
+  const validToken = jwt.sign({ id: 'u-1', email: 'u@x.com' }, 'access');
+
+  const configValues: Record<string, string> = {
+    JWT_ACCESS_SECRET: 'access',
+    JWT_REFRESH_SECRET: 'refresh',
+    STUDENT_JWT_ACCESS_SECRET: 'student-access',
+    STUDENT_JWT_REFRESH_SECRET: 'student-refresh',
+    GOOGLE_CLIENT_ID: 'gid',
+    GOOGLE_CLIENT_SECRET: 'gsecret',
+    GOOGLE_CALL_BACK: 'https://x/cb',
+    NODE_ENV: 'test',
+  };
+  const mockConfig = {
+    get: jest.fn((k: string) => configValues[k]),
+  };
+
+  beforeAll(async () => {
+    app = await buildApp({
+      corsOrigin: true,
+      realUserGuard: true,
+      config: mockConfig,
+    });
+  });
+
+  afterAll(async () => app.close());
+
+  // Pick any always-existing UserGuard-protected GET route in the codebase.
+  // We use /v1/users/me. The downstream handler will likely error (Prisma is
+  // mocked as {}), but that's fine — the test is verifying the GUARD
+  // behavior, not the controller's business logic.
+  it('GET /v1/users/me accepts a valid Bearer token', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/users/me',
+      headers: { authorization: `Bearer ${validToken}` },
+    });
+    expect(res.statusCode).not.toBe(401);
+  });
+
+  it('GET /v1/users/me without Bearer token returns 401', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/users/me' });
+    expect(res.statusCode).toBe(401);
   });
 });

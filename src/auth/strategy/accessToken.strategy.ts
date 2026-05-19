@@ -1,66 +1,67 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
-import { Student, User } from '@prisma/client';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import fastifyPassport from '@fastify/passport';
 import {
   StudentJwtPayload,
   UserJwtPayload,
 } from '../../interfaces/jwt-payload';
 
 @Injectable()
-export class UserAccessTokenStrategy extends PassportStrategy(
-  Strategy,
-  'user-jwt',
-) {
-  logger: Logger;
-  constructor(
-    config: ConfigService,
-    private prisma: PrismaService,
-  ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: config.get('JWT_ACCESS_SECRET'),
-    });
-    this.logger = new Logger(UserAccessTokenStrategy.name);
-  }
+export class UserAccessTokenStrategy implements OnModuleInit {
+  private readonly logger = new Logger(UserAccessTokenStrategy.name);
+  constructor(private config: ConfigService) {}
 
-  async validate(payload: UserJwtPayload) {
-    try {
-      return payload;
-    } catch (err) {
-      this.logger.error(err);
-      throw new UnauthorizedException();
-    }
+  onModuleInit() {
+    fastifyPassport.use(
+      'user-jwt',
+      new Strategy(
+        {
+          jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+          ignoreExpiration: false,
+          secretOrKey: this.config.get('JWT_ACCESS_SECRET'),
+        },
+        (payload: UserJwtPayload, done) => {
+          try {
+            done(null, payload);
+          } catch (err) {
+            this.logger.error(err);
+            done(new UnauthorizedException(), false);
+          }
+        },
+      ),
+    );
   }
 }
 
 @Injectable()
-export class StudentAccessTokenStrategy extends PassportStrategy(
-  Strategy,
-  'student-jwt',
-) {
-  logger: Logger;
-  constructor(
-    config: ConfigService,
-    private prisma: PrismaService,
-  ) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: config.get('STUDENT_JWT_ACCESS_SECRET'),
-    });
-    this.logger = new Logger(UserAccessTokenStrategy.name);
-  }
+export class StudentAccessTokenStrategy implements OnModuleInit {
+  private readonly logger = new Logger(StudentAccessTokenStrategy.name);
+  constructor(private config: ConfigService) {}
 
-  async validate(payload: StudentJwtPayload) {
-    try {
-      return payload;
-    } catch (err) {
-      this.logger.error(err);
-      throw new UnauthorizedException();
-    }
+  onModuleInit() {
+    fastifyPassport.use(
+      'student-jwt',
+      new Strategy(
+        {
+          jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+          ignoreExpiration: false,
+          secretOrKey: this.config.get('STUDENT_JWT_ACCESS_SECRET'),
+        },
+        (payload: StudentJwtPayload, done) => {
+          try {
+            done(null, payload);
+          } catch (err) {
+            this.logger.error(err);
+            done(new UnauthorizedException(), false);
+          }
+        },
+      ),
+    );
   }
 }
