@@ -84,7 +84,7 @@ export class WheelOfNameRepository implements Repository {
     try {
       const response = this.httpService
         .put<ResponseUpdate>(
-          `https://wheelofnames.com/api/v1/wheels/${request.where.path}`,
+          `https://wheelofnames.com/api/v2/wheels/${request.where.path}`,
           {
             ...request.data,
           },
