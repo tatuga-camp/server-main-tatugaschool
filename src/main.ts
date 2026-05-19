@@ -5,6 +5,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
+import fastifyPassport from '@fastify/passport';
+import fastifySecureSession from '@fastify/secure-session';
 import { AppModule } from './app.module';
 import { PRODUCTION_CORS_ORIGINS } from './cors-config';
 
@@ -14,13 +16,28 @@ async function bootstrap() {
     new FastifyAdapter({
       bodyLimit: 100 * 1024 * 1024,
       trustProxy: true,
-      ignoreTrailingSlash: true,
-      ignoreDuplicateSlashes: true,
+      routerOptions: {
+        ignoreTrailingSlash: true,
+      },
     }),
     { rawBody: true },
   );
 
   await app.register(fastifyCookie);
+
+  // @fastify/passport requires a session plugin even for stateless JWT flows.
+  // We use secure-session with a key derived from JWT_REFRESH_SECRET — never
+  // actually used because every strategy passes { session: false }, but the
+  // API contract demands registration.
+  const sessionKey = Buffer.alloc(32);
+  Buffer.from(process.env.JWT_REFRESH_SECRET ?? 'dev-fallback')
+    .copy(sessionKey, 0, 0, 32);
+  await app.register(fastifySecureSession, {
+    key: sessionKey,
+    cookie: { path: '/', secure: true, sameSite: 'none' },
+  });
+  await app.register(fastifyPassport.initialize());
+  await app.register(fastifyPassport.secureSession());
 
   // Express-compat shim for @nestjs/passport. passport-oauth2's redirect path
   // (initial OAuth provider redirect) calls res.setHeader('Location', ...) and

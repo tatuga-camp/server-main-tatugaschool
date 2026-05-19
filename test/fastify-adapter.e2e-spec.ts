@@ -4,6 +4,8 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
+import fastifyPassport from '@fastify/passport';
+import fastifySecureSession from '@fastify/secure-session';
 import { ExecutionContext, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
@@ -134,9 +136,17 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
   );
   await app.register(fastifyCookie);
 
+  const fastifyInstance = app.getHttpAdapter().getInstance();
+  const sessionKey = Buffer.alloc(32, 'a');
+  await fastifyInstance.register(fastifySecureSession, {
+    key: sessionKey,
+    cookie: { path: '/' },
+  });
+  await fastifyInstance.register(fastifyPassport.initialize());
+  await fastifyInstance.register(fastifyPassport.secureSession());
+
   // Mirror the Express-compat shim from main.ts so passport-oauth2's redirect
   // path doesn't crash inside the real GoogleStrategy under test.
-  const fastifyInstance = app.getHttpAdapter().getInstance();
   fastifyInstance.addHook('onRequest', (_req, reply, hookDone) => {
     const r = reply as any;
     if (typeof r.setHeader !== 'function') {
