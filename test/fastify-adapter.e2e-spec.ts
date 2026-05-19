@@ -7,7 +7,6 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyPassport from '@fastify/passport';
 import fastifySecureSession from '@fastify/secure-session';
 import { ExecutionContext, ValidationPipe } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -23,6 +22,7 @@ import { AuthService } from '../src/auth/auth.service';
 import { FileOnStudentAssignmentService } from '../src/file-on-student-assignment/file-on-student-assignment.service';
 import { WebhooksService } from '../src/webhooks/webhooks.service';
 import { UserGuard } from '../src/auth/guard';
+import { GoogleOAuthGuard } from '../src/auth/guard/google-oauth.guard';
 import { SchoolService } from '../src/school/school.service';
 import { PRODUCTION_CORS_ORIGINS } from '../src/cors-config';
 
@@ -113,7 +113,7 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
   }
   if (!opts.realGoogleGuard) {
     guardedBuilder = guardedBuilder
-      .overrideGuard(AuthGuard('google'))
+      .overrideGuard(GoogleOAuthGuard)
       .useValue({
         canActivate: (ctx: ExecutionContext) => {
           const req: any = ctx.switchToHttp().getRequest();

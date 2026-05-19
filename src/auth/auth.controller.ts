@@ -11,9 +11,9 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
+import { GoogleOAuthGuard } from './guard/google-oauth.guard';
 import {
   ForgotPasswordDto,
   RefreshTokenDto,
@@ -90,11 +90,11 @@ export class AuthController {
   }
 
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthGuard)
   async googleAuth() {}
 
   @Get('google/redirect')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthGuard)
   googleAuthRedirect(@Req() req: FastifyRequest, @Res() reply: FastifyReply) {
     return this.authService.googleLogin(req, reply);
   }
