@@ -81,6 +81,7 @@ type BuildAppOptions = {
   realAuth?: boolean;
   realGoogleGuard?: boolean;
   realUserGuard?: boolean;
+  googleGuardUser?: any;
   prisma?: any;
   jwt?: any;
   config?: any;
@@ -117,7 +118,7 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
       .useValue({
         canActivate: (ctx: ExecutionContext) => {
           const req: any = ctx.switchToHttp().getRequest();
-          req.user = {
+          req.user = opts.googleGuardUser ?? {
             email: 'g@example.com',
             firstName: 'G',
             lastName: 'X',
@@ -619,5 +620,91 @@ describe('Fastify adapter — UserGuard via fastify-passport', () => {
   it('GET /v1/users/me without Bearer token returns 401', async () => {
     const res = await app.inject({ method: 'GET', url: '/v1/users/me' });
     expect(res.statusCode).toBe(401);
+  });
+});
+
+describe('Fastify adapter — real googleLogin handles non-ASCII (Thai) names', () => {
+  let app: NestFastifyApplication;
+
+  // Real Google profiles for Thai users contain Thai script in givenName /
+  // familyName, plus a photo URL whose own query string contains `=` and `&`.
+  // Both broke the redirect before fix: Node's setHeader('Location', url)
+  // rejects non-ASCII bytes with "Invalid character in header content".
+  const thaiUser = {
+    provider: 'GOOGLE',
+    providerId: 'gid-สมชาย',
+    email: 'somchai@example.com',
+    firstName: 'สมชาย',
+    lastName: 'ใจดี',
+    photo: 'https://lh3.googleusercontent.com/a/x=s96-c&foo=bar',
+    phone: '',
+  };
+
+  const realPrisma = {
+    user: {
+      findUnique: jest.fn().mockResolvedValue(null),
+    },
+  };
+
+  const configValues: Record<string, string> = {
+    JWT_ACCESS_SECRET: 'access',
+    JWT_REFRESH_SECRET: 'refresh',
+    STUDENT_JWT_ACCESS_SECRET: 'student-access',
+    STUDENT_JWT_REFRESH_SECRET: 'student-refresh',
+    GOOGLE_CLIENT_ID: 'gid',
+    GOOGLE_CLIENT_SECRET: 'gsecret',
+    GOOGLE_CALL_BACK: 'https://x/cb',
+    CLIENT_URL: 'https://app.tatugaschool.com',
+    NODE_ENV: 'test',
+    GOOGLE_CLOUD_PRIVATE_KEY_ENCODE: '',
+  };
+  const mockConfig = {
+    get: jest.fn((k: string) => configValues[k]),
+  };
+
+  beforeAll(async () => {
+    process.env.CLIENT_URL = 'https://app.tatugaschool.com';
+    app = await buildApp({
+      corsOrigin: true,
+      realAuth: true,
+      googleGuardUser: thaiUser,
+      prisma: realPrisma,
+      config: mockConfig,
+    });
+  });
+
+  afterAll(async () => app.close());
+
+  // Regression for: TypeError: Invalid character in header content ["location"]
+  // at node:_http_outgoing.setHeader, called from googleLogin's redirect.
+  it('GET /v1/auth/google/redirect produces an ASCII-safe Location with encoded Thai chars', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/google/redirect',
+    });
+
+    expect(res.statusCode).toBe(302);
+    const location = res.headers['location'];
+    expect(typeof location).toBe('string');
+
+    // Node's setHeader rejects bytes outside printable ASCII. If this regex
+    // fails the assertion, production would 500 with the original error.
+    expect(location as string).toMatch(/^[\x20-\x7E]*$/);
+
+    // Confirm the user-supplied Thai chars are present in their URL-encoded
+    // form, not as raw UTF-8 bytes.
+    expect(location).toContain(encodeURIComponent('สมชาย'));
+    expect(location).toContain(encodeURIComponent('ใจดี'));
+
+    // Round-trip: the client at /auth/sign-up should be able to decode the
+    // query and get the original values back unchanged.
+    const url = new URL(location as string);
+    expect(url.pathname).toBe('/auth/sign-up');
+    expect(url.searchParams.get('email')).toBe(thaiUser.email);
+    expect(url.searchParams.get('firstName')).toBe(thaiUser.firstName);
+    expect(url.searchParams.get('lastName')).toBe(thaiUser.lastName);
+    expect(url.searchParams.get('provider')).toBe('google');
+    expect(url.searchParams.get('providerId')).toBe(thaiUser.providerId);
+    expect(url.searchParams.get('photo')).toBe(thaiUser.photo);
   });
 });

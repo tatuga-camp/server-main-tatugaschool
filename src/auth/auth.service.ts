@@ -459,8 +459,16 @@ export class AuthService {
         return reply.redirect(url, 302);
       }
 
+      const signUpParams = new URLSearchParams({
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        provider: 'google',
+        providerId: data.providerId,
+        photo: data.photo,
+      });
       return reply.redirect(
-        `${process.env.CLIENT_URL}/auth/sign-up?email=${data.email}&firstName=${data.firstName}&lastName=${data.lastName}&provider=google&providerId=${data.providerId}&photo=${data.photo}`,
+        `${process.env.CLIENT_URL}/auth/sign-up?${signUpParams.toString()}`,
         302,
       );
     } catch (error) {
