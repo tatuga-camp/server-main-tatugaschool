@@ -5,9 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ImageService } from '../image/image.service';
 import {
   StudentAccessTokenStrategy,
-  StudentRefreshTokenStrategy,
   UserAccessTokenStrategy,
-  UserRefreshTokenStrategy,
 } from './strategy';
 import { GoogleStrategy } from './strategy/google-oauth.strategy';
 import { SchoolModule } from '../school/school.module';
@@ -19,9 +17,7 @@ import { SchoolModule } from '../school/school.module';
     AuthService,
     ImageService,
     UserAccessTokenStrategy,
-    UserRefreshTokenStrategy,
     StudentAccessTokenStrategy,
-    StudentRefreshTokenStrategy,
     GoogleStrategy,
   ],
   controllers: [AuthController],
