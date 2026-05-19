@@ -39,29 +39,6 @@ async function bootstrap() {
   await app.register(fastifyPassport.initialize());
   await app.register(fastifyPassport.secureSession());
 
-  // Express-compat shim for @nestjs/passport. passport-oauth2's redirect path
-  // (initial OAuth provider redirect) calls res.setHeader('Location', ...) and
-  // res.end() directly — Express-style. FastifyReply uses .header() and .send().
-  // Without these aliases, hitting GET /v1/auth/google crashes with
-  // "TypeError: res.setHeader is not a function".
-  const fastifyInstance = app.getHttpAdapter().getInstance();
-  fastifyInstance.addHook('onRequest', (_request, reply, done) => {
-    const r = reply as any;
-    if (typeof r.setHeader !== 'function') {
-      r.setHeader = function (name: string, value: string | number | string[]) {
-        this.header(name, value);
-        return this;
-      };
-    }
-    if (typeof r.end !== 'function') {
-      r.end = function (payload?: any) {
-        this.send(payload ?? '');
-        return this;
-      };
-    }
-    done();
-  });
-
   // Override Fastify's default JSON parser to accept empty bodies.
   // useBodyParser sets _isParserRegistered = true, preventing NestJS from
   // re-registering its own parser during app.init() / app.listen().

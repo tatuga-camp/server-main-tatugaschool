@@ -150,25 +150,6 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
   await fastifyInstance.register(fastifyPassport.initialize());
   await fastifyInstance.register(fastifyPassport.secureSession());
 
-  // Mirror the Express-compat shim from main.ts so passport-oauth2's redirect
-  // path doesn't crash inside the real GoogleStrategy under test.
-  fastifyInstance.addHook('onRequest', (_req, reply, hookDone) => {
-    const r = reply as any;
-    if (typeof r.setHeader !== 'function') {
-      r.setHeader = function (name: string, value: any) {
-        this.header(name, value);
-        return this;
-      };
-    }
-    if (typeof r.end !== 'function') {
-      r.end = function (payload?: any) {
-        this.send(payload ?? '');
-        return this;
-      };
-    }
-    hookDone();
-  });
-
   const adapter = app.getHttpAdapter() as any;
   adapter.registerUrlencodedContentParser(true);
   adapter.useBodyParser(
