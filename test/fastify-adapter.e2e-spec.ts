@@ -6,6 +6,9 @@ import {
 import fastifyCookie from '@fastify/cookie';
 import { ExecutionContext, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { PrismaReadService } from '../src/prisma/prisma-read.service';
@@ -18,6 +21,7 @@ import { FileOnStudentAssignmentService } from '../src/file-on-student-assignmen
 import { WebhooksService } from '../src/webhooks/webhooks.service';
 import { UserGuard } from '../src/auth/guard';
 import { SchoolService } from '../src/school/school.service';
+import { PRODUCTION_CORS_ORIGINS } from '../src/cors-config';
 
 jest.mock('web-push', () => ({
   setVapidDetails: jest.fn(),
@@ -29,110 +33,140 @@ jest.mock('@google/genai', () => ({
   HarmCategory: {},
   HarmBlockThreshold: {},
 }));
-jest.mock('googleapis', () => ({}));
+jest.mock('googleapis', () => ({
+  google: {
+    auth: {
+      GoogleAuth: jest.fn().mockImplementation(() => ({
+        getClient: jest.fn(),
+      })),
+    },
+  },
+}));
+
+const mockPrisma = {} as any;
+const mockRedis = {} as any;
+const mockStorage = {} as any;
+const mockStripe = {
+  webhooks: { constructEvent: jest.fn() },
+};
+const mockEmail = {};
+
+const mockAuth = {
+  signIn: jest.fn(),
+  signup: jest.fn(),
+  UserRefreshToken: jest.fn(),
+  googleLogin: jest.fn(),
+  studentSignIn: jest.fn(),
+  StudnetRefreshToken: jest.fn(),
+  forgotPassword: jest.fn(),
+  verifyEmail: jest.fn(),
+  resetPassword: jest.fn(),
+} as any;
+const mockFileOnStudent = {
+  downloadAllFiles: jest.fn(),
+} as any;
+const mockWebhooks = {
+  handleStripeWebhook: jest.fn(),
+  handleLineWebhook: jest.fn(),
+} as any;
+const mockSchool = {
+  deleteSchool: jest.fn().mockResolvedValue({ ok: true }),
+} as any;
+
+type BuildAppOptions = {
+  corsOrigin: boolean | string[];
+  realAuth?: boolean;
+  prisma?: any;
+  jwt?: any;
+  config?: any;
+};
+
+async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> {
+  const prismaOverride = opts.prisma ?? mockPrisma;
+  let builder = Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(PrismaService).useValue(prismaOverride)
+    .overrideProvider(PrismaReadService).useValue(prismaOverride)
+    .overrideProvider(RedisService).useValue(mockRedis)
+    .overrideProvider(StorageService).useValue(mockStorage)
+    .overrideProvider(StripeService).useValue(mockStripe)
+    .overrideProvider(EmailService).useValue(mockEmail)
+    .overrideProvider(FileOnStudentAssignmentService).useValue(mockFileOnStudent)
+    .overrideProvider(WebhooksService).useValue(mockWebhooks)
+    .overrideProvider(SchoolService).useValue(mockSchool);
+
+  if (!opts.realAuth) {
+    builder = builder.overrideProvider(AuthService).useValue(mockAuth);
+  }
+  if (opts.jwt) builder = builder.overrideProvider(JwtService).useValue(opts.jwt);
+  if (opts.config) builder = builder.overrideProvider(ConfigService).useValue(opts.config);
+
+  const moduleRef: TestingModule = await builder
+    .overrideGuard(UserGuard).useValue({ canActivate: () => true })
+    .overrideGuard(AuthGuard('google')).useValue({
+      canActivate: (ctx: ExecutionContext) => {
+        const req: any = ctx.switchToHttp().getRequest();
+        req.user = {
+          email: 'g@example.com',
+          firstName: 'G',
+          lastName: 'X',
+          providerId: 'gid',
+          photo: 'p',
+        };
+        return true;
+      },
+    })
+    .compile();
+
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(
+    new FastifyAdapter({
+      bodyLimit: 100 * 1024 * 1024,
+      trustProxy: true,
+      ignoreTrailingSlash: true,
+      ignoreDuplicateSlashes: true,
+    }),
+    { rawBody: true },
+  );
+  await app.register(fastifyCookie);
+
+  const adapter = app.getHttpAdapter() as any;
+  adapter.registerUrlencodedContentParser(true);
+  adapter.useBodyParser(
+    'application/json',
+    true,
+    {},
+    (
+      _req: any,
+      body: Buffer,
+      done: (err: Error | null, body?: unknown) => void,
+    ) => {
+      if (!body || body.length === 0) {
+        done(null, undefined);
+        return;
+      }
+      try {
+        done(null, JSON.parse(body.toString('utf8')));
+      } catch (err) {
+        done(err as Error, undefined);
+      }
+    },
+  );
+
+  app.enableCors({
+    origin: opts.corsOrigin,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    credentials: true,
+  });
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  await app.init();
+  await app.getHttpAdapter().getInstance().ready();
+  return app;
+}
 
 describe('Fastify adapter (e2e)', () => {
   let app: NestFastifyApplication;
 
-  const mockPrisma = {} as any;
-  const mockRedis = {} as any;
-  const mockStorage = {} as any;
-  const mockStripe = {
-    webhooks: { constructEvent: jest.fn() },
-  };
-  const mockEmail = {};
-
-  const mockAuth = {
-    signIn: jest.fn(),
-    signup: jest.fn(),
-    UserRefreshToken: jest.fn(),
-    googleLogin: jest.fn(),
-    studentSignIn: jest.fn(),
-    StudnetRefreshToken: jest.fn(),
-    forgotPassword: jest.fn(),
-    verifyEmail: jest.fn(),
-    resetPassword: jest.fn(),
-  } as any;
-  const mockFileOnStudent = {
-    downloadAllFiles: jest.fn(),
-  } as any;
-  const mockWebhooks = {
-    handleStripeWebhook: jest.fn(),
-    handleLineWebhook: jest.fn(),
-  } as any;
-  const mockSchool = {
-    deleteSchool: jest.fn().mockResolvedValue({ ok: true }),
-  } as any;
-
   beforeAll(async () => {
-    const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(PrismaService).useValue(mockPrisma)
-      .overrideProvider(PrismaReadService).useValue(mockPrisma)
-      .overrideProvider(RedisService).useValue(mockRedis)
-      .overrideProvider(StorageService).useValue(mockStorage)
-      .overrideProvider(StripeService).useValue(mockStripe)
-      .overrideProvider(EmailService).useValue(mockEmail)
-      .overrideProvider(AuthService).useValue(mockAuth)
-      .overrideProvider(FileOnStudentAssignmentService).useValue(mockFileOnStudent)
-      .overrideProvider(WebhooksService).useValue(mockWebhooks)
-      .overrideProvider(SchoolService).useValue(mockSchool)
-      .overrideGuard(UserGuard).useValue({ canActivate: () => true })
-      .overrideGuard(AuthGuard('google')).useValue({
-        canActivate: (ctx: ExecutionContext) => {
-          const req: any = ctx.switchToHttp().getRequest();
-          req.user = {
-            email: 'g@example.com',
-            firstName: 'G',
-            lastName: 'X',
-            providerId: 'gid',
-            photo: 'p',
-          };
-          return true;
-        },
-      })
-      .compile();
-
-    app = moduleRef.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter({
-        bodyLimit: 100 * 1024 * 1024,
-        trustProxy: true,
-      }),
-      { rawBody: true },
-    );
-    await app.register(fastifyCookie);
-
-    // Override Fastify's default JSON parser to accept empty bodies.
-    // useBodyParser sets _isParserRegistered = true, preventing NestJS from
-    // re-registering its own parser during app.init().
-    const adapter = app.getHttpAdapter() as any;
-    adapter.registerUrlencodedContentParser(true);
-    adapter.useBodyParser(
-      'application/json',
-      true,
-      {},
-      (_req: any, body: Buffer, done: (err: Error | null, body?: unknown) => void) => {
-        if (!body || body.length === 0) {
-          done(null, undefined);
-          return;
-        }
-        try {
-          done(null, JSON.parse(body.toString('utf8')));
-        } catch (err) {
-          done(err as Error, undefined);
-        }
-      },
-    );
-
-    app.enableCors({
-      origin: true,
-      methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-      credentials: true,
-    });
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-    await app.init();
-    await app.getHttpAdapter().getInstance().ready();
+    app = await buildApp({ corsOrigin: true });
   });
 
   afterAll(async () => {
@@ -169,8 +203,6 @@ describe('Fastify adapter (e2e)', () => {
   });
 
   it('POST /webhooks/stripe forwards rawBody to the service', async () => {
-    // Stripe sends JSON bodies. We use a valid JSON payload to avoid Fastify's
-    // JSON parse rejection, while verifying rawBody is preserved as a Buffer.
     const stripePayload = '{"type":"payment_intent.succeeded","data":{}}';
     mockWebhooks.handleStripeWebhook.mockImplementation(async (req: any, reply: any) => {
       expect(Buffer.isBuffer(req.rawBody)).toBe(true);
@@ -258,9 +290,6 @@ describe('Fastify adapter (e2e)', () => {
   });
 
   it('GET /v1/auth/google/redirect returns 302 with Location', async () => {
-    // Note: NestJS calls reply.code(200) before the handler runs (setStatus hook).
-    // Fastify 5's reply.redirect(url) without explicit code uses the previously set code.
-    // We must pass the explicit 302 status to override NestJS's pre-set 200.
     mockAuth.googleLogin.mockImplementation((_req: any, reply: any) => {
       reply.redirect('https://app.tatugaschool.com/', 302);
     });
@@ -316,5 +345,160 @@ describe('Fastify adapter (e2e)', () => {
       headers: { 'content-type': 'application/json' },
     });
     expect(res.statusCode).not.toBe(400);
+  });
+
+  it('trailing-slash and duplicate-slash URLs match the no-slash route', async () => {
+    // Clients send URLs like `/v1/auth/sign-in/` (schools.ts, subject.ts,
+    // attendance.ts, assignments.ts, group-on-subject.ts, attendance-row.ts).
+    // Fastify defaults to strict matching, so we must keep ignoreTrailingSlash +
+    // ignoreDuplicateSlashes enabled. This test locks that behavior in.
+    mockAuth.signIn.mockResolvedValue({
+      redirectUrl: 'x',
+      accessToken: 'a',
+      refreshToken: 'r',
+    });
+
+    const noSlash = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sign-in',
+      headers: { 'content-type': 'application/json' },
+      payload: { email: 'test@example.com', password: 'password123' },
+    });
+    const trailing = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sign-in/',
+      headers: { 'content-type': 'application/json' },
+      payload: { email: 'test@example.com', password: 'password123' },
+    });
+    const duplicate = await app.inject({
+      method: 'POST',
+      url: '/v1//auth/sign-in',
+      headers: { 'content-type': 'application/json' },
+      payload: { email: 'test@example.com', password: 'password123' },
+    });
+
+    expect(noSlash.statusCode).not.toBe(404);
+    expect(trailing.statusCode).toBe(noSlash.statusCode);
+    expect(duplicate.statusCode).toBe(noSlash.statusCode);
+  });
+});
+
+describe('Fastify adapter — production CORS allowlist', () => {
+  let app: NestFastifyApplication;
+
+  beforeAll(async () => {
+    app = await buildApp({ corsOrigin: PRODUCTION_CORS_ORIGINS });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it.each(PRODUCTION_CORS_ORIGINS)('reflects allowed origin %s', async (origin) => {
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/v1/auth/sign-in',
+      headers: {
+        origin,
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    });
+    expect(res.statusCode).toBeLessThan(300);
+    expect(res.headers['access-control-allow-origin']).toBe(origin);
+    expect(res.headers['access-control-allow-credentials']).toBe('true');
+  });
+
+  it('does not reflect a disallowed origin', async () => {
+    const res = await app.inject({
+      method: 'OPTIONS',
+      url: '/v1/auth/sign-in',
+      headers: {
+        origin: 'https://evil.example.com',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+    });
+    expect(res.headers['access-control-allow-origin']).toBeUndefined();
+  });
+});
+
+describe('Fastify adapter — real AuthService.signIn cookie flow', () => {
+  let app: NestFastifyApplication;
+  const passwordHash = bcrypt.hashSync('password123', 4);
+
+  const realPrisma = {
+    user: {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'user-1',
+        email: 'real@example.com',
+        password: passwordHash,
+        provider: 'LOCAL',
+        isVerifyEmail: true,
+      }),
+      update: jest.fn().mockResolvedValue({}),
+    },
+  };
+  const mockJwt = {
+    signAsync: jest.fn().mockImplementation(async (_, opts) =>
+      opts?.secret === 'access' ? 'access.jwt' : 'refresh.jwt',
+    ),
+  };
+  const configValues: Record<string, string> = {
+    JWT_ACCESS_SECRET: 'access',
+    JWT_REFRESH_SECRET: 'refresh',
+    STUDENT_JWT_ACCESS_SECRET: 'student-access',
+    STUDENT_JWT_REFRESH_SECRET: 'student-refresh',
+    GOOGLE_CLIENT_ID: 'gid',
+    GOOGLE_CLIENT_SECRET: 'gsecret',
+    GOOGLE_CALL_BACK: 'https://x/cb',
+    NODE_ENV: 'test',
+    // AuthService.initializeGoogleAuth atob()s this in its constructor.
+    // Empty string is a valid base64 input → atob('') === ''.
+    GOOGLE_CLOUD_PRIVATE_KEY_ENCODE: '',
+  };
+  const mockConfig = {
+    get: jest.fn((k: string) => configValues[k]),
+  };
+
+  beforeAll(async () => {
+    app = await buildApp({
+      corsOrigin: true,
+      realAuth: true,
+      prisma: realPrisma,
+      jwt: mockJwt,
+      config: mockConfig,
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  // Regression guard for the ms-vs-sec cookie bug: the real AuthService.signIn
+  // must serialize Max-Age in seconds via @fastify/cookie. If anyone changes
+  // setCookieAccessToken/setCookieRefreshToken to pass milliseconds, the
+  // Set-Cookie header below would no longer be Max-Age=259200.
+  it('POST /v1/auth/sign-in runs the real service and sets seconds-based Max-Age cookies', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/auth/sign-in',
+      headers: { 'content-type': 'application/json' },
+      payload: { email: 'real@example.com', password: 'password123' },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(realPrisma.user.findUnique).toHaveBeenCalledWith({
+      where: { email: 'real@example.com' },
+    });
+
+    const setCookies = res.headers['set-cookie'];
+    const cookieArr = Array.isArray(setCookies) ? setCookies : [setCookies];
+    const joined = cookieArr.join('\n');
+    expect(joined).toMatch(/access_token=access\.jwt/);
+    expect(joined).toMatch(/refresh_token=refresh\.jwt/);
+    expect(joined).toMatch(/Max-Age=259200/);
+    expect(joined).toMatch(/Secure/);
+    expect(joined).toMatch(/SameSite=None/);
   });
 });

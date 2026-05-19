@@ -6,11 +6,12 @@ import {
   Param,
   Patch,
   Post,
-  Query,
   UseGuards,
 } from '@nestjs/common';
-import { AttendanceRowService } from './attendance-row.service';
+import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
+import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { AttendanceRowService } from './attendance-row.service';
 import {
   CreateAttendanceRowDto,
   DeleteAttendanceRowDto,
@@ -18,9 +19,6 @@ import {
   GetAttendanceRowsDto,
   UpdateAttendanceRowDto,
 } from './dto';
-import { GetUser } from '../auth/decorators';
-import { User } from '@prisma/client';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Controller('v1/attendance-rows')
 export class AttendanceRowController {

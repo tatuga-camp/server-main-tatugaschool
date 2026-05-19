@@ -14,12 +14,6 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import '@fastify/cookie';
 import { FastifyReply, FastifyRequest } from 'fastify';
-
-declare module 'fastify' {
-  interface FastifyRequest {
-    user?: unknown;
-  }
-}
 import { Auth, google } from 'googleapis';
 import { EmailService } from '../email/email.service';
 import { StorageService } from '../storage/storage.service';

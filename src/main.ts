@@ -6,6 +6,7 @@ import {
 } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
 import { AppModule } from './app.module';
+import { PRODUCTION_CORS_ORIGINS } from './cors-config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -13,6 +14,8 @@ async function bootstrap() {
     new FastifyAdapter({
       bodyLimit: 100 * 1024 * 1024,
       trustProxy: true,
+      ignoreTrailingSlash: true,
+      ignoreDuplicateSlashes: true,
     }),
     { rawBody: true },
   );
@@ -29,7 +32,11 @@ async function bootstrap() {
     'application/json',
     true,
     {},
-    (req: any, body: Buffer, done: (err: Error | null, body?: unknown) => void) => {
+    (
+      req: any,
+      body: Buffer,
+      done: (err: Error | null, body?: unknown) => void,
+    ) => {
       if (!body || body.length === 0) {
         done(null, undefined);
         return;
@@ -44,14 +51,7 @@ async function bootstrap() {
 
   const isDevelopment = process.env.NODE_ENV !== 'production';
 
-  const allowedOrigins = isDevelopment
-    ? true
-    : [
-        'https://tatugaschool.com',
-        'https://www.tatugaschool.com',
-        'https://app.tatugaschool.com',
-        'https://student.tatugaschool.com',
-      ];
+  const allowedOrigins = isDevelopment ? true : PRODUCTION_CORS_ORIGINS;
 
   app.enableCors({
     origin: allowedOrigins,

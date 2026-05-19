@@ -283,6 +283,7 @@ export class WebhooksService {
         break;
       default:
         console.log(`Unhandled event type ${event.type}`);
+        reply.status(200).send({ received: true });
     }
   }
 }
