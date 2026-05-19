@@ -76,6 +76,7 @@ const mockSchool = {
 type BuildAppOptions = {
   corsOrigin: boolean | string[];
   realAuth?: boolean;
+  realGoogleGuard?: boolean;
   prisma?: any;
   jwt?: any;
   config?: any;
@@ -100,22 +101,27 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
   if (opts.jwt) builder = builder.overrideProvider(JwtService).useValue(opts.jwt);
   if (opts.config) builder = builder.overrideProvider(ConfigService).useValue(opts.config);
 
-  const moduleRef: TestingModule = await builder
-    .overrideGuard(UserGuard).useValue({ canActivate: () => true })
-    .overrideGuard(AuthGuard('google')).useValue({
-      canActivate: (ctx: ExecutionContext) => {
-        const req: any = ctx.switchToHttp().getRequest();
-        req.user = {
-          email: 'g@example.com',
-          firstName: 'G',
-          lastName: 'X',
-          providerId: 'gid',
-          photo: 'p',
-        };
-        return true;
-      },
-    })
-    .compile();
+  let guardedBuilder = builder.overrideGuard(UserGuard).useValue({
+    canActivate: () => true,
+  });
+  if (!opts.realGoogleGuard) {
+    guardedBuilder = guardedBuilder
+      .overrideGuard(AuthGuard('google'))
+      .useValue({
+        canActivate: (ctx: ExecutionContext) => {
+          const req: any = ctx.switchToHttp().getRequest();
+          req.user = {
+            email: 'g@example.com',
+            firstName: 'G',
+            lastName: 'X',
+            providerId: 'gid',
+            photo: 'p',
+          };
+          return true;
+        },
+      });
+  }
+  const moduleRef: TestingModule = await guardedBuilder.compile();
 
   const app = moduleRef.createNestApplication<NestFastifyApplication>(
     new FastifyAdapter({
@@ -127,6 +133,26 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
     { rawBody: true },
   );
   await app.register(fastifyCookie);
+
+  // Mirror the Express-compat shim from main.ts so passport-oauth2's redirect
+  // path doesn't crash inside the real GoogleStrategy under test.
+  const fastifyInstance = app.getHttpAdapter().getInstance();
+  fastifyInstance.addHook('onRequest', (_req, reply, hookDone) => {
+    const r = reply as any;
+    if (typeof r.setHeader !== 'function') {
+      r.setHeader = function (name: string, value: any) {
+        this.header(name, value);
+        return this;
+      };
+    }
+    if (typeof r.end !== 'function') {
+      r.end = function (payload?: any) {
+        this.send(payload ?? '');
+        return this;
+      };
+    }
+    hookDone();
+  });
 
   const adapter = app.getHttpAdapter() as any;
   adapter.registerUrlencodedContentParser(true);
@@ -500,5 +526,52 @@ describe('Fastify adapter — real AuthService.signIn cookie flow', () => {
     expect(joined).toMatch(/Max-Age=259200/);
     expect(joined).toMatch(/Secure/);
     expect(joined).toMatch(/SameSite=None/);
+  });
+});
+
+describe('Fastify adapter — real AuthGuard(google) initial redirect', () => {
+  let app: NestFastifyApplication;
+
+  // GoogleStrategy reads these from ConfigService at provider-construction time
+  // (super({ clientID, clientSecret, callbackURL })). Strategies for JWT etc.
+  // also need their secrets so the AppModule can construct.
+  const configValues: Record<string, string> = {
+    JWT_ACCESS_SECRET: 'access',
+    JWT_REFRESH_SECRET: 'refresh',
+    STUDENT_JWT_ACCESS_SECRET: 'student-access',
+    STUDENT_JWT_REFRESH_SECRET: 'student-refresh',
+    GOOGLE_CLIENT_ID: 'gid',
+    GOOGLE_CLIENT_SECRET: 'gsecret',
+    GOOGLE_CALL_BACK: 'https://x/cb',
+    NODE_ENV: 'test',
+  };
+  const mockConfig = {
+    get: jest.fn((k: string) => configValues[k]),
+  };
+
+  beforeAll(async () => {
+    app = await buildApp({
+      corsOrigin: true,
+      realGoogleGuard: true,
+      config: mockConfig,
+    });
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  // Regression guard for the production crash:
+  //   TypeError: res.setHeader is not a function
+  //   at passport/lib/middleware/authenticate.js:340 (res.setHeader("Location", url))
+  // passport-oauth2's strategy.redirect() calls Express-style res.setHeader and
+  // res.end. Without the Fastify shim registered in main.ts, this 500s.
+  it('GET /v1/auth/google redirects to accounts.google.com via passport-oauth2', async () => {
+    const res = await app.inject({ method: 'GET', url: '/v1/auth/google' });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers['location']).toMatch(
+      /^https:\/\/accounts\.google\.com\/o\/oauth2\/v2\/auth\?/,
+    );
+    expect(res.headers['location']).toContain('client_id=gid');
   });
 });
