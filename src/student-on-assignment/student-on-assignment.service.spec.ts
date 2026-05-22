@@ -38,11 +38,11 @@ describe('StudentOnAssignmentService', () => {
   };
 
   const mockNotificationService = {
-    createNotifications: jest.fn(),
+    createNotifications: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockLineBotService = {
-    sendMessage: jest.fn(),
+    sendMessage: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockSkillOnStudentAssignmentService = {
