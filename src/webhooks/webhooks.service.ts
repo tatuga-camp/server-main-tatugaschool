@@ -1,4 +1,4 @@
-import { Injectable, RawBodyRequest } from '@nestjs/common';
+import { Injectable, Logger, RawBodyRequest } from '@nestjs/common';
 import { FastifyReply, FastifyRequest } from 'fastify';
 import Stripe from 'stripe';
 import { StripeService } from '../stripe/stripe.service';
@@ -16,9 +16,14 @@ import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { UsersService } from '../users/users.service';
+import { SanityNewsWebhookPayload } from './sanity-news.dto';
+import { buildSanityNewsEmail } from './sanity-news-email';
 
 @Injectable()
 export class WebhooksService {
+  private readonly logger = new Logger(WebhooksService.name);
+
   constructor(
     private stripe: StripeService,
     private schoolService: SchoolService,
@@ -28,6 +33,7 @@ export class WebhooksService {
     private config: ConfigService,
     private prisma: PrismaService,
     private ai: AiService,
+    private users: UsersService,
   ) {}
 
   async handleLineWebhook(dto: WebhookRequestBody) {
@@ -157,6 +163,41 @@ export class WebhooksService {
       }
     } catch (error) {
       throw error;
+    }
+  }
+
+  async handleSanityNewsWebhook(
+    payload: SanityNewsWebhookPayload,
+  ): Promise<void> {
+    const start = Date.now();
+    try {
+      const recipients = await this.users.findActiveRecipients(30);
+      if (recipients.length === 0) {
+        this.logger.log(
+          `sanity-news ${payload._id}: 0 active recipients in last 30d, skipping`,
+        );
+        return;
+      }
+
+      const { subject, html } = buildSanityNewsEmail(payload, {
+        projectId: this.config.get<string>('SANITY_PROJECT_ID') ?? '',
+        dataset: this.config.get<string>('SANITY_DATASET') ?? '',
+      });
+
+      const result = await this.email.sendBulk({
+        to: recipients.map((r) => r.email),
+        subject,
+        html,
+      });
+
+      this.logger.log(
+        `sanity-news ${payload._id}: sent=${result.sent} failed=${result.failed} recipients=${recipients.length} duration=${Date.now() - start}ms`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `sanity-news ${payload._id} fanout error: ${(error as Error).message}`,
+        (error as Error).stack,
+      );
     }
   }
 

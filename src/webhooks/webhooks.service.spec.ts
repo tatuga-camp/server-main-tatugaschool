@@ -8,6 +8,7 @@ import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
+import { UsersService } from '../users/users.service';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -55,6 +56,23 @@ describe('WebhooksService', () => {
     generateLineBotSummary: jest.fn(),
   };
 
+  const mockUsersService = {
+    findActiveRecipients: jest.fn(),
+  };
+
+  const mockEmailService = {
+    sendBulk: jest.fn(),
+  };
+
+  const mockConfigService = {
+    get: jest.fn((key: string) => {
+      if (key === 'SANITY_PROJECT_ID') return 'projX';
+      if (key === 'SANITY_DATASET') return 'production';
+      if (key === 'SANITY_WEBHOOK_SECRET') return 'test-secret';
+      return null;
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,9 +81,10 @@ describe('WebhooksService', () => {
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: LineBotService, useValue: mockLineBotService },
         { provide: SubjectService, useValue: mockSubjectService },
-        { provide: EmailService, useValue: {} },
-        { provide: ConfigService, useValue: {} },
+        { provide: EmailService, useValue: mockEmailService },
+        { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: UsersService, useValue: mockUsersService },
         { provide: AiService, useValue: mockAiService },
       ],
     }).compile();
@@ -159,6 +178,68 @@ describe('WebhooksService', () => {
         replyToken: 'rt1',
         message: 'AI Response',
       });
+    });
+  });
+
+  describe('handleSanityNewsWebhook', () => {
+    const payload: any = {
+      _id: 'doc1',
+      _type: 'news',
+      titleEn: 'Hello',
+      titleTh: 'สวัสดี',
+      type: 'news',
+      slug: { current: 'hello' },
+      publishedAt: '2026-05-23T12:00:00Z',
+    };
+
+    it('queries active recipients and sends a bulk email', async () => {
+      mockUsersService.findActiveRecipients.mockResolvedValue([
+        { email: 'a@x.com' },
+        { email: 'b@x.com' },
+      ]);
+      mockEmailService.sendBulk.mockResolvedValue({ sent: 2, failed: 0 });
+
+      await service.handleSanityNewsWebhook(payload);
+
+      expect(mockUsersService.findActiveRecipients).toHaveBeenCalledWith(30);
+      expect(mockEmailService.sendBulk).toHaveBeenCalledTimes(1);
+      const sendArg = mockEmailService.sendBulk.mock.calls[0][0];
+      expect(sendArg.to).toEqual(['a@x.com', 'b@x.com']);
+      expect(sendArg.subject).toContain('Hello');
+      expect(sendArg.subject).toContain('สวัสดี');
+      expect(sendArg.html).toContain(
+        'https://tatugaschool.com/news/hello',
+      );
+    });
+
+    it('skips sending when there are no recipients', async () => {
+      mockUsersService.findActiveRecipients.mockResolvedValue([]);
+
+      await service.handleSanityNewsWebhook(payload);
+
+      expect(mockEmailService.sendBulk).not.toHaveBeenCalled();
+    });
+
+    it('does not throw when the recipient query fails', async () => {
+      mockUsersService.findActiveRecipients.mockRejectedValue(
+        new Error('db down'),
+      );
+
+      await expect(
+        service.handleSanityNewsWebhook(payload),
+      ).resolves.toBeUndefined();
+      expect(mockEmailService.sendBulk).not.toHaveBeenCalled();
+    });
+
+    it('does not throw when sendBulk fails', async () => {
+      mockUsersService.findActiveRecipients.mockResolvedValue([
+        { email: 'a@x.com' },
+      ]);
+      mockEmailService.sendBulk.mockRejectedValue(new Error('mailer down'));
+
+      await expect(
+        service.handleSanityNewsWebhook(payload),
+      ).resolves.toBeUndefined();
     });
   });
 
