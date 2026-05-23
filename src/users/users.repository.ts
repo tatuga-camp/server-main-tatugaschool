@@ -54,12 +54,8 @@ export class UserRepository implements Repository {
     }
   }
 
-  async findActiveRecipients(
-    thresholdDays = 30,
-  ): Promise<{ email: string }[]> {
-    const since = new Date(
-      Date.now() - thresholdDays * 24 * 60 * 60 * 1000,
-    );
+  async findActiveRecipients(thresholdDays = 30): Promise<{ email: string }[]> {
+    const since = new Date(Date.now() - thresholdDays * 24 * 60 * 60 * 1000);
     return this.prisma.user.findMany({
       where: {
         lastActiveAt: { gte: since },
