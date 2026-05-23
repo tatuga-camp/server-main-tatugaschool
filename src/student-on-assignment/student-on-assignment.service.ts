@@ -376,17 +376,21 @@ export class StudentOnAssignmentService {
             subjectId: studentOnAssignment.subjectId,
           },
         });
-        await this.notificationService.createNotifications({
-          type: 'STUDENT_SUBMISSION',
-          message: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
-          link: url,
-          userIds: teachers.map((t) => t.userId),
-          actorImage: studentOnAssignment.photo,
-          subjectId: studentOnAssignment.subjectId,
-          schoolId: studentOnAssignment.schoolId,
-          actorId: studentOnAssignment.studentId,
-          actorName: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
-        });
+        await this.notificationService
+          .createNotifications({
+            type: 'STUDENT_SUBMISSION',
+            message: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName} has submitted an assignment`,
+            link: url,
+            userIds: teachers.map((t) => t.userId),
+            actorImage: studentOnAssignment.photo,
+            subjectId: studentOnAssignment.subjectId,
+            schoolId: studentOnAssignment.schoolId,
+            actorId: studentOnAssignment.studentId,
+            actorName: `${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}`,
+          })
+          .catch((err) => {
+            this.logger.error('Failed to create notification', err);
+          });
 
         if (
           (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE') &&
@@ -409,15 +413,19 @@ export class StudentOnAssignmentService {
                 ],
               },
             });
-          await this.line.sendMessage({
-            groupId: subject.lineGroupId,
-            message:
-              `🌟 ปิ๊งป่อง! มีเด็กดีส่งการบ้านค่ะ \n` +
-              `👨‍🎓 นักเรียน: ${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}\n` +
-              `📕 ชิ้นงาน: ${assignment.title}\n` +
-              `✅ สถานะ: ส่งงานเป็นคนที่ ${totalSummits.length + 1} 🎉\n` +
-              `เข้าไปตรวจผลงานได้ที่นี่เลย / Check it out here 👇\n${newUrl}`,
-          });
+          await this.line
+            .sendMessage({
+              groupId: subject.lineGroupId,
+              message:
+                `🌟 ปิ๊งป่อง! มีเด็กดีส่งการบ้านค่ะ \n` +
+                `👨‍🎓 นักเรียน: ${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}\n` +
+                `📕 ชิ้นงาน: ${assignment.title}\n` +
+                `✅ สถานะ: ส่งงานเป็นคนที่ ${totalSummits.length + 1} 🎉\n` +
+                `เข้าไปตรวจผลงานได้ที่นี่เลย / Check it out here 👇\n${newUrl}`,
+            })
+            .catch((err) => {
+              this.logger.error('Failed to send Line notification', err);
+            });
         }
       }
 

@@ -560,10 +560,14 @@ export class AssignmentService {
 
         if (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') {
           const url = `https://student.tatugaschool.com?subject_code=${subject.code}`;
-          await this.linebotService.sendMessage({
-            groupId: subject.lineGroupId,
-            message: `📢 แจ้งเตือน: มีงานใหม่เพิ่มเข้ามา 📚\nหัวข้อ: ${assignment.title}\n\nอย่าลืมเข้าไปดูรายละเอียดและทำส่งนะครับ/ค่ะ!\nลิงก์รายวิชา: ${url}`,
-          });
+          await this.linebotService
+            .sendMessage({
+              groupId: subject.lineGroupId,
+              message: `📢 แจ้งเตือน: มีงานใหม่เพิ่มเข้ามา 📚\nหัวข้อ: ${assignment.title}\n\nอย่าลืมเข้าไปดูรายละเอียดและทำส่งนะครับ/ค่ะ!\nลิงก์รายวิชา: ${url}`,
+            })
+            .catch((error) => {
+              this.logger.error('Failed to send line notification', error);
+            });
         }
       }
       return assignment;

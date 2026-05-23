@@ -60,7 +60,7 @@ describe('AssignmentService', () => {
   };
 
   const mockLineBotService = {
-    sendMessage: jest.fn(),
+    sendMessage: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockSkillOnAssignmentService = {
