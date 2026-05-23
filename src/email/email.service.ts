@@ -5,6 +5,11 @@ import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
 export class EmailService {
   private logger: Logger;
   private mailerSend: MailerSend;
+
+  // MailerSend bulk-email rate limit: 500 emails per minute. We send one
+  // 500-recipient chunk and then sleep before the next. Overridable in tests.
+  protected chunkDelayMs = 60_000;
+
   constructor(private config: ConfigService) {
     this.logger = new Logger(EmailService.name);
     this.mailerSend = new MailerSend({
@@ -78,7 +83,11 @@ export class EmailService {
       chunks.push(to.slice(i, i + CHUNK_SIZE));
     }
 
-    const dispatches = chunks.map(async (chunk, idx) => {
+    let sent = 0;
+    let failed = 0;
+
+    for (let idx = 0; idx < chunks.length; idx++) {
+      const chunk = chunks[idx];
       const offset = idx * CHUNK_SIZE;
       const params = chunk.map((email) =>
         new EmailParams()
@@ -87,30 +96,25 @@ export class EmailService {
           .setSubject(subject)
           .setHtml(html),
       );
+
       try {
         await this.mailerSend.email.sendBulk(params);
+        sent += chunk.length;
         this.logger.log(
           `Bulk email chunk sent: ${chunk.length} recipients (offset ${offset})`,
         );
-        return { success: true as const, count: chunk.length };
       } catch (error) {
+        failed += chunk.length;
         this.logger.error(
           `Bulk email chunk failed at offset ${offset} (${chunk.length} recipients): ${(error as Error).message}`,
         );
-        return { success: false as const, count: chunk.length };
       }
-    });
 
-    const settled = await Promise.allSettled(dispatches);
-    let sent = 0;
-    let failed = 0;
-    for (const r of settled) {
-      if (r.status === 'fulfilled') {
-        if (r.value.success) sent += r.value.count;
-        else failed += r.value.count;
-      } else {
-        // Should not happen — inner promises always resolve — but be defensive.
-        this.logger.error(`Bulk email dispatch rejected unexpectedly: ${String(r.reason)}`);
+      const isLastChunk = idx === chunks.length - 1;
+      if (!isLastChunk && this.chunkDelayMs > 0) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.chunkDelayMs),
+        );
       }
     }
 

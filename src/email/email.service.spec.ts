@@ -107,6 +107,8 @@ describe('EmailService', () => {
         if (key === 'NODE_ENV') return 'production';
         return null;
       });
+      // Skip the 60s inter-chunk throttle in tests by default
+      (service as any).chunkDelayMs = 0;
     });
 
     it('does nothing when NODE_ENV is not production or development', async () => {
@@ -160,6 +162,50 @@ describe('EmailService', () => {
       const result = await service.sendBulk({ to, subject: 's', html: '<p>h</p>' });
 
       expect(result).toEqual({ sent: 500 + 100, failed: 500 });
+    });
+
+    it('waits chunkDelayMs between chunks to respect MailerSend rate limit', async () => {
+      jest.useFakeTimers();
+      (service as any).chunkDelayMs = 60_000;
+
+      const sendBulkMock = (service as any).mailerSend.email.sendBulk as jest.Mock;
+      const to = Array.from({ length: 1500 }, (_, i) => `u${i}@x.com`);
+      const promise = service.sendBulk({ to, subject: 's', html: '<p>h</p>' });
+
+      // Let the first chunk dispatch resolve
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(sendBulkMock).toHaveBeenCalledTimes(1);
+
+      // Advance through the first throttle window → second chunk fires
+      await jest.advanceTimersByTimeAsync(60_000);
+      expect(sendBulkMock).toHaveBeenCalledTimes(2);
+
+      // Advance through the second throttle window → third (last) chunk fires
+      await jest.advanceTimersByTimeAsync(60_000);
+      expect(sendBulkMock).toHaveBeenCalledTimes(3);
+
+      const result = await promise;
+      expect(result).toEqual({ sent: 1500, failed: 0 });
+
+      jest.useRealTimers();
+    });
+
+    it('does not wait after the final chunk', async () => {
+      jest.useFakeTimers();
+      (service as any).chunkDelayMs = 60_000;
+
+      const sendBulkMock = (service as any).mailerSend.email.sendBulk as jest.Mock;
+      const to = Array.from({ length: 500 }, (_, i) => `u${i}@x.com`);
+      const promise = service.sendBulk({ to, subject: 's', html: '<p>h</p>' });
+
+      // Single chunk → method should resolve without needing the timer to advance
+      await jest.advanceTimersByTimeAsync(0);
+      const result = await promise;
+      expect(result).toEqual({ sent: 500, failed: 0 });
+      expect(sendBulkMock).toHaveBeenCalledTimes(1);
+
+      jest.useRealTimers();
     });
   });
 });
