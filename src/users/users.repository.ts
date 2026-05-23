@@ -32,6 +32,7 @@ type Repository = {
   findByResetToken(request: RequestFindByResetToken): Promise<User>;
   updatePassword(request: RequestUpdatePassword): Promise<void>;
   updateLastActiveAt(request: RequestUpdateLastActiveAt): Promise<void>;
+  findActiveRecipients(thresholdDays?: number): Promise<{ email: string }[]>;
 };
 
 @Injectable()
@@ -51,6 +52,22 @@ export class UserRepository implements Repository {
       }
       throw error;
     }
+  }
+
+  async findActiveRecipients(
+    thresholdDays = 30,
+  ): Promise<{ email: string }[]> {
+    const since = new Date(
+      Date.now() - thresholdDays * 24 * 60 * 60 * 1000,
+    );
+    return this.prisma.user.findMany({
+      where: {
+        lastActiveAt: { gte: since },
+        isDeleted: false,
+        isVerifyEmail: true,
+      },
+      select: { email: true },
+    });
   }
 
   async findById(request: RequestFindById): Promise<User> {
