@@ -72,11 +72,14 @@ export class EmailService {
 
     const sender = new Sender('support@tatugaschool.com', 'Tatuga School');
     const CHUNK_SIZE = 500;
-    let sent = 0;
-    let failed = 0;
 
+    const chunks: string[][] = [];
     for (let i = 0; i < to.length; i += CHUNK_SIZE) {
-      const chunk = to.slice(i, i + CHUNK_SIZE);
+      chunks.push(to.slice(i, i + CHUNK_SIZE));
+    }
+
+    const dispatches = chunks.map(async (chunk, idx) => {
+      const offset = idx * CHUNK_SIZE;
       const params = chunk.map((email) =>
         new EmailParams()
           .setFrom(sender)
@@ -84,20 +87,30 @@ export class EmailService {
           .setSubject(subject)
           .setHtml(html),
       );
-
       try {
         await this.mailerSend.email.sendBulk(params);
-        sent += chunk.length;
         this.logger.log(
-          `Bulk email chunk sent: ${chunk.length} recipients (offset ${i})`,
+          `Bulk email chunk sent: ${chunk.length} recipients (offset ${offset})`,
         );
+        return { success: true as const, count: chunk.length };
       } catch (error) {
-        failed += chunk.length;
         this.logger.error(
-          `Bulk email chunk failed at offset ${i} (${chunk.length} recipients): ${
-            (error as Error).message
-          }`,
+          `Bulk email chunk failed at offset ${offset} (${chunk.length} recipients): ${(error as Error).message}`,
         );
+        return { success: false as const, count: chunk.length };
+      }
+    });
+
+    const settled = await Promise.allSettled(dispatches);
+    let sent = 0;
+    let failed = 0;
+    for (const r of settled) {
+      if (r.status === 'fulfilled') {
+        if (r.value.success) sent += r.value.count;
+        else failed += r.value.count;
+      } else {
+        // Should not happen — inner promises always resolve — but be defensive.
+        this.logger.error(`Bulk email dispatch rejected unexpectedly: ${String(r.reason)}`);
       }
     }
 
