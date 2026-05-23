@@ -221,4 +221,8 @@ export class UsersService {
       throw error;
     }
   }
+
+  findActiveRecipients(thresholdDays = 30): Promise<{ email: string }[]> {
+    return this.userRepository.findActiveRecipients(thresholdDays);
+  }
 }

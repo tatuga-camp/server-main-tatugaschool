@@ -51,6 +51,7 @@ describe('UsersService', () => {
       findById: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      findActiveRecipients: jest.fn(),
     } as any;
   });
 
@@ -214,6 +215,17 @@ describe('UsersService', () => {
       const result = await service.isMemberOfSchool('u1', 'sch1');
 
       expect(result.role).toBe('TEACHER');
+    });
+  });
+
+  describe('findActiveRecipients', () => {
+    it('delegates to userRepository with the same threshold', async () => {
+      const spy = jest
+        .spyOn(service.userRepository, 'findActiveRecipients')
+        .mockResolvedValue([{ email: 'x@y.com' }]);
+      const result = await service.findActiveRecipients(7);
+      expect(spy).toHaveBeenCalledWith(7);
+      expect(result).toEqual([{ email: 'x@y.com' }]);
     });
   });
 });
