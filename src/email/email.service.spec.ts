@@ -16,6 +16,7 @@ jest.mock('mailersend', () => ({
   MailerSend: jest.fn().mockImplementation(() => ({
     email: {
       send: jest.fn().mockResolvedValue(true),
+      sendBulk: jest.fn().mockResolvedValue(true),
     },
   })),
   Recipient: jest.fn().mockImplementation((email) => ({ email })),
@@ -96,6 +97,69 @@ describe('EmailService', () => {
       await service.sendMail(dto);
 
       expect((service as any).mailerSend.email.send).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sendBulk', () => {
+    beforeEach(() => {
+      mockConfigService.get.mockImplementation((key) => {
+        if (key === 'EMAIL_API_KEY') return 'mock-key';
+        if (key === 'NODE_ENV') return 'production';
+        return null;
+      });
+    });
+
+    it('does nothing when NODE_ENV is not production or development', async () => {
+      mockConfigService.get.mockImplementation((key) => {
+        if (key === 'NODE_ENV') return 'test';
+        return null;
+      });
+
+      const result = await service.sendBulk({
+        to: ['a@x.com', 'b@x.com'],
+        subject: 's',
+        html: '<p>h</p>',
+      });
+
+      expect(
+        (service as any).mailerSend.email.sendBulk,
+      ).not.toHaveBeenCalled();
+      expect(result).toEqual({ sent: 0, failed: 0 });
+    });
+
+    it('returns 0/0 when recipient list is empty', async () => {
+      const result = await service.sendBulk({
+        to: [],
+        subject: 's',
+        html: '<p>h</p>',
+      });
+      expect(
+        (service as any).mailerSend.email.sendBulk,
+      ).not.toHaveBeenCalled();
+      expect(result).toEqual({ sent: 0, failed: 0 });
+    });
+
+    it('chunks recipients into batches of 500', async () => {
+      const to = Array.from({ length: 1200 }, (_, i) => `u${i}@x.com`);
+      await service.sendBulk({ to, subject: 's', html: '<p>h</p>' });
+      const calls = (service as any).mailerSend.email.sendBulk.mock.calls;
+      expect(calls).toHaveLength(3);
+      expect(calls[0][0]).toHaveLength(500);
+      expect(calls[1][0]).toHaveLength(500);
+      expect(calls[2][0]).toHaveLength(200);
+    });
+
+    it('aggregates sent/failed counts across chunks', async () => {
+      const sendBulkMock = (service as any).mailerSend.email.sendBulk as jest.Mock;
+      sendBulkMock
+        .mockResolvedValueOnce(true)
+        .mockRejectedValueOnce(new Error('boom'))
+        .mockResolvedValueOnce(true);
+
+      const to = Array.from({ length: 1100 }, (_, i) => `u${i}@x.com`);
+      const result = await service.sendBulk({ to, subject: 's', html: '<p>h</p>' });
+
+      expect(result).toEqual({ sent: 500 + 100, failed: 500 });
     });
   });
 });
