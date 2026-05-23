@@ -68,36 +68,50 @@ export function buildSanityNewsEmail(
   const labelEn = escapeHtml(labels.en);
   const labelTh = escapeHtml(labels.th);
 
-  const imageBlock = imageUrl
-    ? `<img src="${imageUrl}" alt="" style="max-width:100%;border-radius:8px;margin:16px 0;" />`
+  const coverImageBlock = imageUrl
+    ? `<img alt="" style="display:block; width:100%; border-radius:6px; margin:0 0 20px;" src="${imageUrl}" />`
     : '';
 
   return {
     subject,
-    html: `<!doctype html>
-<html><body style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:560px;margin:0 auto;padding:24px;">
-  <p style="display:inline-block;padding:4px 10px;background:#eef;color:#225;border-radius:999px;font-size:12px;margin:0 0 12px 0;">
-    ${labelEn} · ${labelTh}
-  </p>
-  ${imageBlock}
-  <h1 style="font-size:22px;margin:0 0 8px 0;">${titleEn}</h1>
-  <p style="margin:0 0 24px 0;color:#444;">There's something new on Tatuga School.</p>
-
-  <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
-
-  <h1 style="font-size:22px;margin:0 0 8px 0;">${titleTh}</h1>
-  <p style="margin:0 0 24px 0;color:#444;">มีอัปเดตใหม่จาก Tatuga School</p>
-
-  <p style="margin:32px 0;">
-    <a href="${articleUrl}"
-       style="display:inline-block;padding:12px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">
-      Read more / อ่านต่อ
-    </a>
-  </p>
-
-  <p style="margin-top:48px;color:#888;font-size:12px;">
-    Tatuga School · <a href="mailto:support@tatugaschool.com" style="color:#888;">support@tatugaschool.com</a>
-  </p>
-</body></html>`,
+    html: `<body style="background-color: #f8f9fa;">
+  <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
+    <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png" />
+    <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+      <p style="display: inline-block; padding: 4px 12px; background-color: #e7f1ff; color: #0d6efd; border-radius: 999px; font-size: 12px; font-weight: 700; margin: 0 0 16px;">
+        ${labelEn} · ${labelTh}
+      </p>
+      ${coverImageBlock}
+      <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
+        ${titleEn}
+      </h1>
+      <p style="margin: 0 0 16px;">
+        There's something new on Tatuga School. Click the link below to read it on our website.
+      </p>
+      <p style="margin: 0 0 16px; color: #6c757d">
+        Do not reply to this email, this email is automatically generated.
+        If you have any questions, please contact this email permlap@tatugacamp.com or the address below
+      </p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+      <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
+        ${titleTh}
+      </h1>
+      <p style="margin: 0 0 16px;">
+        มีอัปเดตใหม่จาก Tatuga School คลิกที่ลิงก์ด้านล่างเพื่ออ่านบนเว็บไซต์ของเรา
+      </p>
+      <p style="margin: 0 0 24px; color: #6c757d">
+        อีเมลนี้ถูกสร้างขึ้นโดยอัตโนมัติ กรุณาอย่าตอบกลับ
+        หากมีคำถาม โปรดติดต่อ permlap@tatugacamp.com หรือที่อยู่ด้านล่าง
+      </p>
+      <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${articleUrl}">Read more / อ่านต่อ</a>
+    </div>
+    <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/public-tatugaschool/banner-tatugaschool.jpg" />
+    <div style="color: #6c757d; text-align: center; margin: 24px 0;">
+      Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
+      288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีีมา 30000<br>
+      โทร 0610277960 Email: permlap@tatugacamp.com<br>
+    </div>
+  </div>
+</body>`,
   };
 }

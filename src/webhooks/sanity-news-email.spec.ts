@@ -96,13 +96,30 @@ describe('buildSanityNewsEmail', () => {
     );
   });
 
-  it('omits the image block when coverImage is absent', () => {
+  it('omits the cover image when coverImage is absent', () => {
     const { html } = buildSanityNewsEmail(basePayload, {
       projectId: PROJECT_ID,
       dataset: DATASET,
     });
     expect(html).not.toContain('cdn.sanity.io');
-    expect(html).not.toContain('<img');
+  });
+
+  it('includes the brand logo and banner in every email', () => {
+    const { html } = buildSanityNewsEmail(basePayload, {
+      projectId: PROJECT_ID,
+      dataset: DATASET,
+    });
+    expect(html).toContain('logo-tatugaschool.png');
+    expect(html).toContain('banner-tatugaschool.jpg');
+  });
+
+  it('includes the Thai company address footer', () => {
+    const { html } = buildSanityNewsEmail(basePayload, {
+      projectId: PROJECT_ID,
+      dataset: DATASET,
+    });
+    expect(html).toContain('ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์');
+    expect(html).toContain('permlap@tatugacamp.com');
   });
 
   it('renders a type badge', () => {
