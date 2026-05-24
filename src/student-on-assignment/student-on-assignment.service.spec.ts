@@ -256,51 +256,6 @@ describe('StudentOnAssignmentService', () => {
       expect(result.id).toBe('sa1');
     });
 
-    it('should notify line bot when student submits', async () => {
-      const dto: any = {
-        query: { studentOnAssignmentId: 'sa1' },
-        body: { status: 'SUBMITTED' },
-      };
-      (
-        service.studentOnAssignmentRepository.getById as jest.Mock
-      ).mockResolvedValue({
-        id: 'sa1',
-        assignmentId: 'a1',
-        subjectId: 's1',
-        studentId: 'st1',
-        isAssigned: true,
-      });
-      (service as any).assignmentRepository.getById.mockResolvedValue({
-        id: 'a1',
-        maxScore: 10,
-        type: 'Assignment',
-      });
-      mockPrismaService.subject.findUnique.mockResolvedValue({
-        id: 's1',
-        isLocked: false,
-        isVerifyLine: true,
-        lineGroupId: 'g1',
-        allowSendNotificationOnStudentOnAssignmentToLine: true,
-      });
-      mockPrismaService.school.findUnique.mockResolvedValue({
-        plan: 'PREMIUM',
-      });
-      (service as any).teacherOnSubjectRepository.findMany.mockResolvedValue([
-        { userId: 'u1' },
-      ]);
-      (
-        service.studentOnAssignmentRepository.findMany as jest.Mock
-      ).mockResolvedValue([{ id: 'sa1' }]);
-      (
-        service.studentOnAssignmentRepository.update as jest.Mock
-      ).mockResolvedValue({ id: 'sa1', status: 'SUBMITTED' });
-
-      await service.update(dto, undefined, { id: 'st1' } as any);
-
-      expect(mockNotificationService.createNotifications).toHaveBeenCalled();
-      expect(mockLineBotService.sendMessage).toHaveBeenCalled();
-    });
-
     it('should throw BadRequestException if score exceeds max', async () => {
       const dto: any = {
         query: { studentOnAssignmentId: 'sa1' },

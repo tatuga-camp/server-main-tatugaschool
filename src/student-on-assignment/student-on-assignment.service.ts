@@ -350,16 +350,6 @@ export class StudentOnAssignmentService {
       }
 
       if (dto.body.status === 'SUBMITTED') {
-        const subject = await this.prisma.subject.findUnique({
-          where: {
-            id: studentOnAssignment.subjectId,
-          },
-        });
-        const school = await this.prisma.school.findUnique({
-          where: {
-            id: subject.schoolId,
-          },
-        });
         const params = {
           studentOnAssignmentId: studentOnAssignment.id,
           menu: 'studentwork',
@@ -391,42 +381,6 @@ export class StudentOnAssignmentService {
           .catch((err) => {
             this.logger.error('Failed to create notification', err);
           });
-
-        if (
-          (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE') &&
-          subject.isVerifyLine === true &&
-          subject.lineGroupId &&
-          subject.allowSendNotificationOnStudentOnAssignmentToLine == true
-        ) {
-          const totalSummits =
-            await this.studentOnAssignmentRepository.findMany({
-              where: {
-                OR: [
-                  {
-                    assignmentId: assignment.id,
-                    status: 'SUBMITTED',
-                  },
-                  {
-                    assignmentId: assignment.id,
-                    status: 'REVIEWD',
-                  },
-                ],
-              },
-            });
-          await this.line
-            .sendMessage({
-              groupId: subject.lineGroupId,
-              message:
-                `🌟 ปิ๊งป่อง! มีเด็กดีส่งการบ้านค่ะ \n` +
-                `👨‍🎓 นักเรียน: ${studentOnAssignment.title} ${studentOnAssignment.firstName} ${studentOnAssignment.lastName}\n` +
-                `📕 ชิ้นงาน: ${assignment.title}\n` +
-                `✅ สถานะ: ส่งงานเป็นคนที่ ${totalSummits.length + 1} 🎉\n` +
-                `เข้าไปตรวจผลงานได้ที่นี่เลย / Check it out here 👇\n${newUrl}`,
-            })
-            .catch((err) => {
-              this.logger.error('Failed to send Line notification', err);
-            });
-        }
       }
 
       let reviewdAt: string | null;
