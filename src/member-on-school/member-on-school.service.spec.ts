@@ -8,6 +8,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 
 jest.mock('web-push', () => ({}));
@@ -86,6 +87,178 @@ describe('MemberOnSchoolService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('sendInviteEmail', () => {
+    it('sends Flow A template (link to /account?menu=Invitations) when no invitationToken', async () => {
+      const member: any = {
+        id: 'm1',
+        email: 'alice@example.com',
+        firstName: 'Alice',
+        invitationToken: null,
+      };
+      const school: any = { id: 'sch1', title: 'My School' };
+
+      await (service as any).sendInviteEmail(member, school);
+
+      expect(mockEmailService.sendMail).toHaveBeenCalledTimes(1);
+      const arg = mockEmailService.sendMail.mock.calls[0][0];
+      expect(arg.to).toBe('alice@example.com');
+      expect(arg.subject).toContain('Invite to join school');
+      expect(arg.html).toContain('/account?menu=Invitations');
+      expect(arg.html).not.toContain('invitationToken=');
+    });
+
+    it('sends Flow B template (link to /auth/sign-up?invitationToken=...) when invitationToken present', async () => {
+      const member: any = {
+        id: 'm2',
+        email: 'bob@example.com',
+        firstName: null,
+        invitationToken: 'tok-xyz',
+      };
+      const school: any = { id: 'sch1', title: 'My School' };
+
+      await (service as any).sendInviteEmail(member, school);
+
+      expect(mockEmailService.sendMail).toHaveBeenCalledTimes(1);
+      const arg = mockEmailService.sendMail.mock.calls[0][0];
+      expect(arg.to).toBe('bob@example.com');
+      expect(arg.html).toContain('/auth/sign-up?invitationToken=tok-xyz');
+      expect(arg.html).toContain('expires in 7 days');
+      expect(arg.html).not.toContain('/account?menu=Invitations');
+    });
+  });
+
+  describe('createMemberOnSchool', () => {
+    const adminUser = { id: 'admin1', email: 'admin@x.com' } as any;
+    const school = {
+      id: 'sch1',
+      title: 'My School',
+      limitSchoolMember: 100,
+    } as any;
+
+    const dto = (overrides: any = {}) => ({
+      schoolId: 'sch1',
+      email: 'invitee@example.com',
+      role: 'TEACHER',
+      ...overrides,
+    });
+
+    beforeEach(() => {
+      mockSchoolService.schoolRepository.getSchoolById.mockResolvedValue(school);
+      mockSchoolService.ValidateLimit.mockResolvedValue(undefined);
+      (service as any).memberOnSchoolRepository.findMany.mockResolvedValue([]);
+      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+        userId: 'admin1',
+        schoolId: 'sch1',
+        status: 'ACCEPT',
+        role: 'ADMIN',
+      });
+    });
+
+    it('creates an existing-user invite with userId set and no token', async () => {
+      (service as any).userRepository.findByEmail.mockResolvedValue({
+        id: 'user2',
+        email: 'invitee@example.com',
+        firstName: 'Eve',
+        lastName: 'Doe',
+        photo: 'p',
+        phone: '123',
+        blurHash: 'b',
+      });
+      (service as any).memberOnSchoolRepository
+        .getMemberOnSchoolByEmailAndSchool.mockResolvedValue(null);
+      (service as any).memberOnSchoolRepository.create.mockImplementation(
+        async (r: any) => ({ id: 'm-new', ...r }),
+      );
+
+      const result = await service.createMemberOnSchool(dto(), adminUser);
+
+      expect(
+        (service as any).memberOnSchoolRepository.create,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: 'user2',
+          email: 'invitee@example.com',
+          firstName: 'Eve',
+          invitationToken: null,
+          invitationTokenExpiresAt: null,
+        }),
+      );
+      expect(result.id).toBe('m-new');
+      expect(mockEmailService.sendMail).toHaveBeenCalled();
+    });
+
+    it('creates a new-email invite with userId=null, token set, expiresAt = now+7d', async () => {
+      (service as any).userRepository.findByEmail.mockResolvedValue(null);
+      (service as any).memberOnSchoolRepository
+        .getMemberOnSchoolByEmailAndSchool.mockResolvedValue(null);
+      (service as any).memberOnSchoolRepository.create.mockImplementation(
+        async (r: any) => ({ id: 'm-new', ...r }),
+      );
+
+      const before = Date.now();
+      await service.createMemberOnSchool(dto(), adminUser);
+      const after = Date.now();
+
+      const created = (service as any).memberOnSchoolRepository.create.mock
+        .calls[0][0];
+      expect(created.userId).toBeNull();
+      expect(created.firstName).toBeNull();
+      expect(created.email).toBe('invitee@example.com');
+      expect(created.invitationToken).toMatch(/^[0-9a-f]{64}$/);
+      const expiresMs = new Date(created.invitationTokenExpiresAt).getTime();
+      const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+      expect(expiresMs).toBeGreaterThanOrEqual(before + sevenDaysMs - 1000);
+      expect(expiresMs).toBeLessThanOrEqual(after + sevenDaysMs + 1000);
+    });
+
+    it('refreshes expiry and resends email when a pending invite already exists', async () => {
+      const existing = {
+        id: 'm-existing',
+        email: 'invitee@example.com',
+        schoolId: 'sch1',
+        status: 'PENDDING',
+        invitationToken: 'old-token',
+        invitationTokenExpiresAt: new Date('2020-01-01'),
+      };
+      (service as any).userRepository.findByEmail.mockResolvedValue(null);
+      (service as any).memberOnSchoolRepository
+        .getMemberOnSchoolByEmailAndSchool.mockResolvedValue(existing);
+      (service as any).memberOnSchoolRepository.updateMemberOnSchool.mockResolvedValue(
+        existing,
+      );
+
+      const result = await service.createMemberOnSchool(dto(), adminUser);
+
+      expect(
+        (service as any).memberOnSchoolRepository.create,
+      ).not.toHaveBeenCalled();
+      expect(
+        (service as any).memberOnSchoolRepository.updateMemberOnSchool,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          query: { id: 'm-existing' },
+          data: expect.objectContaining({
+            invitationTokenExpiresAt: expect.any(Date),
+          }),
+        }),
+      );
+      expect(mockEmailService.sendMail).toHaveBeenCalledTimes(1);
+      expect(result.id).toBe('m-existing');
+    });
+
+    it('throws ForbiddenException when invitee is already an ACCEPT member', async () => {
+      (service as any).memberOnSchoolRepository
+        .getMemberOnSchoolByEmailAndSchool.mockResolvedValue({
+        id: 'm-accepted',
+        status: 'ACCEPT',
+      });
+
+      await expect(
+        service.createMemberOnSchool(dto(), adminUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('validateAccess', () => {
@@ -314,6 +487,254 @@ describe('MemberOnSchoolService', () => {
           { id: 'u1' } as any,
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('claimPendingInvitesForUser', () => {
+    const user: any = {
+      id: 'user1',
+      email: 'invitee@example.com',
+      firstName: 'Eve',
+      lastName: 'Doe',
+      photo: 'p.png',
+      phone: '+1234567890',
+      blurHash: 'bh',
+    };
+
+    it('returns empty array when no pending invites exist', async () => {
+      (service as any).memberOnSchoolRepository.findPendingInvitationsForUser =
+        jest.fn().mockResolvedValue([]);
+
+      const result = await service.claimPendingInvitesForUser(user);
+
+      expect(result).toEqual([]);
+      expect(
+        (service as any).memberOnSchoolRepository.updateMemberOnSchool,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('accepts each pending invite (by userId or email-match) and populates profile fields', async () => {
+      const invite1 = {
+        id: 'm1',
+        schoolId: 'sch1',
+        userId: 'user1',
+        status: 'PENDDING',
+        createAt: new Date('2026-05-20'),
+      };
+      const invite2 = {
+        id: 'm2',
+        schoolId: 'sch2',
+        userId: null,
+        status: 'PENDDING',
+        createAt: new Date('2026-05-22'),
+      };
+      (service as any).memberOnSchoolRepository.findPendingInvitationsForUser =
+        jest.fn().mockResolvedValue([invite1, invite2]);
+      (service as any).memberOnSchoolRepository.updateMemberOnSchool =
+        jest.fn().mockImplementation(async ({ query, data }: any) => ({
+          ...((query.id === 'm1') ? invite1 : invite2),
+          ...data,
+        }));
+      // No other school members — prevents the notification pathway from firing
+      (service as any).memberOnSchoolRepository.findMany =
+        jest.fn().mockResolvedValue([]);
+
+      const result = await service.claimPendingInvitesForUser(user);
+
+      expect(
+        (service as any).memberOnSchoolRepository.updateMemberOnSchool,
+      ).toHaveBeenCalledTimes(2);
+      const firstCall = (service as any).memberOnSchoolRepository
+        .updateMemberOnSchool.mock.calls[0][0];
+      expect(firstCall).toEqual({
+        query: { id: 'm1' },
+        data: {
+          userId: 'user1',
+          status: 'ACCEPT',
+          firstName: 'Eve',
+          lastName: 'Doe',
+          photo: 'p.png',
+          phone: '+1234567890',
+          blurHash: 'bh',
+          invitationToken: null,
+          invitationTokenExpiresAt: null,
+        },
+      });
+      expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('getInvitationByToken', () => {
+    it('returns invitation details for a valid pending token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'm1',
+          email: 'invitee@example.com',
+          role: 'TEACHER',
+          status: 'PENDDING',
+          userId: null,
+          schoolId: 'sch1',
+          invitationToken: 'good-token',
+          invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        });
+      mockSchoolService.schoolRepository.getSchoolById.mockResolvedValue({
+        id: 'sch1',
+        title: 'My School',
+        logo: 'logo.png',
+      });
+
+      const result = await service.getInvitationByToken('good-token');
+
+      expect(result).toEqual({
+        email: 'invitee@example.com',
+        role: 'TEACHER',
+        schoolTitle: 'My School',
+        schoolLogo: 'logo.png',
+      });
+    });
+
+    it('throws NotFoundException for unknown token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue(null);
+
+      await expect(service.getInvitationByToken('nope')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws ForbiddenException for expired token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          invitationToken: 'old',
+          invitationTokenExpiresAt: new Date('2020-01-01'),
+          status: 'PENDDING',
+          userId: null,
+        });
+
+      await expect(service.getInvitationByToken('old')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('throws ConflictException when invitation status is ACCEPT', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          invitationToken: 'used',
+          invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+          status: 'ACCEPT',
+          userId: 'someone',
+        });
+
+      await expect(service.getInvitationByToken('used')).rejects.toThrow(
+        ConflictException,
+      );
+    });
+
+    it('returns invitation details when userId is set but status is still PENDDING (signup happened, verify pending)', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'm1',
+          email: 'invitee@example.com',
+          role: 'TEACHER',
+          status: 'PENDDING',
+          userId: 'newUser',
+          schoolId: 'sch1',
+          invitationToken: 'tok',
+          invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        });
+      mockSchoolService.schoolRepository.getSchoolById.mockResolvedValue({
+        id: 'sch1',
+        title: 'My School',
+        logo: 'logo.png',
+      });
+
+      const result = await service.getInvitationByToken('tok');
+
+      expect(result).toEqual({
+        email: 'invitee@example.com',
+        role: 'TEACHER',
+        schoolTitle: 'My School',
+        schoolLogo: 'logo.png',
+      });
+    });
+  });
+
+  describe('linkInvitationToUser', () => {
+    it('returns the invite and updates it (userId + ACCEPT + clears token) on valid input', async () => {
+      const invite = {
+        id: 'inv1',
+        email: 'invitee@example.com',
+        schoolId: 'sch1',
+        invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+      };
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue(invite);
+
+      const result = await service.linkInvitationToUser({
+        token: 'tok',
+        userId: 'u1',
+        email: 'invitee@example.com',
+      });
+
+      expect(result).toBe(invite);
+      expect(
+        (service as any).memberOnSchoolRepository.updateMemberOnSchool,
+      ).toHaveBeenCalledWith({
+        query: { id: 'inv1' },
+        data: {
+          userId: 'u1',
+          invitationToken: null,
+          invitationTokenExpiresAt: null,
+          status: 'ACCEPT',
+        },
+      });
+    });
+
+    it('throws NotFoundException for unknown token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.linkInvitationToUser({
+          token: 'nope',
+          userId: 'u1',
+          email: 'a@b.com',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ForbiddenException for expired token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'inv1',
+          email: 'a@b.com',
+          invitationTokenExpiresAt: new Date('2020-01-01'),
+        });
+
+      await expect(
+        service.linkInvitationToUser({
+          token: 'old',
+          userId: 'u1',
+          email: 'a@b.com',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when emails differ (case-insensitive)', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'inv1',
+          email: 'invitee@example.com',
+          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+        });
+
+      await expect(
+        service.linkInvitationToUser({
+          token: 'tok',
+          userId: 'u1',
+          email: 'other@example.com',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });

@@ -9,10 +9,15 @@ import {
 } from './strategy';
 import { GoogleStrategy } from './strategy/google-oauth.strategy';
 import { SchoolModule } from '../school/school.module';
+import { MemberOnSchoolModule } from '../member-on-school/member-on-school.module';
 
 @Global()
 @Module({
-  imports: [JwtModule.register({}), forwardRef(() => SchoolModule)],
+  imports: [
+    JwtModule.register({}),
+    forwardRef(() => SchoolModule),
+    forwardRef(() => MemberOnSchoolModule),
+  ],
   providers: [
     AuthService,
     ImageService,

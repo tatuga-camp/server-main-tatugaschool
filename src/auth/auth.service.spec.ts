@@ -9,10 +9,10 @@ import { StorageService } from '../storage/storage.service';
 import { SchoolService } from '../school/school.service';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import {
   NotFoundException,
   ForbiddenException,
-  BadRequestException,
   ConflictException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
@@ -87,6 +87,18 @@ describe('AuthService', () => {
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: RedisService, useValue: {} },
         { provide: PrismaReadService, useValue: {} },
+        {
+          provide: MemberOnSchoolService,
+          useValue: {
+            getInvitationByToken: jest.fn(),
+            claimPendingInvitesForUser: jest.fn().mockResolvedValue([]),
+            linkInvitationToUser: jest.fn(),
+            memberOnSchoolRepository: {
+              getMemberOnSchoolByInvitationToken: jest.fn(),
+              updateMemberOnSchool: jest.fn(),
+            },
+          },
+        },
       ],
     }).compile();
 
@@ -254,6 +266,143 @@ describe('AuthService', () => {
           {} as any,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('signup with invitationToken', () => {
+    const baseDto = {
+      email: 'invitee@example.com',
+      password: 'password123',
+      firstName: 'Eve',
+      lastName: 'Doe',
+      phone: '+1234567890',
+      provider: 'LOCAL' as any,
+    };
+    const reply: any = { setCookie: jest.fn() };
+
+    beforeEach(() => {
+      service.usersRepository.findByEmail = jest.fn().mockResolvedValue(null);
+      service.usersRepository.createUser = jest
+        .fn()
+        .mockResolvedValue({ id: 'newUser', email: 'invitee@example.com' });
+      service.usersRepository.updateVerified = jest.fn().mockResolvedValue({});
+      service.usersRepository.update = jest.fn().mockResolvedValue({
+        id: 'newUser',
+        email: 'invitee@example.com',
+        favoritSchool: 'sch-invited',
+      });
+      mockJwtService.signAsync.mockResolvedValue('jwt');
+      mockImageService.generateBase64Image.mockReturnValue('photo');
+      jest
+        .spyOn(service, 'sendVerifyEmail')
+        .mockResolvedValue({ token: 'verify-token' });
+    });
+
+    it('auto-verifies, sets favoritSchool, and redirects to /school/:id when token is valid', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.linkInvitationToUser.mockResolvedValue({
+        id: 'inv1',
+        schoolId: 'sch-invited',
+        email: 'invitee@example.com',
+      });
+
+      const result = await service.signup(
+        { ...baseDto, invitationToken: 'tok' } as any,
+        reply,
+      );
+
+      expect(memberSvc.linkInvitationToUser).toHaveBeenCalledWith({
+        token: 'tok',
+        userId: 'newUser',
+        email: 'invitee@example.com',
+      });
+      expect(service.usersRepository.updateVerified).toHaveBeenCalledWith({
+        email: 'invitee@example.com',
+      });
+      expect(service.usersRepository.update).toHaveBeenCalledWith({
+        where: { id: 'newUser' },
+        data: { favoritSchool: 'sch-invited' },
+      });
+      expect(service.sendVerifyEmail).not.toHaveBeenCalled();
+      expect(reply.setCookie).toHaveBeenCalledTimes(2);
+      expect(result).toEqual({
+        redirectUrl: `${process.env.CLIENT_URL}/school/sch-invited`,
+      });
+    });
+
+    it('propagates ForbiddenException when invitation email does not match signup email', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.linkInvitationToUser.mockRejectedValue(
+        new ForbiddenException('Email does not match invitation'),
+      );
+
+      await expect(
+        service.signup({ ...baseDto, invitationToken: 'tok' } as any, reply),
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.usersRepository.updateVerified).not.toHaveBeenCalled();
+      expect(service.sendVerifyEmail).not.toHaveBeenCalled();
+    });
+
+    it('propagates NotFoundException when invitation token is unknown', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.linkInvitationToUser.mockRejectedValue(
+        new NotFoundException('Invitation not found'),
+      );
+
+      await expect(
+        service.signup({ ...baseDto, invitationToken: 'bogus' } as any, reply),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('propagates ForbiddenException when invitation token is expired', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.linkInvitationToUser.mockRejectedValue(
+        new ForbiddenException('Invitation expired'),
+      );
+
+      await expect(
+        service.signup({ ...baseDto, invitationToken: 'expired' } as any, reply),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    beforeEach(() => {
+      service.usersRepository.findByVerifyToken = jest.fn().mockResolvedValue({
+        id: 'user1',
+        email: 'invitee@example.com',
+        firstName: 'Eve',
+        lastName: 'Doe',
+        photo: 'p.png',
+        phone: '+1',
+        blurHash: 'b',
+        verifyEmailTokenExpiresAt: new Date(Date.now() + 60_000),
+      });
+      service.usersRepository.updateVerified = jest.fn().mockResolvedValue({});
+    });
+
+    it('creates the default school when the user has no existing memberships', async () => {
+      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([]);
+      mockSchoolService.createSchool.mockResolvedValue({ id: 'defaultSch' });
+
+      const result = await service.verifyEmail({ token: 'vtok' });
+
+      expect(service.usersRepository.updateVerified).toHaveBeenCalledWith({
+        email: 'invitee@example.com',
+      });
+      expect(mockSchoolService.createSchool).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ id: 'defaultSch' });
+    });
+
+    it('skips default school creation when the user already has memberships', async () => {
+      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([
+        { id: 'm1', schoolId: 'sch1' },
+      ]);
+
+      const result = await service.verifyEmail({ token: 'vtok' });
+
+      expect(mockSchoolService.createSchool).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
     });
   });
 });

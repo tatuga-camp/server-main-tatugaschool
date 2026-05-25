@@ -36,6 +36,7 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 
 @Injectable()
 export class AuthService {
@@ -54,6 +55,8 @@ export class AuthService {
     private schoolService: SchoolService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    @Inject(forwardRef(() => MemberOnSchoolService))
+    private memberOnSchoolService: MemberOnSchoolService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
@@ -180,11 +183,32 @@ export class AuthService {
       }
 
       delete dto.password;
-      const user = await this.usersRepository.createUser({
-        ...dto,
+      let user = await this.usersRepository.createUser({
+        email: dto.email,
+        firstName: dto.firstName,
+        providerId: dto.providerId,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        provider: dto.provider,
         photo,
         password: hashedPassword,
       });
+
+      if (dto.invitationToken) {
+        const memberOnSchool =
+          await this.memberOnSchoolService.linkInvitationToUser({
+            token: dto.invitationToken,
+            userId: user.id,
+            email: dto.email,
+          });
+        await this.usersRepository.updateVerified({ email: user.email });
+        user = await this.usersRepository.update({
+          where: { id: user.id },
+          data: {
+            favoritSchool: memberOnSchool.schoolId,
+          },
+        });
+      }
 
       const accessToken = await this.GenerateAccessToken({
         userId: user.id,
@@ -194,9 +218,16 @@ export class AuthService {
         userId: user.id,
         email: user.email,
       });
-      const token = await this.sendVerifyEmail(user);
       this.setCookieAccessToken(reply, accessToken);
       this.setCookieRefreshToken(reply, refreshToken);
+
+      if (dto.invitationToken) {
+        return {
+          redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
+        };
+      }
+
+      const token = await this.sendVerifyEmail(user);
 
       return {
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
@@ -221,14 +252,10 @@ export class AuthService {
         throw new ForbiddenException('Token expired');
       }
 
-      await this.usersRepository.updateVerified({
-        email: user.email,
-      });
+      await this.usersRepository.updateVerified({ email: user.email });
 
       const members = await this.prisma.memberOnSchool.findMany({
-        where: {
-          userId: user.id,
-        },
+        where: { userId: user.id },
       });
 
       if (members.length === 0) {
@@ -459,13 +486,23 @@ export class AuthService {
         return reply.redirect(url, 302);
       }
 
+      const invitationToken =
+        await this.memberOnSchoolService.memberOnSchoolRepository.findFirst({
+          where: { email: data.email },
+        });
+
       const signUpParams = new URLSearchParams({
         email: data.email,
+
         firstName: data.firstName,
         lastName: data.lastName,
         provider: 'google',
         providerId: data.providerId,
         photo: data.photo,
+        ...(invitationToken &&
+          invitationToken.invitationToken && {
+            invitationToken: invitationToken.invitationToken,
+          }),
       });
       return reply.redirect(
         `${process.env.CLIENT_URL}/auth/sign-up?${signUpParams.toString()}`,
