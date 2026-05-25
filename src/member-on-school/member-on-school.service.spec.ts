@@ -88,6 +88,46 @@ describe('MemberOnSchoolService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('sendInviteEmail', () => {
+    it('sends Flow A template (link to /account?menu=Invitations) when no invitationToken', async () => {
+      const member: any = {
+        id: 'm1',
+        email: 'alice@example.com',
+        firstName: 'Alice',
+        invitationToken: null,
+      };
+      const school: any = { id: 'sch1', title: 'My School' };
+
+      await (service as any).sendInviteEmail(member, school);
+
+      expect(mockEmailService.sendMail).toHaveBeenCalledTimes(1);
+      const arg = mockEmailService.sendMail.mock.calls[0][0];
+      expect(arg.to).toBe('alice@example.com');
+      expect(arg.subject).toContain('Invite to join school');
+      expect(arg.html).toContain('/account?menu=Invitations');
+      expect(arg.html).not.toContain('invitationToken=');
+    });
+
+    it('sends Flow B template (link to /auth/sign-up?invitationToken=...) when invitationToken present', async () => {
+      const member: any = {
+        id: 'm2',
+        email: 'bob@example.com',
+        firstName: null,
+        invitationToken: 'tok-xyz',
+      };
+      const school: any = { id: 'sch1', title: 'My School' };
+
+      await (service as any).sendInviteEmail(member, school);
+
+      expect(mockEmailService.sendMail).toHaveBeenCalledTimes(1);
+      const arg = mockEmailService.sendMail.mock.calls[0][0];
+      expect(arg.to).toBe('bob@example.com');
+      expect(arg.html).toContain('/auth/sign-up?invitationToken=tok-xyz');
+      expect(arg.html).toContain('expires in 7 days');
+      expect(arg.html).not.toContain('/account?menu=Invitations');
+    });
+  });
+
   describe('validateAccess', () => {
     it('should pass validation if member is accepted', async () => {
       const mockMember = { userId: 'u1', schoolId: 'sch1', status: 'ACCEPT' };
