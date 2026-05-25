@@ -426,6 +426,23 @@ export class MemberOnSchoolService {
             } as any,
           });
         accepted.push(updated);
+
+        // Best-effort notify other school members
+        const otherMembers = await this.memberOnSchoolRepository.findMany({
+          where: { schoolId: updated.schoolId, status: 'ACCEPT' },
+        });
+        const recipients = otherMembers.filter((m) => m.userId !== user.id);
+        if (recipients.length > 0) {
+          this.notifyMembers({
+            members: recipients,
+            schoolId: updated.schoolId,
+            title: `Your school has a new member`,
+            body: `${user.firstName} ${user.lastName} has been accepted to join the school`,
+            url: new URL(
+              `${process.env.CLIENT_URL}/school/${updated.schoolId}`,
+            ),
+          }).catch((error) => this.logger.error(error));
+        }
       }
       return accepted;
     } catch (error) {

@@ -535,6 +535,9 @@ describe('MemberOnSchoolService', () => {
           ...((query.id === 'm1') ? invite1 : invite2),
           ...data,
         }));
+      // No other school members — prevents the notification pathway from firing
+      (service as any).memberOnSchoolRepository.findMany =
+        jest.fn().mockResolvedValue([]);
 
       const result = await service.claimPendingInvitesForUser(user);
 
