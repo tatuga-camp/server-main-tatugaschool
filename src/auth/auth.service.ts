@@ -36,6 +36,7 @@ import { forwardRef, Inject } from '@nestjs/common';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 
 @Injectable()
 export class AuthService {
@@ -54,6 +55,8 @@ export class AuthService {
     private schoolService: SchoolService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    @Inject(forwardRef(() => MemberOnSchoolService))
+    private memberOnSchoolService: MemberOnSchoolService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);

@@ -9,6 +9,7 @@ import { StorageService } from '../storage/storage.service';
 import { SchoolService } from '../school/school.service';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import {
   NotFoundException,
   ForbiddenException,
@@ -87,6 +88,17 @@ describe('AuthService', () => {
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: RedisService, useValue: {} },
         { provide: PrismaReadService, useValue: {} },
+        {
+          provide: MemberOnSchoolService,
+          useValue: {
+            getInvitationByToken: jest.fn(),
+            claimPendingInvitesForUser: jest.fn().mockResolvedValue([]),
+            memberOnSchoolRepository: {
+              getMemberOnSchoolByInvitationToken: jest.fn(),
+              updateMemberOnSchool: jest.fn(),
+            },
+          },
+        },
       ],
     }).compile();
 
