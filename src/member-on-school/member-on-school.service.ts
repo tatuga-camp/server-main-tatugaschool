@@ -625,6 +625,12 @@ export class MemberOnSchoolService {
         throw new NotFoundException('Not found member on school');
       }
 
+      if (targetDeleteMember.userId === null) {
+        return await this.memberOnSchoolRepository.delete({
+          memberOnSchoolId: dto.memberOnSchoolId,
+        });
+      }
+
       const member = await this.validateAccess({
         user: user,
         schoolId: targetDeleteMember.schoolId,
