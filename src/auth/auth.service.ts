@@ -227,6 +227,31 @@ export class AuthService {
         };
       }
 
+      if (!dto.invitationToken) {
+        const findUnverifiedInvitations =
+          await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
+            where: {
+              email: dto.email,
+              userId: null,
+            },
+          });
+
+        if (findUnverifiedInvitations.length > 0) {
+          await Promise.allSettled(
+            findUnverifiedInvitations.map((invitation) => {
+              this.memberOnSchoolService.linkInvitationToUser({
+                token: invitation.invitationToken,
+                userId: user.id,
+                email: dto.email,
+              });
+            }),
+          );
+          return {
+            redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
+          };
+        }
+      }
+
       const token = await this.sendVerifyEmail(user);
 
       return {

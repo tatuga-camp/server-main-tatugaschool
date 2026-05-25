@@ -295,7 +295,7 @@ export class MemberOnSchoolService {
           refreshed.setDate(refreshed.getDate() + 7);
           await this.memberOnSchoolRepository.updateMemberOnSchool({
             query: { id: existingInvite.id },
-            data: { invitationTokenExpiresAt: refreshed } as any,
+            data: { invitationTokenExpiresAt: refreshed },
           });
         }
         await this.sendInviteEmail(existingInvite, school);
@@ -463,15 +463,11 @@ export class MemberOnSchoolService {
           token: input.token,
         });
       if (!invite) throw new NotFoundException('Invitation not found');
-      if (
-        !invite.invitationTokenExpiresAt ||
-        invite.invitationTokenExpiresAt < new Date()
-      ) {
-        throw new ForbiddenException('Invitation expired');
-      }
+
       if (invite.email.toLowerCase() !== input.email.toLowerCase()) {
         throw new ForbiddenException('Email does not match invitation');
       }
+
       await this.memberOnSchoolRepository.updateMemberOnSchool({
         query: { id: invite.id },
         data: {
