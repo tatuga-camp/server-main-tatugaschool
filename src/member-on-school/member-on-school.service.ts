@@ -464,6 +464,13 @@ export class MemberOnSchoolService {
         });
       if (!invite) throw new NotFoundException('Invitation not found');
 
+      if (
+        !invite.invitationTokenExpiresAt ||
+        invite.invitationTokenExpiresAt < new Date()
+      ) {
+        throw new ForbiddenException('Invitation expired');
+      }
+
       if (invite.email.toLowerCase() !== input.email.toLowerCase()) {
         throw new ForbiddenException('Email does not match invitation');
       }

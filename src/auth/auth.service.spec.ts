@@ -96,6 +96,7 @@ describe('AuthService', () => {
             memberOnSchoolRepository: {
               getMemberOnSchoolByInvitationToken: jest.fn(),
               updateMemberOnSchool: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
             },
           },
         },
@@ -361,7 +362,10 @@ describe('AuthService', () => {
       );
 
       await expect(
-        service.signup({ ...baseDto, invitationToken: 'expired' } as any, reply),
+        service.signup(
+          { ...baseDto, invitationToken: 'expired' } as any,
+          reply,
+        ),
       ).rejects.toThrow(ForbiddenException);
     });
   });
