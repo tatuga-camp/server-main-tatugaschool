@@ -268,4 +268,79 @@ describe('AuthService', () => {
       ).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('signup with invitationToken', () => {
+    const baseDto = {
+      email: 'invitee@example.com',
+      password: 'password123',
+      firstName: 'Eve',
+      lastName: 'Doe',
+      phone: '+1234567890',
+      provider: 'LOCAL' as any,
+    };
+    const reply: any = { setCookie: jest.fn() };
+
+    beforeEach(() => {
+      service.usersRepository.findByEmail = jest.fn().mockResolvedValue(null);
+      service.usersRepository.createUser = jest
+        .fn()
+        .mockResolvedValue({ id: 'newUser', email: 'invitee@example.com' });
+      service.usersRepository.update = jest
+        .fn()
+        .mockResolvedValue({ id: 'newUser', email: 'invitee@example.com' });
+      mockJwtService.signAsync.mockResolvedValue('jwt');
+      mockImageService.generateBase64Image.mockReturnValue('photo');
+    });
+
+    it('links the invite to the new user when token is valid', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken
+        .mockResolvedValue({
+          id: 'inv1',
+          email: 'invitee@example.com',
+          invitationToken: 'tok',
+          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+        });
+
+      await service.signup(
+        { ...baseDto, invitationToken: 'tok' } as any,
+        reply,
+      );
+
+      expect(
+        memberSvc.memberOnSchoolRepository.updateMemberOnSchool,
+      ).toHaveBeenCalledWith({
+        query: { id: 'inv1' },
+        data: { userId: 'newUser' },
+      });
+    });
+
+    it('throws BadRequestException when token email does not match signup email', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken
+        .mockResolvedValue({
+          id: 'inv1',
+          email: 'OTHER@example.com',
+          invitationToken: 'tok',
+          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+        });
+
+      await expect(
+        service.signup({ ...baseDto, invitationToken: 'tok' } as any, reply),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('does not block signup when token is unknown or expired', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken
+        .mockResolvedValue(null);
+
+      await expect(
+        service.signup({ ...baseDto, invitationToken: 'bogus' } as any, reply),
+      ).resolves.toBeDefined();
+      expect(
+        memberSvc.memberOnSchoolRepository.updateMemberOnSchool,
+      ).not.toHaveBeenCalled();
+    });
+  });
 });

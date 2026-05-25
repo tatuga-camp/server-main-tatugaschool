@@ -189,6 +189,39 @@ export class AuthService {
         password: hashedPassword,
       });
 
+      if (dto.invitationToken) {
+        const invite =
+          await this.memberOnSchoolService.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken(
+            { token: dto.invitationToken },
+          );
+
+        if (!invite) {
+          this.logger.warn(
+            `Invalid invitationToken at signup for ${dto.email}`,
+          );
+        } else if (
+          !invite.invitationTokenExpiresAt ||
+          invite.invitationTokenExpiresAt < new Date()
+        ) {
+          this.logger.warn(
+            `Expired invitationToken at signup for ${dto.email}`,
+          );
+        } else if (
+          invite.email.toLowerCase() !== dto.email.toLowerCase()
+        ) {
+          throw new BadRequestException(
+            'Signup email does not match invitation email',
+          );
+        } else {
+          await this.memberOnSchoolService.memberOnSchoolRepository.updateMemberOnSchool(
+            {
+              query: { id: invite.id },
+              data: { userId: user.id } as any,
+            },
+          );
+        }
+      }
+
       const accessToken = await this.GenerateAccessToken({
         userId: user.id,
         email: user.email,
