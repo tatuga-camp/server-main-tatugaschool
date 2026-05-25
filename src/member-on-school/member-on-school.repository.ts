@@ -196,12 +196,14 @@ export class MemberOnSchoolRepository implements Repository {
         },
       });
 
-      await this.prisma.teacherOnSubject.deleteMany({
-        where: {
-          userId: memberOnSchool.userId,
-          schoolId: memberOnSchool.schoolId,
-        },
-      });
+      if (memberOnSchool.userId) {
+        await this.prisma.teacherOnSubject.deleteMany({
+          where: {
+            userId: memberOnSchool.userId,
+            schoolId: memberOnSchool.schoolId,
+          },
+        });
+      }
 
       // Finally, delete the MemberOnSchool record
 

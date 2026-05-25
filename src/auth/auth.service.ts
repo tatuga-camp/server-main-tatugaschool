@@ -246,6 +246,13 @@ export class AuthService {
               });
             }),
           );
+          await this.usersRepository.updateVerified({ email: user.email });
+          user = await this.usersRepository.update({
+            where: { id: user.id },
+            data: {
+              favoritSchool: findUnverifiedInvitations[0].schoolId,
+            },
+          });
           return {
             redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
           };
