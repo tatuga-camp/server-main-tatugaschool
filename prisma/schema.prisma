@@ -152,7 +152,7 @@ model MemberOnSchool {
   school School @relation(fields: [schoolId], references: [id])
 
   @@unique([email, schoolId])
-  @@index([schoolId])
+  @@index([schoolId]) // speed up Prisma referential checks / school-scoped queries
   @@index([invitationToken])
 }
 
