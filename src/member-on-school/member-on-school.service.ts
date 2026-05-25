@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   forwardRef,
   Inject,
@@ -361,6 +362,45 @@ export class MemberOnSchoolService {
       throw error;
     }
   }
+
+  async getInvitationByToken(token: string): Promise<{
+    email: string;
+    role: MemberRole;
+    schoolTitle: string;
+    schoolLogo: string;
+  }> {
+    try {
+      const invite =
+        await this.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken({
+          token,
+        });
+      if (!invite) {
+        throw new NotFoundException('Invitation not found');
+      }
+      if (
+        !invite.invitationTokenExpiresAt ||
+        invite.invitationTokenExpiresAt < new Date()
+      ) {
+        throw new ForbiddenException('Invitation expired');
+      }
+      if (invite.status !== 'PENDDING' || invite.userId !== null) {
+        throw new ConflictException('Invitation already used');
+      }
+      const school = await this.schoolService.schoolRepository.getSchoolById({
+        schoolId: invite.schoolId,
+      });
+      return {
+        email: invite.email,
+        role: invite.role,
+        schoolTitle: school.title,
+        schoolLogo: school.logo,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async updateMemberOnSchool(
     dto: UpdateMemberOnSchoolDto,
     user: UserJwtPayload,

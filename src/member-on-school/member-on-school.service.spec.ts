@@ -8,6 +8,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 
 jest.mock('web-push', () => ({}));
@@ -486,6 +487,73 @@ describe('MemberOnSchoolService', () => {
           { id: 'u1' } as any,
         ),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('getInvitationByToken', () => {
+    it('returns invitation details for a valid pending token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'm1',
+          email: 'invitee@example.com',
+          role: 'TEACHER',
+          status: 'PENDDING',
+          userId: null,
+          schoolId: 'sch1',
+          invitationToken: 'good-token',
+          invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        });
+      mockSchoolService.schoolRepository.getSchoolById.mockResolvedValue({
+        id: 'sch1',
+        title: 'My School',
+        logo: 'logo.png',
+      });
+
+      const result = await service.getInvitationByToken('good-token');
+
+      expect(result).toEqual({
+        email: 'invitee@example.com',
+        role: 'TEACHER',
+        schoolTitle: 'My School',
+        schoolLogo: 'logo.png',
+      });
+    });
+
+    it('throws NotFoundException for unknown token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue(null);
+
+      await expect(service.getInvitationByToken('nope')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('throws ForbiddenException for expired token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          invitationToken: 'old',
+          invitationTokenExpiresAt: new Date('2020-01-01'),
+          status: 'PENDDING',
+          userId: null,
+        });
+
+      await expect(service.getInvitationByToken('old')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('throws ConflictException when invitation already claimed', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          invitationToken: 'used',
+          invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+          status: 'PENDDING',
+          userId: 'someone-already',
+        });
+
+      await expect(service.getInvitationByToken('used')).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 });
