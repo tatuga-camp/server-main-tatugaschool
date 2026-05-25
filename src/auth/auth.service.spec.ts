@@ -13,7 +13,6 @@ import { MemberOnSchoolService } from '../member-on-school/member-on-school.serv
 import {
   NotFoundException,
   ForbiddenException,
-  BadRequestException,
   ConflictException,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
@@ -286,18 +285,28 @@ describe('AuthService', () => {
       service.usersRepository.createUser = jest
         .fn()
         .mockResolvedValue({ id: 'newUser', email: 'invitee@example.com' });
-      service.usersRepository.update = jest
-        .fn()
-        .mockResolvedValue({ id: 'newUser', email: 'invitee@example.com' });
+      service.usersRepository.updateVerified = jest.fn().mockResolvedValue({});
+      service.usersRepository.update = jest.fn().mockResolvedValue({
+        id: 'newUser',
+        email: 'invitee@example.com',
+        favoritSchool: 'sch-invited',
+      });
       mockJwtService.signAsync.mockResolvedValue('jwt');
       mockImageService.generateBase64Image.mockReturnValue('photo');
+      jest
+        .spyOn(service, 'sendVerifyEmail')
+        .mockResolvedValue({ token: 'verify-token' });
     });
 
-    it('links the invite to the new user when token is valid', async () => {
+    it('auto-verifies, sets favoritSchool, and redirects to /school/:id when token is valid', async () => {
       const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.linkInvitationToUser.mockResolvedValue({ status: 'linked' });
+      memberSvc.linkInvitationToUser.mockResolvedValue({
+        id: 'inv1',
+        schoolId: 'sch-invited',
+        email: 'invitee@example.com',
+      });
 
-      await service.signup(
+      const result = await service.signup(
         { ...baseDto, invitationToken: 'tok' } as any,
         reply,
       );
@@ -307,30 +316,57 @@ describe('AuthService', () => {
         userId: 'newUser',
         email: 'invitee@example.com',
       });
+      expect(service.usersRepository.updateVerified).toHaveBeenCalledWith({
+        email: 'invitee@example.com',
+      });
+      expect(service.usersRepository.update).toHaveBeenCalledWith({
+        where: { id: 'newUser' },
+        data: { favoritSchool: 'sch-invited' },
+      });
+      expect(service.sendVerifyEmail).not.toHaveBeenCalled();
+      expect(reply.setCookie).toHaveBeenCalledTimes(2);
+      expect(result).toEqual({
+        redirectUrl: `${process.env.CLIENT_URL}/school/sch-invited`,
+      });
     });
 
-    it('throws BadRequestException when token email does not match signup email', async () => {
+    it('propagates ForbiddenException when invitation email does not match signup email', async () => {
       const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.linkInvitationToUser.mockResolvedValue({
-        status: 'email-mismatch',
-      });
+      memberSvc.linkInvitationToUser.mockRejectedValue(
+        new ForbiddenException('Email does not match invitation'),
+      );
 
       await expect(
         service.signup({ ...baseDto, invitationToken: 'tok' } as any, reply),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.usersRepository.updateVerified).not.toHaveBeenCalled();
+      expect(service.sendVerifyEmail).not.toHaveBeenCalled();
     });
 
-    it('does not block signup when token is unknown or expired', async () => {
+    it('propagates NotFoundException when invitation token is unknown', async () => {
       const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.linkInvitationToUser.mockResolvedValue({ status: 'invalid' });
+      memberSvc.linkInvitationToUser.mockRejectedValue(
+        new NotFoundException('Invitation not found'),
+      );
 
       await expect(
         service.signup({ ...baseDto, invitationToken: 'bogus' } as any, reply),
-      ).resolves.toBeDefined();
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('propagates ForbiddenException when invitation token is expired', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.linkInvitationToUser.mockRejectedValue(
+        new ForbiddenException('Invitation expired'),
+      );
+
+      await expect(
+        service.signup({ ...baseDto, invitationToken: 'expired' } as any, reply),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 
-  describe('verifyEmail with pending invites', () => {
+  describe('verifyEmail', () => {
     beforeEach(() => {
       service.usersRepository.findByVerifyToken = jest.fn().mockResolvedValue({
         id: 'user1',
@@ -343,37 +379,30 @@ describe('AuthService', () => {
         verifyEmailTokenExpiresAt: new Date(Date.now() + 60_000),
       });
       service.usersRepository.updateVerified = jest.fn().mockResolvedValue({});
-      service.usersRepository.update = jest.fn().mockResolvedValue({});
     });
 
-    it('auto-accepts invites, sets favoritSchool to newest, skips default school', async () => {
-      const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.claimPendingInvitesForUser.mockResolvedValue([
-        { id: 'm1', schoolId: 'sch-old', createAt: new Date('2026-05-01') },
-        { id: 'm2', schoolId: 'sch-new', createAt: new Date('2026-05-20') },
-      ]);
-
-      const result = await service.verifyEmail({ token: 'vtok' });
-
-      expect(memberSvc.claimPendingInvitesForUser).toHaveBeenCalled();
-      expect(service.usersRepository.update).toHaveBeenCalledWith({
-        where: { id: 'user1' },
-        data: { favoritSchool: 'sch-new' },
-      });
-      expect(mockSchoolService.createSchool).not.toHaveBeenCalled();
-      expect(result).toBeUndefined();
-    });
-
-    it('creates the default school when no pending invites and no existing memberships', async () => {
-      const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.claimPendingInvitesForUser.mockResolvedValue([]);
+    it('creates the default school when the user has no existing memberships', async () => {
       mockPrismaService.memberOnSchool.findMany.mockResolvedValue([]);
       mockSchoolService.createSchool.mockResolvedValue({ id: 'defaultSch' });
 
       const result = await service.verifyEmail({ token: 'vtok' });
 
+      expect(service.usersRepository.updateVerified).toHaveBeenCalledWith({
+        email: 'invitee@example.com',
+      });
       expect(mockSchoolService.createSchool).toHaveBeenCalledTimes(1);
       expect(result).toEqual({ id: 'defaultSch' });
+    });
+
+    it('skips default school creation when the user already has memberships', async () => {
+      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([
+        { id: 'm1', schoolId: 'sch1' },
+      ]);
+
+      const result = await service.verifyEmail({ token: 'vtok' });
+
+      expect(mockSchoolService.createSchool).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
     });
   });
 });

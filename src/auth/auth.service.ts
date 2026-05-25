@@ -183,27 +183,31 @@ export class AuthService {
       }
 
       delete dto.password;
-      const user = await this.usersRepository.createUser({
-        ...dto,
+      let user = await this.usersRepository.createUser({
+        email: dto.email,
+        firstName: dto.firstName,
+        providerId: dto.providerId,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        provider: dto.provider,
         photo,
         password: hashedPassword,
       });
 
       if (dto.invitationToken) {
-        const result = await this.memberOnSchoolService.linkInvitationToUser({
-          token: dto.invitationToken,
-          userId: user.id,
-          email: dto.email,
+        const memberOnSchool =
+          await this.memberOnSchoolService.linkInvitationToUser({
+            token: dto.invitationToken,
+            userId: user.id,
+            email: dto.email,
+          });
+        await this.usersRepository.updateVerified({ email: user.email });
+        user = await this.usersRepository.update({
+          where: { id: user.id },
+          data: {
+            favoritSchool: memberOnSchool.schoolId,
+          },
         });
-        if (result.status === 'invalid') {
-          this.logger.warn(`Invalid invitationToken at signup for ${dto.email}`);
-        } else if (result.status === 'expired') {
-          this.logger.warn(`Expired invitationToken at signup for ${dto.email}`);
-        } else if (result.status === 'email-mismatch') {
-          throw new BadRequestException(
-            'Signup email does not match invitation email',
-          );
-        }
       }
 
       const accessToken = await this.GenerateAccessToken({
@@ -214,9 +218,16 @@ export class AuthService {
         userId: user.id,
         email: user.email,
       });
-      const token = await this.sendVerifyEmail(user);
       this.setCookieAccessToken(reply, accessToken);
       this.setCookieRefreshToken(reply, refreshToken);
+
+      if (dto.invitationToken) {
+        return {
+          redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
+        };
+      }
+
+      const token = await this.sendVerifyEmail(user);
 
       return {
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
@@ -242,21 +253,6 @@ export class AuthService {
       }
 
       await this.usersRepository.updateVerified({ email: user.email });
-
-      const accepted =
-        await this.memberOnSchoolService.claimPendingInvitesForUser(user);
-
-      if (accepted.length > 0) {
-        const newest = [...accepted].sort(
-          (a, b) =>
-            new Date(b.createAt).getTime() - new Date(a.createAt).getTime(),
-        )[0];
-        await this.usersRepository.update({
-          where: { id: user.id },
-          data: { favoritSchool: newest.schoolId },
-        });
-        return; // skip default-school creation
-      }
 
       const members = await this.prisma.memberOnSchool.findMany({
         where: { userId: user.id },
@@ -490,13 +486,23 @@ export class AuthService {
         return reply.redirect(url, 302);
       }
 
+      const invitationToken =
+        await this.memberOnSchoolService.memberOnSchoolRepository.findFirst({
+          where: { email: data.email },
+        });
+
       const signUpParams = new URLSearchParams({
         email: data.email,
+
         firstName: data.firstName,
         lastName: data.lastName,
         provider: 'google',
         providerId: data.providerId,
         photo: data.photo,
+        ...(invitationToken &&
+          invitationToken.invitationToken && {
+            invitationToken: invitationToken.invitationToken,
+          }),
       });
       return reply.redirect(
         `${process.env.CLIENT_URL}/auth/sign-up?${signUpParams.toString()}`,

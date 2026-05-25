@@ -23,16 +23,22 @@ import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 
-@UseGuards(UserGuard)
 @Controller('v1/member-on-schools')
 export class MemberOnSchoolController {
   constructor(private memberOnSchoolService: MemberOnSchoolService) {}
 
+  @UseGuards(UserGuard)
   @Get('user')
   async getByUserId(@GetUser() user: UserJwtPayload) {
     return this.memberOnSchoolService.getMemberOnSchoolByUserId(user);
   }
 
+  @Get('invitation/:token')
+  async getInvitationByToken(@Param('token') token: string) {
+    return this.memberOnSchoolService.getInvitationByToken(token);
+  }
+
+  @UseGuards(UserGuard)
   @Get('school/:schoolId')
   async getAllMemberOnSchools(
     @Param() param: GetMemberOnSchoolsDto,
@@ -46,6 +52,7 @@ export class MemberOnSchoolController {
     return this.memberOnSchoolService.getAllMemberOnSchools(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Post()
   createMemberOnSchool(
     @Body() dto: CreateMemberOnSchoolDto,
@@ -54,6 +61,7 @@ export class MemberOnSchoolController {
     return this.memberOnSchoolService.createMemberOnSchool(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Delete(':memberOnSchoolId')
   async deleteMemberOnSchool(
     @Param() dto: DeleteMemberOnSchoolDto,
@@ -62,6 +70,7 @@ export class MemberOnSchoolController {
     return await this.memberOnSchoolService.deleteMemberOnSchool(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @Patch()
   async updateMemberOnSchool(
     @Body() dto: UpdateMemberOnSchoolDto,
@@ -70,6 +79,7 @@ export class MemberOnSchoolController {
     return await this.memberOnSchoolService.updateMemberOnSchool(dto, user);
   }
 
+  @UseGuards(UserGuard)
   @HttpCode(200)
   @Patch('invitation')
   async updateInvitation(

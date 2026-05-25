@@ -20,9 +20,12 @@ export interface RequestUpdateMemberOnSchool {
     id: string;
   };
   data: {
+    userId?: string;
     status?: Status;
     role?: MemberRole;
     billingManagerId?: string;
+    invitationToken?: string | null;
+    invitationTokenExpiresAt?: Date | null;
   };
 }
 

@@ -389,6 +389,7 @@ export class MemberOnSchoolService {
       const school = await this.schoolService.schoolRepository.getSchoolById({
         schoolId: invite.schoolId,
       });
+
       return {
         email: invite.email,
         role: invite.role,
@@ -455,29 +456,35 @@ export class MemberOnSchoolService {
     token: string;
     userId: string;
     email: string;
-  }): Promise<{ status: 'linked' | 'invalid' | 'expired' | 'email-mismatch' }> {
+  }): Promise<MemberOnSchool> {
     try {
       const invite =
         await this.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken({
           token: input.token,
         });
-      if (!invite) return { status: 'invalid' };
+      if (!invite) throw new NotFoundException('Invitation not found');
       if (
         !invite.invitationTokenExpiresAt ||
         invite.invitationTokenExpiresAt < new Date()
       ) {
-        return { status: 'expired' };
+        throw new ForbiddenException('Invitation expired');
       }
       if (invite.email.toLowerCase() !== input.email.toLowerCase()) {
-        return { status: 'email-mismatch' };
+        throw new ForbiddenException('Email does not match invitation');
       }
       await this.memberOnSchoolRepository.updateMemberOnSchool({
         query: { id: invite.id },
-        data: { userId: input.userId } as any,
+        data: {
+          userId: input.userId,
+          invitationToken: null,
+          invitationTokenExpiresAt: null,
+          status: 'ACCEPT',
+        },
       });
-      return { status: 'linked' };
+      return invite;
     } catch (error) {
       this.logger.error(error);
+
       throw error;
     }
   }

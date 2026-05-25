@@ -660,66 +660,81 @@ describe('MemberOnSchoolService', () => {
   });
 
   describe('linkInvitationToUser', () => {
-    it('returns linked and updates userId on valid token', async () => {
+    it('returns the invite and updates it (userId + ACCEPT + clears token) on valid input', async () => {
+      const invite = {
+        id: 'inv1',
+        email: 'invitee@example.com',
+        schoolId: 'sch1',
+        invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+      };
       (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
-        jest.fn().mockResolvedValue({
-          id: 'inv1',
-          email: 'invitee@example.com',
-          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
-        });
+        jest.fn().mockResolvedValue(invite);
+
       const result = await service.linkInvitationToUser({
         token: 'tok',
         userId: 'u1',
         email: 'invitee@example.com',
       });
-      expect(result).toEqual({ status: 'linked' });
+
+      expect(result).toBe(invite);
       expect(
         (service as any).memberOnSchoolRepository.updateMemberOnSchool,
       ).toHaveBeenCalledWith({
         query: { id: 'inv1' },
-        data: { userId: 'u1' },
+        data: {
+          userId: 'u1',
+          invitationToken: null,
+          invitationTokenExpiresAt: null,
+          status: 'ACCEPT',
+        },
       });
     });
 
-    it('returns invalid for unknown token', async () => {
+    it('throws NotFoundException for unknown token', async () => {
       (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
         jest.fn().mockResolvedValue(null);
-      const result = await service.linkInvitationToUser({
-        token: 'nope',
-        userId: 'u1',
-        email: 'a@b.com',
-      });
-      expect(result).toEqual({ status: 'invalid' });
+
+      await expect(
+        service.linkInvitationToUser({
+          token: 'nope',
+          userId: 'u1',
+          email: 'a@b.com',
+        }),
+      ).rejects.toThrow(NotFoundException);
     });
 
-    it('returns expired for expired token', async () => {
+    it('throws ForbiddenException for expired token', async () => {
       (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
         jest.fn().mockResolvedValue({
           id: 'inv1',
           email: 'a@b.com',
           invitationTokenExpiresAt: new Date('2020-01-01'),
         });
-      const result = await service.linkInvitationToUser({
-        token: 'old',
-        userId: 'u1',
-        email: 'a@b.com',
-      });
-      expect(result).toEqual({ status: 'expired' });
+
+      await expect(
+        service.linkInvitationToUser({
+          token: 'old',
+          userId: 'u1',
+          email: 'a@b.com',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
 
-    it('returns email-mismatch when emails differ (case-insensitive)', async () => {
+    it('throws ForbiddenException when emails differ (case-insensitive)', async () => {
       (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
         jest.fn().mockResolvedValue({
           id: 'inv1',
           email: 'invitee@example.com',
           invitationTokenExpiresAt: new Date(Date.now() + 60_000),
         });
-      const result = await service.linkInvitationToUser({
-        token: 'tok',
-        userId: 'u1',
-        email: 'other@example.com',
-      });
-      expect(result).toEqual({ status: 'email-mismatch' });
+
+      await expect(
+        service.linkInvitationToUser({
+          token: 'tok',
+          userId: 'u1',
+          email: 'other@example.com',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
