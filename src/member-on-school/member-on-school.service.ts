@@ -383,7 +383,7 @@ export class MemberOnSchoolService {
       ) {
         throw new ForbiddenException('Invitation expired');
       }
-      if (invite.status !== 'PENDDING' || invite.userId !== null) {
+      if (invite.status !== 'PENDDING') {
         throw new ConflictException('Invitation already used');
       }
       const school = await this.schoolService.schoolRepository.getSchoolById({

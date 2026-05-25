@@ -616,18 +616,46 @@ describe('MemberOnSchoolService', () => {
       );
     });
 
-    it('throws ConflictException when invitation already claimed', async () => {
+    it('throws ConflictException when invitation status is ACCEPT', async () => {
       (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
         jest.fn().mockResolvedValue({
           invitationToken: 'used',
           invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
-          status: 'PENDDING',
-          userId: 'someone-already',
+          status: 'ACCEPT',
+          userId: 'someone',
         });
 
       await expect(service.getInvitationByToken('used')).rejects.toThrow(
         ConflictException,
       );
+    });
+
+    it('returns invitation details when userId is set but status is still PENDDING (signup happened, verify pending)', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'm1',
+          email: 'invitee@example.com',
+          role: 'TEACHER',
+          status: 'PENDDING',
+          userId: 'newUser',
+          schoolId: 'sch1',
+          invitationToken: 'tok',
+          invitationTokenExpiresAt: new Date(Date.now() + 1000 * 60 * 60),
+        });
+      mockSchoolService.schoolRepository.getSchoolById.mockResolvedValue({
+        id: 'sch1',
+        title: 'My School',
+        logo: 'logo.png',
+      });
+
+      const result = await service.getInvitationByToken('tok');
+
+      expect(result).toEqual({
+        email: 'invitee@example.com',
+        role: 'TEACHER',
+        schoolTitle: 'My School',
+        schoolLogo: 'logo.png',
+      });
     });
   });
 });
