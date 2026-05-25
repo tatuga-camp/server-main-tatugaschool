@@ -87,24 +87,37 @@ type BuildAppOptions = {
   config?: any;
 };
 
-async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> {
+async function buildApp(
+  opts: BuildAppOptions,
+): Promise<NestFastifyApplication> {
   const prismaOverride = opts.prisma ?? mockPrisma;
   let builder = Test.createTestingModule({ imports: [AppModule] })
-    .overrideProvider(PrismaService).useValue(prismaOverride)
-    .overrideProvider(PrismaReadService).useValue(prismaOverride)
-    .overrideProvider(RedisService).useValue(mockRedis)
-    .overrideProvider(StorageService).useValue(mockStorage)
-    .overrideProvider(StripeService).useValue(mockStripe)
-    .overrideProvider(EmailService).useValue(mockEmail)
-    .overrideProvider(FileOnStudentAssignmentService).useValue(mockFileOnStudent)
-    .overrideProvider(WebhooksService).useValue(mockWebhooks)
-    .overrideProvider(SchoolService).useValue(mockSchool);
+    .overrideProvider(PrismaService)
+    .useValue(prismaOverride)
+    .overrideProvider(PrismaReadService)
+    .useValue(prismaOverride)
+    .overrideProvider(RedisService)
+    .useValue(mockRedis)
+    .overrideProvider(StorageService)
+    .useValue(mockStorage)
+    .overrideProvider(StripeService)
+    .useValue(mockStripe)
+    .overrideProvider(EmailService)
+    .useValue(mockEmail)
+    .overrideProvider(FileOnStudentAssignmentService)
+    .useValue(mockFileOnStudent)
+    .overrideProvider(WebhooksService)
+    .useValue(mockWebhooks)
+    .overrideProvider(SchoolService)
+    .useValue(mockSchool);
 
   if (!opts.realAuth) {
     builder = builder.overrideProvider(AuthService).useValue(mockAuth);
   }
-  if (opts.jwt) builder = builder.overrideProvider(JwtService).useValue(opts.jwt);
-  if (opts.config) builder = builder.overrideProvider(ConfigService).useValue(opts.config);
+  if (opts.jwt)
+    builder = builder.overrideProvider(JwtService).useValue(opts.jwt);
+  if (opts.config)
+    builder = builder.overrideProvider(ConfigService).useValue(opts.config);
 
   let guardedBuilder = builder;
   if (!opts.realUserGuard) {
@@ -113,21 +126,19 @@ async function buildApp(opts: BuildAppOptions): Promise<NestFastifyApplication> 
     });
   }
   if (!opts.realGoogleGuard) {
-    guardedBuilder = guardedBuilder
-      .overrideGuard(GoogleOAuthGuard)
-      .useValue({
-        canActivate: (ctx: ExecutionContext) => {
-          const req: any = ctx.switchToHttp().getRequest();
-          req.user = opts.googleGuardUser ?? {
-            email: 'g@example.com',
-            firstName: 'G',
-            lastName: 'X',
-            providerId: 'gid',
-            photo: 'p',
-          };
-          return true;
-        },
-      });
+    guardedBuilder = guardedBuilder.overrideGuard(GoogleOAuthGuard).useValue({
+      canActivate: (ctx: ExecutionContext) => {
+        const req: any = ctx.switchToHttp().getRequest();
+        req.user = opts.googleGuardUser ?? {
+          email: 'g@example.com',
+          firstName: 'G',
+          lastName: 'X',
+          providerId: 'gid',
+          photo: 'p',
+        };
+        return true;
+      },
+    });
   }
   const moduleRef: TestingModule = await guardedBuilder.compile();
 
@@ -207,7 +218,9 @@ describe('Fastify adapter (e2e)', () => {
   it('GET / returns welcome JSON', async () => {
     const res = await app.inject({ method: 'GET', url: '/' });
     expect(res.statusCode).toBe(200);
-    expect(JSON.parse(res.payload).message).toMatch(/welcome to tatuga school/i);
+    expect(JSON.parse(res.payload).message).toMatch(
+      /welcome to tatuga school/i,
+    );
   });
 
   it('OPTIONS preflight returns CORS headers', async () => {
@@ -227,12 +240,14 @@ describe('Fastify adapter (e2e)', () => {
 
   it('POST /webhooks/stripe forwards rawBody to the service', async () => {
     const stripePayload = '{"type":"payment_intent.succeeded","data":{}}';
-    mockWebhooks.handleStripeWebhook.mockImplementation(async (req: any, reply: any) => {
-      expect(Buffer.isBuffer(req.rawBody)).toBe(true);
-      expect(req.rawBody.toString('utf8')).toBe(stripePayload);
-      expect(req.headers['stripe-signature']).toBe('test-sig');
-      reply.status(200).send({ ok: true });
-    });
+    mockWebhooks.handleStripeWebhook.mockImplementation(
+      async (req: any, reply: any) => {
+        expect(Buffer.isBuffer(req.rawBody)).toBe(true);
+        expect(req.rawBody.toString('utf8')).toBe(stripePayload);
+        expect(req.headers['stripe-signature']).toBe('test-sig');
+        reply.status(200).send({ ok: true });
+      },
+    );
 
     const res = await app.inject({
       method: 'POST',
@@ -255,7 +270,10 @@ describe('Fastify adapter (e2e)', () => {
     const badRes = await app.inject({
       method: 'POST',
       url: '/webhooks/line',
-      headers: { 'content-type': 'application/json', 'x-line-signature': 'bad' },
+      headers: {
+        'content-type': 'application/json',
+        'x-line-signature': 'bad',
+      },
       payload,
     });
     expect(badRes.statusCode).toBe(401);
@@ -270,7 +288,10 @@ describe('Fastify adapter (e2e)', () => {
     const goodRes = await app.inject({
       method: 'POST',
       url: '/webhooks/line',
-      headers: { 'content-type': 'application/json', 'x-line-signature': goodSig },
+      headers: {
+        'content-type': 'application/json',
+        'x-line-signature': goodSig,
+      },
       payload,
     });
     expect(goodRes.statusCode).toBe(200);
@@ -417,20 +438,23 @@ describe('Fastify adapter — production CORS allowlist', () => {
     await app.close();
   });
 
-  it.each(PRODUCTION_CORS_ORIGINS)('reflects allowed origin %s', async (origin) => {
-    const res = await app.inject({
-      method: 'OPTIONS',
-      url: '/v1/auth/sign-in',
-      headers: {
-        origin,
-        'access-control-request-method': 'POST',
-        'access-control-request-headers': 'content-type',
-      },
-    });
-    expect(res.statusCode).toBeLessThan(300);
-    expect(res.headers['access-control-allow-origin']).toBe(origin);
-    expect(res.headers['access-control-allow-credentials']).toBe('true');
-  });
+  it.each(PRODUCTION_CORS_ORIGINS)(
+    'reflects allowed origin %s',
+    async (origin) => {
+      const res = await app.inject({
+        method: 'OPTIONS',
+        url: '/v1/auth/sign-in',
+        headers: {
+          origin,
+          'access-control-request-method': 'POST',
+          'access-control-request-headers': 'content-type',
+        },
+      });
+      expect(res.statusCode).toBeLessThan(300);
+      expect(res.headers['access-control-allow-origin']).toBe(origin);
+      expect(res.headers['access-control-allow-credentials']).toBe('true');
+    },
+  );
 
   it('does not reflect a disallowed origin', async () => {
     const res = await app.inject({
@@ -463,9 +487,11 @@ describe('Fastify adapter — real AuthService.signIn cookie flow', () => {
     },
   };
   const mockJwt = {
-    signAsync: jest.fn().mockImplementation(async (_, opts) =>
-      opts?.secret === 'access' ? 'access.jwt' : 'refresh.jwt',
-    ),
+    signAsync: jest
+      .fn()
+      .mockImplementation(async (_, opts) =>
+        opts?.secret === 'access' ? 'access.jwt' : 'refresh.jwt',
+      ),
   };
   const configValues: Record<string, string> = {
     JWT_ACCESS_SECRET: 'access',
@@ -640,9 +666,18 @@ describe('Fastify adapter — real googleLogin handles non-ASCII (Thai) names', 
     phone: '',
   };
 
+  // googleLogin now also looks up a pending invite by email
+  // (memberOnSchoolService.memberOnSchoolRepository.findFirst) when the
+  // Google user has no User record yet. The mock starts returning null
+  // (no invite); individual tests override it to exercise the
+  // invite-found branch.
+  const memberOnSchoolFindFirst = jest.fn().mockResolvedValue(null);
   const realPrisma = {
     user: {
       findUnique: jest.fn().mockResolvedValue(null),
+    },
+    memberOnSchool: {
+      findFirst: memberOnSchoolFindFirst,
     },
   };
 
@@ -706,5 +741,34 @@ describe('Fastify adapter — real googleLogin handles non-ASCII (Thai) names', 
     expect(url.searchParams.get('provider')).toBe('google');
     expect(url.searchParams.get('providerId')).toBe(thaiUser.providerId);
     expect(url.searchParams.get('photo')).toBe(thaiUser.photo);
+    // No pending invite for this email -> token is absent.
+    expect(url.searchParams.get('invitationToken')).toBeNull();
+  });
+
+  // When a pending invite exists for the Google user's email,
+  // googleLogin must forward the invitationToken to /auth/sign-up so the
+  // signup page can lock the email and the form can claim the invite.
+  it('forwards invitationToken to /auth/sign-up when a pending invite matches the Google email', async () => {
+    memberOnSchoolFindFirst.mockResolvedValueOnce({
+      id: 'inv-1',
+      email: thaiUser.email,
+      schoolId: 'sch-1',
+      invitationToken: 'tok-abc-123',
+      invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/auth/google/redirect',
+    });
+
+    expect(res.statusCode).toBe(302);
+    const location = res.headers['location'] as string;
+    expect(typeof location).toBe('string');
+    expect(location).toMatch(/^[\x20-\x7E]*$/);
+
+    const url = new URL(location);
+    expect(url.pathname).toBe('/auth/sign-up');
+    expect(url.searchParams.get('invitationToken')).toBe('tok-abc-123');
   });
 });
