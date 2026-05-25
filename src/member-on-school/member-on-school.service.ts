@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import {
   BadRequestException,
   ForbiddenException,
@@ -257,9 +258,7 @@ export class MemberOnSchoolService {
       }
 
       const totalMembers = await this.memberOnSchoolRepository.findMany({
-        where: {
-          schoolId: school.id,
-        },
+        where: { schoolId: school.id },
       });
 
       await this.schoolService.ValidateLimit(
@@ -279,76 +278,80 @@ export class MemberOnSchoolService {
         );
       }
 
-      const newMember = await this.userRepository.findByEmail({
-        email: dto.email,
-      });
-
-      if (!newMember) {
-        throw new NotFoundException('No user found with this email');
-      }
-
-      const existingMemberOnSchool =
+      const existingInvite =
         await this.memberOnSchoolRepository.getMemberOnSchoolByEmailAndSchool({
-          email: newMember.email,
+          email: dto.email,
           schoolId: dto.schoolId,
         });
 
-      if (existingMemberOnSchool) {
-        throw new ForbiddenException('MemberOnSchool already exists');
+      // ----- Dedupe / re-send path -----
+      if (existingInvite) {
+        if (existingInvite.status === 'ACCEPT') {
+          throw new ForbiddenException('User is already a member');
+        }
+        if (existingInvite.invitationToken) {
+          const refreshed = new Date();
+          refreshed.setDate(refreshed.getDate() + 7);
+          await this.memberOnSchoolRepository.updateMemberOnSchool({
+            query: { id: existingInvite.id },
+            data: { invitationTokenExpiresAt: refreshed } as any,
+          });
+        }
+        await this.sendInviteEmail(existingInvite, school);
+        return existingInvite;
       }
 
-      const create = await this.memberOnSchoolRepository.create({
-        status: 'PENDDING',
-        role: dto.role,
-        firstName: newMember.firstName,
-        lastName: newMember.lastName,
-        email: newMember.email,
-        photo: newMember.photo,
-        phone: newMember.phone,
-        userId: newMember.id,
-        blurHash: newMember.blurHash,
-        schoolId: school.id,
+      const existingUser = await this.userRepository.findByEmail({
+        email: dto.email,
       });
 
-      const emailHTML = `
-         <body style="background-color: #f8f9fa;">
-       <div style="margin: 0 auto; max-width: 600px; padding: 20px;">
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png" />
-         <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-           <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
-          You have been invited to join the school ${school.title} on Tatuga School
-           </h1>
-           <p style="margin: 0 0 16px;">
-           Hello ${newMember.firstName},<br>
-            You have been invited to join the school ${school.title} on Tatuga School. Please click the link below to accept the invitation.
-           </p>
-            <p style="margin: 0 0 16px; color: #6c757d">
-            Do not reply to this email, this email is automatically generated.
-            If you have any questions, please contact this email permlap@tatugacamp.com or the address below
-           </p>
-           <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${process.env.CLIENT_URL}/account?menu=Invitations">Click</a>
-         </div>
-         <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/public-tatugaschool/banner-tatugaschool.jpg" />
-         <div style="color: #6c757d; text-align: center; margin: 24px 0;">
-         Tatuga School - ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์ <br>
-         288/2 ซอยมิตรภาพ 8 ตำบลในเมือง อำเภอเมืองนครราชสีมา จ.นครราชสีีมา 30000<br>
-         โทร 0610277960 Email: permlap@tatugacamp.com<br>
-         </div>
-       </div>
-     </body>
-     `;
+      let create: MemberOnSchool;
 
-      await this.emailService.sendMail({
-        to: newMember.email,
-        subject: 'Invite to join school - Tatuga School',
-        html: emailHTML,
-      });
+      if (existingUser) {
+        // ----- Flow A: existing user -----
+        create = await this.memberOnSchoolRepository.create({
+          status: 'PENDDING',
+          role: dto.role,
+          firstName: existingUser.firstName,
+          lastName: existingUser.lastName,
+          email: existingUser.email,
+          photo: existingUser.photo,
+          phone: existingUser.phone,
+          userId: existingUser.id,
+          blurHash: existingUser.blurHash,
+          schoolId: school.id,
+          invitationToken: null,
+          invitationTokenExpiresAt: null,
+        });
+      } else {
+        // ----- Flow B: not-yet-registered email -----
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiration = new Date();
+        expiration.setDate(expiration.getDate() + 7);
+
+        create = await this.memberOnSchoolRepository.create({
+          status: 'PENDDING',
+          role: dto.role,
+          firstName: null,
+          lastName: null,
+          email: dto.email,
+          photo: null,
+          phone: null,
+          userId: null,
+          blurHash: null,
+          schoolId: school.id,
+          invitationToken: token,
+          invitationTokenExpiresAt: expiration,
+        });
+      }
+
+      await this.sendInviteEmail(create, school);
 
       await this.notifyMembers({
         members: [create],
         schoolId: dto.schoolId,
         title: `Your school ${school.title} has a new member`,
-        body: `${newMember.firstName} ${newMember.lastName} has been invited to join the school`,
+        body: `${create.firstName ?? create.email} has been invited to join the school`,
         url: new URL(`${process.env.CLIENT_URL}/account?menu=Invitations`),
       }).catch((error) => console.log(error));
 
