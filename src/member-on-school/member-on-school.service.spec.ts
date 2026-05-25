@@ -658,4 +658,68 @@ describe('MemberOnSchoolService', () => {
       });
     });
   });
+
+  describe('linkInvitationToUser', () => {
+    it('returns linked and updates userId on valid token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'inv1',
+          email: 'invitee@example.com',
+          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+        });
+      const result = await service.linkInvitationToUser({
+        token: 'tok',
+        userId: 'u1',
+        email: 'invitee@example.com',
+      });
+      expect(result).toEqual({ status: 'linked' });
+      expect(
+        (service as any).memberOnSchoolRepository.updateMemberOnSchool,
+      ).toHaveBeenCalledWith({
+        query: { id: 'inv1' },
+        data: { userId: 'u1' },
+      });
+    });
+
+    it('returns invalid for unknown token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue(null);
+      const result = await service.linkInvitationToUser({
+        token: 'nope',
+        userId: 'u1',
+        email: 'a@b.com',
+      });
+      expect(result).toEqual({ status: 'invalid' });
+    });
+
+    it('returns expired for expired token', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'inv1',
+          email: 'a@b.com',
+          invitationTokenExpiresAt: new Date('2020-01-01'),
+        });
+      const result = await service.linkInvitationToUser({
+        token: 'old',
+        userId: 'u1',
+        email: 'a@b.com',
+      });
+      expect(result).toEqual({ status: 'expired' });
+    });
+
+    it('returns email-mismatch when emails differ (case-insensitive)', async () => {
+      (service as any).memberOnSchoolRepository.getMemberOnSchoolByInvitationToken =
+        jest.fn().mockResolvedValue({
+          id: 'inv1',
+          email: 'invitee@example.com',
+          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
+        });
+      const result = await service.linkInvitationToUser({
+        token: 'tok',
+        userId: 'u1',
+        email: 'other@example.com',
+      });
+      expect(result).toEqual({ status: 'email-mismatch' });
+    });
+  });
 });

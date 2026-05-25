@@ -190,34 +190,18 @@ export class AuthService {
       });
 
       if (dto.invitationToken) {
-        const invite =
-          await this.memberOnSchoolService.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken(
-            { token: dto.invitationToken },
-          );
-
-        if (!invite) {
-          this.logger.warn(
-            `Invalid invitationToken at signup for ${dto.email}`,
-          );
-        } else if (
-          !invite.invitationTokenExpiresAt ||
-          invite.invitationTokenExpiresAt < new Date()
-        ) {
-          this.logger.warn(
-            `Expired invitationToken at signup for ${dto.email}`,
-          );
-        } else if (
-          invite.email.toLowerCase() !== dto.email.toLowerCase()
-        ) {
+        const result = await this.memberOnSchoolService.linkInvitationToUser({
+          token: dto.invitationToken,
+          userId: user.id,
+          email: dto.email,
+        });
+        if (result.status === 'invalid') {
+          this.logger.warn(`Invalid invitationToken at signup for ${dto.email}`);
+        } else if (result.status === 'expired') {
+          this.logger.warn(`Expired invitationToken at signup for ${dto.email}`);
+        } else if (result.status === 'email-mismatch') {
           throw new BadRequestException(
             'Signup email does not match invitation email',
-          );
-        } else {
-          await this.memberOnSchoolService.memberOnSchoolRepository.updateMemberOnSchool(
-            {
-              query: { id: invite.id },
-              data: { userId: user.id } as any,
-            },
           );
         }
       }

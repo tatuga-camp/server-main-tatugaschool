@@ -93,6 +93,7 @@ describe('AuthService', () => {
           useValue: {
             getInvitationByToken: jest.fn(),
             claimPendingInvitesForUser: jest.fn().mockResolvedValue([]),
+            linkInvitationToUser: jest.fn(),
             memberOnSchoolRepository: {
               getMemberOnSchoolByInvitationToken: jest.fn(),
               updateMemberOnSchool: jest.fn(),
@@ -294,36 +295,25 @@ describe('AuthService', () => {
 
     it('links the invite to the new user when token is valid', async () => {
       const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken
-        .mockResolvedValue({
-          id: 'inv1',
-          email: 'invitee@example.com',
-          invitationToken: 'tok',
-          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
-        });
+      memberSvc.linkInvitationToUser.mockResolvedValue({ status: 'linked' });
 
       await service.signup(
         { ...baseDto, invitationToken: 'tok' } as any,
         reply,
       );
 
-      expect(
-        memberSvc.memberOnSchoolRepository.updateMemberOnSchool,
-      ).toHaveBeenCalledWith({
-        query: { id: 'inv1' },
-        data: { userId: 'newUser' },
+      expect(memberSvc.linkInvitationToUser).toHaveBeenCalledWith({
+        token: 'tok',
+        userId: 'newUser',
+        email: 'invitee@example.com',
       });
     });
 
     it('throws BadRequestException when token email does not match signup email', async () => {
       const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken
-        .mockResolvedValue({
-          id: 'inv1',
-          email: 'OTHER@example.com',
-          invitationToken: 'tok',
-          invitationTokenExpiresAt: new Date(Date.now() + 60_000),
-        });
+      memberSvc.linkInvitationToUser.mockResolvedValue({
+        status: 'email-mismatch',
+      });
 
       await expect(
         service.signup({ ...baseDto, invitationToken: 'tok' } as any, reply),
@@ -332,15 +322,11 @@ describe('AuthService', () => {
 
     it('does not block signup when token is unknown or expired', async () => {
       const memberSvc = (service as any).memberOnSchoolService;
-      memberSvc.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken
-        .mockResolvedValue(null);
+      memberSvc.linkInvitationToUser.mockResolvedValue({ status: 'invalid' });
 
       await expect(
         service.signup({ ...baseDto, invitationToken: 'bogus' } as any, reply),
       ).resolves.toBeDefined();
-      expect(
-        memberSvc.memberOnSchoolRepository.updateMemberOnSchool,
-      ).not.toHaveBeenCalled();
     });
   });
 

@@ -451,6 +451,37 @@ export class MemberOnSchoolService {
     }
   }
 
+  async linkInvitationToUser(input: {
+    token: string;
+    userId: string;
+    email: string;
+  }): Promise<{ status: 'linked' | 'invalid' | 'expired' | 'email-mismatch' }> {
+    try {
+      const invite =
+        await this.memberOnSchoolRepository.getMemberOnSchoolByInvitationToken({
+          token: input.token,
+        });
+      if (!invite) return { status: 'invalid' };
+      if (
+        !invite.invitationTokenExpiresAt ||
+        invite.invitationTokenExpiresAt < new Date()
+      ) {
+        return { status: 'expired' };
+      }
+      if (invite.email.toLowerCase() !== input.email.toLowerCase()) {
+        return { status: 'email-mismatch' };
+      }
+      await this.memberOnSchoolRepository.updateMemberOnSchool({
+        query: { id: invite.id },
+        data: { userId: input.userId } as any,
+      });
+      return { status: 'linked' };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async updateMemberOnSchool(
     dto: UpdateMemberOnSchoolDto,
     user: UserJwtPayload,
