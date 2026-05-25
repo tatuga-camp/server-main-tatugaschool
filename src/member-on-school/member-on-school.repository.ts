@@ -45,6 +45,13 @@ type Repository = {
     schoolId: string;
   }): Promise<MemberOnSchool>;
   count(request: Prisma.MemberOnSchoolCountArgs): Promise<number>;
+  getMemberOnSchoolByInvitationToken(request: {
+    token: string;
+  }): Promise<MemberOnSchool | null>;
+  findPendingInvitationsForUser(request: {
+    userId: string;
+    email: string;
+  }): Promise<MemberOnSchool[]>;
 };
 
 @Injectable()
@@ -272,6 +279,49 @@ export class MemberOnSchoolRepository implements Repository {
         where: {
           email: request.email,
           schoolId: request.schoolId,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async getMemberOnSchoolByInvitationToken(request: {
+    token: string;
+  }): Promise<MemberOnSchool | null> {
+    try {
+      return await this.prisma.memberOnSchool.findFirst({
+        where: { invitationToken: request.token },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findPendingInvitationsForUser(request: {
+    userId: string;
+    email: string;
+  }): Promise<MemberOnSchool[]> {
+    try {
+      return await this.prisma.memberOnSchool.findMany({
+        where: {
+          status: 'PENDDING',
+          OR: [
+            { userId: request.userId },
+            { AND: [{ userId: null }, { email: request.email }] },
+          ],
         },
       });
     } catch (error) {
