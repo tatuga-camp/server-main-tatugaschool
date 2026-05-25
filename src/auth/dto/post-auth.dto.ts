@@ -45,6 +45,10 @@ export class SignUpDto {
   @IsString()
   @IsIn(Object.values(Provider))
   provider: Provider;
+
+  @IsOptional()
+  @IsString()
+  invitationToken?: string;
 }
 
 export class ForgotPasswordDto {
