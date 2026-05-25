@@ -401,6 +401,39 @@ export class MemberOnSchoolService {
     }
   }
 
+  async claimPendingInvitesForUser(user: User): Promise<MemberOnSchool[]> {
+    try {
+      const pending =
+        await this.memberOnSchoolRepository.findPendingInvitationsForUser({
+          userId: user.id,
+          email: user.email,
+        });
+      const accepted: MemberOnSchool[] = [];
+      for (const invite of pending) {
+        const updated =
+          await this.memberOnSchoolRepository.updateMemberOnSchool({
+            query: { id: invite.id },
+            data: {
+              userId: user.id,
+              status: 'ACCEPT',
+              firstName: user.firstName,
+              lastName: user.lastName,
+              photo: user.photo,
+              phone: user.phone,
+              blurHash: user.blurHash,
+              invitationToken: null,
+              invitationTokenExpiresAt: null,
+            } as any,
+          });
+        accepted.push(updated);
+      }
+      return accepted;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async updateMemberOnSchool(
     dto: UpdateMemberOnSchoolDto,
     user: UserJwtPayload,
