@@ -257,14 +257,25 @@ export class AuthService {
         throw new ForbiddenException('Token expired');
       }
 
-      await this.usersRepository.updateVerified({
-        email: user.email,
-      });
+      await this.usersRepository.updateVerified({ email: user.email });
+
+      const accepted =
+        await this.memberOnSchoolService.claimPendingInvitesForUser(user);
+
+      if (accepted.length > 0) {
+        const newest = [...accepted].sort(
+          (a, b) =>
+            new Date(b.createAt).getTime() - new Date(a.createAt).getTime(),
+        )[0];
+        await this.usersRepository.update({
+          where: { id: user.id },
+          data: { favoritSchool: newest.schoolId },
+        });
+        return; // skip default-school creation
+      }
 
       const members = await this.prisma.memberOnSchool.findMany({
-        where: {
-          userId: user.id,
-        },
+        where: { userId: user.id },
       });
 
       if (members.length === 0) {

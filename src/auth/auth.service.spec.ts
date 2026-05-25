@@ -343,4 +343,51 @@ describe('AuthService', () => {
       ).not.toHaveBeenCalled();
     });
   });
+
+  describe('verifyEmail with pending invites', () => {
+    beforeEach(() => {
+      service.usersRepository.findByVerifyToken = jest.fn().mockResolvedValue({
+        id: 'user1',
+        email: 'invitee@example.com',
+        firstName: 'Eve',
+        lastName: 'Doe',
+        photo: 'p.png',
+        phone: '+1',
+        blurHash: 'b',
+        verifyEmailTokenExpiresAt: new Date(Date.now() + 60_000),
+      });
+      service.usersRepository.updateVerified = jest.fn().mockResolvedValue({});
+      service.usersRepository.update = jest.fn().mockResolvedValue({});
+    });
+
+    it('auto-accepts invites, sets favoritSchool to newest, skips default school', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.claimPendingInvitesForUser.mockResolvedValue([
+        { id: 'm1', schoolId: 'sch-old', createAt: new Date('2026-05-01') },
+        { id: 'm2', schoolId: 'sch-new', createAt: new Date('2026-05-20') },
+      ]);
+
+      const result = await service.verifyEmail({ token: 'vtok' });
+
+      expect(memberSvc.claimPendingInvitesForUser).toHaveBeenCalled();
+      expect(service.usersRepository.update).toHaveBeenCalledWith({
+        where: { id: 'user1' },
+        data: { favoritSchool: 'sch-new' },
+      });
+      expect(mockSchoolService.createSchool).not.toHaveBeenCalled();
+      expect(result).toBeUndefined();
+    });
+
+    it('creates the default school when no pending invites and no existing memberships', async () => {
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.claimPendingInvitesForUser.mockResolvedValue([]);
+      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([]);
+      mockSchoolService.createSchool.mockResolvedValue({ id: 'defaultSch' });
+
+      const result = await service.verifyEmail({ token: 'vtok' });
+
+      expect(mockSchoolService.createSchool).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ id: 'defaultSch' });
+    });
+  });
 });
