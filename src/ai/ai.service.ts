@@ -54,7 +54,7 @@ export class AiService implements AiType {
 
   async generateContent(
     request: ContentListUnion,
-    model: string = 'gemini-3.1-flash-lite-preview',
+    model: string = 'gemini-3.1-flash-lite',
   ) {
     const streamingResp = await this.googleAI.models.generateContentStream({
       model: model,
