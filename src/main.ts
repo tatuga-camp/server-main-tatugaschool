@@ -49,6 +49,7 @@ async function bootstrap() {
         ignoreTrailingSlash: true,
       },
       logger: buildLoggerConfig(),
+      disableRequestLogging: true,
     }),
     { rawBody: true, bufferLogs: true },
   );
