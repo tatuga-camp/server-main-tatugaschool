@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,14 +25,16 @@ export class UsersService {
 
   async GetUser(user: UserJwtPayload): Promise<User> {
     try {
-      return await this.userRepository
-        .findById({ id: user.id })
-        .then((user) => {
-          delete user.password;
-          delete user.resetPasswordToken;
-          delete user.verifyEmailToken;
-          return user;
-        });
+      const userInfo = await this.userRepository.findById({ id: user.id });
+
+      if (!userInfo) {
+        throw new NotFoundException('User not found');
+      }
+
+      delete userInfo.password;
+      delete userInfo.resetPasswordToken;
+      delete userInfo.verifyEmailToken;
+      return userInfo;
     } catch (error) {
       this.logger.error(error);
       throw error;
