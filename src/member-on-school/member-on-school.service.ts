@@ -402,56 +402,6 @@ export class MemberOnSchoolService {
     }
   }
 
-  async claimPendingInvitesForUser(user: User): Promise<MemberOnSchool[]> {
-    try {
-      const pending =
-        await this.memberOnSchoolRepository.findPendingInvitationsForUser({
-          userId: user.id,
-          email: user.email,
-        });
-      const accepted: MemberOnSchool[] = [];
-      for (const invite of pending) {
-        const updated =
-          await this.memberOnSchoolRepository.updateMemberOnSchool({
-            query: { id: invite.id },
-            data: {
-              userId: user.id,
-              status: 'ACCEPT',
-              firstName: user.firstName,
-              lastName: user.lastName,
-              photo: user.photo,
-              phone: user.phone,
-              blurHash: user.blurHash,
-              invitationToken: null,
-              invitationTokenExpiresAt: null,
-            } as any,
-          });
-        accepted.push(updated);
-
-        // Best-effort notify other school members
-        const otherMembers = await this.memberOnSchoolRepository.findMany({
-          where: { schoolId: updated.schoolId, status: 'ACCEPT' },
-        });
-        const recipients = otherMembers.filter((m) => m.userId !== user.id);
-        if (recipients.length > 0) {
-          this.notifyMembers({
-            members: recipients,
-            schoolId: updated.schoolId,
-            title: `Your school has a new member`,
-            body: `${user.firstName} ${user.lastName} has been accepted to join the school`,
-            url: new URL(
-              `${process.env.CLIENT_URL}/school/${updated.schoolId}`,
-            ),
-          }).catch((error) => this.logger.error(error));
-        }
-      }
-      return accepted;
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
-  }
-
   async linkInvitationToUser(input: {
     token: string;
     userId: string;
@@ -523,16 +473,6 @@ export class MemberOnSchoolService {
           query: { id: memberOnSchool.id },
           data: dto.body,
         });
-
-      await this.notifyMembers({
-        members: [updateMemberOnSchool],
-        schoolId: memberOnSchool.schoolId,
-        title: `Your school has updated member`,
-        body: `${memberOnSchool.firstName} ${memberOnSchool.lastName} has been updated`,
-        url: new URL(
-          `${process.env.CLIENT_URL}/school/${memberOnSchool.schoolId}`,
-        ),
-      });
 
       return updateMemberOnSchool;
     } catch (error) {

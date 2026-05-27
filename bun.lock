@@ -42,6 +42,7 @@
         "passport-local": "^1.0.0",
         "pdf-parse": "^1.1.1",
         "pdfjs-dist": "^5.3.31",
+        "pino": "^10.3.1",
         "rxjs": "^7.8.1",
         "stripe": "^15.10.0",
         "web-push": "^3.6.7",

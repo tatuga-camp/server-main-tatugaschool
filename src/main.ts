@@ -7,8 +7,37 @@ import {
 import fastifyCookie from '@fastify/cookie';
 import fastifyPassport from '@fastify/passport';
 import fastifySecureSession from '@fastify/secure-session';
+import pino from 'pino';
 import { AppModule } from './app.module';
+import { PinoLoggerService } from './common/logger/pino-logger.service';
 import { PRODUCTION_CORS_ORIGINS } from './cors-config';
+
+function buildLoggerConfig() {
+  const env = process.env.NODE_ENV;
+  if (env === 'test') return false as const;
+
+  const isProduction = env === 'production';
+
+  return {
+    level: process.env.LOG_LEVEL ?? (isProduction ? 'info' : 'debug'),
+    timestamp: pino.stdTimeFunctions.isoTime,
+    formatters: {
+      level: (label: string) => ({ level: label }),
+    },
+    redact: {
+      paths: [
+        'req.headers.authorization',
+        'req.headers.cookie',
+        'req.headers["set-cookie"]',
+        'res.headers["set-cookie"]',
+      ],
+      remove: true,
+    },
+    // transport intentionally omitted:
+    //  - production: direct synchronous stdout, single-line JSON, no worker threads
+    //  - avoids Bun + pino worker-thread compatibility risks
+  };
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -19,9 +48,16 @@ async function bootstrap() {
       routerOptions: {
         ignoreTrailingSlash: true,
       },
+      logger: buildLoggerConfig(),
     }),
-    { rawBody: true },
+    { rawBody: true, bufferLogs: true },
   );
+
+  // Install the bridge BEFORE app.listen() / any module initialization-time
+  // logging so that bufferLogs flushes into pino instead of the default Nest
+  // logger.
+  const fastifyInstance = app.getHttpAdapter().getInstance();
+  app.useLogger(new PinoLoggerService(fastifyInstance.log));
 
   await app.register(fastifyCookie);
 

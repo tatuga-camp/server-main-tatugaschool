@@ -91,7 +91,6 @@ describe('AuthService', () => {
           provide: MemberOnSchoolService,
           useValue: {
             getInvitationByToken: jest.fn(),
-            claimPendingInvitesForUser: jest.fn().mockResolvedValue([]),
             linkInvitationToUser: jest.fn(),
             memberOnSchoolRepository: {
               getMemberOnSchoolByInvitationToken: jest.fn(),
