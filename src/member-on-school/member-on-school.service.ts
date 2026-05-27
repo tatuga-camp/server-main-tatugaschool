@@ -324,6 +324,14 @@ export class MemberOnSchoolService {
           invitationToken: null,
           invitationTokenExpiresAt: null,
         });
+
+        await this.notifyMembers({
+          members: [create],
+          schoolId: dto.schoolId,
+          title: `Your school ${school.title} has a new member`,
+          body: `${create.firstName ?? create.email} has been invited to join the school`,
+          url: new URL(`${process.env.CLIENT_URL}/account?menu=Invitations`),
+        }).catch((error) => console.log(error));
       } else {
         // ----- Flow B: not-yet-registered email -----
         const token = crypto.randomBytes(32).toString('hex');
@@ -347,14 +355,6 @@ export class MemberOnSchoolService {
       }
 
       await this.sendInviteEmail(create, school);
-
-      await this.notifyMembers({
-        members: [create],
-        schoolId: dto.schoolId,
-        title: `Your school ${school.title} has a new member`,
-        body: `${create.firstName ?? create.email} has been invited to join the school`,
-        url: new URL(`${process.env.CLIENT_URL}/account?menu=Invitations`),
-      }).catch((error) => console.log(error));
 
       return create;
     } catch (error) {
