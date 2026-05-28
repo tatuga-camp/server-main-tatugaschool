@@ -65,7 +65,7 @@ export class NotificationRepository implements Repository {
     return await this.prisma.notification.findMany({
       where: { userId, isRead: false },
       orderBy: { createAt: 'desc' },
-      take: 20,
+      take: 99,
     });
   }
 
