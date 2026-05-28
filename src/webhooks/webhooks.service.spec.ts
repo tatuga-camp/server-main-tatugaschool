@@ -69,6 +69,7 @@ describe('WebhooksService', () => {
       if (key === 'SANITY_PROJECT_ID') return 'projX';
       if (key === 'SANITY_DATASET') return 'production';
       if (key === 'SANITY_WEBHOOK_SECRET') return 'test-secret';
+      if (key === 'SANITY_NEWS_SEND_DELAY_MS') return 0;
       return null;
     }),
   };

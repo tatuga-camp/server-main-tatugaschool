@@ -179,6 +179,17 @@ export class WebhooksService {
         return;
       }
 
+      // Give Netlify time to finish rebuilding the public site so the
+      // links in the email resolve to the new article.
+      const delayMs =
+        this.config.get<number>('SANITY_NEWS_SEND_DELAY_MS') ?? 60_000;
+      if (delayMs > 0) {
+        this.logger.log(
+          `sanity-news ${payload._id}: waiting ${delayMs}ms for Netlify build before sending to ${recipients.length} recipients`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+
       const { subject, html } = buildSanityNewsEmail(payload, {
         projectId: this.config.get<string>('SANITY_PROJECT_ID') ?? '',
         dataset: this.config.get<string>('SANITY_DATASET') ?? '',
