@@ -299,6 +299,7 @@ export class SubjectService {
                 order: assignment.order,
                 maxScore: assignment.maxScore,
                 videoURL: assignment.videoURL,
+                tags: assignment.tags,
               },
               user,
             );
