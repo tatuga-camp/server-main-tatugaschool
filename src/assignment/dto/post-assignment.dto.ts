@@ -1,6 +1,9 @@
 import { AssignmentStatus, AssignmentType } from '@prisma/client';
 import { Transform } from 'class-transformer';
+import { normalizeTags } from '../utils/normalize-tags';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsBoolean,
   IsDateString,
   IsEnum,
@@ -71,4 +74,12 @@ export class CreateAssignmentDto {
   @IsOptional()
   @IsBoolean()
   assignAll?: boolean;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(30, { each: true })
+  @Transform(({ value }) => normalizeTags(value))
+  tags?: string[];
 }

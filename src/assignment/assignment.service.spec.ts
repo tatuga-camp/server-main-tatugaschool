@@ -905,6 +905,45 @@ describe('AssignmentService', () => {
       expect(createCall.data.dueDate).toBeUndefined();
       expect(createCall.data.weight).toBeUndefined();
     });
+
+    it('should forward tags to the repository create call', async () => {
+      const mockUser = { id: 'u1' } as any;
+      const dto: any = {
+        subjectId: 's1',
+        type: 'Assignment',
+        beginDate: new Date(),
+        maxScore: 10,
+        status: 'Draft',
+        tags: ['Homework'],
+      };
+
+      const mockSubject = {
+        id: 's1',
+        schoolId: 'sch1',
+        isLocked: false,
+        isVerifyLine: false,
+        code: 'SUB123',
+      };
+      const mockAssignment = { id: 'a-new', subjectId: 's1', schoolId: 'sch1' };
+
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockSubjectService.subjectRepository.findUnique.mockResolvedValue(
+        mockSubject,
+      );
+      (service.assignmentRepository.create as jest.Mock).mockResolvedValue({
+        ...mockAssignment,
+        tags: ['Homework'],
+      });
+      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue(
+        [],
+      );
+
+      await service.createAssignment(dto, mockUser);
+
+      const createCall = (service.assignmentRepository.create as jest.Mock).mock
+        .calls[0][0];
+      expect(createCall.data.tags).toEqual(['Homework']);
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -943,6 +982,39 @@ describe('AssignmentService', () => {
         data: { title: 'Updated' },
       });
       expect(result.title).toBe('Updated');
+    });
+
+    it('should forward tags to the repository update call', async () => {
+      const mockUser = { id: 'u1' } as any;
+      const dto: any = {
+        query: { assignmentId: 'a1' },
+        data: { tags: ['Homework', 'Test'] },
+      };
+
+      const mockAssignment = {
+        id: 'a1',
+        subjectId: 's1',
+        status: 'Draft',
+        schoolId: 'sch1',
+      };
+      const mockSubject = { id: 's1', isLocked: false };
+
+      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
+        mockAssignment,
+      );
+      mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (service.assignmentRepository.update as jest.Mock).mockResolvedValue({
+        ...mockAssignment,
+        tags: ['Homework', 'Test'],
+      });
+
+      await service.updateAssignment(dto, mockUser);
+
+      expect(service.assignmentRepository.update).toHaveBeenCalledWith({
+        where: { id: 'a1' },
+        data: { tags: ['Homework', 'Test'] },
+      });
     });
 
     it('should throw NotFoundException if assignment is not found', async () => {

@@ -1,6 +1,8 @@
 import { AssignmentStatus, AssignmentType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
+import { normalizeTags } from '../utils/normalize-tags';
 import {
+  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsBoolean,
@@ -58,6 +60,14 @@ class UpdateAssignmentBody {
   @IsOptional()
   @IsEnum(AssignmentStatus)
   status: AssignmentStatus;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(30, { each: true })
+  @Transform(({ value }) => normalizeTags(value))
+  tags?: string[];
 }
 
 class UpdateAssignmentQuery {

@@ -449,6 +449,8 @@ model Assignment {
   vectorResouce      String?
   preventFastForward Boolean?
 
+  tags String[]
+
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
 
