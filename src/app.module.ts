@@ -50,6 +50,7 @@ import { FileOnFeedbackModule } from './file-on-feedback/file-on-feedback.module
 import { LineBotModule } from './line-bot/line-bot.module';
 import { AiModule } from './ai/ai.module';
 import { RedisModule } from './redis/redis.module';
+import { WordCloudModule } from './word-cloud/word-cloud.module';
 
 @Module({
   imports: [
@@ -102,6 +103,7 @@ import { RedisModule } from './redis/redis.module';
     FileOnFeedbackModule,
     LineBotModule,
     RedisModule,
+    WordCloudModule,
   ],
   controllers: [AppController],
   providers: [AppService],
