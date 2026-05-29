@@ -46,6 +46,7 @@ model User {
   feedbacks                 Feedback[]
   classes                   Class[]
   notifications             Notification[]
+  wordClouds                WordCloud[]
 }
 
 enum Language {
@@ -125,6 +126,8 @@ model School {
   groupOnSubjects          GroupOnSubject[]
   unitOnGroups             UnitOnGroup[]
   studentOnGroups          StudentOnGroup[]
+  wordClouds               WordCloud[]
+  wordCloudAnswers         WordCloudAnswer[]
 }
 
 model MemberOnSchool {
@@ -208,6 +211,7 @@ model Student {
   fileOnStudentAssignments  FileOnStudentAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   studentOnGroups           StudentOnGroup[]
+  wordCloudAnswers          WordCloudAnswer[]
 
   @@index([schoolId, classId])
   @@index([classId])
@@ -274,6 +278,8 @@ model Subject {
   unitOnGroups              UnitOnGroup[]
   studentOnGroups           StudentOnGroup[]
   questionOnVideos          QuestionOnVideo[]
+  wordClouds                WordCloud[]
+  wordCloudAnswers          WordCloudAnswer[]
 
   @@index([educationYear, schoolId])
   @@index([isVerifyLine, lineGroupId])
@@ -340,6 +346,7 @@ model StudentOnSubject {
   scoreOnStudents      ScoreOnStudent[]
   attendances          Attendance[]
   studentOnGroups      StudentOnGroup[]
+  wordCloudAnswers     WordCloudAnswer[]
 
   @@unique([studentId, subjectId])
   @@index([subjectId])
@@ -1033,4 +1040,65 @@ enum FeedbackTag {
   COMPLIMENT
   BUG
   REQUEST_FEATURE
+}
+
+model WordCloud {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  question      String
+  status        WordCloudStatus @default(OPEN)
+  accessMode    WordCloudAccess @default(PUBLIC)
+  allowMultiple Boolean         @default(false)
+
+  subjectId String @db.ObjectId
+  schoolId  String @db.ObjectId
+  userId    String @db.ObjectId
+
+  subject Subject @relation(fields: [subjectId], references: [id])
+  school  School  @relation(fields: [schoolId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  answers WordCloudAnswer[]
+
+  @@index([subjectId])
+  @@index([schoolId])
+}
+
+model WordCloudAnswer {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  text         String
+  normalized   String
+  browserToken String
+
+  wordCloudId String @db.ObjectId
+  subjectId   String @db.ObjectId
+  schoolId    String @db.ObjectId
+
+  studentOnSubjectId String? @db.ObjectId
+  studentId          String? @db.ObjectId
+
+  wordCloud        WordCloud         @relation(fields: [wordCloudId], references: [id])
+  subject          Subject           @relation(fields: [subjectId], references: [id])
+  school           School            @relation(fields: [schoolId], references: [id])
+  studentOnSubject StudentOnSubject? @relation(fields: [studentOnSubjectId], references: [id])
+  student          Student?          @relation(fields: [studentId], references: [id])
+
+  @@index([wordCloudId])
+  @@index([schoolId])
+  @@index([wordCloudId, browserToken])
+}
+
+enum WordCloudStatus {
+  OPEN
+  CLOSED
+}
+
+enum WordCloudAccess {
+  PUBLIC
+  STUDENTS_ONLY
 }
