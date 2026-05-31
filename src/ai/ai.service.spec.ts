@@ -36,7 +36,6 @@ describe('AiService', () => {
   let service: AiService;
   let configService: ConfigService;
   let httpService: HttpService;
-  let authService: AuthService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -68,7 +67,6 @@ describe('AiService', () => {
     service = module.get<AiService>(AiService);
     configService = module.get<ConfigService>(ConfigService);
     httpService = module.get<HttpService>(HttpService);
-    authService = module.get<AuthService>(AuthService);
   });
 
   afterEach(() => {

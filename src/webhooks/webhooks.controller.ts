@@ -55,7 +55,14 @@ export class WebhooksController {
       rawBodyBuffer.toString('utf8'),
     );
 
-    await this.webhooksService.handleLineWebhook(parsedBody);
+    // Fire-and-forget: respond 200 immediately so LINE does not redeliver
+    // the webhook while the (AI-bound) handler runs. Errors are logged,
+    // never bubbled back to LINE.
+    this.webhooksService
+      .handleLineWebhook(parsedBody)
+      .catch((err) =>
+        this.logger.error('line webhook background handler crashed', err),
+      );
 
     return 'OK';
   }

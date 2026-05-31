@@ -1,9 +1,10 @@
 import { TextMessage } from '@line/bot-sdk';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { messagingApi, WebhookEvent } from '@line/bot-sdk';
 @Injectable()
 export class LineBotService {
+  private readonly logger = new Logger(LineBotService.name);
   private lineClient: messagingApi.MessagingApiClient;
   constructor(private config: ConfigService) {
     this.lineClient = new messagingApi.MessagingApiClient({
@@ -45,6 +46,28 @@ export class LineBotService {
       });
     } catch (error) {
       throw error;
+    }
+  }
+
+  async replyOrPushMessage(request: {
+    replyToken: string;
+    groupId: string;
+    message: string;
+  }) {
+    try {
+      await this.replyMessage({
+        replyToken: request.replyToken,
+        message: request.message,
+      });
+    } catch (err) {
+      this.logger.warn(
+        `replyMessage failed, falling back to pushMessage for group ${request.groupId}`,
+        err,
+      );
+      await this.sendMessage({
+        groupId: request.groupId,
+        message: request.message,
+      });
     }
   }
 }

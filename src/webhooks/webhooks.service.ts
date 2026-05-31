@@ -144,8 +144,9 @@ export class WebhooksService {
                 message.text,
                 JSON.stringify(summarydata),
               );
-              await this.line.replyMessage({
+              await this.line.replyOrPushMessage({
                 replyToken: event.replyToken,
+                groupId: event.source.groupId,
                 message: messageAI,
               });
               return;
@@ -162,7 +163,7 @@ export class WebhooksService {
         }
       }
     } catch (error) {
-      throw error;
+      this.logger.error('Error handling LINE webhook', error);
     }
   }
 

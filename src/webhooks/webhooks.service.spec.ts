@@ -40,6 +40,7 @@ describe('WebhooksService', () => {
 
   const mockLineBotService = {
     replyMessage: jest.fn(),
+    replyOrPushMessage: jest.fn(),
   };
 
   const mockSubjectService = {
@@ -175,10 +176,61 @@ describe('WebhooksService', () => {
       await service.handleLineWebhook(dto);
 
       expect(mockAiService.generateLineBotSummary).toHaveBeenCalled();
-      expect(mockLineBotService.replyMessage).toHaveBeenCalledWith({
+      expect(mockLineBotService.replyOrPushMessage).toHaveBeenCalledWith({
         replyToken: 'rt1',
+        groupId: 'g1',
         message: 'AI Response',
       });
+    });
+
+    it('does not rethrow when an internal step fails', async () => {
+      const mockEvent = {
+        type: 'message',
+        source: { type: 'group', groupId: 'g1' },
+        replyToken: 'rt1',
+        message: {
+          type: 'text',
+          text: '@Tatuga tell me',
+          mention: { mentionees: [{ isSelf: true }] },
+        },
+      };
+      const dto: any = { events: [mockEvent] };
+
+      mockSubjectService.subjectRepository.findFirst.mockRejectedValue(
+        new Error('db down'),
+      );
+
+      await expect(service.handleLineWebhook(dto)).resolves.toBeUndefined();
+    });
+
+    it('does not rethrow when the AI path fails', async () => {
+      const mockEvent = {
+        type: 'message',
+        source: { type: 'group', groupId: 'g1' },
+        replyToken: 'rt1',
+        message: {
+          type: 'text',
+          text: '@Tatuga tell me',
+          mention: { mentionees: [{ isSelf: true }] },
+        },
+      };
+      const dto: any = { events: [mockEvent] };
+
+      mockSubjectService.subjectRepository.findFirst.mockResolvedValue({
+        id: 's1',
+        isVerifyLine: true,
+        lineGroupId: 'g1',
+        schoolId: 'sch1',
+      });
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        plan: 'PREMIUM',
+      });
+      mockSubjectService.getAllSubjectData.mockResolvedValue({});
+      mockAiService.generateLineBotSummary.mockRejectedValue(
+        new Error('ECONNRESET'),
+      );
+
+      await expect(service.handleLineWebhook(dto)).resolves.toBeUndefined();
     });
   });
 

@@ -44,7 +44,6 @@ export class AiService implements AiType {
   constructor(
     private config: ConfigService,
     private httpService: HttpService,
-    private authService: AuthService,
   ) {
     this.logger = new Logger(AiService.name);
     this.googleAI = new GoogleGenAI({
@@ -55,16 +54,18 @@ export class AiService implements AiType {
   async generateContent(
     request: ContentListUnion,
     model: string = 'gemini-3.1-flash-lite',
+    maxOutputTokens: number = 65536,
+    thinkingLevel: ThinkingLevel = ThinkingLevel.HIGH,
   ) {
     const streamingResp = await this.googleAI.models.generateContentStream({
       model: model,
       contents: request,
       config: {
-        maxOutputTokens: 65536,
+        maxOutputTokens: maxOutputTokens,
         temperature: 1,
         topP: 0.95,
         thinkingConfig: {
-          thinkingLevel: ThinkingLevel.HIGH,
+          thinkingLevel: thinkingLevel,
         },
         safetySettings: [
           {
@@ -393,23 +394,18 @@ Your tasks:
 1. Analyze the user's input and predict what the user needs or is trying to achieve.
 2. Provide a concise, helpful response based on the server information that directly addresses the user's needs.
 3. Format your response so it is suitable for a LINE bot message (use emojis, bullet points, keep it friendly and easy to read on mobile screens).
-4. ** ** for bold text not working for LINE`;
+4. Don't use **. Instead, use ALL CAPS for emphasis if needed. ** **`;
+      const response = await this.generateContent([
+        {
+          role: 'user',
+          parts: [
+            {
+              text: prompt,
+            },
+          ],
+        },
+      ]);
 
-      const response = await this.generateContent(
-        [
-          {
-            role: 'user',
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        // 'gemini-3.1-pro-preview',
-      );
-
-      console.log;
       return response;
     } catch (error) {
       this.logger.error('Failed to generate LINE bot summary:', error);
