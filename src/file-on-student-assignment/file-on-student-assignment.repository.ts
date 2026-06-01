@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   RequestDeleteFileOnStudentAssignment,
@@ -151,6 +152,12 @@ export class FileOnStudentAssignmentRepository
           },
         });
 
+      // Concurrent / duplicate delete: the record was already removed before we
+      // got here. Treat as a benign 404 instead of dereferencing null (-> 500).
+      if (!fileOnStudentAssignment) {
+        throw new NotFoundException('File on student assignment not found');
+      }
+
       if (
         fileOnStudentAssignment.contentType === 'FILE' &&
         fileOnStudentAssignment.type !== 'link-url'
@@ -175,6 +182,14 @@ export class FileOnStudentAssignmentRepository
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
+        // P2025: the row was deleted concurrently between findUnique and
+        // delete. This is benign (already gone), so surface it as a 404 rather
+        // than a 500. Returning it as a 404 also stops the caller from
+        // double-decrementing school storage for a file that was only deleted
+        // once.
+        if (error.code === 'P2025') {
+          throw new NotFoundException('File on student assignment not found');
+        }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
         );
