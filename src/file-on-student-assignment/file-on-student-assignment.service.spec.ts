@@ -337,6 +337,62 @@ describe('FileOnStudentAssignmentService', () => {
         } as any),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('does not delete storage when renaming a FILE without a new body', async () => {
+      const file = {
+        id: 'f1', subjectId: 's1', studentId: 'stu1',
+        contentType: 'FILE', body: 'schools/s1/original.pdf',
+      };
+      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
+      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
+      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue({ ...file, name: 'Final essay' });
+
+      await service.updateFile(
+        { query: { id: 'f1' }, body: { name: 'Final essay' } } as any,
+        { id: 'teacher1' } as any,
+        null,
+      );
+
+      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
+    });
+
+    it('deletes the old storage file only when a different body is provided', async () => {
+      const file = {
+        id: 'f1', subjectId: 's1', studentId: 'stu1',
+        contentType: 'FILE', body: 'schools/s1/original.pdf',
+      };
+      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
+      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
+      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue(file);
+
+      await service.updateFile(
+        { query: { id: 'f1' }, body: { body: 'schools/s1/new.pdf' } } as any,
+        { id: 'teacher1' } as any,
+        null,
+      );
+
+      expect(mockStorageService.DeleteFileOnStorage).toHaveBeenCalledWith({
+        fileName: 'schools/s1/original.pdf',
+      });
+    });
+
+    it('does not delete storage when the same body value is re-submitted', async () => {
+      const file = {
+        id: 'f1', subjectId: 's1', studentId: 'stu1',
+        contentType: 'FILE', body: 'schools/s1/original.pdf',
+      };
+      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
+      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
+      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue(file);
+
+      await service.updateFile(
+        { query: { id: 'f1' }, body: { body: 'schools/s1/original.pdf' } } as any,
+        { id: 'teacher1' } as any,
+        null,
+      );
+
+      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {

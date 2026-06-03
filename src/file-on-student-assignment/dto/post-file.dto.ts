@@ -34,6 +34,7 @@ export class CreateFileOnStudentAssignmentDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   name?: string;
 
   @IsNotEmpty()

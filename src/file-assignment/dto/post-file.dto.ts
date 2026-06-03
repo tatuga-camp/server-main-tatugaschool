@@ -24,6 +24,11 @@ export class CreateFileOnAssignmentDto {
   @IsString()
   blurHash?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  name?: string;
+
   @IsNotEmpty()
   @IsNumber()
   @Min(1)

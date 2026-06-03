@@ -5,7 +5,10 @@ const config = {
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    // isolatedModules: true works around a pre-existing cross-file type error
+    // that prevents ts-jest from compiling the suite; the underlying type error
+    // should be fixed separately so this workaround can eventually be removed.
+    '^.+\\.(t|j)s$': ['ts-jest', { isolatedModules: true }],
   },
   moduleNameMapper: {
     '^bun$': '<rootDir>/../__mocks__/bun.ts',

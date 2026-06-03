@@ -249,6 +249,7 @@ export class WordCloudService {
         accessMode: wordCloud.accessMode,
         allowMultiple: wordCloud.allowMultiple,
         students,
+        subjectId: wordCloud.subjectId,
       };
     } catch (error) {
       this.logger.error(error);

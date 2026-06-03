@@ -5,6 +5,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -15,12 +16,14 @@ class QueryUpdateFile {
 }
 
 class BodyUpdateFile {
+  @IsOptional()
   @IsNotEmpty()
   @IsString()
-  body: string;
+  body?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   name?: string;
 }
 

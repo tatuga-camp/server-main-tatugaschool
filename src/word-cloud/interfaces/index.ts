@@ -19,5 +19,6 @@ export type ResponseGetWordCloudPublic = {
   status: string;
   accessMode: string;
   allowMultiple: boolean;
+  subjectId: string;
   students: StudentOnSubject[]; // subject roster, only for STUDENTS_ONLY
 };

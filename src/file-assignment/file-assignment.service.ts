@@ -123,6 +123,7 @@ export class FileAssignmentService {
         },
         data: {
           preventFastForward: dto.preventFastForward,
+          name: dto.name,
         },
       });
 
