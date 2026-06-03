@@ -496,6 +496,7 @@ model FileOnAssignment {
   type     String?
   blurHash String?
   url      String
+  name     String?
   size     Float
 
   preventFastForward Boolean? @default(false)

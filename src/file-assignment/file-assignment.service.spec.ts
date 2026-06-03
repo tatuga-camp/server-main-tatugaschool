@@ -131,6 +131,26 @@ describe('FileAssignmentService', () => {
       expect(service.fileAssignmentRepository.update).toHaveBeenCalled();
       expect(result.preventFastForward).toBe(true);
     });
+
+    it('persists name when updating a file', async () => {
+      const file = { id: 'file1', subjectId: 'subj1' };
+      (service.fileAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
+      (
+        service as any
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
+      const updateSpy = service.fileAssignmentRepository.update as jest.Mock;
+      updateSpy.mockResolvedValue({ ...file, name: 'My Report' });
+
+      await service.updateFile(
+        { id: 'file1', name: 'My Report' } as any,
+        { id: 'teacher1' } as any,
+      );
+
+      expect(updateSpy).toHaveBeenCalledWith({
+        where: { id: 'file1' },
+        data: { preventFastForward: undefined, name: 'My Report' },
+      });
+    });
   });
 
   describe('createFileAssignment', () => {

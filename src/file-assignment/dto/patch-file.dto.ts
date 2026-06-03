@@ -1,4 +1,11 @@
-import { IsBoolean, IsMongoId, IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsBoolean,
+  IsMongoId,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
 export class UpdateFileDto {
   @IsNotEmpty()
@@ -8,4 +15,9 @@ export class UpdateFileDto {
   @IsOptional()
   @IsBoolean()
   preventFastForward?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  name?: string;
 }
