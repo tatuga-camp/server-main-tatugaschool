@@ -143,7 +143,7 @@ describe('FileAssignmentService', () => {
 
       await service.updateFile(
         { id: 'file1', name: 'My Report' } as any,
-        { id: 'teacher1' } as any,
+        { id: 'u1' } as any,
       );
 
       expect(updateSpy).toHaveBeenCalledWith({
@@ -200,6 +200,37 @@ describe('FileAssignmentService', () => {
           { id: 'u1' } as any,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should pass name to repository when name is supplied', async () => {
+      const mockAssignment = { id: 'a1', subjectId: 's1', schoolId: 'sch1' };
+      (service as any).assignmentRepository.getById.mockResolvedValue(
+        mockAssignment,
+      );
+      (
+        service as any
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
+        { id: 'ts1' },
+      );
+      (service.fileAssignmentRepository.create as jest.Mock).mockResolvedValue({
+        id: 'f1',
+        size: 100,
+        name: 'Homework Sheet',
+      });
+      (service as any).schoolRepository.getById.mockResolvedValue({
+        id: 'sch1',
+        totalStorage: 500,
+      });
+      (service as any).schoolRepository.update.mockResolvedValue({});
+
+      await service.createFileAssignment(
+        { type: 'video/mp4', assignmentId: 'a1', name: 'Homework Sheet' } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(service.fileAssignmentRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Homework Sheet' }),
+      );
     });
   });
 
