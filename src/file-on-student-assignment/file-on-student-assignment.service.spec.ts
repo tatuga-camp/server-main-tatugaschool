@@ -375,6 +375,24 @@ describe('FileOnStudentAssignmentService', () => {
         fileName: 'schools/s1/original.pdf',
       });
     });
+
+    it('does not delete storage when the same body value is re-submitted', async () => {
+      const file = {
+        id: 'f1', subjectId: 's1', studentId: 'stu1',
+        contentType: 'FILE', body: 'schools/s1/original.pdf',
+      };
+      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
+      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
+      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue(file);
+
+      await service.updateFile(
+        { query: { id: 'f1' }, body: { body: 'schools/s1/original.pdf' } } as any,
+        { id: 'teacher1' } as any,
+        null,
+      );
+
+      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {
