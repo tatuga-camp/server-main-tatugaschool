@@ -15,9 +15,9 @@ class QueryUpdateFile {
 }
 
 class BodyUpdateFile {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  body: string;
+  body?: string;
 
   @IsOptional()
   @IsString()

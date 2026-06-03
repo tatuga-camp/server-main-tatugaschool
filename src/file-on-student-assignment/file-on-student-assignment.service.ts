@@ -302,7 +302,11 @@ export class FileOnStudentAssignmentService {
         data: dto.body,
       });
 
-      if (file.contentType === 'FILE' && dto.body.body !== file.body) {
+      if (
+        file.contentType === 'FILE' &&
+        dto.body.body !== undefined &&
+        dto.body.body !== file.body
+      ) {
         await this.storageService.DeleteFileOnStorage({
           fileName: file.body,
         });
