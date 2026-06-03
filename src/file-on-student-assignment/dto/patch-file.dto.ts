@@ -5,6 +5,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -22,6 +23,7 @@ class BodyUpdateFile {
 
   @IsOptional()
   @IsString()
+  @MaxLength(255)
   name?: string;
 }
 
