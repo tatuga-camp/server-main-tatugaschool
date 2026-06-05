@@ -152,6 +152,11 @@ export class RubricService {
       throw new BadRequestException('This assignment has no rubric attached.');
     }
 
+    const criterionIds = dto.items.map((i) => i.criterionId);
+    if (new Set(criterionIds).size !== criterionIds.length) {
+      throw new BadRequestException('Duplicate criterionId in items.');
+    }
+
     const resolved = dto.items.map((item) => {
       const criterion = loaded.criteria.find((c) => c.id === item.criterionId);
       if (!criterion) {

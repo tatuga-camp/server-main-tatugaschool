@@ -144,6 +144,22 @@ describe('RubricService.gradeStudent', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('rejects duplicate criterionId in items', async () => {
+    const { service } = gradingService();
+    await expect(
+      service.gradeStudent(
+        {
+          studentOnAssignmentId: 'soa1',
+          items: [
+            { criterionId: 'c1', selectedLevelId: 'l-hi' },
+            { criterionId: 'c1', selectedLevelId: 'l-lo' },
+          ],
+        } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('computes and writes the normalized score with status REVIEWD', async () => {
     const { service, prisma } = gradingService();
     await service.gradeStudent(

@@ -15,22 +15,5 @@ export class RubricScoreController {
     return this.rubricService.gradeStudent(dto, user);
   }
 
-  // Task 9: read breakdown routes (teacher + student) to be added here.
-  // @UseGuards(UserGuard)
-  // @Get('student-on-assignment/:studentOnAssignmentId')
-  // readForTeacher(
-  //   @Param() dto: StudentOnAssignmentIdParamDto,
-  //   @GetUser() user: UserJwtPayload,
-  // ) {
-  //   return this.rubricService.readBreakdownForTeacher(dto, user);
-  // }
-  //
-  // @UseGuards(StudentGuard)
-  // @Get('student-on-assignment/:studentOnAssignmentId/student')
-  // readForStudent(
-  //   @Param() dto: StudentOnAssignmentIdParamDto,
-  //   @GetStudent() student: StudentJwtPayload,
-  // ) {
-  //   return this.rubricService.readBreakdownForStudent(dto, student);
-  // }
+  // Task 9 adds GET /student-on-assignment/:id (teacher) and .../student (student) here.
 }
