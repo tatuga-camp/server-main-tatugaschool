@@ -1191,4 +1191,5 @@ model RubricScoreOnStudentAssignment {
   @@unique([studentOnAssignmentId, criterionId])
   @@index([studentOnAssignmentId])
   @@index([subjectId])
+  @@index([schoolId])
 }
