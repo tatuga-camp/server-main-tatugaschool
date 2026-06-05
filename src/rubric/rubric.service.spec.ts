@@ -217,3 +217,55 @@ describe('RubricService.readBreakdownForStudent', () => {
     expect(result.rubric.criteria[0].comment).toBe('nice');
   });
 });
+
+describe('RubricService.aiDraft', () => {
+  function aiService(modelText: string) {
+    const prisma: any = {
+      subject: { findUnique: jest.fn().mockResolvedValue(subject) },
+    };
+    const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
+    const ai: any = {
+      generateContent: jest.fn().mockResolvedValue(modelText),
+      summarizeFile: jest.fn(),
+    };
+    const service = new RubricService(prisma, teacher, ai);
+    return { service, ai };
+  }
+
+  const validJson = JSON.stringify({
+    title: 'Essay Rubric',
+    description: 'd',
+    criteria: [
+      {
+        title: 'Organization',
+        weight: 1,
+        levels: [
+          { title: 'Excellent', points: 4 },
+          { title: 'Poor', points: 1 },
+        ],
+      },
+    ],
+  });
+
+  it('parses a valid draft and returns it', async () => {
+    const { service } = aiService('```json\n' + validJson + '\n```');
+    const result = await service.aiDraft(
+      { subjectId: 'sub1', topic: 't', gradeLevel: 'G5', learningGoal: 'g' } as any,
+      { id: 'u1' } as any,
+      'token',
+    );
+    expect(result.draft.criteria[0].levels.length).toBe(2);
+  });
+
+  it('retries once on invalid JSON then throws', async () => {
+    const { service, ai } = aiService('not json');
+    await expect(
+      service.aiDraft(
+        { subjectId: 'sub1', topic: 't', gradeLevel: 'G5', learningGoal: 'g' } as any,
+        { id: 'u1' } as any,
+        'token',
+      ),
+    ).rejects.toBeTruthy();
+    expect(ai.generateContent).toHaveBeenCalledTimes(2);
+  });
+});

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Rubric } from '@prisma/client';
@@ -12,6 +13,7 @@ import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { RubricRepository } from './rubric.repository';
 import { computeRubricScore } from './rubric-math';
 import {
+  AiDraftRubricDto,
   CreateRubricDto,
   GetRubricsBySubjectDto,
   GradeRubricDto,
@@ -19,10 +21,12 @@ import {
   StudentOnAssignmentIdParamDto,
   UpdateRubricDto,
 } from './dto';
+import { AiDraftResult, RubricDraft } from './interfaces';
 
 @Injectable()
 export class RubricService {
   repo: RubricRepository;
+  private logger = new Logger(RubricService.name);
 
   constructor(
     private prisma: PrismaService,
@@ -269,5 +273,101 @@ export class RubricService {
       throw new ForbiddenException('Not your assignment.');
     }
     return this.shapeBreakdown(data);
+  }
+
+  private extractJson(text: string): any {
+    const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const raw = fenced ? fenced[1] : text;
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if (start === -1 || end === -1) throw new Error('No JSON object found');
+    return JSON.parse(raw.slice(start, end + 1));
+  }
+
+  private validateDraft(obj: any): RubricDraft {
+    if (!obj || typeof obj.title !== 'string' || !Array.isArray(obj.criteria)) {
+      throw new Error('Draft missing title/criteria');
+    }
+    for (const c of obj.criteria) {
+      if (
+        typeof c.title !== 'string' ||
+        !Array.isArray(c.levels) ||
+        c.levels.length < 2
+      ) {
+        throw new Error('Each criterion needs a title and >=2 levels');
+      }
+      for (const l of c.levels) {
+        if (typeof l.title !== 'string' || typeof l.points !== 'number') {
+          throw new Error('Each level needs a title and numeric points');
+        }
+      }
+    }
+    return obj as RubricDraft;
+  }
+
+  async aiDraft(
+    dto: AiDraftRubricDto,
+    user: UserJwtPayload,
+    accessToken: string,
+  ): Promise<AiDraftResult> {
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: dto.subjectId },
+    });
+    if (!subject) throw new NotFoundException('Subject not found');
+    await this.teacherOnSubjectService.ValidateAccess({
+      userId: user.id,
+      subjectId: dto.subjectId,
+    });
+
+    let curriculumSummary: string | undefined;
+    if (dto.curriculum) {
+      const summary = await this.ai.summarizeFile({
+        imageURLs: [{ url: dto.curriculum.url, type: dto.curriculum.type }],
+        accessToken,
+      });
+      curriculumSummary =
+        summary?.candidates?.[0]?.content?.parts
+          ?.map((p: any) => p.text)
+          .filter(Boolean)
+          .join('\n') ?? undefined;
+    }
+
+    const levelCount = dto.levelCount ?? 4;
+    const maxPoints = dto.maxPointsPerLevel ?? 4;
+    const language = dto.language ?? 'en';
+    const prompt = [
+      'You are an expert teacher creating an assessment rubric.',
+      `Output language: ${language}.`,
+      `Assignment topic: ${dto.topic}.`,
+      `Grade level: ${dto.gradeLevel}.`,
+      `Learning goal: ${dto.learningGoal}.`,
+      dto.criteriaCount
+        ? `Use exactly ${dto.criteriaCount} criteria.`
+        : 'Choose an appropriate number of criteria (3-6).',
+      `Each criterion must have exactly ${levelCount} performance levels, ordered best to worst, with the best level worth ${maxPoints} points and the worst worth 1.`,
+      curriculumSummary
+        ? `Align the criteria to this curriculum summary:\n${curriculumSummary}`
+        : '',
+      'Return ONLY a JSON object with this exact shape:',
+      '{"title":string,"description":string,"criteria":[{"title":string,"description":string,"weight":number,"levels":[{"title":string,"description":string,"points":number}]}]}',
+      'Use weight 1 unless a criterion is clearly more important. No prose outside the JSON.',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    let lastErr: unknown;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const text = await this.ai.generateContent(prompt);
+      try {
+        const draft = this.validateDraft(this.extractJson(text));
+        return { curriculumSummary, draft };
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    this.logger.error(lastErr);
+    throw new BadRequestException(
+      'Could not generate a rubric draft. Please adjust your inputs and try again.',
+    );
   }
 }
