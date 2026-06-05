@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { RubricService } from './rubric.service';
 
 const subject = { id: 'sub1', schoolId: 'school1' };
@@ -15,9 +15,8 @@ function makeService() {
     findManyBySubject: jest.fn().mockResolvedValue([]),
     findByIdWithTree: jest.fn(),
     countAssignmentsUsing: jest.fn().mockResolvedValue(0),
-    deleteCriteriaTree: jest.fn().mockResolvedValue(undefined),
     deleteCascade: jest.fn().mockResolvedValue(undefined),
-    updateRubricWithCriteria: jest.fn().mockResolvedValue({ id: 'r1' }),
+    replaceCriteria: jest.fn().mockResolvedValue({ id: 'r1' }),
   };
   return { service, prisma, teacher };
 }
@@ -48,6 +47,32 @@ describe('RubricService CRUD', () => {
       userId: 'u1',
       subjectId: 'sub1',
     });
+    expect(result).toEqual({ id: 'r1' });
+  });
+
+  it('throws NotFoundException on create when the subject does not exist', async () => {
+    const { service, prisma } = makeService();
+    prisma.subject.findUnique.mockResolvedValue(null);
+    await expect(
+      service.create(
+        { title: 'R', subjectId: 'missing', criteria: [] } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('deletes a rubric via deleteCascade when it is unused', async () => {
+    const { service } = makeService();
+    (service as any).repo.findByIdWithTree.mockResolvedValue({
+      id: 'r1',
+      subjectId: 'sub1',
+    });
+    (service as any).repo.countAssignmentsUsing.mockResolvedValue(0);
+    const result = await service.delete(
+      { rubricId: 'r1' } as any,
+      { id: 'u1' } as any,
+    );
+    expect((service as any).repo.deleteCascade).toHaveBeenCalledWith('r1');
     expect(result).toEqual({ id: 'r1' });
   });
 

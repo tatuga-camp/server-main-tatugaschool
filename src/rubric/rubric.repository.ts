@@ -70,8 +70,8 @@ export class RubricRepository {
     }
   }
 
-  // Delete a rubric's criteria + levels, but keep the rubric row (used by update).
-  async deleteCriteriaTree(rubricId: string): Promise<void> {
+  // Delete the whole rubric including its criteria + levels (used by delete).
+  async deleteCascade(rubricId: string): Promise<void> {
     try {
       const criteria = await this.prisma.rubricCriterion.findMany({
         where: { rubricId },
@@ -82,28 +82,32 @@ export class RubricRepository {
         where: { criterionId: { in: ids } },
       });
       await this.prisma.rubricCriterion.deleteMany({ where: { rubricId } });
-    } catch (e) {
-      this.handle(e);
-    }
-  }
-
-  // Delete the whole rubric including its criteria + levels (used by delete).
-  async deleteCascade(rubricId: string): Promise<void> {
-    try {
-      await this.deleteCriteriaTree(rubricId);
       await this.prisma.rubric.delete({ where: { id: rubricId } });
     } catch (e) {
       this.handle(e);
     }
   }
 
-  // Update the rubric row and (re)create its criteria subtree.
-  async updateRubricWithCriteria(
+  // Atomically replace a rubric's criteria/levels subtree and update the row.
+  // Wraps delete + recreate in a single transaction so a failure can't leave
+  // the rubric with its criteria wiped (used by update).
+  async replaceCriteria(
     rubricId: string,
     data: Prisma.RubricUpdateInput,
   ): Promise<Rubric> {
     try {
-      return await this.prisma.rubric.update({ where: { id: rubricId }, data });
+      return await this.prisma.$transaction(async (tx) => {
+        const criteria = await tx.rubricCriterion.findMany({
+          where: { rubricId },
+          select: { id: true },
+        });
+        const ids = criteria.map((c) => c.id);
+        await tx.rubricLevel.deleteMany({
+          where: { criterionId: { in: ids } },
+        });
+        await tx.rubricCriterion.deleteMany({ where: { rubricId } });
+        return tx.rubric.update({ where: { id: rubricId }, data });
+      });
     } catch (e) {
       this.handle(e);
     }

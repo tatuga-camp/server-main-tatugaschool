@@ -1,7 +1,6 @@
 import {
   ForbiddenException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Rubric } from '@prisma/client';
@@ -19,7 +18,6 @@ import {
 
 @Injectable()
 export class RubricService {
-  private logger = new Logger(RubricService.name);
   repo: RubricRepository;
 
   constructor(
@@ -30,45 +28,44 @@ export class RubricService {
     this.repo = new RubricRepository(this.prisma);
   }
 
-  async create(dto: CreateRubricDto, user: UserJwtPayload): Promise<Rubric> {
-    try {
-      const subject = await this.prisma.subject.findUnique({
-        where: { id: dto.subjectId },
-      });
-      if (!subject) throw new NotFoundException('Subject not found');
-      await this.teacherOnSubjectService.ValidateAccess({
-        userId: user.id,
-        subjectId: dto.subjectId,
-      });
-      return await this.repo.createFull({
-        data: {
-          title: dto.title,
-          description: dto.description,
-          subjectId: dto.subjectId,
-          schoolId: subject.schoolId,
-          userId: user.id,
-          criteria: {
-            create: dto.criteria.map((c) => ({
-              title: c.title,
-              description: c.description,
-              weight: c.weight,
-              order: c.order,
-              levels: {
-                create: c.levels.map((l) => ({
-                  title: l.title,
-                  description: l.description,
-                  points: l.points,
-                  order: l.order,
-                })),
-              },
-            })),
-          },
+  private buildCriteriaCreate(criteria: CreateRubricDto['criteria']) {
+    return {
+      create: criteria.map((c) => ({
+        title: c.title,
+        description: c.description,
+        weight: c.weight,
+        order: c.order,
+        levels: {
+          create: c.levels.map((l) => ({
+            title: l.title,
+            description: l.description,
+            points: l.points,
+            order: l.order,
+          })),
         },
-      });
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+      })),
+    };
+  }
+
+  async create(dto: CreateRubricDto, user: UserJwtPayload): Promise<Rubric> {
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: dto.subjectId },
+    });
+    if (!subject) throw new NotFoundException('Subject not found');
+    await this.teacherOnSubjectService.ValidateAccess({
+      userId: user.id,
+      subjectId: dto.subjectId,
+    });
+    return this.repo.createFull({
+      data: {
+        title: dto.title,
+        description: dto.description,
+        subjectId: dto.subjectId,
+        schoolId: subject.schoolId,
+        userId: user.id,
+        criteria: this.buildCriteriaCreate(dto.criteria),
+      },
+    });
   }
 
   async findBySubject(dto: GetRubricsBySubjectDto, user: UserJwtPayload) {
@@ -96,27 +93,11 @@ export class RubricService {
       userId: user.id,
       subjectId: existing.subjectId,
     });
-    // Keep the same rubric id; replace its criteria/levels from the dto.
-    await this.repo.deleteCriteriaTree(dto.rubricId);
-    return this.repo.updateRubricWithCriteria(dto.rubricId, {
+    // Keep the same rubric id; atomically replace its criteria/levels from the dto.
+    return this.repo.replaceCriteria(dto.rubricId, {
       title: dto.title,
       description: dto.description,
-      criteria: {
-        create: dto.criteria.map((c) => ({
-          title: c.title,
-          description: c.description,
-          weight: c.weight,
-          order: c.order,
-          levels: {
-            create: c.levels.map((l) => ({
-              title: l.title,
-              description: l.description,
-              points: l.points,
-              order: l.order,
-            })),
-          },
-        })),
-      },
+      criteria: this.buildCriteriaCreate(dto.criteria),
     });
   }
 
