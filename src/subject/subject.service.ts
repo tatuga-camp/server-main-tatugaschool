@@ -280,6 +280,50 @@ export class SubjectService {
             ),
         );
       }
+      // Duplicate rubrics (with their criteria + levels) into the new subject,
+      // mapping each old rubric id → new rubric id so duplicated assignments can
+      // re-attach to the cloned rubric (not the original subject's rubric).
+      // Student grade rows (RubricScoreOnStudentAssignment) are NOT copied — a
+      // duplicated subject starts ungraded.
+      const oldRubrics = await this.prisma.rubric.findMany({
+        where: { subjectId: subject.id },
+        include: {
+          criteria: {
+            orderBy: { order: 'asc' },
+            include: { levels: { orderBy: { order: 'asc' } } },
+          },
+        },
+      });
+      const rubricIdMap = new Map<string, string>();
+      for (const rubric of oldRubrics) {
+        const newRubric = await this.prisma.rubric.create({
+          data: {
+            title: rubric.title,
+            description: rubric.description,
+            subjectId: create.id,
+            schoolId: create.schoolId,
+            userId: user.id,
+            criteria: {
+              create: rubric.criteria.map((c) => ({
+                title: c.title,
+                description: c.description,
+                weight: c.weight,
+                order: c.order,
+                levels: {
+                  create: c.levels.map((l) => ({
+                    title: l.title,
+                    description: l.description,
+                    points: l.points,
+                    order: l.order,
+                  })),
+                },
+              })),
+            },
+          },
+        });
+        rubricIdMap.set(rubric.id, newRubric.id);
+      }
+
       if (assignments.length > 0) {
         await Promise.all(
           assignments.map(async (assignment) => {
@@ -303,6 +347,18 @@ export class SubjectService {
               },
               user,
             );
+
+            // Re-attach the cloned rubric (createAssignment doesn't accept
+            // rubricId, so set it via update once the assignment exists).
+            const mappedRubricId = assignment.rubricId
+              ? rubricIdMap.get(assignment.rubricId)
+              : undefined;
+            if (mappedRubricId) {
+              await this.prisma.assignment.update({
+                where: { id: newAssignment.id },
+                data: { rubricId: mappedRubricId },
+              });
+            }
 
             const filesOnAssignments =
               await this.fileAssignmentService.fileAssignmentRepository.findMany(
