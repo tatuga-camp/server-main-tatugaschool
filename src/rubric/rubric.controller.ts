@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   Patch,
   Post,
@@ -13,6 +14,7 @@ import { UserGuard } from '../auth/guard';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { RubricService } from './rubric.service';
 import {
+  AiDraftRubricDto,
   CreateRubricDto,
   GetRubricsBySubjectDto,
   RubricIdParamDto,
@@ -42,6 +44,17 @@ export class RubricController {
   @Get(':rubricId')
   getById(@Param() dto: RubricIdParamDto, @GetUser() user: UserJwtPayload) {
     return this.rubricService.getById(dto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Post('ai-draft')
+  aiDraft(
+    @Body() dto: AiDraftRubricDto,
+    @GetUser() user: UserJwtPayload,
+    @Headers('authorization') authorization: string,
+  ) {
+    const accessToken = (authorization ?? '').replace(/^Bearer\s+/i, '');
+    return this.rubricService.aiDraft(dto, user, accessToken);
   }
 
   @UseGuards(UserGuard)
