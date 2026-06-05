@@ -73,16 +73,23 @@ export class RubricRepository {
   // Delete the whole rubric including its criteria + levels (used by delete).
   async deleteCascade(rubricId: string): Promise<void> {
     try {
-      const criteria = await this.prisma.rubricCriterion.findMany({
-        where: { rubricId },
-        select: { id: true },
+      await this.prisma.$transaction(async (tx) => {
+        const criteria = await tx.rubricCriterion.findMany({
+          where: { rubricId },
+          select: { id: true },
+        });
+        const ids = criteria.map((c) => c.id);
+        // Remove dependent grade rows first — they hold required relations to
+        // the criteria/levels we are about to delete (else Prisma P2014).
+        await tx.rubricScoreOnStudentAssignment.deleteMany({
+          where: { criterionId: { in: ids } },
+        });
+        await tx.rubricLevel.deleteMany({
+          where: { criterionId: { in: ids } },
+        });
+        await tx.rubricCriterion.deleteMany({ where: { rubricId } });
+        await tx.rubric.delete({ where: { id: rubricId } });
       });
-      const ids = criteria.map((c) => c.id);
-      await this.prisma.rubricLevel.deleteMany({
-        where: { criterionId: { in: ids } },
-      });
-      await this.prisma.rubricCriterion.deleteMany({ where: { rubricId } });
-      await this.prisma.rubric.delete({ where: { id: rubricId } });
     } catch (e) {
       this.handle(e);
     }
@@ -102,6 +109,13 @@ export class RubricRepository {
           select: { id: true },
         });
         const ids = criteria.map((c) => c.id);
+        // Remove dependent grade rows first — they hold required relations to
+        // the criteria/levels we are about to delete (else Prisma P2014).
+        // Editing a rubric's structure therefore clears its prior per-criterion
+        // grade breakdowns; teachers re-grade against the updated rubric.
+        await tx.rubricScoreOnStudentAssignment.deleteMany({
+          where: { criterionId: { in: ids } },
+        });
         await tx.rubricLevel.deleteMany({
           where: { criterionId: { in: ids } },
         });
