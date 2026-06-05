@@ -3,12 +3,12 @@ import {
   Controller,
   Delete,
   Get,
-  Headers,
   Param,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { AuthService } from '../auth/auth.service';
 import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
@@ -23,7 +23,10 @@ import {
 
 @Controller('v1/rubrics')
 export class RubricController {
-  constructor(private rubricService: RubricService) {}
+  constructor(
+    private rubricService: RubricService,
+    private authService: AuthService,
+  ) {}
 
   @UseGuards(UserGuard)
   @Post()
@@ -48,12 +51,8 @@ export class RubricController {
 
   @UseGuards(UserGuard)
   @Post('ai-draft')
-  aiDraft(
-    @Body() dto: AiDraftRubricDto,
-    @GetUser() user: UserJwtPayload,
-    @Headers('authorization') authorization: string,
-  ) {
-    const accessToken = (authorization ?? '').replace(/^Bearer\s+/i, '');
+  async aiDraft(@Body() dto: AiDraftRubricDto, @GetUser() user: UserJwtPayload) {
+    const accessToken = await this.authService.getGoogleAccessToken();
     return this.rubricService.aiDraft(dto, user, accessToken);
   }
 
