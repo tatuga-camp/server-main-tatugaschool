@@ -47,6 +47,7 @@ model User {
   classes                   Class[]
   notifications             Notification[]
   wordClouds                WordCloud[]
+  rubrics                   Rubric[]
 }
 
 enum Language {
@@ -128,6 +129,7 @@ model School {
   studentOnGroups          StudentOnGroup[]
   wordClouds               WordCloud[]
   wordCloudAnswers         WordCloudAnswer[]
+  rubrics                  Rubric[]
 }
 
 model MemberOnSchool {
@@ -280,6 +282,7 @@ model Subject {
   questionOnVideos          QuestionOnVideo[]
   wordClouds                WordCloud[]
   wordCloudAnswers          WordCloudAnswer[]
+  rubrics                   Rubric[]
 
   @@index([educationYear, schoolId])
   @@index([isVerifyLine, lineGroupId])
@@ -458,6 +461,9 @@ model Assignment {
 
   tags String[]
 
+  rubricId String? @db.ObjectId
+  rubric   Rubric? @relation(fields: [rubricId], references: [id])
+
   subjectId String  @db.ObjectId
   subject   Subject @relation(fields: [subjectId], references: [id])
 
@@ -569,6 +575,7 @@ model StudentOnAssignment {
   fileOnStudentAssignments  FileOnStudentAssignment[]
   commentOnAssignments      CommentOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
+  rubricScores              RubricScoreOnStudentAssignment[]
 
   @@unique([studentOnSubjectId, assignmentId])
   @@index([assignmentId])
@@ -1102,4 +1109,86 @@ enum WordCloudStatus {
 enum WordCloudAccess {
   PUBLIC
   STUDENTS_ONLY
+}
+
+model Rubric {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+
+  subjectId String  @db.ObjectId
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  schoolId  String  @db.ObjectId
+  school    School  @relation(fields: [schoolId], references: [id])
+  userId    String? @db.ObjectId
+  user      User?   @relation(fields: [userId], references: [id])
+
+  criteria    RubricCriterion[]
+  assignments Assignment[]
+
+  @@index([subjectId])
+  @@index([schoolId])
+}
+
+model RubricCriterion {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+  weight      Float  @default(1)
+  order       Int
+
+  rubricId String @db.ObjectId
+  rubric   Rubric @relation(fields: [rubricId], references: [id])
+
+  levels RubricLevel[]
+  scores RubricScoreOnStudentAssignment[]
+
+  @@index([rubricId])
+}
+
+model RubricLevel {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title       String
+  description String?
+  points      Float
+  order       Int
+
+  criterionId String          @db.ObjectId
+  criterion   RubricCriterion @relation(fields: [criterionId], references: [id])
+
+  scores RubricScoreOnStudentAssignment[]
+
+  @@index([criterionId])
+}
+
+model RubricScoreOnStudentAssignment {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  points  Float
+  comment String?
+
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id])
+  criterionId           String              @db.ObjectId
+  criterion             RubricCriterion     @relation(fields: [criterionId], references: [id])
+  selectedLevelId       String              @db.ObjectId
+  selectedLevel         RubricLevel         @relation(fields: [selectedLevelId], references: [id])
+
+  subjectId String @db.ObjectId
+  schoolId  String @db.ObjectId
+
+  @@unique([studentOnAssignmentId, criterionId])
+  @@index([studentOnAssignmentId])
+  @@index([subjectId])
 }
