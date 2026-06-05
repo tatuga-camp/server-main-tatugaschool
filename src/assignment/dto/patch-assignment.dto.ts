@@ -17,6 +17,7 @@ import {
   IsUrl,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -68,6 +69,11 @@ class UpdateAssignmentBody {
   @MaxLength(30, { each: true })
   @Transform(({ value }) => normalizeTags(value))
   tags?: string[];
+
+  @IsOptional()
+  @ValidateIf((o) => o.rubricId !== null)
+  @IsMongoId()
+  rubricId?: string | null;
 }
 
 class UpdateAssignmentQuery {
