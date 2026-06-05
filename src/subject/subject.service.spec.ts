@@ -39,6 +39,8 @@ describe('SubjectService', () => {
     teacherOnSubject: { create: jest.fn() },
     questionOnVideo: { findMany: jest.fn(), create: jest.fn() },
     studentOnSubject: { findMany: jest.fn() },
+    rubric: { findMany: jest.fn(), create: jest.fn() },
+    assignment: { update: jest.fn() },
   };
 
   const mockWheelOfNameService = {
@@ -273,6 +275,9 @@ describe('SubjectService', () => {
         { id: 'qv1' },
       ]);
 
+      // No rubrics on the source subject in this case.
+      mockPrismaService.rubric.findMany.mockResolvedValue([]);
+
       const result = await service.duplicateSubject(
         {
           subjectId: 's1',
@@ -291,6 +296,104 @@ describe('SubjectService', () => {
       ).toHaveBeenCalled();
       expect(mockAssignmentService.createAssignment).toHaveBeenCalled();
       expect(result).toEqual(mockSubject);
+    });
+
+    it('should duplicate rubrics and re-attach them to duplicated assignments', async () => {
+      const mockSubject = { id: 's1', schoolId: 'sch1', title: 'Old Subject' };
+      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue(
+        mockSubject,
+      );
+      mockClassService.classRepository.findById.mockResolvedValue({ id: 'c1' });
+      mockMemberOnSchoolService.validateAccess.mockResolvedValue(true);
+      jest
+        .spyOn(service, 'createSubject')
+        .mockResolvedValue({ id: 's2', schoolId: 'sch1' } as any);
+
+      // No attendance tables/status to keep the test focused on rubrics.
+      mockAttendanceTableService.attendanceTableRepository.findMany.mockResolvedValue(
+        [],
+      );
+      mockAttendanceStatusListService.attendanceStatusListSRepository.findMany.mockResolvedValue(
+        [],
+      );
+
+      // One assignment that references rubric r1.
+      mockAssignmentService.assignmentRepository.findMany.mockResolvedValue([
+        { id: 'a1', title: 'Ass1', rubricId: 'r1' },
+      ]);
+      mockAssignmentService.createAssignment.mockResolvedValue({ id: 'na1' });
+      mockFileAssignmentService.fileAssignmentRepository.findMany.mockResolvedValue(
+        [],
+      );
+      mockPrismaService.questionOnVideo.findMany.mockResolvedValue([]);
+
+      // Source subject has one rubric (r1) with one criterion + two levels.
+      mockPrismaService.rubric.findMany.mockResolvedValue([
+        {
+          id: 'r1',
+          title: 'Presentation',
+          description: 'desc',
+          criteria: [
+            {
+              id: 'cr1',
+              title: 'Delivery',
+              description: null,
+              weight: 2,
+              order: 0,
+              levels: [
+                { id: 'l1', title: 'Great', description: 'g', points: 4, order: 0 },
+                { id: 'l2', title: 'Poor', description: null, points: 1, order: 1 },
+              ],
+            },
+          ],
+        },
+      ]);
+      mockPrismaService.rubric.create.mockResolvedValue({ id: 'r2' });
+      mockPrismaService.assignment.update.mockResolvedValue({ id: 'na1' });
+
+      await service.duplicateSubject(
+        {
+          subjectId: 's1',
+          classroomId: 'c1',
+          title: 'New',
+          description: 'Desc',
+          educationYear: '2024',
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      // The rubric is cloned into the new subject with its nested tree.
+      expect(mockPrismaService.rubric.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            title: 'Presentation',
+            subjectId: 's2',
+            schoolId: 'sch1',
+            userId: 'u1',
+            criteria: {
+              create: [
+                expect.objectContaining({
+                  title: 'Delivery',
+                  weight: 2,
+                  order: 0,
+                  levels: {
+                    create: [
+                      expect.objectContaining({ title: 'Great', points: 4, order: 0 }),
+                      expect.objectContaining({ title: 'Poor', points: 1, order: 1 }),
+                    ],
+                  },
+                }),
+              ],
+            },
+          }),
+        }),
+      );
+
+      // The duplicated assignment is re-attached to the cloned rubric (r2).
+      expect(mockPrismaService.assignment.update).toHaveBeenCalledWith({
+        where: { id: 'na1' },
+        data: { rubricId: 'r2' },
+      });
     });
   });
 
