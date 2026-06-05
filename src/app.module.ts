@@ -51,6 +51,7 @@ import { LineBotModule } from './line-bot/line-bot.module';
 import { AiModule } from './ai/ai.module';
 import { RedisModule } from './redis/redis.module';
 import { WordCloudModule } from './word-cloud/word-cloud.module';
+import { RubricModule } from './rubric/rubric.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { WordCloudModule } from './word-cloud/word-cloud.module';
     LineBotModule,
     RedisModule,
     WordCloudModule,
+    RubricModule,
   ],
   controllers: [AppController],
   providers: [AppService],
