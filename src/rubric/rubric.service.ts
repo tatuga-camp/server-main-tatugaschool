@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,9 +10,11 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { AiService } from '../ai/ai.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { RubricRepository } from './rubric.repository';
+import { computeRubricScore } from './rubric-math';
 import {
   CreateRubricDto,
   GetRubricsBySubjectDto,
+  GradeRubricDto,
   RubricIdParamDto,
   UpdateRubricDto,
 } from './dto';
@@ -119,5 +122,90 @@ export class RubricService {
     }
     await this.repo.deleteCascade(dto.rubricId);
     return { id: dto.rubricId };
+  }
+
+  private async loadAssignmentRubric(assignmentId: string) {
+    const loaded = await this.repo.findAssignmentRubric(assignmentId);
+    if (!loaded) return null;
+    return {
+      maxScore: loaded.maxScore,
+      criteria: loaded.rubric.criteria.map((c) => ({
+        id: c.id,
+        weight: c.weight,
+        levels: c.levels.map((l) => ({ id: l.id, points: l.points })),
+      })),
+    };
+  }
+
+  async gradeStudent(dto: GradeRubricDto, user: UserJwtPayload) {
+    const soa = await this.repo.getStudentOnAssignment(
+      dto.studentOnAssignmentId,
+    );
+    if (!soa) throw new NotFoundException('Student assignment not found');
+    await this.teacherOnSubjectService.ValidateAccess({
+      userId: user.id,
+      subjectId: soa.subjectId,
+    });
+
+    const loaded = await this.loadAssignmentRubric(soa.assignmentId);
+    if (!loaded) {
+      throw new BadRequestException('This assignment has no rubric attached.');
+    }
+
+    const resolved = dto.items.map((item) => {
+      const criterion = loaded.criteria.find((c) => c.id === item.criterionId);
+      if (!criterion) {
+        throw new BadRequestException(
+          `Criterion ${item.criterionId} is not part of this assignment's rubric.`,
+        );
+      }
+      const level = criterion.levels.find((l) => l.id === item.selectedLevelId);
+      if (!level) {
+        throw new BadRequestException(
+          `Level ${item.selectedLevelId} is not part of criterion ${item.criterionId}.`,
+        );
+      }
+      return {
+        criterionId: item.criterionId,
+        selectedLevelId: item.selectedLevelId,
+        comment: item.comment,
+        points: level.points,
+        weight: criterion.weight,
+      };
+    });
+
+    const score = computeRubricScore({
+      criteria: loaded.criteria.map((c) => ({
+        weight: c.weight,
+        maxPoints: Math.max(0, ...c.levels.map((l) => l.points)),
+      })),
+      selections: resolved.map((r) => ({ points: r.points, weight: r.weight })),
+      maxScore: loaded.maxScore,
+    });
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.rubricScoreOnStudentAssignment.deleteMany({
+        where: { studentOnAssignmentId: dto.studentOnAssignmentId },
+      });
+      for (const r of resolved) {
+        await tx.rubricScoreOnStudentAssignment.create({
+          data: {
+            studentOnAssignmentId: dto.studentOnAssignmentId,
+            criterionId: r.criterionId,
+            selectedLevelId: r.selectedLevelId,
+            comment: r.comment,
+            points: r.points,
+            subjectId: soa.subjectId,
+            schoolId: soa.schoolId,
+          },
+        });
+      }
+      await tx.studentOnAssignment.update({
+        where: { id: dto.studentOnAssignmentId },
+        data: { score, status: 'REVIEWD', reviewdAt: new Date() },
+      });
+    });
+
+    return { studentOnAssignmentId: dto.studentOnAssignmentId, score };
   }
 }

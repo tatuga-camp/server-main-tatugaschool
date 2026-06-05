@@ -136,4 +136,21 @@ export class RubricRepository {
       this.handle(e);
     }
   }
+
+  async findAssignmentRubric(assignmentId: string) {
+    try {
+      const assignment = await this.prisma.assignment.findUnique({
+        where: { id: assignmentId },
+        select: { maxScore: true, rubricId: true },
+      });
+      if (!assignment?.rubricId) return null;
+      const rubric = await this.prisma.rubric.findUnique({
+        where: { id: assignment.rubricId },
+        include: { criteria: { include: { levels: true } } },
+      });
+      return rubric ? { maxScore: assignment.maxScore, rubric } : null;
+    } catch (e) {
+      this.handle(e);
+    }
+  }
 }

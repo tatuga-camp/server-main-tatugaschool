@@ -1,4 +1,8 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { RubricService } from './rubric.service';
 
 const subject = { id: 'sub1', schoolId: 'school1' };
@@ -86,5 +90,73 @@ describe('RubricService CRUD', () => {
     await expect(
       service.delete({ rubricId: 'r1' } as any, { id: 'u1' } as any),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
+
+describe('RubricService.gradeStudent', () => {
+  function gradingService() {
+    const prisma: any = {
+      subject: { findUnique: jest.fn().mockResolvedValue(subject) },
+      $transaction: jest.fn(async (fn: any) => fn(prisma)),
+      rubricScoreOnStudentAssignment: {
+        deleteMany: jest.fn().mockResolvedValue({}),
+        create: jest.fn().mockResolvedValue({}),
+      },
+      studentOnAssignment: { update: jest.fn().mockResolvedValue({ id: 'soa1' }) },
+    };
+    const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
+    const ai: any = {};
+    const service = new RubricService(prisma, teacher, ai);
+    (service as any).repo = {
+      getStudentOnAssignment: jest.fn().mockResolvedValue({
+        id: 'soa1',
+        assignmentId: 'a1',
+        subjectId: 'sub1',
+        schoolId: 'school1',
+      }),
+    };
+    (service as any).loadAssignmentRubric = jest.fn().mockResolvedValue({
+      maxScore: 10,
+      criteria: [
+        {
+          id: 'c1',
+          weight: 1,
+          levels: [
+            { id: 'l-lo', points: 1 },
+            { id: 'l-hi', points: 4 },
+          ],
+        },
+      ],
+    });
+    return { service, prisma, teacher };
+  }
+
+  it('rejects an item whose criterion is not in the assignment rubric', async () => {
+    const { service } = gradingService();
+    await expect(
+      service.gradeStudent(
+        {
+          studentOnAssignmentId: 'soa1',
+          items: [{ criterionId: 'XXX', selectedLevelId: 'l-hi' }],
+        } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('computes and writes the normalized score with status REVIEWD', async () => {
+    const { service, prisma } = gradingService();
+    await service.gradeStudent(
+      {
+        studentOnAssignmentId: 'soa1',
+        items: [{ criterionId: 'c1', selectedLevelId: 'l-hi' }],
+      } as any,
+      { id: 'u1' } as any,
+    );
+    expect(prisma.studentOnAssignment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ score: 10, status: 'REVIEWD' }),
+      }),
+    );
   });
 });
