@@ -216,7 +216,12 @@ export class RubricService {
       });
     });
 
-    return { studentOnAssignmentId: dto.studentOnAssignmentId, score };
+    return {
+      studentOnAssignmentId: dto.studentOnAssignmentId,
+      score,
+      subjectId: soa.subjectId,
+      assignmentId: soa.assignmentId,
+    };
   }
 
   private shapeBreakdown(
