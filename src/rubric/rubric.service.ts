@@ -297,10 +297,20 @@ export class RubricService {
         throw new Error('Each criterion needs a title and >=2 levels');
       }
       for (const l of c.levels) {
-        if (typeof l.title !== 'string' || typeof l.points !== 'number') {
+        if (typeof l.title !== 'string') {
           throw new Error('Each level needs a title and numeric points');
         }
+        if (typeof l.points !== 'number' || !Number.isFinite(l.points)) {
+          throw new Error('Each level needs a title and numeric points');
+        }
+        l.points = Math.max(0, l.points);
       }
+      c.weight =
+        typeof c.weight === 'number' &&
+        Number.isFinite(c.weight) &&
+        c.weight >= 0
+          ? c.weight
+          : 1;
     }
     return obj as RubricDraft;
   }
@@ -330,6 +340,9 @@ export class RubricService {
           ?.map((p: any) => p.text)
           .filter(Boolean)
           .join('\n') ?? undefined;
+      if (curriculumSummary && curriculumSummary.length > 4000) {
+        curriculumSummary = curriculumSummary.slice(0, 4000);
+      }
     }
 
     const levelCount = dto.levelCount ?? 4;

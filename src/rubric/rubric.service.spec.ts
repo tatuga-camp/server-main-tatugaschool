@@ -268,4 +268,27 @@ describe('RubricService.aiDraft', () => {
     ).rejects.toBeTruthy();
     expect(ai.generateContent).toHaveBeenCalledTimes(2);
   });
+
+  it('defaults missing weight to 1 and clamps negative points', async () => {
+    const json = JSON.stringify({
+      title: 'R',
+      criteria: [
+        {
+          title: 'C1', // no weight
+          levels: [
+            { title: 'Hi', points: 4 },
+            { title: 'Lo', points: -2 },
+          ],
+        },
+      ],
+    });
+    const { service } = aiService('```json\n' + json + '\n```');
+    const result = await service.aiDraft(
+      { subjectId: 'sub1', topic: 't', gradeLevel: 'G5', learningGoal: 'g' } as any,
+      { id: 'u1' } as any,
+      'token',
+    );
+    expect(result.draft.criteria[0].weight).toBe(1);
+    expect(result.draft.criteria[0].levels[1].points).toBe(0);
+  });
 });
