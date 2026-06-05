@@ -9,11 +9,11 @@ export class WordCloudIdParamDto {
 export class AnswerWordCloudDto {
   @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
+  @MaxLength(999)
   text: string;
 
   @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
+  @MaxLength(999)
   browserToken: string;
 }
