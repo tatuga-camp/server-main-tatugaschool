@@ -176,3 +176,44 @@ describe('RubricService.gradeStudent', () => {
     );
   });
 });
+
+describe('RubricService.readBreakdownForStudent', () => {
+  it('throws Forbidden when the student does not own the assignment', async () => {
+    const prisma: any = {};
+    const teacher: any = { ValidateAccess: jest.fn() };
+    const ai: any = {};
+    const service = new RubricService(prisma, teacher, ai);
+    (service as any).repo = {
+      findBreakdown: jest.fn().mockResolvedValue({
+        soa: { id: 'soa1', studentId: 'studentA', subjectId: 'sub1', score: 5, assignment: { id: 'a1', maxScore: 10, rubric: null } },
+        scores: [],
+      }),
+    };
+    await expect(
+      service.readBreakdownForStudent(
+        { studentOnAssignmentId: 'soa1' } as any,
+        { id: 'studentB', schoolId: 'school1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('returns a shaped breakdown for the owning student', async () => {
+    const prisma: any = {};
+    const teacher: any = {};
+    const ai: any = {};
+    const service = new RubricService(prisma, teacher, ai);
+    (service as any).repo = {
+      findBreakdown: jest.fn().mockResolvedValue({
+        soa: { id: 'soa1', studentId: 'studentA', subjectId: 'sub1', score: 8, assignment: { id: 'a1', maxScore: 10, rubric: { id: 'r1', title: 'R', criteria: [{ id: 'c1', title: 'C1', description: null, weight: 1, levels: [{ id: 'l1', title: 'Good', description: null, points: 4 }] }] } } },
+        scores: [{ criterionId: 'c1', selectedLevelId: 'l1', points: 4, comment: 'nice' }],
+      }),
+    };
+    const result = await service.readBreakdownForStudent(
+      { studentOnAssignmentId: 'soa1' } as any,
+      { id: 'studentA', schoolId: 'school1' } as any,
+    );
+    expect(result.finalScore).toBe(8);
+    expect(result.rubric.criteria[0].selectedLevelId).toBe('l1');
+    expect(result.rubric.criteria[0].comment).toBe('nice');
+  });
+});

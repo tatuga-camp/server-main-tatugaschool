@@ -137,6 +137,41 @@ export class RubricRepository {
     }
   }
 
+  async findBreakdown(studentOnAssignmentId: string) {
+    try {
+      const soa = await this.prisma.studentOnAssignment.findUnique({
+        where: { id: studentOnAssignmentId },
+        select: {
+          id: true,
+          studentId: true,
+          subjectId: true,
+          score: true,
+          assignment: {
+            select: {
+              id: true,
+              maxScore: true,
+              rubric: {
+                include: {
+                  criteria: {
+                    orderBy: { order: 'asc' },
+                    include: { levels: { orderBy: { order: 'asc' } } },
+                  },
+                },
+              },
+            },
+          },
+        },
+      });
+      if (!soa) return null;
+      const scores = await this.prisma.rubricScoreOnStudentAssignment.findMany({
+        where: { studentOnAssignmentId },
+      });
+      return { soa, scores };
+    } catch (e) {
+      this.handle(e);
+    }
+  }
+
   async findAssignmentRubric(assignmentId: string) {
     try {
       const assignment = await this.prisma.assignment.findUnique({

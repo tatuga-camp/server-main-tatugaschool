@@ -8,7 +8,7 @@ import { Rubric } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { AiService } from '../ai/ai.service';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { RubricRepository } from './rubric.repository';
 import { computeRubricScore } from './rubric-math';
 import {
@@ -16,6 +16,7 @@ import {
   GetRubricsBySubjectDto,
   GradeRubricDto,
   RubricIdParamDto,
+  StudentOnAssignmentIdParamDto,
   UpdateRubricDto,
 } from './dto';
 
@@ -212,5 +213,61 @@ export class RubricService {
     });
 
     return { studentOnAssignmentId: dto.studentOnAssignmentId, score };
+  }
+
+  private shapeBreakdown(
+    data: NonNullable<Awaited<ReturnType<RubricRepository['findBreakdown']>>>,
+  ) {
+    const rubric = data.soa.assignment?.rubric ?? null;
+    const byCriterion = new Map(data.scores.map((s) => [s.criterionId, s]));
+    return {
+      studentOnAssignmentId: data.soa.id,
+      finalScore: data.soa.score,
+      maxScore: data.soa.assignment?.maxScore ?? null,
+      rubric: rubric && {
+        id: rubric.id,
+        title: rubric.title,
+        criteria: rubric.criteria.map((c) => ({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          weight: c.weight,
+          levels: c.levels.map((l) => ({
+            id: l.id,
+            title: l.title,
+            description: l.description,
+            points: l.points,
+          })),
+          selectedLevelId: byCriterion.get(c.id)?.selectedLevelId ?? null,
+          points: byCriterion.get(c.id)?.points ?? null,
+          comment: byCriterion.get(c.id)?.comment ?? null,
+        })),
+      },
+    };
+  }
+
+  async readBreakdownForTeacher(
+    dto: StudentOnAssignmentIdParamDto,
+    user: UserJwtPayload,
+  ) {
+    const data = await this.repo.findBreakdown(dto.studentOnAssignmentId);
+    if (!data) throw new NotFoundException('Student assignment not found');
+    await this.teacherOnSubjectService.ValidateAccess({
+      userId: user.id,
+      subjectId: data.soa.subjectId,
+    });
+    return this.shapeBreakdown(data);
+  }
+
+  async readBreakdownForStudent(
+    dto: StudentOnAssignmentIdParamDto,
+    student: StudentJwtPayload,
+  ) {
+    const data = await this.repo.findBreakdown(dto.studentOnAssignmentId);
+    if (!data) throw new NotFoundException('Student assignment not found');
+    if (data.soa.studentId !== student.id) {
+      throw new ForbiddenException('Not your assignment.');
+    }
+    return this.shapeBreakdown(data);
   }
 }

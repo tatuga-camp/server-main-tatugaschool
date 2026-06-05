@@ -1,9 +1,9 @@
-import { Body, Controller, Put, UseGuards } from '@nestjs/common';
-import { GetUser } from '../auth/decorators';
-import { UserGuard } from '../auth/guard';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { Body, Controller, Get, Param, Put, UseGuards } from '@nestjs/common';
+import { GetStudent, GetUser } from '../auth/decorators';
+import { StudentGuard, UserGuard } from '../auth/guard';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { RubricService } from './rubric.service';
-import { GradeRubricDto } from './dto';
+import { GradeRubricDto, StudentOnAssignmentIdParamDto } from './dto';
 
 @Controller('v1/rubric-scores')
 export class RubricScoreController {
@@ -15,5 +15,21 @@ export class RubricScoreController {
     return this.rubricService.gradeStudent(dto, user);
   }
 
-  // Task 9 adds GET /student-on-assignment/:id (teacher) and .../student (student) here.
+  @UseGuards(UserGuard)
+  @Get('student-on-assignment/:studentOnAssignmentId')
+  readForTeacher(
+    @Param() dto: StudentOnAssignmentIdParamDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
+    return this.rubricService.readBreakdownForTeacher(dto, user);
+  }
+
+  @UseGuards(StudentGuard)
+  @Get('student-on-assignment/:studentOnAssignmentId/student')
+  readForStudent(
+    @Param() dto: StudentOnAssignmentIdParamDto,
+    @GetStudent() student: StudentJwtPayload,
+  ) {
+    return this.rubricService.readBreakdownForStudent(dto, student);
+  }
 }
