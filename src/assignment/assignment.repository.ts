@@ -222,6 +222,13 @@ export class AssignmentRepository implements AssignmentRepositoryType {
               studentOnAssignmentId: { in: studentOnAssignmentIds },
             },
           }),
+          // Rubric grade rows hold a required relation to studentOnAssignment;
+          // remove them before the studentOnAssignments are deleted (else P2014).
+          this.prisma.rubricScoreOnStudentAssignment.deleteMany({
+            where: {
+              studentOnAssignmentId: { in: studentOnAssignmentIds },
+            },
+          }),
         ]);
       }
 

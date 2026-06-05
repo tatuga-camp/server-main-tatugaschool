@@ -304,6 +304,38 @@ export class SubjectRepository implements Repository {
 
       await Promise.all([baseLeafDeletes, cascades]);
 
+      // 4b. Remove the subject's rubrics and their nested tree. Rubric has a
+      //     required relation to Subject, so it must be cleared before the
+      //     Subject is deleted. Order: scores → levels → criteria → rubrics.
+      const rubrics = await this.prisma.rubric.findMany({
+        where: { subjectId: subjectId },
+        select: { id: true },
+      });
+      const rubricIds = rubrics.map((r) => r.id);
+      if (rubricIds.length > 0) {
+        const criteria = await this.prisma.rubricCriterion.findMany({
+          where: { rubricId: { in: rubricIds } },
+          select: { id: true },
+        });
+        const criterionIds = criteria.map((c) => c.id);
+        // Grade rows are normally cleared by the assignment cascade above, but
+        // delete by subjectId too in case a rubric was detached/never graded.
+        await this.prisma.rubricScoreOnStudentAssignment.deleteMany({
+          where: { subjectId: subjectId },
+        });
+        if (criterionIds.length > 0) {
+          await this.prisma.rubricLevel.deleteMany({
+            where: { criterionId: { in: criterionIds } },
+          });
+        }
+        await this.prisma.rubricCriterion.deleteMany({
+          where: { rubricId: { in: rubricIds } },
+        });
+        await this.prisma.rubric.deleteMany({
+          where: { subjectId: subjectId },
+        });
+      }
+
       // 5. studentOnSubject must run AFTER scoreOnStudent / attendance / studentOnGroups
       //    have been cleared, because Prisma's mongo connector does referential
       //    checks on those relations when deleting StudentOnSubject docs.
