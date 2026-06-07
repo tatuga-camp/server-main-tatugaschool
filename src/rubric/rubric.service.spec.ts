@@ -3,6 +3,13 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+
+// RubricService transitively imports AiService, which loads @google/genai at
+// module level (pulls in google-auth-library -> buffer-equal-constant-time and
+// crashes under newer Node). These tests inject a fake `ai` collaborator, so the
+// real AiService is never used — stub the module to keep the import chain light.
+jest.mock('../ai/ai.service', () => ({ AiService: class AiService {} }));
+
 import { RubricService } from './rubric.service';
 
 const subject = { id: 'sub1', schoolId: 'school1' };
@@ -90,6 +97,96 @@ describe('RubricService CRUD', () => {
     await expect(
       service.delete({ rubricId: 'r1' } as any, { id: 'u1' } as any),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects create when the caller is not a co-teacher or admin', async () => {
+    const { service, teacher } = makeService();
+    teacher.ValidateAccess.mockRejectedValue(
+      new ForbiddenException("You're not a teacher on this subject"),
+    );
+    await expect(
+      service.create(
+        { title: 'R', subjectId: 'sub1', criteria: [] } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect((service as any).repo.createFull).not.toHaveBeenCalled();
+  });
+
+  it('updates a rubric after validating teacher access', async () => {
+    const { service, teacher } = makeService();
+    (service as any).repo.findByIdWithTree.mockResolvedValue({
+      id: 'r1',
+      subjectId: 'sub1',
+    });
+    const result = await service.update(
+      {
+        rubricId: 'r1',
+        title: 'R2',
+        criteria: [
+          {
+            title: 'C1',
+            weight: 1,
+            order: 0,
+            levels: [
+              { title: 'Good', points: 2, order: 0 },
+              { title: 'Bad', points: 1, order: 1 },
+            ],
+          },
+        ],
+      } as any,
+      { id: 'u1' } as any,
+    );
+    expect(teacher.ValidateAccess).toHaveBeenCalledWith({
+      userId: 'u1',
+      subjectId: 'sub1',
+    });
+    expect((service as any).repo.replaceCriteria).toHaveBeenCalled();
+    expect(result).toEqual({ id: 'r1' });
+  });
+
+  it('throws NotFoundException on update when the rubric does not exist', async () => {
+    const { service } = makeService();
+    (service as any).repo.findByIdWithTree.mockResolvedValue(null);
+    await expect(
+      service.update(
+        { rubricId: 'missing', title: 'R', criteria: [] } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('rejects update when the caller is not a co-teacher or admin', async () => {
+    const { service, teacher } = makeService();
+    (service as any).repo.findByIdWithTree.mockResolvedValue({
+      id: 'r1',
+      subjectId: 'sub1',
+    });
+    teacher.ValidateAccess.mockRejectedValue(
+      new ForbiddenException("You're not a teacher on this subject"),
+    );
+    await expect(
+      service.update(
+        { rubricId: 'r1', title: 'R', criteria: [] } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect((service as any).repo.replaceCriteria).not.toHaveBeenCalled();
+  });
+
+  it('rejects delete when the caller is not a co-teacher or admin', async () => {
+    const { service, teacher } = makeService();
+    (service as any).repo.findByIdWithTree.mockResolvedValue({
+      id: 'r1',
+      subjectId: 'sub1',
+    });
+    teacher.ValidateAccess.mockRejectedValue(
+      new ForbiddenException("You're not a teacher on this subject"),
+    );
+    await expect(
+      service.delete({ rubricId: 'r1' } as any, { id: 'u1' } as any),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect((service as any).repo.deleteCascade).not.toHaveBeenCalled();
   });
 });
 
