@@ -220,6 +220,80 @@ describe('AiService', () => {
         'Summary of the file',
       );
     });
+
+    it('should strip the data URI prefix and send raw base64 to Gemini', async () => {
+      mockedAxios.get.mockResolvedValue({ data: Buffer.from('mock-data') });
+
+      jest.spyOn(service, 'generateContent').mockResolvedValue('Summary');
+
+      await service.summarizeFile({
+        imageURLs: [
+          { url: 'data:image/png;base64,iVBORw0KGgo', type: 'image/png' },
+          { url: 'http://example.com/test.jpg', type: 'image/jpeg' },
+        ],
+        accessToken: 'token',
+      });
+
+      const callArgs = (service.generateContent as jest.Mock).mock.calls[0][0];
+      const sentParts = callArgs[0].parts;
+
+      // data: URI must be reduced to the raw base64 payload only — NOT the full URI.
+      expect(sentParts[0].inlineData).toEqual({
+        mimeType: 'image/png',
+        data: 'iVBORw0KGgo',
+      });
+      // remote URL is fetched and base64-encoded
+      expect(sentParts[1].inlineData).toEqual({
+        mimeType: 'image/jpeg',
+        data: Buffer.from('mock-data').toString('base64'),
+      });
+    });
+
+    it('should skip files that exceed the inline request cap', async () => {
+      // First file is 15MB (over the ~14MB cap) → skipped; second is tiny → kept.
+      const bigBuffer = Buffer.alloc(15 * 1024 * 1024, 1);
+      mockedAxios.get
+        .mockResolvedValueOnce({ data: bigBuffer })
+        .mockResolvedValueOnce({ data: Buffer.from('small') });
+
+      jest.spyOn(service, 'generateContent').mockResolvedValue('Summary');
+
+      await service.summarizeFile({
+        imageURLs: [
+          { url: 'http://example.com/big.mp4', type: 'video/mp4' },
+          { url: 'http://example.com/small.jpg', type: 'image/jpeg' },
+        ],
+        accessToken: 'token',
+      });
+
+      const callArgs = (service.generateContent as jest.Mock).mock.calls[0][0];
+      const sentParts = callArgs[0].parts;
+
+      // Only the small file + the text prompt remain; the oversized file is dropped.
+      const inlineParts = sentParts.filter((p: any) => p.inlineData);
+      expect(inlineParts).toHaveLength(1);
+      expect(inlineParts[0].inlineData).toEqual({
+        mimeType: 'image/jpeg',
+        data: Buffer.from('small').toString('base64'),
+      });
+    });
+
+    it('should cap each download so huge files are never buffered into RAM', async () => {
+      mockedAxios.get.mockResolvedValue({ data: Buffer.from('mock-data') });
+
+      jest.spyOn(service, 'generateContent').mockResolvedValue('Summary');
+
+      await service.summarizeFile({
+        imageURLs: [{ url: 'http://example.com/test.jpg', type: 'image/jpeg' }],
+        accessToken: 'token',
+      });
+
+      // axios must be told to abort oversized responses mid-stream.
+      const [, config] = mockedAxios.get.mock.calls[0];
+      expect(config.maxContentLength).toBeGreaterThan(0);
+      expect(config.maxContentLength).toBeLessThanOrEqual(14 * 1024 * 1024);
+      expect(config.maxBodyLength).toBe(config.maxContentLength);
+    });
   });
 
   describe('suggestTeachingMaterialMetadata', () => {
@@ -265,6 +339,23 @@ describe('AiService', () => {
         titleTH: 'Test Title TH',
         keywords: ['tag1', 'tag2'],
         description: 'Long description here...',
+      });
+    });
+
+    it('should strip the data URI prefix and send raw base64 to Gemini', async () => {
+      jest.spyOn(service, 'generateContent').mockResolvedValue('{}');
+
+      await service.suggestTeachingMaterialMetadata({
+        imageURLs: [
+          { url: 'data:image/png;base64,iVBORw0KGgo', type: 'image/png' },
+        ],
+        accessToken: 'token',
+      });
+
+      const callArgs = (service.generateContent as jest.Mock).mock.calls[0][0];
+      expect(callArgs[0].parts[0].inlineData).toEqual({
+        mimeType: 'image/png',
+        data: 'iVBORw0KGgo',
       });
     });
 

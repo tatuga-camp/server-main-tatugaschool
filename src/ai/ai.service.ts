@@ -100,6 +100,114 @@ export class AiService implements AiType {
     return fullResponse;
   }
 
+  // Gemini rejects requests whose total body exceeds ~20MB with a 400
+  // INVALID_ARGUMENT. base64 inflates raw bytes by ~33%, so cap the cumulative
+  // *raw* inline payload at ~14MB to leave headroom for the prompt + encoding.
+  // Any file that would push the request past this cap is skipped.
+  private static readonly GEMINI_INLINE_LIMIT_BYTES = 14 * 1024 * 1024;
+
+  /**
+   * Resolve a media reference to its raw bytes + mime type, never buffering more
+   * than `maxBytes` into memory. Returns `null` (skip) when the media is too big
+   * or the fetch fails, so a single huge file can't OOM the process or abort the
+   * whole request. Handles both `data:` URIs and remote URLs.
+   */
+  private async resolveMediaBytes(
+    url: { url: string; type: string },
+    maxBytes: number,
+  ): Promise<{ mimeType: string; base64: string; bytes: Buffer } | null> {
+    let mimeType = url.type;
+
+    if (url.url.startsWith('data:')) {
+      // data:[<mime>][;base64],<payload> — Gemini's inlineData.data must be the
+      // raw base64 payload only, NOT the full data URI. Strip the prefix.
+      const match = url.url.match(/^data:([^;,]+)?(?:;base64)?,(.*)$/s);
+      if (!match || !match[2]) {
+        this.logger.warn('Skipping media: invalid data URI');
+        return null;
+      }
+      if (match[1]) {
+        mimeType = match[1];
+      }
+      // Estimate decoded size from the base64 length and bail BEFORE allocating
+      // the decoded Buffer if it's already over budget.
+      const estimatedBytes = Math.floor((match[2].length * 3) / 4);
+      if (estimatedBytes > maxBytes) {
+        this.logger.warn(
+          `Skipping media (${mimeType}, ~${estimatedBytes} bytes): exceeds the Gemini inline request budget`,
+        );
+        return null;
+      }
+      return {
+        mimeType,
+        base64: match[2],
+        bytes: Buffer.from(match[2], 'base64'),
+      };
+    }
+
+    try {
+      // maxContentLength/maxBodyLength are enforced chunk-by-chunk by the axios
+      // Node adapter, so an oversized (or gzip-bomb) response is aborted mid
+      // stream — memory is bounded by maxBytes, not the full file size.
+      const response = await axios.get(url.url, {
+        responseType: 'arraybuffer',
+        maxContentLength: maxBytes,
+        maxBodyLength: maxBytes,
+      });
+      const bytes = Buffer.from(response.data);
+      return { mimeType, base64: bytes.toString('base64'), bytes };
+    } catch (error: any) {
+      this.logger.warn(
+        `Skipping media (${url.url}): ${error?.message ?? 'fetch failed'}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Build the multimodal `parts` array for a set of media references, keeping
+   * inline data under Gemini's ~20MB request cap. Files are processed
+   * sequentially against a shrinking budget so peak memory is one file at a time
+   * (≤ the remaining budget), never the sum of all files. Anything that doesn't
+   * fit is skipped (and logged) without being fully downloaded.
+   */
+  private async buildContentParts(
+    supportedFiles: { url: string; type: string }[],
+  ): Promise<any[]> {
+    const parts: any[] = [];
+    let budgetRemaining = AiService.GEMINI_INLINE_LIMIT_BYTES;
+
+    for (const file of supportedFiles) {
+      if (budgetRemaining <= 0) {
+        this.logger.warn(
+          `Skipping media (${file.type}): Gemini inline request budget exhausted`,
+        );
+        continue;
+      }
+
+      const media = await this.resolveMediaBytes(file, budgetRemaining);
+      if (!media) {
+        continue;
+      }
+
+      // Defense in depth: even if the transport didn't enforce the cap (e.g. no
+      // Content-Length), never let the cumulative inline payload exceed budget.
+      if (media.bytes.length > budgetRemaining) {
+        this.logger.warn(
+          `Skipping media (${media.mimeType}, ${media.bytes.length} bytes): exceeds the Gemini inline request budget`,
+        );
+        continue;
+      }
+
+      budgetRemaining -= media.bytes.length;
+      parts.push({
+        inlineData: { mimeType: media.mimeType, data: media.base64 },
+      });
+    }
+
+    return parts;
+  }
+
   async summarizeFile(dto: {
     imageURLs: { url: string; type: string }[];
     accessToken: string;
@@ -172,28 +280,7 @@ export class AiService implements AiType {
         };
       }
 
-      const parts = await Promise.all(
-        supportedFiles.map(async (url) => {
-          if (url.url.startsWith('data:')) {
-            return {
-              inlineData: {
-                mimeType: url.type,
-                data: url.url,
-              },
-            };
-          }
-          const response = await axios.get(url.url, {
-            responseType: 'arraybuffer',
-          });
-          const base64Data = Buffer.from(response.data).toString('base64');
-          return {
-            inlineData: {
-              mimeType: url.type,
-              data: base64Data,
-            },
-          };
-        }),
-      );
+      const parts = await this.buildContentParts(supportedFiles);
       const response = await this.generateContent([
         {
           role: 'user',
@@ -272,28 +359,7 @@ export class AiService implements AiType {
         };
       }
 
-      const parts = await Promise.all(
-        supportedFiles.map(async (url) => {
-          if (url.url.startsWith('data:')) {
-            return {
-              inlineData: {
-                mimeType: url.type,
-                data: url.url,
-              },
-            };
-          }
-          const response = await axios.get(url.url, {
-            responseType: 'arraybuffer',
-          });
-          const base64Data = Buffer.from(response.data).toString('base64');
-          return {
-            inlineData: {
-              mimeType: url.type,
-              data: base64Data,
-            },
-          };
-        }),
-      );
+      const parts = await this.buildContentParts(supportedFiles);
       const response = await this.generateContent([
         {
           role: 'user',
