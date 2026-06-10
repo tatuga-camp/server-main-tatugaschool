@@ -47,6 +47,7 @@ model User {
   classes                   Class[]
   notifications             Notification[]
   wordClouds                WordCloud[]
+  wordCloudSets             WordCloudSet[]
   rubrics                   Rubric[]
 }
 
@@ -128,6 +129,7 @@ model School {
   unitOnGroups             UnitOnGroup[]
   studentOnGroups          StudentOnGroup[]
   wordClouds               WordCloud[]
+  wordCloudSets            WordCloudSet[]
   wordCloudAnswers         WordCloudAnswer[]
   rubrics                  Rubric[]
 }
@@ -281,6 +283,7 @@ model Subject {
   studentOnGroups           StudentOnGroup[]
   questionOnVideos          QuestionOnVideo[]
   wordClouds                WordCloud[]
+  wordCloudSets             WordCloudSet[]
   wordCloudAnswers          WordCloudAnswer[]
   rubrics                   Rubric[]
 
@@ -1068,10 +1071,15 @@ model WordCloud {
   school  School  @relation(fields: [schoolId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
 
+  wordCloudSetId String?       @db.ObjectId
+  order          Int           @default(0)
+  wordCloudSet   WordCloudSet? @relation(fields: [wordCloudSetId], references: [id])
+
   answers WordCloudAnswer[]
 
   @@index([subjectId])
   @@index([schoolId])
+  @@index([wordCloudSetId])
 }
 
 model WordCloudAnswer {
@@ -1099,6 +1107,31 @@ model WordCloudAnswer {
   @@index([wordCloudId])
   @@index([schoolId])
   @@index([wordCloudId, browserToken])
+}
+
+model WordCloudSet {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title             String?
+  status            WordCloudStatus @default(OPEN)
+  accessMode        WordCloudAccess @default(PUBLIC)
+  allowMultiple     Boolean         @default(false)
+  activeWordCloudId String?         @db.ObjectId
+
+  subjectId String @db.ObjectId
+  schoolId  String @db.ObjectId
+  userId    String @db.ObjectId
+
+  subject Subject @relation(fields: [subjectId], references: [id])
+  school  School  @relation(fields: [schoolId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  questions WordCloud[]
+
+  @@index([subjectId])
+  @@index([schoolId])
 }
 
 enum WordCloudStatus {
