@@ -112,7 +112,7 @@ describe('StudentService', () => {
       );
       const callArg = (service.studentRepository.create as jest.Mock).mock
         .calls[0][0];
-      expect(callArg.photo).toContain('avatars');
+      expect(callArg.photo).toContain('AVATAR');
     });
 
     it('should throw NotFoundException if class not found', async () => {
