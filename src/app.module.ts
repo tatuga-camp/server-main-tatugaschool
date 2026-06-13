@@ -21,6 +21,7 @@ import { GroupOnSubjectModule } from './group-on-subject/group-on-subject.module
 import { MemberOnSchoolModule } from './member-on-school/member-on-school.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SchoolModule } from './school/school.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { ScoreOnStudentModule } from './score-on-student/score-on-student.module';
 import { ScoreOnSubjectModule } from './score-on-subject/score-on-subject.module';
 import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
@@ -70,6 +71,7 @@ import { RubricModule } from './rubric/rubric.module';
     AttendanceRowModule,
     AttendanceModule,
     SchoolModule,
+    AnalyticsModule,
     ClassModule,
     StudentModule,
     SubjectModule,

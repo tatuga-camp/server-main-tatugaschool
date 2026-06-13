@@ -484,6 +484,7 @@ model Assignment {
 
   @@index([subjectId])
   @@index([schoolId])
+  @@index([schoolId, status])
 }
 
 enum AssignmentType {
