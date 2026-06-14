@@ -95,8 +95,8 @@ export class TeachingMaterialRepository implements Repository {
 
       const teachingMaterials = teachingMaterialRaw.map((teachingMaterial) => ({
         id: teachingMaterial._id.$oid,
-        createAt: teachingMaterial.createAt.$date,
-        updateAt: teachingMaterial.updateAt.$date,
+        createAt: new Date(teachingMaterial.createAt.$date),
+        updateAt: new Date(teachingMaterial.updateAt.$date),
         title: teachingMaterial.title as string,
         titleTH: teachingMaterial.titleTH as string,
         description: teachingMaterial.description as string,

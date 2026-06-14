@@ -208,7 +208,8 @@ export class TeachingMaterialService {
 
       if (dto.filter === 'recent') {
         teachingMaterials.sort(
-          (a, b) => b.createAt.getTime() - a.createAt.getTime(),
+          (a, b) =>
+            new Date(b.createAt).getTime() - new Date(a.createAt).getTime(),
         );
       }
 
