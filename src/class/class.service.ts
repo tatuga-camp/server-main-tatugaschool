@@ -378,7 +378,6 @@ export class ClassService {
         await this.schoolService.unlockFeatures(school);
       }
 
-      this.sendNotificationWhenClassDelete(classroom);
       return classroom;
     } catch (error) {
       this.logger.error(error);

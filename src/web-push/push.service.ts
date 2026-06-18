@@ -25,27 +25,38 @@ export class PushService {
     subscription: PushSubscription | string,
     payload: { title: string; body: string; url: URL; groupId: string },
   ) {
-    const { endpoint } = JSON.parse(subscription as string);
+    const subObj =
+      typeof subscription === 'string'
+        ? JSON.parse(subscription)
+        : subscription;
+    const { endpoint } = subObj;
+
     try {
       await webPush.sendNotification(
-        JSON.parse(subscription as string),
+        subObj,
         JSON.stringify({
           ...payload,
           icon: 'https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png',
         }),
       );
     } catch (error: any) {
-      if (error?.statusCode === 410) {
-        const subscription = await this.pushRepository.findFirst({
+      if (error?.statusCode === 410 || error?.statusCode === 404) {
+        const existingSub = await this.pushRepository.findFirst({
           where: {
             endpoint: endpoint,
           },
         });
-        await this.pushRepository.delete({
-          where: {
-            id: subscription.id,
-          },
-        });
+        if (existingSub) {
+          await this.pushRepository.delete({
+            where: {
+              id: existingSub.id,
+            },
+          });
+        }
+      } else if (error?.statusCode >= 500) {
+        this.logger.warn(
+          `Push notification transient error (${error.statusCode}): ${error.message}`,
+        );
       } else {
         this.logger.error('Error sending notification:', error);
       }
