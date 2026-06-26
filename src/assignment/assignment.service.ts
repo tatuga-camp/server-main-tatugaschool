@@ -688,14 +688,14 @@ export class AssignmentService {
 
       text += '\n' + summaries.map((s) => s.summary).join('\n');
       // 1. Detect the language of the combined text.
-      const detectedLanguage = await this.aiService.detectLanguage(
-        text,
-        accessToken,
-      );
+      // const detectedLanguage = await this.aiService.detectLanguage(
+      //   text,
+      //   accessToken,
+      // );
       // 2. If the language is not English, translate it to English.
-      if (detectedLanguage !== 'en') {
-        text = await this.aiService.translateText(text, 'en', accessToken);
-      }
+      // if (detectedLanguage !== 'en') {
+      //   text = await this.aiService.translateText(text, 'en', accessToken);
+      // }
 
       const vectors = await this.aiService.embbedingText(text, accessToken);
       return await this.assignmentRepository.update({

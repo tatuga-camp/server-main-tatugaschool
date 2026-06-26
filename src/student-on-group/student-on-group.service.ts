@@ -78,6 +78,13 @@ export class StudentOnGroupService {
       return create;
     } catch (error) {
       this.logger.error(error);
+      if (
+        error &&
+        typeof error === 'object' &&
+        (error as any).code === 'P2002'
+      ) {
+        throw new BadRequestException('Student is already in this group');
+      }
       throw error;
     }
   }
