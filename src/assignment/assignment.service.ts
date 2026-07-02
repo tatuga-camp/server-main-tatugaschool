@@ -808,7 +808,12 @@ export class AssignmentService {
           },
         });
 
-        if (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') {
+        if (
+          (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') &&
+          subject.isVerifyLine === true &&
+          subject.lineGroupId &&
+          subject.allowSendNotificationOnAssignmentToLine == true
+        ) {
           const url = `https://student.tatugaschool.com?subject_code=${subject.code}`;
           await this.linebotService.sendMessage({
             groupId: subject.lineGroupId,

@@ -1080,6 +1080,8 @@ describe('AssignmentService', () => {
         isLocked: false,
         code: 'SUB123',
         lineGroupId: 'grp1',
+        isVerifyLine: true,
+        allowSendNotificationOnAssignmentToLine: true,
       };
       const mockUpdated = {
         ...mockAssignment,
@@ -1101,7 +1103,71 @@ describe('AssignmentService', () => {
 
       await service.updateAssignment(dto, mockUser);
 
-      expect(mockLineBotService.sendMessage).toHaveBeenCalled();
+      expect(mockLineBotService.sendMessage).toHaveBeenCalledWith({
+        groupId: 'grp1',
+        message: expect.stringContaining('Test'),
+      });
+    });
+
+    const publishToLineSubject = {
+      id: 's1',
+      isLocked: false,
+      code: 'SUB123',
+      lineGroupId: 'grp1',
+      isVerifyLine: true,
+      allowSendNotificationOnAssignmentToLine: true,
+    };
+
+    const publishAssignment = async (subjectOverrides: any) => {
+      const dto: any = {
+        query: { assignmentId: 'a1' },
+        data: { status: 'Published' },
+      };
+      const mockAssignment = {
+        id: 'a1',
+        subjectId: 's1',
+        status: 'Draft',
+        schoolId: 'sch1',
+      };
+
+      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
+        mockAssignment,
+      );
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        ...publishToLineSubject,
+        ...subjectOverrides,
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (service.assignmentRepository.update as jest.Mock).mockResolvedValue({
+        ...mockAssignment,
+        status: 'Published',
+        title: 'Test',
+      });
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        plan: 'PREMIUM',
+      });
+
+      await service.updateAssignment(dto, { id: 'u1' } as any);
+    };
+
+    it('should NOT send line notification when subject line group is not verified', async () => {
+      await publishAssignment({ isVerifyLine: false });
+
+      expect(mockLineBotService.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should NOT send line notification when subject has no line group', async () => {
+      await publishAssignment({ lineGroupId: null });
+
+      expect(mockLineBotService.sendMessage).not.toHaveBeenCalled();
+    });
+
+    it('should NOT send line notification when subject disallows assignment notifications to line', async () => {
+      await publishAssignment({
+        allowSendNotificationOnAssignmentToLine: false,
+      });
+
+      expect(mockLineBotService.sendMessage).not.toHaveBeenCalled();
     });
 
     it('should NOT send line notification when assignment was already Published', async () => {
