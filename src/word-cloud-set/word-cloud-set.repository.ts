@@ -50,6 +50,16 @@ export class WordCloudSetRepository {
     }
   }
 
+  async findFirst(
+    request: Prisma.WordCloudSetFindFirstArgs,
+  ): Promise<WordCloudSet | null> {
+    try {
+      return await this.prisma.wordCloudSet.findFirst(request);
+    } catch (error) {
+      this.handle(error);
+    }
+  }
+
   async update(request: Prisma.WordCloudSetUpdateArgs): Promise<WordCloudSet> {
     try {
       return await this.prisma.wordCloudSet.update(request);

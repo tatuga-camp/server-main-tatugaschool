@@ -16,6 +16,7 @@ import {
   AppendQuestionDto,
   CreateWordCloudSetDto,
   EditQuestionDto,
+  GetWordCloudResultsByTokenDto,
   GetWordCloudSetsBySubjectDto,
   SetQuestionParamDto,
   UpdateWordCloudSetDto,
@@ -80,6 +81,13 @@ export class WordCloudSetController {
     @GetUser() user: UserJwtPayload,
   ) {
     return this.service.deleteQuestion(param, user);
+  }
+
+  // Public, unauthenticated: live results by share token.
+  // Declared before @Get(':setId') so 'results' is never treated as a setId.
+  @Get('results/:token')
+  getResults(@Param() dto: GetWordCloudResultsByTokenDto) {
+    return this.service.getResultsByToken(dto);
   }
 
   @UseGuards(UserGuard)

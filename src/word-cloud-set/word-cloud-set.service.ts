@@ -16,6 +16,7 @@ import {
   AppendQuestionDto,
   CreateWordCloudSetDto,
   EditQuestionDto,
+  GetWordCloudResultsByTokenDto,
   GetWordCloudSetsBySubjectDto,
   SetIdParamDto,
   SetQuestionParamDto,
@@ -25,6 +26,8 @@ import {
 import {
   ResponseGetWordCloudSetById,
   ResponseGetWordCloudSetPublic,
+  ResponseGetWordCloudSetResults,
+  SetQuestionResult,
 } from './interfaces';
 
 @Injectable()
@@ -84,6 +87,49 @@ export class WordCloudSetService {
       subjectId: set.subjectId,
     });
     return set;
+  }
+
+  // Aggregated words + answerer names for every question in a set, order asc.
+  // Shared by the teacher detail view and the public results-by-token view.
+  private async buildQuestionResults(
+    setId: string,
+  ): Promise<SetQuestionResult[]> {
+    const questions = await this.repository.findManyQuestions({
+      where: { wordCloudSetId: setId },
+      orderBy: { order: 'asc' },
+    });
+
+    const results: SetQuestionResult[] = [];
+    for (const q of questions) {
+      const answers = await this.repository.findManyAnswers({
+        where: { wordCloudId: q.id },
+      });
+      let nameById: Map<string, string> | undefined;
+      if (q.accessMode === 'STUDENTS_ONLY') {
+        const ids = [
+          ...new Set(
+            answers
+              .map((a) => a.studentOnSubjectId)
+              .filter((x): x is string => !!x),
+          ),
+        ];
+        nameById = new Map();
+        if (ids.length) {
+          const students = await this.prisma.studentOnSubject.findMany({
+            where: { id: { in: ids } },
+          });
+          for (const s of students) {
+            nameById.set(s.id, `${s.firstName} ${s.lastName}`);
+          }
+        }
+      }
+      results.push({
+        wordCloud: q,
+        words: this.aggregate(answers, nameById),
+        totalAnswers: answers.length,
+      });
+    }
+    return results;
   }
 
   async create(
@@ -171,43 +217,7 @@ export class WordCloudSetService {
   ): Promise<ResponseGetWordCloudSetById> {
     try {
       const set = await this.loadSetForTeacher(dto.setId, user);
-      const questions = await this.repository.findManyQuestions({
-        where: { wordCloudSetId: set.id },
-        orderBy: { order: 'asc' },
-      });
-
-      const results = [];
-      for (const q of questions) {
-        const answers = await this.repository.findManyAnswers({
-          where: { wordCloudId: q.id },
-        });
-        let nameById: Map<string, string> | undefined;
-        if (q.accessMode === 'STUDENTS_ONLY') {
-          const ids = [
-            ...new Set(
-              answers
-                .map((a) => a.studentOnSubjectId)
-                .filter((x): x is string => !!x),
-            ),
-          ];
-          nameById = new Map();
-          if (ids.length) {
-            const students = await this.prisma.studentOnSubject.findMany({
-              where: { id: { in: ids } },
-            });
-            for (const s of students) {
-              nameById.set(s.id, `${s.firstName} ${s.lastName}`);
-            }
-          }
-        }
-        results.push({
-          wordCloud: q,
-          words: this.aggregate(answers, nameById),
-          totalAnswers: answers.length,
-        });
-      }
-
-      return { set, questions: results };
+      return { set, questions: await this.buildQuestionResults(set.id) };
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -430,6 +440,35 @@ export class WordCloudSetService {
           status: q.status,
         })),
         students,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async getResultsByToken(
+    dto: GetWordCloudResultsByTokenDto,
+  ): Promise<ResponseGetWordCloudSetResults> {
+    try {
+      const set = await this.repository.findFirst({
+        where: { publicResultsToken: dto.token },
+      });
+      if (!set) throw new NotFoundException('This link is no longer available');
+
+      const results = await this.buildQuestionResults(set.id);
+      return {
+        title: set.title,
+        status: set.status,
+        activeWordCloudId: set.activeWordCloudId,
+        questions: results.map((r) => ({
+          id: r.wordCloud.id,
+          question: r.wordCloud.question,
+          order: r.wordCloud.order,
+          status: r.wordCloud.status,
+          words: r.words,
+          totalAnswers: r.totalAnswers,
+        })),
       };
     } catch (error) {
       this.logger.error(error);

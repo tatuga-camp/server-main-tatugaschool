@@ -30,6 +30,7 @@ describe('WordCloudSetService', () => {
       create: jest.fn(),
       findMany: jest.fn(),
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       update: jest.fn(),
       findManyQuestions: jest.fn(),
       findUniqueQuestion: jest.fn(),
@@ -298,6 +299,90 @@ describe('WordCloudSetService', () => {
         where: { id: 'set1' },
         data: { publicResultsToken: null },
       });
+    });
+  });
+
+  describe('getResultsByToken', () => {
+    const token = 'a'.repeat(32);
+
+    it('returns ALL questions with aggregated words and no internal ids', async () => {
+      const repo = (service as any).repository;
+      repo.findFirst.mockResolvedValue({
+        id: 'set1',
+        title: 'My set',
+        status: 'OPEN',
+        activeWordCloudId: 'q0', // active is the FIRST question…
+        subjectId: 'sub1',
+        schoolId: 'school1',
+        userId: 'user1',
+      });
+      repo.findManyQuestions.mockResolvedValue([
+        { id: 'q0', question: 'A?', order: 0, status: 'OPEN', accessMode: 'PUBLIC' },
+        { id: 'q1', question: 'B?', order: 1, status: 'OPEN', accessMode: 'PUBLIC' },
+      ]);
+      repo.findManyAnswers
+        .mockResolvedValueOnce([
+          { text: 'Dog', normalized: 'dog' },
+          { text: 'dog', normalized: 'dog' },
+          { text: 'Cat', normalized: 'cat' },
+        ])
+        .mockResolvedValueOnce([]);
+
+      const result = await service.getResultsByToken({ token });
+
+      // …yet BOTH questions are returned: no reveal filtering on results.
+      expect(result.questions).toHaveLength(2);
+      expect(repo.findFirst).toHaveBeenCalledWith({
+        where: { publicResultsToken: token },
+      });
+      expect(result.title).toBe('My set');
+      expect(result.questions[0].words[0]).toMatchObject({
+        normalized: 'dog',
+        count: 2,
+      });
+      expect(result.questions[0].totalAnswers).toBe(3);
+      expect(result).not.toHaveProperty('subjectId');
+      expect(result).not.toHaveProperty('schoolId');
+      expect(result).not.toHaveProperty('userId');
+      expect(result.questions[0]).not.toHaveProperty('subjectId');
+    });
+
+    it('includes answerer names for STUDENTS_ONLY questions', async () => {
+      const repo = (service as any).repository;
+      repo.findFirst.mockResolvedValue({
+        id: 'set1',
+        title: null,
+        status: 'OPEN',
+        activeWordCloudId: 'q0',
+      });
+      repo.findManyQuestions.mockResolvedValue([
+        {
+          id: 'q0',
+          question: 'A?',
+          order: 0,
+          status: 'OPEN',
+          accessMode: 'STUDENTS_ONLY',
+        },
+      ]);
+      repo.findManyAnswers.mockResolvedValueOnce([
+        { text: 'Dog', normalized: 'dog', studentOnSubjectId: 'sos1' },
+      ]);
+      mockPrisma.studentOnSubject.findMany.mockResolvedValue([
+        { id: 'sos1', firstName: 'Ann', lastName: 'B' },
+      ]);
+
+      const result = await service.getResultsByToken({ token });
+
+      expect(result.questions[0].words[0].students).toEqual(['Ann B']);
+    });
+
+    it('throws NotFound for an unknown or revoked token', async () => {
+      const repo = (service as any).repository;
+      repo.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.getResultsByToken({ token }),
+      ).rejects.toBeInstanceOf(NotFoundException);
     });
   });
 });
