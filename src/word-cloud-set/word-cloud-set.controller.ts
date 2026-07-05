@@ -100,6 +100,24 @@ export class WordCloudSetController {
     return this.service.deleteSet(dto, user);
   }
 
+  @UseGuards(UserGuard)
+  @Post(':setId/share-results')
+  shareResults(
+    @Param() dto: WordCloudSetIdParamDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
+    return this.service.shareResults(dto, user);
+  }
+
+  @UseGuards(UserGuard)
+  @Delete(':setId/share-results')
+  revokeResults(
+    @Param() dto: WordCloudSetIdParamDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
+    return this.service.revokeResults(dto, user);
+  }
+
   // ---- Student-facing ----
 
   @Get(':setId/public')

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { StudentOnSubject, WordCloud, WordCloudSet } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
@@ -350,6 +351,40 @@ export class WordCloudSetService {
     try {
       const set = await this.loadSetForTeacher(param.setId, user);
       return await this.repository.deleteSet(set.id);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async shareResults(
+    param: WordCloudSetIdParamDto,
+    user: UserJwtPayload,
+  ): Promise<WordCloudSet> {
+    try {
+      const set = await this.loadSetForTeacher(param.setId, user);
+      // Always generate a fresh token: re-sharing rotates the link so a
+      // previously leaked URL stays dead.
+      return await this.repository.update({
+        where: { id: set.id },
+        data: { publicResultsToken: randomBytes(16).toString('hex') },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async revokeResults(
+    param: WordCloudSetIdParamDto,
+    user: UserJwtPayload,
+  ): Promise<WordCloudSet> {
+    try {
+      const set = await this.loadSetForTeacher(param.setId, user);
+      return await this.repository.update({
+        where: { id: set.id },
+        data: { publicResultsToken: null },
+      });
     } catch (error) {
       this.logger.error(error);
       throw error;

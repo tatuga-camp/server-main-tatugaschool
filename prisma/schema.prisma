@@ -1120,6 +1120,7 @@ model WordCloudSet {
   accessMode        WordCloudAccess @default(PUBLIC)
   allowMultiple     Boolean         @default(false)
   activeWordCloudId String?         @db.ObjectId
+  publicResultsToken String?
 
   subjectId String @db.ObjectId
   schoolId  String @db.ObjectId
@@ -1133,6 +1134,7 @@ model WordCloudSet {
 
   @@index([subjectId])
   @@index([schoolId])
+  @@index([publicResultsToken])
 }
 
 enum WordCloudStatus {

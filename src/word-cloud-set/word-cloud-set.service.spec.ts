@@ -247,4 +247,57 @@ describe('WordCloudSetService', () => {
       );
     });
   });
+
+  describe('shareResults / revokeResults', () => {
+    it('generates a 32-char hex token after validating teacher access', async () => {
+      const repo = (service as any).repository;
+      repo.findUnique.mockResolvedValue({ id: 'set1', subjectId: 'sub1' });
+      repo.update.mockImplementation(async (args: any) => ({
+        id: 'set1',
+        ...args.data,
+      }));
+
+      const result = await service.shareResults(
+        { setId: 'set1' },
+        { id: 'user1' } as any,
+      );
+
+      expect(mockValidateAccess).toHaveBeenCalledWith({
+        userId: 'user1',
+        subjectId: 'sub1',
+      });
+      expect(result.publicResultsToken).toMatch(/^[a-f0-9]{32}$/);
+    });
+
+    it('rotates to a different token when shared again', async () => {
+      const repo = (service as any).repository;
+      repo.findUnique.mockResolvedValue({ id: 'set1', subjectId: 'sub1' });
+      repo.update.mockImplementation(async (args: any) => ({
+        id: 'set1',
+        ...args.data,
+      }));
+
+      await service.shareResults({ setId: 'set1' }, { id: 'user1' } as any);
+      await service.shareResults({ setId: 'set1' }, { id: 'user1' } as any);
+
+      const first = repo.update.mock.calls[0][0].data.publicResultsToken;
+      const second = repo.update.mock.calls[1][0].data.publicResultsToken;
+      expect(first).toMatch(/^[a-f0-9]{32}$/);
+      expect(second).toMatch(/^[a-f0-9]{32}$/);
+      expect(second).not.toBe(first);
+    });
+
+    it('revoke sets the token to null', async () => {
+      const repo = (service as any).repository;
+      repo.findUnique.mockResolvedValue({ id: 'set1', subjectId: 'sub1' });
+      repo.update.mockResolvedValue({ id: 'set1', publicResultsToken: null });
+
+      await service.revokeResults({ setId: 'set1' }, { id: 'user1' } as any);
+
+      expect(repo.update).toHaveBeenCalledWith({
+        where: { id: 'set1' },
+        data: { publicResultsToken: null },
+      });
+    });
+  });
 });
