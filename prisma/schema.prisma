@@ -1302,6 +1302,7 @@ model FileOnAnnouncement {
   @@index([announcementId])
   @@index([subjectId])
   @@index([schoolId])
+  @@index([url])
 }
 
 model CommentOnAnnouncement {
@@ -1358,4 +1359,5 @@ model ReactionOnAnnouncement {
 
   @@index([announcementId])
   @@index([subjectId])
+  @@index([schoolId])
 }

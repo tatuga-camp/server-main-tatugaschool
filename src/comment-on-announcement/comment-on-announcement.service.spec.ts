@@ -127,6 +127,65 @@ describe('CommentOnAnnouncementService', () => {
     });
   });
 
+  describe('updateFromTeacher', () => {
+    it('validates the caller still has teacher access to the subject', async () => {
+      (
+        service.commentOnAnnouncementRepository.findById as jest.Mock
+      ).mockResolvedValue({ id: 'c1', userId: 'u1', subjectId: 'subj1' });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (
+        service.commentOnAnnouncementRepository.update as jest.Mock
+      ).mockResolvedValue({ id: 'c1', content: 'edited' });
+
+      const result = await service.updateFromTeacher(
+        { query: { commentOnAnnouncementId: 'c1' }, body: { content: 'edited' } },
+        teacher,
+      );
+
+      expect(result.id).toBe('c1');
+      expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+        userId: 'u1',
+        subjectId: 'subj1',
+      });
+    });
+
+    it('rejects when ValidateAccess throws (caller no longer has subject access)', async () => {
+      (
+        service.commentOnAnnouncementRepository.findById as jest.Mock
+      ).mockResolvedValue({ id: 'c1', userId: 'u1', subjectId: 'subj1' });
+      mockTeacherOnSubjectService.ValidateAccess.mockRejectedValue(
+        new ForbiddenException("You don't have permission to access"),
+      );
+
+      await expect(
+        service.updateFromTeacher(
+          {
+            query: { commentOnAnnouncementId: 'c1' },
+            body: { content: 'edited' },
+          },
+          teacher,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rejects editing another teacher\'s comment', async () => {
+      (
+        service.commentOnAnnouncementRepository.findById as jest.Mock
+      ).mockResolvedValue({ id: 'c1', userId: 'someone-else', subjectId: 'subj1' });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+
+      await expect(
+        service.updateFromTeacher(
+          {
+            query: { commentOnAnnouncementId: 'c1' },
+            body: { content: 'edited' },
+          },
+          teacher,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
   describe('deleteFromTeacher', () => {
     it('allows a subject teacher to delete any comment (moderation)', async () => {
       (

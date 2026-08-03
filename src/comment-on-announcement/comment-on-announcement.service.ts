@@ -215,6 +215,11 @@ export class CommentOnAnnouncementService {
         throw new NotFoundException('Comment not found');
       }
 
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: comment.subjectId,
+      });
+
       if (comment.userId !== user.id) {
         throw new ForbiddenException('You can only edit your own comment');
       }

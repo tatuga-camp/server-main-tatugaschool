@@ -277,13 +277,29 @@ export class AnnouncementService {
       });
 
       let totalSize = 0;
-      for (const file of files.filter((f) => f.type !== 'LINK')) {
+      for (const file of files) {
         totalSize += file.size;
-        await this.storageService
-          .DeleteFileOnStorage({ fileName: file.url })
-          .catch((error) =>
-            this.logger.error('Failed to delete file from storage', error),
+
+        if (file.type !== 'LINK') {
+          // Mirrors file-on-announcement.service.ts's `=== 0` semantics: only
+          // delete the R2 object if no OTHER announcement's file row still
+          // references the same url.
+          const otherReferences = await this.prisma.fileOnAnnouncement.findMany(
+            {
+              where: {
+                url: file.url,
+                announcementId: { not: announcement.id },
+              },
+            },
           );
+          if (otherReferences.length === 0) {
+            await this.storageService
+              .DeleteFileOnStorage({ fileName: file.url })
+              .catch((error) =>
+                this.logger.error('Failed to delete file from storage', error),
+              );
+          }
+        }
       }
 
       await this.prisma.fileOnAnnouncement.deleteMany({

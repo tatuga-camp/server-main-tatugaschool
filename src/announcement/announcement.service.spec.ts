@@ -271,9 +271,18 @@ describe('AnnouncementService', () => {
         schoolId: 'sch1',
       });
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      mockPrismaService.fileOnAnnouncement.findMany.mockResolvedValue([
-        { id: 'f1', url: 'https://r2/x', size: 100, type: 'image/png' },
-      ]);
+      mockPrismaService.fileOnAnnouncement.findMany.mockImplementation(
+        ({ where }: any) => {
+          if (where.announcementId === 'ann1' && !where.url) {
+            return Promise.resolve([
+              { id: 'f1', url: 'https://r2/x', size: 100, type: 'image/png' },
+            ]);
+          }
+          // "other references" guard check: no other announcement's file
+          // row shares this url.
+          return Promise.resolve([]);
+        },
+      );
       mockStorageService.DeleteFileOnStorage.mockResolvedValue(undefined);
       (service.announcementRepository.delete as jest.Mock).mockResolvedValue({
         id: 'ann1',
@@ -299,6 +308,77 @@ describe('AnnouncementService', () => {
       });
       expect(service.announcementRepository.delete).toHaveBeenCalledWith({
         announcementId: 'ann1',
+      });
+    });
+
+    it('skips R2 deletion when another announcement still references the same file url', async () => {
+      (service.announcementRepository.findById as jest.Mock).mockResolvedValue({
+        id: 'ann1',
+        subjectId: 'subj1',
+        schoolId: 'sch1',
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockPrismaService.fileOnAnnouncement.findMany.mockImplementation(
+        ({ where }: any) => {
+          if (where.announcementId === 'ann1' && !where.url) {
+            return Promise.resolve([
+              { id: 'f1', url: 'https://r2/shared', size: 100, type: 'image/png' },
+            ]);
+          }
+          // another announcement's row still references this url
+          return Promise.resolve([
+            { id: 'f2', url: 'https://r2/shared', announcementId: 'ann2' },
+          ]);
+        },
+      );
+      (service.announcementRepository.delete as jest.Mock).mockResolvedValue({
+        id: 'ann1',
+      });
+
+      await service.delete({ announcementId: 'ann1' }, teacher);
+
+      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
+      // storage quota is still refunded for this announcement's own row
+      expect(mockPrismaService.school.update).toHaveBeenCalledWith({
+        where: { id: 'sch1' },
+        data: { totalStorage: { decrement: 100 } },
+      });
+    });
+
+    it('includes LINK file sizes in the storage refund but skips R2 deletion for them', async () => {
+      (service.announcementRepository.findById as jest.Mock).mockResolvedValue({
+        id: 'ann1',
+        subjectId: 'subj1',
+        schoolId: 'sch1',
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockPrismaService.fileOnAnnouncement.findMany.mockImplementation(
+        ({ where }: any) => {
+          if (where.announcementId === 'ann1' && !where.url) {
+            return Promise.resolve([
+              { id: 'f1', url: 'https://r2/x', size: 100, type: 'image/png' },
+              { id: 'f2', url: 'https://external/link', size: 50, type: 'LINK' },
+            ]);
+          }
+          return Promise.resolve([]);
+        },
+      );
+      mockStorageService.DeleteFileOnStorage.mockResolvedValue(undefined);
+      (service.announcementRepository.delete as jest.Mock).mockResolvedValue({
+        id: 'ann1',
+      });
+
+      await service.delete({ announcementId: 'ann1' }, teacher);
+
+      // LINK row's size is included in the decrement...
+      expect(mockPrismaService.school.update).toHaveBeenCalledWith({
+        where: { id: 'sch1' },
+        data: { totalStorage: { decrement: 150 } },
+      });
+      // ...but no R2 delete is attempted for it.
+      expect(mockStorageService.DeleteFileOnStorage).toHaveBeenCalledTimes(1);
+      expect(mockStorageService.DeleteFileOnStorage).toHaveBeenCalledWith({
+        fileName: 'https://r2/x',
       });
     });
 
