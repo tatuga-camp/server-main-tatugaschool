@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { CareerModule } from './career/career.module';
 import { ClassModule } from './class/class.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
+import { CommentOnAnnouncementModule } from './comment-on-announcement/comment-on-announcement.module';
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
@@ -74,6 +75,7 @@ import { RubricModule } from './rubric/rubric.module';
     SchoolModule,
     AnalyticsModule,
     AnnouncementModule,
+    CommentOnAnnouncementModule,
     ClassModule,
     StudentModule,
     SubjectModule,
