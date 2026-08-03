@@ -16,6 +16,7 @@ import { ReactionOnAnnouncementModule } from './reaction-on-announcement/reactio
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
+import { FileOnAnnouncementModule } from './file-on-announcement/file-on-announcement.module';
 import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
 import { FileOnTeachingMaterialModule } from './file-on-teaching-material/file-on-teaching-material.module';
 import { GradeModule } from './grade/grade.module';
@@ -78,6 +79,7 @@ import { RubricModule } from './rubric/rubric.module';
     AnnouncementModule,
     CommentOnAnnouncementModule,
     ReactionOnAnnouncementModule,
+    FileOnAnnouncementModule,
     ClassModule,
     StudentModule,
     SubjectModule,
