@@ -12,6 +12,7 @@ import { CareerModule } from './career/career.module';
 import { ClassModule } from './class/class.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
 import { CommentOnAnnouncementModule } from './comment-on-announcement/comment-on-announcement.module';
+import { ReactionOnAnnouncementModule } from './reaction-on-announcement/reaction-on-announcement.module';
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
@@ -76,6 +77,7 @@ import { RubricModule } from './rubric/rubric.module';
     AnalyticsModule,
     AnnouncementModule,
     CommentOnAnnouncementModule,
+    ReactionOnAnnouncementModule,
     ClassModule,
     StudentModule,
     SubjectModule,
