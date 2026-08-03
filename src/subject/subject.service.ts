@@ -981,6 +981,7 @@ export class SubjectService {
           allowSendNotificationOnStudentOnAssignmentToLine: true,
           allowSendNotificationMorningSummaryToLine: true,
           allowSendNotificationOnAssignmentToLine: true,
+          allowSendNotificationOnAnnouncementToLine: true,
         },
       });
 

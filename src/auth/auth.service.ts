@@ -222,6 +222,7 @@ export class AuthService {
       this.setCookieRefreshToken(reply, refreshToken);
 
       if (dto.invitationToken) {
+        // create account with google and have invitation token, so we can redirect to school page
         return {
           redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
         };
@@ -237,6 +238,7 @@ export class AuthService {
           });
 
         if (findUnverifiedInvitations.length > 0) {
+          // create account with password and have invitation token, so we can link invitation to user and redirect to school page
           await Promise.allSettled(
             findUnverifiedInvitations.map((invitation) => {
               this.memberOnSchoolService.linkInvitationToUser({
@@ -253,12 +255,14 @@ export class AuthService {
               favoritSchool: findUnverifiedInvitations[0].schoolId,
             },
           });
+
           return {
             redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
           };
         }
       }
 
+      // create account with google or password and no invitation token, so we can redirect to wait verify email page
       const token = await this.sendVerifyEmail(user);
 
       return {
@@ -563,6 +567,10 @@ export class AuthService {
       });
 
       const resetUrl = `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`;
+
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.log(`Verify email URL: ${resetUrl}`);
+      }
 
       const emailHTML = `
          <body style="background-color: #f8f9fa;">

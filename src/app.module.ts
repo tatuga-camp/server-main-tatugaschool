@@ -11,9 +11,12 @@ import { AuthModule } from './auth/auth.module';
 import { CareerModule } from './career/career.module';
 import { ClassModule } from './class/class.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
+import { CommentOnAnnouncementModule } from './comment-on-announcement/comment-on-announcement.module';
+import { ReactionOnAnnouncementModule } from './reaction-on-announcement/reaction-on-announcement.module';
 import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
+import { FileOnAnnouncementModule } from './file-on-announcement/file-on-announcement.module';
 import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
 import { FileOnTeachingMaterialModule } from './file-on-teaching-material/file-on-teaching-material.module';
 import { GradeModule } from './grade/grade.module';
@@ -22,6 +25,7 @@ import { MemberOnSchoolModule } from './member-on-school/member-on-school.module
 import { PrismaModule } from './prisma/prisma.module';
 import { SchoolModule } from './school/school.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { AnnouncementModule } from './announcement/announcement.module';
 import { ScoreOnStudentModule } from './score-on-student/score-on-student.module';
 import { ScoreOnSubjectModule } from './score-on-subject/score-on-subject.module';
 import { SkillOnAssignmentModule } from './skill-on-assignment/skill-on-assignment.module';
@@ -72,6 +76,10 @@ import { RubricModule } from './rubric/rubric.module';
     AttendanceModule,
     SchoolModule,
     AnalyticsModule,
+    AnnouncementModule,
+    CommentOnAnnouncementModule,
+    ReactionOnAnnouncementModule,
+    FileOnAnnouncementModule,
     ClassModule,
     StudentModule,
     SubjectModule,

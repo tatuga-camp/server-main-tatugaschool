@@ -99,6 +99,10 @@ class UpdateSubjectBody {
   @IsOptional()
   @IsBoolean()
   allowSendNotificationMorningSummaryToLine?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowSendNotificationOnAnnouncementToLine?: boolean;
 }
 
 export class UpdateSubjectDto {

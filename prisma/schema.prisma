@@ -49,6 +49,9 @@ model User {
   wordClouds                WordCloud[]
   wordCloudSets             WordCloudSet[]
   rubrics                   Rubric[]
+  announcements             Announcement[]
+  commentOnAnnouncements    CommentOnAnnouncement[]
+  reactionOnAnnouncements   ReactionOnAnnouncement[]
 }
 
 enum Language {
@@ -66,10 +69,12 @@ model SubscriptionNotification {
   userAgent String
   expiredAt DateTime
 
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
+  userId    String?  @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id])
+  studentId String?  @db.ObjectId
+  student   Student? @relation(fields: [studentId], references: [id])
 
-  @@unique([endpoint, userId])
+  @@unique([endpoint, userId, studentId])
 }
 
 model School {
@@ -132,6 +137,10 @@ model School {
   wordCloudSets            WordCloudSet[]
   wordCloudAnswers         WordCloudAnswer[]
   rubrics                  Rubric[]
+  announcements            Announcement[]
+  fileOnAnnouncements      FileOnAnnouncement[]
+  commentOnAnnouncements   CommentOnAnnouncement[]
+  reactionOnAnnouncements  ReactionOnAnnouncement[]
 }
 
 model MemberOnSchool {
@@ -216,6 +225,10 @@ model Student {
   skillOnStudentAssignments SkillOnStudentAssignment[]
   studentOnGroups           StudentOnGroup[]
   wordCloudAnswers          WordCloudAnswer[]
+  notifications             Notification[]
+  subscriptionNotifications SubscriptionNotification[]
+  commentOnAnnouncements    CommentOnAnnouncement[]
+  reactionOnAnnouncements   ReactionOnAnnouncement[]
 
   @@index([schoolId, classId])
   @@index([classId])
@@ -246,6 +259,7 @@ model Subject {
   allowSendNotificationOnStudentOnAssignmentToLine Boolean @default(false)
   allowSendNotificationOnAssignmentToLine          Boolean @default(false)
   allowSendNotificationMorningSummaryToLine        Boolean @default(false)
+  allowSendNotificationOnAnnouncementToLine        Boolean @default(false)
 
   isLocked  Boolean @default(false)
   isDeleted Boolean @default(false)
@@ -286,6 +300,10 @@ model Subject {
   wordCloudSets             WordCloudSet[]
   wordCloudAnswers          WordCloudAnswer[]
   rubrics                   Rubric[]
+  announcements             Announcement[]
+  fileOnAnnouncements       FileOnAnnouncement[]
+  commentOnAnnouncements    CommentOnAnnouncement[]
+  reactionOnAnnouncements   ReactionOnAnnouncement[]
 
   @@index([educationYear, schoolId])
   @@index([isVerifyLine, lineGroupId])
@@ -992,8 +1010,10 @@ model Notification {
   id       String   @id @default(auto()) @map("_id") @db.ObjectId
   createAt DateTime @default(now())
 
-  userId String @db.ObjectId
-  user   User   @relation(fields: [userId], references: [id])
+  userId    String?  @db.ObjectId
+  user      User?    @relation(fields: [userId], references: [id])
+  studentId String?  @db.ObjectId
+  student   Student? @relation(fields: [studentId], references: [id])
 
   actorName  String
   actorId    String @db.ObjectId
@@ -1011,6 +1031,8 @@ model Notification {
   @@index([userId, isRead])
   @@index([createAt])
   @@index([userId, createAt]) // listing per user, newest first
+  @@index([studentId, isRead])
+  @@index([studentId, createAt])
   @@index([schoolId])
   @@index([subjectId])
 }
@@ -1018,6 +1040,7 @@ model Notification {
 enum NotificationType {
   STUDENT_SUBMISSION
   STUDENT_COMMENT
+  NEW_ANNOUNCEMENT
 }
 
 enum UserRole {
@@ -1226,6 +1249,115 @@ model RubricScoreOnStudentAssignment {
 
   @@unique([studentOnAssignmentId, criterionId])
   @@index([studentOnAssignmentId])
+  @@index([subjectId])
+  @@index([schoolId])
+}
+
+model Announcement {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  title   String
+  content String
+
+  firstName String
+  lastName  String
+  photo     String?
+  blurHash  String?
+
+  userId    String @db.ObjectId
+  subjectId String @db.ObjectId
+  schoolId  String @db.ObjectId
+  user      User    @relation(fields: [userId], references: [id])
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  school    School  @relation(fields: [schoolId], references: [id])
+
+  files     FileOnAnnouncement[]
+  comments  CommentOnAnnouncement[]
+  reactions ReactionOnAnnouncement[]
+
+  @@index([subjectId, createAt])
+  @@index([schoolId])
+}
+
+model FileOnAnnouncement {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  type     String?
+  url      String
+  name     String?
+  size     Float
+  blurHash String?
+
+  announcementId String @db.ObjectId
+  subjectId      String @db.ObjectId
+  schoolId       String @db.ObjectId
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  school         School       @relation(fields: [schoolId], references: [id])
+
+  @@index([announcementId])
+  @@index([subjectId])
+  @@index([schoolId])
+  @@index([url])
+}
+
+model CommentOnAnnouncement {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  content String
+
+  title     String
+  firstName String
+  lastName  String
+  photo     String?
+  blurHash  String?
+  number    String?
+  role      MemberRole?
+  email     String?
+
+  announcementId String  @db.ObjectId
+  subjectId      String  @db.ObjectId
+  schoolId       String  @db.ObjectId
+  studentId      String? @db.ObjectId
+  userId         String? @db.ObjectId
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  school         School       @relation(fields: [schoolId], references: [id])
+  student        Student?     @relation(fields: [studentId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@index([announcementId])
+  @@index([subjectId])
+  @@index([schoolId])
+}
+
+model ReactionOnAnnouncement {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  emoji     String
+  firstName String
+  photo     String?
+
+  announcementId String  @db.ObjectId
+  subjectId      String  @db.ObjectId
+  schoolId       String  @db.ObjectId
+  studentId      String? @db.ObjectId
+  userId         String? @db.ObjectId
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+  subject        Subject      @relation(fields: [subjectId], references: [id])
+  school         School       @relation(fields: [schoolId], references: [id])
+  student        Student?     @relation(fields: [studentId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
+
+  @@index([announcementId])
   @@index([subjectId])
   @@index([schoolId])
 }

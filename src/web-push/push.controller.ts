@@ -1,22 +1,29 @@
 import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { PushService } from './push.service';
-import { UserGuard } from '../auth/guard';
-import { GetUser } from '../auth/decorators';
-import { User } from '@prisma/client';
-import { PushSubscription } from './interfaces';
+import { StudentGuard, UserGuard } from '../auth/guard';
+import { GetStudent, GetUser } from '../auth/decorators';
 import { SubscribeNotificationDto } from './dto';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
-@UseGuards(UserGuard)
 @Controller('v1/push')
 export class PushController {
   constructor(private readonly pushService: PushService) {}
 
+  @UseGuards(UserGuard)
   @Post('subscribe')
   subscribe(
     @GetUser() user: UserJwtPayload,
     @Body() data: SubscribeNotificationDto,
   ) {
     return this.pushService.subscribe(data, user);
+  }
+
+  @UseGuards(StudentGuard)
+  @Post('subscribe/student')
+  subscribeStudent(
+    @GetStudent() student: StudentJwtPayload,
+    @Body() data: SubscribeNotificationDto,
+  ) {
+    return this.pushService.subscribeStudent(data, student);
   }
 }

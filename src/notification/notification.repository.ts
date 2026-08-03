@@ -34,6 +34,14 @@ export type RequestMarkAllAsRead = {
   userId: string;
 };
 
+export type RequestGetForStudent = {
+  studentId: string;
+};
+
+export type RequestMarkAllAsReadForStudent = {
+  studentId: string;
+};
+
 // --- 2. Define the Repository Interface ---
 // This interface defines the "contract" that our class must follow.
 
@@ -45,6 +53,10 @@ export type Repository = {
   createMany(request: RequestCreateMany): Promise<Prisma.BatchPayload>;
   markAsRead(request: RequestMarkAsRead): Promise<Notification>;
   markAllAsRead(request: RequestMarkAllAsRead): Promise<Prisma.BatchPayload>;
+  findManyForStudent(request: RequestGetForStudent): Promise<Notification[]>;
+  markAllAsReadForStudent(
+    request: RequestMarkAllAsReadForStudent,
+  ): Promise<Prisma.BatchPayload>;
 };
 
 // --- 3. Implement the Repository Class ---
@@ -103,6 +115,28 @@ export class NotificationRepository implements Repository {
     return await this.prisma.notification.updateMany({
       where: {
         userId,
+        isRead: false,
+      },
+      data: { isRead: true },
+    });
+  }
+
+  async findManyForStudent({
+    studentId,
+  }: RequestGetForStudent): Promise<Notification[]> {
+    return await this.prisma.notification.findMany({
+      where: { studentId, isRead: false },
+      orderBy: { createAt: 'desc' },
+      take: 99,
+    });
+  }
+
+  async markAllAsReadForStudent({
+    studentId,
+  }: RequestMarkAllAsReadForStudent): Promise<Prisma.BatchPayload> {
+    return await this.prisma.notification.updateMany({
+      where: {
+        studentId,
         isRead: false,
       },
       data: { isRead: true },
