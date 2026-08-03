@@ -4,7 +4,7 @@ import { PushRepository } from './push.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionNotification, User } from '@prisma/client';
 import { PushSubscription } from './interfaces';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class PushService {
@@ -110,6 +110,62 @@ export class PushService {
         body: "You'll receive notification from us",
         url: new URL(process.env.CLIENT_URL),
         groupId: user.id,
+      });
+
+      return subscription;
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async subscribeStudent(
+    dto: { payload: PushSubscription; userAgent: string },
+    student: StudentJwtPayload,
+  ): Promise<SubscriptionNotification> {
+    try {
+      if (!dto.payload.endpoint) {
+        throw new BadRequestException('Invalid payload');
+      }
+
+      const expiredAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+      const existingSubscription = await this.pushRepository.findFirst({
+        where: {
+          endpoint: dto.payload.endpoint,
+          studentId: student.id,
+        },
+      });
+
+      let subscription: SubscriptionNotification;
+      if (existingSubscription) {
+        subscription = await this.pushRepository.update({
+          where: {
+            id: existingSubscription.id,
+          },
+          data: {
+            expiredAt: expiredAt,
+            data: JSON.stringify(dto.payload),
+            userAgent: dto.userAgent,
+          },
+        });
+      } else {
+        subscription = await this.pushRepository.create({
+          data: {
+            endpoint: dto.payload.endpoint,
+            expiredAt: expiredAt,
+            data: JSON.stringify(dto.payload),
+            userAgent: dto.userAgent,
+            studentId: student.id,
+          },
+        });
+      }
+
+      await this.sendNotification(subscription.data as PushSubscription, {
+        title: 'Thanks for allowing notification',
+        body: "You'll receive notification from us",
+        url: new URL('https://student.tatugaschool.com'),
+        groupId: student.id,
       });
 
       return subscription;

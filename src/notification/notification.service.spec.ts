@@ -28,6 +28,7 @@ describe('NotificationService', () => {
   const mockPushService = {
     pushRepository: {
       findFirst: jest.fn(),
+      findMany: jest.fn(),
     },
     sendNotification: jest.fn(),
   };
@@ -138,6 +139,77 @@ describe('NotificationService', () => {
         id: 'u1',
       } as any);
       expect(result).toEqual({ count: 5 });
+    });
+  });
+
+  describe('createStudentNotifications', () => {
+    it('creates one notification row per student and pushes to ALL their devices', async () => {
+      (mockNotificationRepo.createMany as jest.Mock).mockResolvedValue({
+        count: 2,
+      });
+      (mockPushService.pushRepository.findMany as jest.Mock).mockResolvedValue(
+        [
+          { id: 'sub1', studentId: 'st1', data: '{"endpoint":"e1"}' },
+          { id: 'sub2', studentId: 'st1', data: '{"endpoint":"e2"}' },
+          { id: 'sub3', studentId: 'st2', data: '{"endpoint":"e3"}' },
+        ],
+      );
+      (mockPushService.sendNotification as jest.Mock).mockResolvedValue(
+        undefined,
+      );
+
+      const result = await service.createStudentNotifications({
+        studentIds: ['st1', 'st2'],
+        actorName: 'Teacher A',
+        actorId: 'u1',
+        actorImage: 'photo.png',
+        type: 'NEW_ANNOUNCEMENT',
+        message: 'SGS closing soon',
+        link: new URL('https://student.tatugaschool.com?subject_code=ABC123'),
+        schoolId: 'sch1',
+        subjectId: 'subj1',
+      });
+
+      expect(result.count).toBe(2);
+      expect(mockNotificationRepo.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({ studentId: 'st1', type: 'NEW_ANNOUNCEMENT' }),
+          expect.objectContaining({ studentId: 'st2', type: 'NEW_ANNOUNCEMENT' }),
+        ]),
+      });
+      // 3 subscriptions total -> 3 pushes
+      expect(mockPushService.sendNotification).toHaveBeenCalledTimes(3);
+    });
+
+    it('returns {count: 0} for empty studentIds without touching the repository', async () => {
+      const result = await service.createStudentNotifications({
+        studentIds: [],
+        actorName: 'x',
+        actorId: 'a',
+        actorImage: '',
+        type: 'NEW_ANNOUNCEMENT',
+        message: 'm',
+        link: new URL('https://student.tatugaschool.com'),
+        schoolId: 's',
+        subjectId: 'su',
+      });
+      expect(result).toEqual({ count: 0 });
+      expect(mockNotificationRepo.createMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('student read APIs', () => {
+    it('markNotificationAsReadStudent rejects a notification belonging to another student', async () => {
+      (mockNotificationRepo.findById as jest.Mock).mockResolvedValue({
+        id: 'n1',
+        studentId: 'other-student',
+      });
+      await expect(
+        service.markNotificationAsReadStudent('n1', {
+          id: 'st1',
+          schoolId: 'sch1',
+        } as any),
+      ).rejects.toThrow('Cannot access this notification');
     });
   });
 });

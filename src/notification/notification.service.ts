@@ -3,7 +3,7 @@ import { NotificationRepository } from './notification.repository';
 import { Notification, NotificationType, Prisma, User } from '@prisma/client';
 import { PushService } from '../web-push/push.service';
 import { PushSubscription } from '../web-push/interfaces';
-import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
 export class NotificationService {
@@ -93,6 +93,8 @@ export class NotificationService {
     switch (type) {
       case 'STUDENT_SUBMISSION':
         return 'New Submission';
+      case 'NEW_ANNOUNCEMENT':
+        return 'New Announcement';
       default:
         return 'New Notification';
     }
@@ -139,6 +141,110 @@ export class NotificationService {
     try {
       return await this.repository.markAllAsRead({
         userId: user.id,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async createStudentNotifications(dto: {
+    studentIds: string[];
+    actorName: string;
+    actorId: string;
+    actorImage: string;
+    type: NotificationType;
+    message: string;
+    link: URL;
+    schoolId: string;
+    subjectId: string;
+  }) {
+    const { studentIds } = dto;
+    const methodName = 'createStudentNotifications';
+
+    if (!studentIds || studentIds.length === 0) {
+      return { count: 0 };
+    }
+
+    try {
+      const dataToCreate = studentIds.map<Prisma.NotificationCreateManyInput>(
+        (studentId) => ({
+          studentId,
+          link: dto.link.toString(),
+          actorName: dto.actorName,
+          actorId: dto.actorId,
+          type: dto.type,
+          message: dto.message,
+          schoolId: dto.schoolId,
+          subjectId: dto.subjectId,
+          actorImage: dto.actorImage,
+        }),
+      );
+
+      const createResult = await this.repository.createMany({
+        data: dataToCreate,
+      });
+
+      const subscriptions = await this.pushService.pushRepository.findMany({
+        where: {
+          studentId: { in: studentIds },
+        },
+      });
+
+      for (const subscription of subscriptions) {
+        this.pushService
+          .sendNotification(subscription.data as PushSubscription, {
+            title: this.getNotificationTitle(dto.type),
+            body: dto.message,
+            url: dto.link,
+            groupId: dto.subjectId,
+          })
+          .catch((err) =>
+            this.logger.error(
+              `[${methodName}] Failed to push to student ${subscription.studentId}:`,
+              err.stack || err.message,
+            ),
+          );
+      }
+
+      return createResult;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getNotificationsForStudent(
+    student: StudentJwtPayload,
+  ): Promise<Notification[]> {
+    try {
+      return await this.repository.findManyForStudent({
+        studentId: student.id,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async markNotificationAsReadStudent(
+    id: string,
+    student: StudentJwtPayload,
+  ): Promise<Notification> {
+    try {
+      const notification = await this.repository.findById({ id });
+      if (!notification || notification.studentId !== student.id) {
+        throw new ForbiddenException('Cannot access this notification');
+      }
+      return await this.repository.markAsRead({ id });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async markAllNotificationsAsReadStudent(
+    student: StudentJwtPayload,
+  ): Promise<{ count: number }> {
+    try {
+      return await this.repository.markAllAsReadForStudent({
+        studentId: student.id,
       });
     } catch (error) {
       throw error;

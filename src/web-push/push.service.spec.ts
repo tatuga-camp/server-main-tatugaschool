@@ -138,4 +138,32 @@ describe('PushService', () => {
       );
     });
   });
+
+  describe('subscribeStudent', () => {
+    it('creates a student-scoped subscription when none exists', async () => {
+      (service.pushRepository.findFirst as jest.Mock).mockResolvedValue(null);
+      (service.pushRepository.create as jest.Mock).mockResolvedValue({
+        id: 'sub1',
+        studentId: 'st1',
+        data: '{"endpoint":"e1"}',
+      });
+      jest.spyOn(service, 'sendNotification').mockResolvedValue(undefined);
+
+      const result = await service.subscribeStudent(
+        {
+          payload: { endpoint: 'e1', keys: { p256dh: 'k', auth: 'a' } } as any,
+          userAgent: 'jest',
+        },
+        { id: 'st1', schoolId: 'sch1' } as any,
+      );
+
+      expect(service.pushRepository.findFirst).toHaveBeenCalledWith({
+        where: { endpoint: 'e1', studentId: 'st1' },
+      });
+      expect(service.pushRepository.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ studentId: 'st1', endpoint: 'e1' }),
+      });
+      expect(result.id).toBe('sub1');
+    });
+  });
 });
