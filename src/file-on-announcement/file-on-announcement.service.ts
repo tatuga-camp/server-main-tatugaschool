@@ -116,7 +116,7 @@ export class FileOnAnnouncementService {
         const remaining = await this.prisma.fileOnAnnouncement.findMany({
           where: { url: file.url },
         });
-        if (remaining.length <= 1) {
+        if (remaining.length === 0) {
           await this.storageService
             .DeleteFileOnStorage({ fileName: file.url })
             .catch((error) =>

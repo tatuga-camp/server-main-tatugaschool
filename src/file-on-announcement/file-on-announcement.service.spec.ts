@@ -97,9 +97,8 @@ describe('FileOnAnnouncementService', () => {
       schoolId: 'sch1',
     });
     mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-    mockPrismaService.fileOnAnnouncement.findMany.mockResolvedValue([
-      { id: 'f1', url: 'https://r2/x.pdf' },
-    ]);
+    // Post-delete state: the row itself is gone, so no other rows share the url.
+    mockPrismaService.fileOnAnnouncement.findMany.mockResolvedValue([]);
     mockStorageService.DeleteFileOnStorage.mockResolvedValue(undefined);
 
     await service.delete({ fileOnAnnouncementId: 'f1' }, teacher);
@@ -110,6 +109,35 @@ describe('FileOnAnnouncementService', () => {
     expect(mockStorageService.DeleteFileOnStorage).toHaveBeenCalledWith({
       fileName: 'https://r2/x.pdf',
     });
+    expect(mockPrismaService.school.update).toHaveBeenCalledWith({
+      where: { id: 'sch1' },
+      data: { totalStorage: { decrement: 1234 } },
+    });
+  });
+
+  it('keeps the R2 object and still decrements storage when another row still references the url', async () => {
+    mockPrismaService.fileOnAnnouncement.findUnique.mockResolvedValue({
+      id: 'f1',
+      url: 'https://r2/x.pdf',
+      size: 1234,
+      type: 'application/pdf',
+      announcementId: 'ann1',
+      subjectId: 'subj1',
+      schoolId: 'sch1',
+    });
+    mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+    // Post-delete state: another row (f2) still references the same url.
+    mockPrismaService.fileOnAnnouncement.findMany.mockResolvedValue([
+      { id: 'f2', url: 'https://r2/x.pdf' },
+    ]);
+    mockStorageService.DeleteFileOnStorage.mockResolvedValue(undefined);
+
+    await service.delete({ fileOnAnnouncementId: 'f1' }, teacher);
+
+    expect(mockPrismaService.fileOnAnnouncement.delete).toHaveBeenCalledWith({
+      where: { id: 'f1' },
+    });
+    expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
     expect(mockPrismaService.school.update).toHaveBeenCalledWith({
       where: { id: 'sch1' },
       data: { totalStorage: { decrement: 1234 } },
