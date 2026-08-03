@@ -106,16 +106,18 @@ export class AnnouncementService {
     subject: Subject,
     userInfo: { firstName: string; lastName: string; photo: string },
   ): Promise<void> {
-    const studentOnSubjects = await this.prisma.studentOnSubject.findMany({
-      where: { subjectId: subject.id, isActive: true },
-    });
-
     const link = new URL(
       `${STUDENT_CLIENT_URL}?subject_code=${subject.code}&announcement_id=${announcement.id}`,
     );
 
-    await this.notificationService
-      .createStudentNotifications({
+    // Bell/push channel: isolated in its own try/catch so a failure here
+    // (including the recipient-list fetch) can never block the LINE channel below.
+    try {
+      const studentOnSubjects = await this.prisma.studentOnSubject.findMany({
+        where: { subjectId: subject.id, isActive: true },
+      });
+
+      await this.notificationService.createStudentNotifications({
         studentIds: studentOnSubjects.map((s) => s.studentId),
         actorName: `${userInfo.firstName} ${userInfo.lastName}`,
         actorId: announcement.userId,
@@ -125,32 +127,35 @@ export class AnnouncementService {
         link,
         schoolId: announcement.schoolId,
         subjectId: announcement.subjectId,
-      })
-      .catch((error) =>
-        this.logger.error('Failed to create student notifications', error),
-      );
+      });
+    } catch (error) {
+      this.logger.error('Failed to create student notifications', error);
+    }
 
     if (
       subject.isVerifyLine === true &&
       subject.lineGroupId &&
       subject.allowSendNotificationOnAnnouncementToLine === true
     ) {
-      const school = await this.prisma.school.findUnique({
-        where: { id: announcement.schoolId },
-      });
+      try {
+        const school = await this.prisma.school.findUnique({
+          where: { id: announcement.schoolId },
+        });
 
-      if (school && (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE')) {
-        const plainContent = announcement.content
-          .replace(/<[^>]*>/g, '')
-          .slice(0, 200);
-        await this.lineBotService
-          .sendMessage({
+        if (
+          school &&
+          (school.plan === 'PREMIUM' || school.plan === 'ENTERPRISE')
+        ) {
+          const plainContent = announcement.content
+            .replace(/<[^>]*>/g, '')
+            .slice(0, 200);
+          await this.lineBotService.sendMessage({
             groupId: subject.lineGroupId,
             message: `📢 ประกาศใหม่จากคุณครู 📣\nวิชา: ${subject.title}\nเรื่อง: ${announcement.title}\n\n${plainContent}\n\nอ่านเพิ่มเติม: ${link.toString()}`,
-          })
-          .catch((error) => {
-            this.logger.error('Failed to send line notification', error);
           });
+        }
+      } catch (error) {
+        this.logger.error('Failed to send line notification', error);
       }
     }
   }

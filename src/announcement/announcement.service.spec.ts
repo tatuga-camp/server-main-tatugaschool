@@ -165,6 +165,36 @@ describe('AnnouncementService', () => {
       );
     });
 
+    it('still fires LINE when the bell/push recipient fetch fails', async () => {
+      mockPrismaService.studentOnSubject.findMany.mockRejectedValue(
+        new Error('transient db error'),
+      );
+      await service.create(
+        { title: 'x', content: 'y', subjectId: 'subj1' },
+        teacher,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(mockLineBotService.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ groupId: 'g1' }),
+      );
+    });
+
+    it('still fires LINE when createStudentNotifications rejects', async () => {
+      mockNotificationService.createStudentNotifications.mockRejectedValue(
+        new Error('notification service down'),
+      );
+      await service.create(
+        { title: 'x', content: 'y', subjectId: 'subj1' },
+        teacher,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(mockLineBotService.sendMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ groupId: 'g1' }),
+      );
+    });
+
     it('skips LINE when the school plan is FREE', async () => {
       mockPrismaService.school.findUnique.mockResolvedValue({
         id: 'sch1',
