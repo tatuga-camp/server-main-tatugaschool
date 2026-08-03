@@ -27,10 +27,7 @@ export class EmailService {
     html: string;
   }): Promise<void> {
     try {
-      if (
-        this.config.get('NODE_ENV') !== 'production' &&
-        this.config.get('NODE_ENV') !== 'development'
-      ) {
+      if (this.config.get('NODE_ENV') !== 'production') {
         this.logger.log(
           `Email will not be sent to ${to} because you are in ${this.config.get('NODE_ENV')}  env`,
         );
@@ -112,9 +109,7 @@ export class EmailService {
 
       const isLastChunk = idx === chunks.length - 1;
       if (!isLastChunk && this.chunkDelayMs > 0) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, this.chunkDelayMs),
-        );
+        await new Promise((resolve) => setTimeout(resolve, this.chunkDelayMs));
       }
     }
 
