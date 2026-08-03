@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import {
   CreateFileOnAnnouncementDto,
   DeleteFileOnAnnouncementDto,
   GetFileOnAnnouncementByAnnouncementIdDto,
+  UpdateFileOnAnnouncementDto,
 } from './dto';
 import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
@@ -38,6 +40,14 @@ export class FileOnAnnouncementController {
     @Body() dto: CreateFileOnAnnouncementDto,
   ) {
     return this.fileOnAnnouncementService.create(dto, user);
+  }
+
+  @Patch()
+  update(
+    @GetUser() user: UserJwtPayload,
+    @Body() dto: UpdateFileOnAnnouncementDto,
+  ) {
+    return this.fileOnAnnouncementService.update(dto, user);
   }
 
   @Delete(':fileOnAnnouncementId')

@@ -7,6 +7,7 @@ import {
   CreateFileOnAnnouncementDto,
   DeleteFileOnAnnouncementDto,
   GetFileOnAnnouncementByAnnouncementIdDto,
+  UpdateFileOnAnnouncementDto,
 } from './dto';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 
@@ -40,6 +41,34 @@ export class FileOnAnnouncementService {
 
       return await this.prisma.fileOnAnnouncement.findMany({
         where: { announcementId: dto.announcementId },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
+  async update(
+    dto: UpdateFileOnAnnouncementDto,
+    user: UserJwtPayload,
+  ): Promise<FileOnAnnouncement> {
+    try {
+      const file = await this.prisma.fileOnAnnouncement.findUnique({
+        where: { id: dto.query.fileOnAnnouncementId },
+      });
+
+      if (!file) {
+        throw new NotFoundException('File not found');
+      }
+
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: file.subjectId,
+      });
+
+      return await this.prisma.fileOnAnnouncement.update({
+        where: { id: file.id },
+        data: { ...dto.body },
       });
     } catch (error) {
       this.logger.error(error);

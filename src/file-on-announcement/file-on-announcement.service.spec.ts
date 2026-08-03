@@ -23,6 +23,7 @@ describe('FileOnAnnouncementService', () => {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
     },
     school: { update: jest.fn() },
@@ -149,6 +150,44 @@ describe('FileOnAnnouncementService', () => {
     await expect(
       service.create(
         { announcementId: 'nope', url: 'https://r2/x', size: 1 },
+        teacher,
+      ),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('renames a file after validating subject access', async () => {
+    mockPrismaService.fileOnAnnouncement.findUnique.mockResolvedValue({
+      id: 'f1',
+      subjectId: 'subj1',
+      name: 'old.pdf',
+    });
+    mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+    mockPrismaService.fileOnAnnouncement.update.mockResolvedValue({
+      id: 'f1',
+      name: 'new.pdf',
+    });
+
+    const result = await service.update(
+      { query: { fileOnAnnouncementId: 'f1' }, body: { name: 'new.pdf' } },
+      teacher,
+    );
+
+    expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+      userId: 'u1',
+      subjectId: 'subj1',
+    });
+    expect(mockPrismaService.fileOnAnnouncement.update).toHaveBeenCalledWith({
+      where: { id: 'f1' },
+      data: { name: 'new.pdf' },
+    });
+    expect(result.name).toBe('new.pdf');
+  });
+
+  it('throws NotFound when renaming a missing file', async () => {
+    mockPrismaService.fileOnAnnouncement.findUnique.mockResolvedValue(null);
+    await expect(
+      service.update(
+        { query: { fileOnAnnouncementId: 'nope' }, body: { name: 'x' } },
         teacher,
       ),
     ).rejects.toThrow(NotFoundException);
