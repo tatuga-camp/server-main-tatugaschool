@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserRepository } from './users.repository';
 import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 @Injectable()
 export class UsersService {
@@ -39,6 +41,18 @@ export class UsersService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  GetTawkHash(user: UserJwtPayload): { userId: string; hash: string } {
+    const apiKey = process.env.TAWK_API_KEY;
+    if (!apiKey) {
+      throw new InternalServerErrorException('TAWK_API_KEY is not configured');
+    }
+    const hash = crypto
+      .createHmac('sha256', apiKey)
+      .update(user.id)
+      .digest('hex');
+    return { userId: user.id, hash };
   }
 
   async ResendVerifyEmail(user: UserJwtPayload): Promise<void> {

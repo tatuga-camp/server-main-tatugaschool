@@ -24,6 +24,12 @@ export class UsersController {
     return this.usersService.GetUser(user);
   }
 
+  @UseGuards(UserGuard)
+  @Get('me/tawk-hash')
+  GetTawkHash(@GetUser() user: UserJwtPayload) {
+    return this.usersService.GetTawkHash(user);
+  }
+
   @UseGuards(NoVerifyUserGuard)
   @Post('resend-verify-email')
   ResendVerifyEmail(@GetUser() user: UserJwtPayload) {

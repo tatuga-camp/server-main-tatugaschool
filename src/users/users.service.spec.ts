@@ -6,8 +6,10 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -215,6 +217,38 @@ describe('UsersService', () => {
       const result = await service.isMemberOfSchool('u1', 'sch1');
 
       expect(result.role).toBe('TEACHER');
+    });
+  });
+
+  describe('GetTawkHash', () => {
+    afterEach(() => {
+      delete process.env.TAWK_API_KEY;
+    });
+
+    it('returns userId and hex HMAC-SHA256 of user id keyed with TAWK_API_KEY', () => {
+      process.env.TAWK_API_KEY = 'test-key';
+      const user = { id: '507f1f77bcf86cd799439011' } as any;
+
+      const result = service.GetTawkHash(user);
+
+      const expected = crypto
+        .createHmac('sha256', 'test-key')
+        .update('507f1f77bcf86cd799439011')
+        .digest('hex');
+      expect(result).toEqual({
+        userId: '507f1f77bcf86cd799439011',
+        hash: expected,
+      });
+      expect(result.hash).toMatch(/^[a-f0-9]{64}$/);
+    });
+
+    it('throws InternalServerErrorException when TAWK_API_KEY is not configured', () => {
+      delete process.env.TAWK_API_KEY;
+      const user = { id: 'abc' } as any;
+
+      expect(() => service.GetTawkHash(user)).toThrow(
+        InternalServerErrorException,
+      );
     });
   });
 
