@@ -1028,10 +1028,10 @@ model Notification {
   schoolId  String @db.ObjectId
   subjectId String @db.ObjectId
 
-  @@index([userId, isRead])
+  @@index([userId, isRead, createAt]) // unread listing per user, newest first
   @@index([createAt])
   @@index([userId, createAt]) // listing per user, newest first
-  @@index([studentId, isRead])
+  @@index([studentId, isRead, createAt]) // unread listing per student, newest first
   @@index([studentId, createAt])
   @@index([schoolId])
   @@index([subjectId])
