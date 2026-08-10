@@ -14,6 +14,12 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import {
+  findFirstMemberOnSchoolByUser,
+  findManyMemberOnSchoolByUser,
+  findMemberOnSchoolByInvitationToken,
+  findPendingInvitationsByUserOrEmail,
+} from './member-on-school.raw';
 
 type Repository = {
   create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool>;
@@ -109,10 +115,8 @@ export class MemberOnSchoolRepository implements Repository {
 
   async getByUserId(request: { userId: string }): Promise<MemberOnSchool[]> {
     try {
-      return await this.prisma.memberOnSchool.findMany({
-        where: {
-          userId: request.userId,
-        },
+      return await findManyMemberOnSchoolByUser(this.prisma, {
+        userId: request.userId,
       });
     } catch (error) {
       this.logger.error(error);
@@ -148,11 +152,9 @@ export class MemberOnSchoolRepository implements Repository {
     schoolId: string;
   }): Promise<MemberOnSchool> {
     try {
-      return await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: request.userId,
-          schoolId: request.schoolId,
-        },
+      return await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: request.userId,
+        schoolId: request.schoolId,
       });
     } catch (error) {
       this.logger.error(error);
@@ -298,9 +300,10 @@ export class MemberOnSchoolRepository implements Repository {
     token: string;
   }): Promise<MemberOnSchool | null> {
     try {
-      return await this.prisma.memberOnSchool.findFirst({
-        where: { invitationToken: request.token },
-      });
+      return await findMemberOnSchoolByInvitationToken(
+        this.prisma,
+        request.token,
+      );
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -317,14 +320,9 @@ export class MemberOnSchoolRepository implements Repository {
     email: string;
   }): Promise<MemberOnSchool[]> {
     try {
-      return await this.prisma.memberOnSchool.findMany({
-        where: {
-          status: 'PENDDING',
-          OR: [
-            { userId: request.userId },
-            { AND: [{ userId: null }, { email: request.email }] },
-          ],
-        },
+      return await findPendingInvitationsByUserOrEmail(this.prisma, {
+        userId: request.userId,
+        email: request.email,
       });
     } catch (error) {
       this.logger.error(error);

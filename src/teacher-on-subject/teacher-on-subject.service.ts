@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import {
   CreateTeacherOnSubjectDto,
   DeleteTeacherOnSubjectDto,
@@ -56,11 +57,9 @@ export class TeacherOnSubjectService {
         throw new NotFoundException('Subject Not Found');
       }
 
-      const memberOnSchool = await this.memberOnSchoolRepository.findFirst({
-        where: {
-          schoolId: subject.schoolId,
-          userId: userId,
-        },
+      const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: userId,
+        schoolId: subject.schoolId,
       });
 
       if (!memberOnSchool || memberOnSchool?.status !== 'ACCEPT') {

@@ -11,6 +11,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Attendance, AttendanceRow, User } from '@prisma/client';
 import {
   CreateAttendanceDto,
@@ -83,11 +84,9 @@ export class AttendanceService {
     }
 
     const [memberOnSchool, teacherOnSubject] = await Promise.all([
-      this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: userId,
-          schoolId: subject.schoolId,
-        },
+      findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: userId,
+        schoolId: subject.schoolId,
       }),
 
       this.prisma.teacherOnSubject.findFirst({

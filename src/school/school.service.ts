@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { MemberRole, School, Status, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { findManyMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { StripeService } from '../stripe/stripe.service';
 import { ClassService } from './../class/class.service';
 import { StorageService } from '../storage/storage.service';
@@ -60,11 +61,9 @@ export class SchoolService {
   async getSchools(user: UserJwtPayload): Promise<School[]> {
     try {
       const memberOnSchools =
-        await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
-          where: {
-            userId: user.id,
-            status: 'ACCEPT',
-          },
+        await findManyMemberOnSchoolByUser(this.prisma, {
+          userId: user.id,
+          status: 'ACCEPT',
         });
 
       const schoolIds = memberOnSchools.map((member) => member.schoolId);
@@ -161,10 +160,8 @@ export class SchoolService {
         throw new NotFoundException('User not found');
       }
       const memeberOnSchools =
-        await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
-          where: {
-            userId: user.id,
-          },
+        await findManyMemberOnSchoolByUser(this.prisma, {
+          userId: user.id,
         });
 
       const customer = await this.stripe.customers.create({

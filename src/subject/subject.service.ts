@@ -23,6 +23,7 @@ import * as crypto from 'crypto';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { ClassService } from '../class/class.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { StudentOnSubjectRepository } from '../student-on-subject/student-on-subject.repository';
 import { StorageService } from '../storage/storage.service';
 import { MemberOnSchoolService } from './../member-on-school/member-on-school.service';
@@ -502,11 +503,9 @@ export class SubjectService {
     user: UserJwtPayload,
   ): Promise<(Subject & { teachers: TeacherOnSubject[]; class: Class })[]> {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: dto.schoolId,
-        },
+      const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: user.id,
+        schoolId: dto.schoolId,
       });
 
       if (!memberOnSchool) {
@@ -732,11 +731,9 @@ export class SubjectService {
       );
 
       const [memberOnSchool, classroom] = await Promise.all([
-        this.prisma.memberOnSchool.findFirst({
-          where: {
-            userId: user.id,
-            schoolId: dto.schoolId,
-          },
+        findFirstMemberOnSchoolByUser(this.prisma, {
+          userId: user.id,
+          schoolId: dto.schoolId,
         }),
         this.classroomService.classRepository.findById({
           classId: dto.classId,

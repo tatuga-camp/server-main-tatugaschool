@@ -94,10 +94,7 @@ export class WordCloudSetService {
   private async buildQuestionResults(
     setId: string,
   ): Promise<SetQuestionResult[]> {
-    const questions = await this.repository.findManyQuestions({
-      where: { wordCloudSetId: setId },
-      orderBy: { order: 'asc' },
-    });
+    const questions = await this.repository.findQuestionsBySetId(setId);
 
     const results: SetQuestionResult[] = [];
     for (const q of questions) {
@@ -254,10 +251,7 @@ export class WordCloudSetService {
       if (dto.allowMultiple !== undefined)
         questionData.allowMultiple = dto.allowMultiple;
       if (Object.keys(questionData).length > 0) {
-        await this.repository.updateManyQuestions({
-          where: { wordCloudSetId: set.id },
-          data: questionData,
-        });
+        await this.repository.updateQuestionsBySetId(set.id, questionData);
       }
 
       return updated;
@@ -274,10 +268,7 @@ export class WordCloudSetService {
   ): Promise<WordCloud> {
     try {
       const set = await this.loadSetForTeacher(param.setId, user);
-      const questions = await this.repository.findManyQuestions({
-        where: { wordCloudSetId: set.id },
-        orderBy: { order: 'asc' },
-      });
+      const questions = await this.repository.findQuestionsBySetId(set.id);
       const nextOrder =
         questions.length === 0
           ? 0
@@ -410,10 +401,7 @@ export class WordCloudSetService {
       });
       if (!set) throw new NotFoundException('Word cloud set not found');
 
-      const questions = await this.repository.findManyQuestions({
-        where: { wordCloudSetId: set.id },
-        orderBy: { order: 'asc' },
-      });
+      const questions = await this.repository.findQuestionsBySetId(set.id);
 
       const activeOrder =
         questions.find((q) => q.id === set.activeWordCloudId)?.order ?? 0;
@@ -451,9 +439,7 @@ export class WordCloudSetService {
     dto: GetWordCloudResultsByTokenDto,
   ): Promise<ResponseGetWordCloudSetResults> {
     try {
-      const set = await this.repository.findFirst({
-        where: { publicResultsToken: dto.token },
-      });
+      const set = await this.repository.findSetByPublicResultsToken(dto.token);
       if (!set) throw new NotFoundException('This link is no longer available');
 
       const results = await this.buildQuestionResults(set.id);

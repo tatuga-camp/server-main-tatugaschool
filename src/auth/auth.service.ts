@@ -19,6 +19,7 @@ import { EmailService } from '../email/email.service';
 import { StorageService } from '../storage/storage.service';
 import { ImageService } from '../image/image.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { findManyMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { UserRepository } from '../users/users.repository';
 import { StudentRepository } from './../student/student.repository';
 import {
@@ -290,8 +291,8 @@ export class AuthService {
 
       await this.usersRepository.updateVerified({ email: user.email });
 
-      const members = await this.prisma.memberOnSchool.findMany({
-        where: { userId: user.id },
+      const members = await findManyMemberOnSchoolByUser(this.prisma, {
+        userId: user.id,
       });
 
       if (members.length === 0) {

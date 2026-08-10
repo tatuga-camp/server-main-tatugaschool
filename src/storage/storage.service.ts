@@ -10,6 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { Readable } from 'stream';
 import { PrismaService } from '../prisma/prisma.service';
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { MemberOnSchool, Student, User } from '@prisma/client';
 import { InputDeleteFileOnStorage } from './interfaces';
 import {
@@ -101,11 +102,9 @@ export class StorageService {
     schoolId: string;
   }): Promise<MemberOnSchool> {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: schoolId,
-        },
+      const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: user.id,
+        schoolId: schoolId,
       });
 
       if (!memberOnSchool || memberOnSchool.status !== 'ACCEPT') {

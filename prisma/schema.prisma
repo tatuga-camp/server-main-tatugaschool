@@ -52,6 +52,9 @@ model User {
   announcements             Announcement[]
   commentOnAnnouncements    CommentOnAnnouncement[]
   reactionOnAnnouncements   ReactionOnAnnouncement[]
+
+  @@index([verifyEmailToken])
+  @@index([resetPasswordToken])
 }
 
 enum Language {
@@ -75,6 +78,8 @@ model SubscriptionNotification {
   student   Student? @relation(fields: [studentId], references: [id])
 
   @@unique([endpoint, userId, studentId])
+  @@index([userId, createAt]) // latest-subscription-per-user lookup on notification send
+  @@index([studentId])
 }
 
 model School {
@@ -170,6 +175,7 @@ model MemberOnSchool {
   @@unique([email, schoolId])
   @@index([schoolId]) // speed up Prisma referential checks / school-scoped queries
   @@index([invitationToken])
+  @@index([userId, schoolId]) // per-request permission checks (userId prefix serves userId-only lookups)
 }
 
 model Class {
@@ -700,6 +706,7 @@ model CommentOnAssignment {
   @@index([schoolId])
   @@index([teacherOnSubjectId])
   @@index([userId])
+  @@index([studentId])
 }
 
 model ScoreOnSubject {

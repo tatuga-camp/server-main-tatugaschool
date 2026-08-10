@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubjectService } from './subject.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -466,7 +468,7 @@ describe('SubjectService', () => {
 
   describe('getBySchoolId', () => {
     it('should throw ForbiddenException if memberOnSchool not found', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue(null);
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue(null);
       await expect(
         service.getBySchoolId({ schoolId: 'sch1', educationYear: '2024' }, {
           id: 'u1',
@@ -475,7 +477,7 @@ describe('SubjectService', () => {
     });
 
     it('should return subjects', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         schoolId: 'sch1',
       });
       (service.subjectRepository.findMany as jest.Mock).mockResolvedValue([
@@ -654,7 +656,7 @@ describe('SubjectService', () => {
       });
       (service.subjectRepository.findMany as jest.Mock).mockResolvedValue([]);
       mockSchoolService.ValidateLimit.mockResolvedValue(true);
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         schoolId: 'sch1',
       });
       mockClassService.classRepository.findById.mockResolvedValue({

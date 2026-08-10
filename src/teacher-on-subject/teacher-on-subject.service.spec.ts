@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeacherOnSubjectService } from './teacher-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -85,9 +87,10 @@ describe('TeacherOnSubjectService', () => {
         id: 's1',
         schoolId: 'sch1',
       });
-      (
-        service.memberOnSchoolRepository.findFirst as jest.Mock
-      ).mockResolvedValue({ status: 'ACCEPT', role: 'ADMIN' });
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
+        status: 'ACCEPT',
+        role: 'ADMIN',
+      });
 
       const result = await service.ValidateAccess({
         userId: 'u1',
@@ -95,6 +98,10 @@ describe('TeacherOnSubjectService', () => {
       });
 
       expect(result).toBe('admin-school');
+      expect(findFirstMemberOnSchoolByUser).toHaveBeenCalledWith(
+        expect.anything(),
+        { userId: 'u1', schoolId: 'sch1' },
+      );
     });
 
     it('should return memberOnSubject if user is teacher', async () => {
@@ -102,9 +109,10 @@ describe('TeacherOnSubjectService', () => {
         id: 's1',
         schoolId: 'sch1',
       });
-      (
-        service.memberOnSchoolRepository.findFirst as jest.Mock
-      ).mockResolvedValue({ status: 'ACCEPT', role: 'TEACHER' });
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
+        status: 'ACCEPT',
+        role: 'TEACHER',
+      });
       (
         service.teacherOnSubjectRepository
           .getByTeacherIdAndSubjectId as jest.Mock
@@ -123,9 +131,7 @@ describe('TeacherOnSubjectService', () => {
         id: 's1',
         schoolId: 'sch1',
       });
-      (
-        service.memberOnSchoolRepository.findFirst as jest.Mock
-      ).mockResolvedValue(null);
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
         service.ValidateAccess({ userId: 'u1', subjectId: 's1' }),

@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findManyMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { EmailService } from '../email/email.service';
@@ -385,7 +387,7 @@ describe('AuthService', () => {
     });
 
     it('creates the default school when the user has no existing memberships', async () => {
-      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([]);
+      (findManyMemberOnSchoolByUser as jest.Mock).mockResolvedValue([]);
       mockSchoolService.createSchool.mockResolvedValue({ id: 'defaultSch' });
 
       const result = await service.verifyEmail({ token: 'vtok' });
@@ -398,7 +400,7 @@ describe('AuthService', () => {
     });
 
     it('skips default school creation when the user already has memberships', async () => {
-      mockPrismaService.memberOnSchool.findMany.mockResolvedValue([
+      (findManyMemberOnSchoolByUser as jest.Mock).mockResolvedValue([
         { id: 'm1', schoolId: 'sch1' },
       ]);
 

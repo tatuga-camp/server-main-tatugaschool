@@ -20,6 +20,84 @@ import {
 } from './interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
+// verifyEmailToken/resetPasswordToken are optional fields, so Prisma findFirst
+// filters on them compile to `$expr`/`$ne: [field, "$$REMOVE"]` pipelines that
+// MongoDB cannot serve from the token indexes — every verify/reset click would
+// scan the whole User collection. The token lookups use findRaw instead.
+
+type RawObjectId = { $oid: string };
+type RawDate = { $date: string | { $numberLong: string } };
+
+type RawUser = {
+  _id: RawObjectId;
+  createAt: RawDate;
+  updateAt: RawDate;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  photo: string;
+  blurHash?: string | null;
+  password?: string | null;
+  role: User['role'];
+  createBySchoolId?: RawObjectId | null;
+  isVerifyEmail?: boolean;
+  verifyEmailToken?: string | null;
+  verifyEmailTokenExpiresAt?: RawDate | null;
+  language?: User['language'];
+  isDoneSurvey?: boolean;
+  lastActiveAt: RawDate;
+  isResetPassword?: boolean;
+  provider: User['provider'];
+  providerId?: string | null;
+  isDeleted?: boolean;
+  deleteAt?: RawDate | null;
+  resetPasswordToken?: string | null;
+  resetPasswordTokenExpiresAt?: RawDate | null;
+  favoritSchool?: RawObjectId | null;
+};
+
+function fromRawDate(raw: RawDate): Date {
+  return typeof raw.$date === 'string'
+    ? new Date(raw.$date)
+    : new Date(Number(raw.$date.$numberLong));
+}
+
+function fromRawUser(doc: RawUser): User {
+  return {
+    id: doc._id.$oid,
+    createAt: fromRawDate(doc.createAt),
+    updateAt: fromRawDate(doc.updateAt),
+    firstName: doc.firstName,
+    lastName: doc.lastName,
+    email: doc.email,
+    phone: doc.phone,
+    photo: doc.photo,
+    blurHash: doc.blurHash ?? null,
+    password: doc.password ?? null,
+    role: doc.role ?? 'USER',
+    createBySchoolId: doc.createBySchoolId?.$oid ?? null,
+    isVerifyEmail: doc.isVerifyEmail ?? false,
+    verifyEmailToken: doc.verifyEmailToken ?? null,
+    verifyEmailTokenExpiresAt: doc.verifyEmailTokenExpiresAt
+      ? fromRawDate(doc.verifyEmailTokenExpiresAt)
+      : null,
+    language: doc.language ?? 'en',
+    isDoneSurvey: doc.isDoneSurvey ?? false,
+    lastActiveAt: fromRawDate(doc.lastActiveAt),
+    isResetPassword: doc.isResetPassword ?? false,
+    provider: doc.provider,
+    providerId: doc.providerId ?? null,
+    isDeleted: doc.isDeleted ?? false,
+    deleteAt: doc.deleteAt ? fromRawDate(doc.deleteAt) : null,
+    resetPasswordToken: doc.resetPasswordToken ?? null,
+    resetPasswordTokenExpiresAt: doc.resetPasswordTokenExpiresAt
+      ? fromRawDate(doc.resetPasswordTokenExpiresAt)
+      : null,
+    favoritSchool: doc.favoritSchool?.$oid ?? null,
+  };
+}
+
 type Repository = {
   findMany(request: Prisma.UserFindManyArgs): Promise<User[]>;
   findById(request: RequestFindById): Promise<User | null>;
@@ -121,11 +199,23 @@ export class UserRepository implements Repository {
         blurHash: user.blurHash,
       };
       await Promise.allSettled([
-        this.prisma.memberOnSchool.updateMany({
-          where: {
-            userId: user.id,
-          },
-          data: data,
+        // userId is optional on MemberOnSchool, so Prisma's updateMany filter
+        // compiles to a $expr/$ne-$$REMOVE pipeline MongoDB cannot serve from
+        // the userId index — a raw plain filter is index-eligible.
+        this.prisma.$runCommandRaw({
+          update: 'MemberOnSchool',
+          updates: [
+            {
+              q: { userId: { $oid: user.id } },
+              u: {
+                $set: {
+                  ...data,
+                  updateAt: { $date: new Date().toISOString() },
+                },
+              },
+              multi: true,
+            },
+          ],
         }),
         this.prisma.teacherOnSubject.updateMany({
           where: {
@@ -133,11 +223,23 @@ export class UserRepository implements Repository {
           },
           data: data,
         }),
-        this.prisma.commentOnAssignment.updateMany({
-          where: {
-            userId: user.id,
-          },
-          data: data,
+        // userId is optional on CommentOnAssignment, so Prisma's updateMany
+        // filter compiles to a $expr/$ne-$$REMOVE pipeline MongoDB cannot serve
+        // from the userId index — a raw plain filter is index-eligible.
+        this.prisma.$runCommandRaw({
+          update: 'CommentOnAssignment',
+          updates: [
+            {
+              q: { userId: { $oid: user.id } },
+              u: {
+                $set: {
+                  ...data,
+                  updateAt: { $date: new Date().toISOString() },
+                },
+              },
+              multi: true,
+            },
+          ],
         }),
       ]);
 
@@ -200,12 +302,17 @@ export class UserRepository implements Repository {
   }
 
   async findByVerifyToken(request: RequestFindByVerifyToken): Promise<User> {
+    // A raw {verifyEmailToken: null/undefined} filter would match token-less
+    // users (or anyone at all) — never let a falsy token through.
+    if (!request.verifyEmailToken) {
+      return null;
+    }
     try {
-      return await this.prisma.user.findFirst({
-        where: {
-          ...request,
-        },
-      });
+      const docs = (await this.prisma.user.findRaw({
+        filter: { verifyEmailToken: request.verifyEmailToken },
+        options: { limit: 1 },
+      })) as unknown as RawUser[];
+      return docs.length > 0 ? fromRawUser(docs[0]) : null;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -239,12 +346,17 @@ export class UserRepository implements Repository {
   }
 
   async findByResetToken(request: RequestFindByResetToken): Promise<User> {
+    // Same guard as findByVerifyToken: a falsy token must never reach the
+    // raw filter.
+    if (!request.resetPasswordToken) {
+      return null;
+    }
     try {
-      return await this.prisma.user.findFirst({
-        where: {
-          ...request,
-        },
-      });
+      const docs = (await this.prisma.user.findRaw({
+        filter: { resetPasswordToken: request.resetPasswordToken },
+        options: { limit: 1 },
+      })) as unknown as RawUser[];
+      return docs.length > 0 ? fromRawUser(docs[0]) : null;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

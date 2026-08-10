@@ -44,7 +44,7 @@ describe('ClassService', () => {
 
   const mockPushService = {
     pushRepository: {
-      findMany: jest.fn(),
+      findManyForUsers: jest.fn().mockResolvedValue([]),
     },
     sendNotification: jest.fn(),
   };

@@ -27,8 +27,8 @@ describe('NotificationService', () => {
 
   const mockPushService = {
     pushRepository: {
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
+      findLatestForUser: jest.fn(),
+      findManyForStudents: jest.fn(),
     },
     sendNotification: jest.fn(),
   };
@@ -68,12 +68,17 @@ describe('NotificationService', () => {
       };
 
       mockNotificationRepo.createMany.mockResolvedValue({ count: 1 });
-      mockPushService.pushRepository.findFirst.mockResolvedValue({ data: {} });
+      mockPushService.pushRepository.findLatestForUser.mockResolvedValue({
+        data: {},
+      });
       mockPushService.sendNotification.mockResolvedValue({});
 
       const result = await service.createNotifications(dto);
 
       expect(mockNotificationRepo.createMany).toHaveBeenCalled();
+      expect(
+        mockPushService.pushRepository.findLatestForUser,
+      ).toHaveBeenCalledWith('u1');
       expect(mockPushService.sendNotification).toHaveBeenCalled();
       expect(result).toEqual({ count: 1 });
     });
@@ -147,13 +152,13 @@ describe('NotificationService', () => {
       (mockNotificationRepo.createMany as jest.Mock).mockResolvedValue({
         count: 2,
       });
-      (mockPushService.pushRepository.findMany as jest.Mock).mockResolvedValue(
-        [
-          { id: 'sub1', studentId: 'st1', data: '{"endpoint":"e1"}' },
-          { id: 'sub2', studentId: 'st1', data: '{"endpoint":"e2"}' },
-          { id: 'sub3', studentId: 'st2', data: '{"endpoint":"e3"}' },
-        ],
-      );
+      (
+        mockPushService.pushRepository.findManyForStudents as jest.Mock
+      ).mockResolvedValue([
+        { id: 'sub1', studentId: 'st1', data: '{"endpoint":"e1"}' },
+        { id: 'sub2', studentId: 'st1', data: '{"endpoint":"e2"}' },
+        { id: 'sub3', studentId: 'st2', data: '{"endpoint":"e3"}' },
+      ]);
       (mockPushService.sendNotification as jest.Mock).mockResolvedValue(
         undefined,
       );
