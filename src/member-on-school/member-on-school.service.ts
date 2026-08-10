@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { MemberOnSchool, MemberRole, School, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { findFirstMemberOnSchoolByUser } from './member-on-school.raw';
 import { UserRepository } from '../users/users.repository';
 import { PushSubscription } from '../web-push/interfaces';
 import { PushService } from '../web-push/push.service';
@@ -53,11 +54,9 @@ export class MemberOnSchoolService {
     schoolId: string;
   }): Promise<MemberOnSchool> {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: user.id,
-          schoolId: schoolId,
-        },
+      const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: user.id,
+        schoolId: schoolId,
       });
 
       if (!memberOnSchool || memberOnSchool.status !== 'ACCEPT') {
@@ -93,11 +92,10 @@ export class MemberOnSchoolService {
         },
       });
 
-      const notificaitons = await this.pushService.pushRepository.findMany({
-        where: {
-          OR: users.map((user) => ({ userId: user.id })),
-        },
-      });
+      const notificaitons =
+        await this.pushService.pushRepository.findManyForUsers(
+          users.map((user) => user.id),
+        );
       const notifications = notificaitons.map((subscription) =>
         this.pushService.sendNotification(
           subscription.data as PushSubscription,

@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findManyMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SchoolService } from './school.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -104,7 +106,7 @@ describe('SchoolService', () => {
 
   describe('getSchools', () => {
     it('should return schools the user is a member of', async () => {
-      mockMemberOnSchoolService.memberOnSchoolRepository.findMany.mockResolvedValue(
+      (findManyMemberOnSchoolByUser as jest.Mock).mockResolvedValue(
         [{ schoolId: 'sch1' }],
       );
       (service.schoolRepository.findMany as jest.Mock).mockResolvedValue([
@@ -158,7 +160,7 @@ describe('SchoolService', () => {
 
   describe('createSchool', () => {
     it('should create school and initial member', async () => {
-      mockMemberOnSchoolService.memberOnSchoolRepository.findMany.mockResolvedValue(
+      (findManyMemberOnSchoolByUser as jest.Mock).mockResolvedValue(
         [],
       );
       mockStripeService.customers.create.mockResolvedValue({ id: 'cus_123' });

@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -102,7 +104,7 @@ describe('AttendanceService', () => {
         id: 's1',
         schoolId: 'sch1',
       });
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         status: 'ACCEPT',
         role: 'ADMIN',
       });
@@ -118,7 +120,7 @@ describe('AttendanceService', () => {
         id: 's1',
         schoolId: 'sch1',
       });
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         status: 'ACCEPT',
         role: 'USER',
       });

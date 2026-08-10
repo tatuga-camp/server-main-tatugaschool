@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StorageService } from './storage.service';
 import { ConfigService } from '@nestjs/config';
@@ -82,7 +84,7 @@ describe('StorageService', () => {
 
   describe('validateAccess', () => {
     it('should validate successfully', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         status: 'ACCEPT',
       });
 
@@ -94,7 +96,7 @@ describe('StorageService', () => {
     });
 
     it('should throw ForbiddenException if user not member', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue(null);
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
         service.validateAccess({ user: { id: 'u1' } as any, schoolId: 'sch1' }),
@@ -109,7 +111,7 @@ describe('StorageService', () => {
         totalStorage: 100,
         limitTotalStorage: 1000,
       });
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         status: 'ACCEPT',
       });
 
@@ -144,7 +146,7 @@ describe('StorageService', () => {
         totalStorage: 950,
         limitTotalStorage: 1000,
       });
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         status: 'ACCEPT',
       });
 

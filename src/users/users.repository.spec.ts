@@ -5,7 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 describe('UserRepository', () => {
   let repo: UserRepository;
   const mockPrisma = {
-    user: { findMany: jest.fn() },
+    user: { findMany: jest.fn(), update: jest.fn(), findRaw: jest.fn() },
+    memberOnSchool: { updateMany: jest.fn() },
+    teacherOnSubject: { updateMany: jest.fn() },
+    commentOnAssignment: { updateMany: jest.fn() },
+    $runCommandRaw: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -54,4 +58,237 @@ describe('UserRepository', () => {
       expect(since.getTime()).toBe(expected.getTime());
     });
   });
+
+  // Regression tests for the User COLLSCAN on token lookups: the tokens are
+  // optional fields, so Prisma findFirst compiles to a non-index-eligible
+  // `$expr`/`$ne: [field, "$$REMOVE"]` filter that scans the whole User
+  // collection per email-verify / password-reset click. Must use findRaw.
+  describe('findByVerifyToken / findByResetToken', () => {
+    const rawUser = {
+      _id: { $oid: '5f4b4a4e481e3caefd634a01' },
+      createAt: { $date: '2026-01-01T00:00:00.000Z' },
+      updateAt: { $date: '2026-01-01T00:00:00.000Z' },
+      firstName: 'Will',
+      lastName: 'T.',
+      email: 'will@example.com',
+      phone: '0812345678',
+      photo: 'photo.png',
+      blurHash: 'LEHV6n',
+      password: 'hashed',
+      role: 'USER',
+      isVerifyEmail: false,
+      verifyEmailToken: 'tok-verify',
+      verifyEmailTokenExpiresAt: { $date: '2026-05-24T12:00:00.000Z' },
+      language: 'th',
+      isDoneSurvey: true,
+      lastActiveAt: { $date: '2026-05-23T00:00:00.000Z' },
+      isResetPassword: false,
+      provider: 'LOCAL',
+      isDeleted: false,
+      resetPasswordToken: 'tok-reset',
+      resetPasswordTokenExpiresAt: { $date: '2026-05-24T12:00:00.000Z' },
+      favoritSchool: { $oid: '6a4b4a4e481e3caefd634d01' },
+    };
+
+    it('findByVerifyToken uses a plain (non-$expr) filter and maps EJSON back', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([rawUser]);
+
+      const user = await repo.findByVerifyToken({
+        verifyEmailToken: 'tok-verify',
+      });
+
+      expect(mockPrisma.user.findRaw).toHaveBeenCalledWith({
+        filter: { verifyEmailToken: 'tok-verify' },
+        options: { limit: 1 },
+      });
+      expect(user).toMatchObject({
+        id: '5f4b4a4e481e3caefd634a01',
+        email: 'will@example.com',
+        role: 'USER',
+        provider: 'LOCAL',
+        providerId: null,
+        deleteAt: null,
+        favoritSchool: '6a4b4a4e481e3caefd634d01',
+      });
+      expect(user.verifyEmailTokenExpiresAt).toBeInstanceOf(Date);
+      expect(user.verifyEmailTokenExpiresAt.toISOString()).toBe(
+        '2026-05-24T12:00:00.000Z',
+      );
+    });
+
+    it('findByVerifyToken returns null when no user matches', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([]);
+
+      const user = await repo.findByVerifyToken({
+        verifyEmailToken: 'nope',
+      });
+
+      expect(user).toBeNull();
+    });
+
+    it('findByResetToken uses a plain (non-$expr) filter', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([rawUser]);
+
+      const user = await repo.findByResetToken({
+        resetPasswordToken: 'tok-reset',
+      });
+
+      expect(mockPrisma.user.findRaw).toHaveBeenCalledWith({
+        filter: { resetPasswordToken: 'tok-reset' },
+        options: { limit: 1 },
+      });
+      expect(user.resetPasswordTokenExpiresAt).toBeInstanceOf(Date);
+    });
+
+    it('findByResetToken returns null when no user matches', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([]);
+
+      const user = await repo.findByResetToken({
+        resetPasswordToken: 'nope',
+      });
+
+      expect(user).toBeNull();
+    });
+
+    it('returns null for a falsy token without querying (raw null/undefined filters would over-match)', async () => {
+      const byVerify = await repo.findByVerifyToken({
+        verifyEmailToken: undefined as unknown as string,
+      });
+      const byReset = await repo.findByResetToken({
+        resetPasswordToken: null as unknown as string,
+      });
+
+      expect(byVerify).toBeNull();
+      expect(byReset).toBeNull();
+      expect(mockPrisma.user.findRaw).not.toHaveBeenCalled();
+    });
+
+    it('maps canonical EJSON dates ({ $date: { $numberLong } })', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([
+        {
+          ...rawUser,
+          createAt: { $date: { $numberLong: '1767225600000' } },
+          updateAt: { $date: { $numberLong: '1767225600000' } },
+          lastActiveAt: { $date: { $numberLong: '1779537600000' } },
+          verifyEmailTokenExpiresAt: { $date: { $numberLong: '1779624000000' } },
+        },
+      ]);
+
+      const user = await repo.findByVerifyToken({
+        verifyEmailToken: 'tok-verify',
+      });
+
+      expect(user.createAt.getTime()).toBe(1767225600000);
+      expect(user.lastActiveAt.getTime()).toBe(1779537600000);
+      expect(user.verifyEmailTokenExpiresAt.getTime()).toBe(1779624000000);
+    });
+
+    it('defaults role/language/flags on legacy users missing optional fields', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([
+        {
+          _id: { $oid: '5f4b4a4e481e3caefd634a02' },
+          createAt: { $date: '2026-01-01T00:00:00.000Z' },
+          updateAt: { $date: '2026-01-01T00:00:00.000Z' },
+          firstName: 'Legacy',
+          lastName: 'User',
+          email: 'legacy@example.com',
+          phone: '0800000000',
+          photo: 'photo.png',
+          provider: 'LOCAL',
+          lastActiveAt: { $date: '2026-01-01T00:00:00.000Z' },
+        },
+      ]);
+
+      const user = await repo.findByVerifyToken({
+        verifyEmailToken: 'tok-verify',
+      });
+
+      expect(user).toMatchObject({
+        role: 'USER',
+        language: 'en',
+        isVerifyEmail: false,
+        isDoneSurvey: false,
+        isResetPassword: false,
+        isDeleted: false,
+        blurHash: null,
+        password: null,
+        createBySchoolId: null,
+        verifyEmailToken: null,
+        verifyEmailTokenExpiresAt: null,
+        resetPasswordToken: null,
+        resetPasswordTokenExpiresAt: null,
+        favoritSchool: null,
+      });
+    });
+  });
+
+  // Regression test for the CommentOnAssignment COLLSCAN: userId is optional,
+  // so Prisma's updateMany filter compiles to a non-index-eligible
+  // `$expr`/`$ne: [field, "$$REMOVE"]` pipeline. The author-info sync must use
+  // $runCommandRaw with a plain filter so the { userId } index is used.
+  describe('update', () => {
+    const USER_ID = '5f4b4a4e481e3caefd634a01';
+
+    it('syncs comment author info with a plain (non-$expr) raw update', async () => {
+      mockPrisma.user.update.mockResolvedValue({
+        id: USER_ID,
+        firstName: 'Will',
+        lastName: 'T.',
+        email: 'will@example.com',
+        phone: '0812345678',
+        photo: 'photo.png',
+        blurHash: 'LEHV6n',
+      });
+      mockPrisma.$runCommandRaw.mockResolvedValue({ n: 0, nModified: 0, ok: 1 });
+
+      await repo.update({
+        where: { id: USER_ID },
+        data: { firstName: 'Will' },
+      });
+
+      expect(mockPrisma.commentOnAssignment.updateMany).not.toHaveBeenCalled();
+      expect(mockPrisma.memberOnSchool.updateMany).not.toHaveBeenCalled();
+      expect(mockPrisma.$runCommandRaw).toHaveBeenCalledWith({
+        update: 'MemberOnSchool',
+        updates: [
+          {
+            q: { userId: { $oid: USER_ID } },
+            u: {
+              $set: {
+                firstName: 'Will',
+                lastName: 'T.',
+                email: 'will@example.com',
+                phone: '0812345678',
+                photo: 'photo.png',
+                blurHash: 'LEHV6n',
+                updateAt: { $date: '2026-05-23T12:00:00.000Z' },
+              },
+            },
+            multi: true,
+          },
+        ],
+      });
+      expect(mockPrisma.$runCommandRaw).toHaveBeenCalledWith({
+        update: 'CommentOnAssignment',
+        updates: [
+          {
+            q: { userId: { $oid: USER_ID } },
+            u: {
+              $set: {
+                firstName: 'Will',
+                lastName: 'T.',
+                email: 'will@example.com',
+                phone: '0812345678',
+                photo: 'photo.png',
+                blurHash: 'LEHV6n',
+                updateAt: { $date: '2026-05-23T12:00:00.000Z' },
+              },
+            },
+            multi: true,
+          },
+        ],
+      });
+    });
+  });
+
 });

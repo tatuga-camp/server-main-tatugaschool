@@ -1,3 +1,5 @@
+jest.mock('./member-on-school.raw');
+import { findFirstMemberOnSchoolByUser } from './member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { MemberOnSchoolService } from './member-on-school.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -36,7 +38,7 @@ describe('MemberOnSchoolService', () => {
 
   const mockPushService = {
     pushRepository: {
-      findMany: jest.fn().mockResolvedValue([]),
+      findManyForUsers: jest.fn().mockResolvedValue([]),
     },
     sendNotification: jest.fn(),
   };
@@ -150,7 +152,7 @@ describe('MemberOnSchoolService', () => {
       );
       mockSchoolService.ValidateLimit.mockResolvedValue(undefined);
       (service as any).memberOnSchoolRepository.findMany.mockResolvedValue([]);
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         userId: 'admin1',
         schoolId: 'sch1',
         status: 'ACCEPT',
@@ -280,7 +282,7 @@ describe('MemberOnSchoolService', () => {
   describe('validateAccess', () => {
     it('should pass validation if member is accepted', async () => {
       const mockMember = { userId: 'u1', schoolId: 'sch1', status: 'ACCEPT' };
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue(mockMember);
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue(mockMember);
 
       const result = await service.validateAccess({
         user: { id: 'u1' } as any,
@@ -290,7 +292,7 @@ describe('MemberOnSchoolService', () => {
     });
 
     it('should throw ForbiddenException if member not accepted or not found', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue(null);
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue(null);
 
       await expect(
         service.validateAccess({ user: { id: 'u1' } as any, schoolId: 'sch1' }),

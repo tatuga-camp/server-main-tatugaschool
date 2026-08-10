@@ -87,11 +87,23 @@ export class StudentRepository implements Repository {
             data: data,
           }),
         ),
-        this.prisma.commentOnAssignment.updateMany({
-          where: {
-            studentId: student.id,
-          },
-          data: data,
+        // studentId is optional on CommentOnAssignment, so Prisma's updateMany
+        // filter compiles to a $expr/$ne-$$REMOVE pipeline MongoDB cannot serve
+        // from the studentId index — a raw plain filter is index-eligible.
+        this.prisma.$runCommandRaw({
+          update: 'CommentOnAssignment',
+          updates: [
+            {
+              q: { studentId: { $oid: student.id } },
+              u: {
+                $set: {
+                  ...data,
+                  updateAt: { $date: new Date().toISOString() },
+                },
+              },
+              multi: true,
+            },
+          ],
         }),
         this.prisma.scoreOnStudent.updateMany({
           where: {

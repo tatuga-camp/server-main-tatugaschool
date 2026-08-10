@@ -129,6 +129,14 @@ describe('NotificationRepository (raw index-eligible queries)', () => {
       });
       expect(count).toBe(5);
     });
+
+    it('returns 0 when the count command reports no matching documents', async () => {
+      mockPrisma.$runCommandRaw.mockResolvedValue({ ok: 1 });
+
+      const count = await repository.getUnreadCount({ userId: USER_ID });
+
+      expect(count).toBe(0);
+    });
   });
 
   describe('markAllAsRead / markAllAsReadForStudent', () => {
@@ -168,6 +176,14 @@ describe('NotificationRepository (raw index-eligible queries)', () => {
         ],
       });
       expect(result).toEqual({ count: 2 });
+    });
+
+    it('reports a count of 0 when the update command omits nModified', async () => {
+      mockPrisma.$runCommandRaw.mockResolvedValue({ n: 0, ok: 1 });
+
+      const result = await repository.markAllAsRead({ userId: USER_ID });
+
+      expect(result).toEqual({ count: 0 });
     });
   });
 });

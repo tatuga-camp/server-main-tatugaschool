@@ -16,6 +16,51 @@ export type ToggleReactionResult = {
   reaction: ReactionOnAnnouncement | null;
 };
 
+// studentId/userId are optional fields, so a Prisma findFirst on them compiles
+// to a `$expr`/`$ne: [field, "$$REMOVE"]` pipeline MongoDB cannot serve from
+// the announcementId index. The existing-reaction lookup uses findRaw instead.
+
+type RawObjectId = { $oid: string };
+type RawDate = { $date: string | { $numberLong: string } };
+
+type RawReactionOnAnnouncement = {
+  _id: RawObjectId;
+  createAt: RawDate;
+  updateAt: RawDate;
+  emoji: string;
+  firstName: string;
+  photo?: string | null;
+  announcementId: RawObjectId;
+  subjectId: RawObjectId;
+  schoolId: RawObjectId;
+  studentId?: RawObjectId | null;
+  userId?: RawObjectId | null;
+};
+
+function fromRawDate(raw: RawDate): Date {
+  return typeof raw.$date === 'string'
+    ? new Date(raw.$date)
+    : new Date(Number(raw.$date.$numberLong));
+}
+
+function fromRawReaction(
+  doc: RawReactionOnAnnouncement,
+): ReactionOnAnnouncement {
+  return {
+    id: doc._id.$oid,
+    createAt: fromRawDate(doc.createAt),
+    updateAt: fromRawDate(doc.updateAt),
+    emoji: doc.emoji,
+    firstName: doc.firstName,
+    photo: doc.photo ?? null,
+    announcementId: doc.announcementId.$oid,
+    subjectId: doc.subjectId.$oid,
+    schoolId: doc.schoolId.$oid,
+    studentId: doc.studentId?.$oid ?? null,
+    userId: doc.userId?.$oid ?? null,
+  };
+}
+
 @Injectable()
 export class ReactionOnAnnouncementService {
   private logger: Logger = new Logger(ReactionOnAnnouncementService.name);
@@ -48,14 +93,16 @@ export class ReactionOnAnnouncementService {
     firstName: string;
     photo: string | null;
   }): Promise<ToggleReactionResult> {
-    const existing = await this.prisma.reactionOnAnnouncement.findFirst({
-      where: {
-        announcementId: input.announcementId,
+    const docs = (await this.prisma.reactionOnAnnouncement.findRaw({
+      filter: {
+        announcementId: { $oid: input.announcementId },
         ...(input.studentId
-          ? { studentId: input.studentId }
-          : { userId: input.userId }),
+          ? { studentId: { $oid: input.studentId } }
+          : { userId: { $oid: input.userId } }),
       },
-    });
+      options: { limit: 1 },
+    })) as unknown as RawReactionOnAnnouncement[];
+    const existing = docs.length > 0 ? fromRawReaction(docs[0]) : null;
 
     if (existing && existing.emoji === input.emoji) {
       await this.prisma.reactionOnAnnouncement.delete({

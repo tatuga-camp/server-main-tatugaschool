@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { UserRepository } from './users.repository';
 import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
@@ -194,11 +195,9 @@ export class UsersService {
 
   async isAdminOfSchool(id: string, schoolId: string) {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: id,
-          schoolId: schoolId,
-        },
+      const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: id,
+        schoolId: schoolId,
       });
 
       if (!memberOnSchool) {
@@ -219,11 +218,9 @@ export class UsersService {
   }
   async isMemberOfSchool(id: string, schoolId: string) {
     try {
-      const memberOnSchool = await this.prisma.memberOnSchool.findFirst({
-        where: {
-          userId: id,
-          schoolId: schoolId,
-        },
+      const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
+        userId: id,
+        schoolId: schoolId,
       });
 
       if (!memberOnSchool) {

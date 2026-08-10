@@ -32,11 +32,12 @@ describe('WordCloudSetService', () => {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
       update: jest.fn(),
-      findManyQuestions: jest.fn(),
       findUniqueQuestion: jest.fn(),
       createQuestion: jest.fn(),
       updateQuestion: jest.fn(),
-      updateManyQuestions: jest.fn(),
+      findSetByPublicResultsToken: jest.fn(),
+      findQuestionsBySetId: jest.fn(),
+      updateQuestionsBySetId: jest.fn(),
       countAnswers: jest.fn(),
       findManyAnswers: jest.fn(),
       deleteSet: jest.fn(),
@@ -112,9 +113,8 @@ describe('WordCloudSetService', () => {
         { id: 'user1' } as any,
       );
 
-      expect(repo.updateManyQuestions).toHaveBeenCalledWith({
-        where: { wordCloudSetId: 'set1' },
-        data: { status: 'CLOSED' },
+      expect(repo.updateQuestionsBySetId).toHaveBeenCalledWith('set1', {
+        status: 'CLOSED',
       });
     });
 
@@ -128,7 +128,7 @@ describe('WordCloudSetService', () => {
         { id: 'user1' } as any,
       );
 
-      expect(repo.updateManyQuestions).not.toHaveBeenCalled();
+      expect(repo.updateQuestionsBySetId).not.toHaveBeenCalled();
       expect(repo.update).toHaveBeenCalledWith({
         where: { id: 'set1' },
         data: { activeWordCloudId: 'q2' },
@@ -151,7 +151,7 @@ describe('WordCloudSetService', () => {
         where: { id: 'set1' },
         data: { title: 'Renamed' },
       });
-      expect(repo.updateManyQuestions).not.toHaveBeenCalled();
+      expect(repo.updateQuestionsBySetId).not.toHaveBeenCalled();
     });
 
     it('cascades allowMultiple to child questions', async () => {
@@ -164,9 +164,8 @@ describe('WordCloudSetService', () => {
         { id: 'user1' } as any,
       );
 
-      expect(repo.updateManyQuestions).toHaveBeenCalledWith({
-        where: { wordCloudSetId: 'set1' },
-        data: { allowMultiple: true },
+      expect(repo.updateQuestionsBySetId).toHaveBeenCalledWith('set1', {
+        allowMultiple: true,
       });
     });
   });
@@ -181,7 +180,7 @@ describe('WordCloudSetService', () => {
         userId: 'user1',
         accessMode: 'PUBLIC',
       });
-      repo.findManyQuestions.mockResolvedValue([
+      repo.findQuestionsBySetId.mockResolvedValue([
         { id: 'q0', order: 0 },
         { id: 'q1', order: 1 },
       ]);
@@ -228,7 +227,7 @@ describe('WordCloudSetService', () => {
         subjectId: 'sub1',
         activeWordCloudId: 'q1',
       });
-      repo.findManyQuestions.mockResolvedValue([
+      repo.findQuestionsBySetId.mockResolvedValue([
         { id: 'q0', question: 'A?', order: 0, status: 'OPEN' },
         { id: 'q1', question: 'B?', order: 1, status: 'OPEN' },
         { id: 'q2', question: 'C?', order: 2, status: 'OPEN' },
@@ -307,7 +306,7 @@ describe('WordCloudSetService', () => {
 
     it('returns ALL questions with aggregated words and no internal ids', async () => {
       const repo = (service as any).repository;
-      repo.findFirst.mockResolvedValue({
+      repo.findSetByPublicResultsToken.mockResolvedValue({
         id: 'set1',
         title: 'My set',
         status: 'OPEN',
@@ -316,7 +315,7 @@ describe('WordCloudSetService', () => {
         schoolId: 'school1',
         userId: 'user1',
       });
-      repo.findManyQuestions.mockResolvedValue([
+      repo.findQuestionsBySetId.mockResolvedValue([
         { id: 'q0', question: 'A?', order: 0, status: 'OPEN', accessMode: 'PUBLIC' },
         { id: 'q1', question: 'B?', order: 1, status: 'OPEN', accessMode: 'PUBLIC' },
       ]);
@@ -332,9 +331,7 @@ describe('WordCloudSetService', () => {
 
       // …yet BOTH questions are returned: no reveal filtering on results.
       expect(result.questions).toHaveLength(2);
-      expect(repo.findFirst).toHaveBeenCalledWith({
-        where: { publicResultsToken: token },
-      });
+      expect(repo.findSetByPublicResultsToken).toHaveBeenCalledWith(token);
       expect(result.title).toBe('My set');
       expect(result.questions[0].words[0]).toMatchObject({
         normalized: 'dog',
@@ -349,13 +346,13 @@ describe('WordCloudSetService', () => {
 
     it('includes answerer names for STUDENTS_ONLY questions', async () => {
       const repo = (service as any).repository;
-      repo.findFirst.mockResolvedValue({
+      repo.findSetByPublicResultsToken.mockResolvedValue({
         id: 'set1',
         title: null,
         status: 'OPEN',
         activeWordCloudId: 'q0',
       });
-      repo.findManyQuestions.mockResolvedValue([
+      repo.findQuestionsBySetId.mockResolvedValue([
         {
           id: 'q0',
           question: 'A?',
@@ -378,7 +375,7 @@ describe('WordCloudSetService', () => {
 
     it('throws NotFound for an unknown or revoked token', async () => {
       const repo = (service as any).repository;
-      repo.findFirst.mockResolvedValue(null);
+      repo.findSetByPublicResultsToken.mockResolvedValue(null);
 
       await expect(
         service.getResultsByToken({ token }),

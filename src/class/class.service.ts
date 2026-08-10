@@ -393,12 +393,24 @@ export class ClassService {
         },
       });
 
+      // One indexed batch query instead of a per-member lookup; unlinked
+      // members (null userId) simply get no push.
+      const allSubscriptions =
+        await this.pushService.pushRepository.findManyForUsers(
+          memberOnSchools.map((member) => member.userId),
+        );
+      const subscriptionsByUser = new Map<string, typeof allSubscriptions>();
+      for (const subscription of allSubscriptions) {
+        if (!subscription.userId) continue;
+        const list = subscriptionsByUser.get(subscription.userId) ?? [];
+        list.push(subscription);
+        subscriptionsByUser.set(subscription.userId, list);
+      }
+
       for (const member of memberOnSchools) {
-        const subscriptions = await this.pushService.pushRepository.findMany({
-          where: {
-            userId: member.userId,
-          },
-        });
+        const subscriptions = member.userId
+          ? (subscriptionsByUser.get(member.userId) ?? [])
+          : [];
         const emailHTML = `
       <body style="background-color: #f8f9fa;">
     <div style="margin: 0 auto; max-width: 600px; padding: 20px;">

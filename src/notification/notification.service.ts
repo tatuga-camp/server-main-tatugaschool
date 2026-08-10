@@ -61,12 +61,8 @@ export class NotificationService {
       };
 
       for (const userId of userIds) {
-        const subscription = await this.pushService.pushRepository.findFirst({
-          where: {
-            userId: userId,
-          },
-          orderBy: { createAt: 'desc' },
-        });
+        const subscription =
+          await this.pushService.pushRepository.findLatestForUser(userId);
         if (!subscription) continue;
         this.pushService
           .sendNotification(subscription.data as PushSubscription, {
@@ -184,11 +180,8 @@ export class NotificationService {
         data: dataToCreate,
       });
 
-      const subscriptions = await this.pushService.pushRepository.findMany({
-        where: {
-          studentId: { in: studentIds },
-        },
-      });
+      const subscriptions =
+        await this.pushService.pushRepository.findManyForStudents(studentIds);
 
       for (const subscription of subscriptions) {
         this.pushService

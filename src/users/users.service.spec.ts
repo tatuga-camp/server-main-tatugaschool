@@ -1,3 +1,5 @@
+jest.mock('../member-on-school/member-on-school.raw');
+import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -188,7 +190,7 @@ describe('UsersService', () => {
 
   describe('isAdminOfSchool', () => {
     it('should return member if admin', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         role: 'ADMIN',
       });
 
@@ -198,7 +200,7 @@ describe('UsersService', () => {
     });
 
     it('should throw ForbiddenException if not admin', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         role: 'TEACHER',
       });
 
@@ -210,7 +212,7 @@ describe('UsersService', () => {
 
   describe('isMemberOfSchool', () => {
     it('should return member if belongs to school', async () => {
-      mockPrismaService.memberOnSchool.findFirst.mockResolvedValue({
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
         role: 'TEACHER',
       });
 
