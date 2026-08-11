@@ -520,6 +520,12 @@ export class SubjectService {
         },
       });
 
+      // OR: [] compiles to an always-false $expr on MongoDB that still
+      // COLLSCANs the whole collection — skip the queries entirely.
+      if (subjects.length === 0) {
+        return [];
+      }
+
       const [teachers, classrooms] = await Promise.all([
         this.teacherOnSubjectService.teacherOnSubjectRepository.findMany({
           where: {

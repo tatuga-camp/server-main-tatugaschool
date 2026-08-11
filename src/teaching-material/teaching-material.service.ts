@@ -138,6 +138,12 @@ export class TeachingMaterialService {
         },
       });
 
+      // OR: [] compiles to an always-false $expr on MongoDB that still
+      // COLLSCANs the whole collection — skip the query entirely.
+      if (teachingMaterials.length === 0) {
+        return [];
+      }
+
       const files =
         await this.fileOnTeachingMaterialService.fileOnTeachingMaterialRepository.findMany(
           {

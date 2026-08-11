@@ -365,39 +365,46 @@ export class AttendanceService {
         user,
       );
 
+    // OR: [] compiles to an always-false $expr on MongoDB that still
+    // COLLSCANs the whole collection — skip the queries entirely.
+    const hasTables = listAttendanceTable.length > 0;
     const [attendances, attendanceRows, statusLists] = await Promise.all([
-      this.attendanceRepository.findMany({
-        where: {
-          OR: listAttendanceTable.map((table) => {
-            return {
-              attendanceTableId: table.id,
-            };
+      !hasTables
+        ? Promise.resolve([])
+        : this.attendanceRepository.findMany({
+            where: {
+              OR: listAttendanceTable.map((table) => {
+                return {
+                  attendanceTableId: table.id,
+                };
+              }),
+              ...(dto.startDate &&
+                dto.endDate && {
+                  startDate: {
+                    gte: dto.startDate,
+                    lte: dto.endDate,
+                  },
+                }),
+            },
           }),
-          ...(dto.startDate &&
-            dto.endDate && {
-              startDate: {
-                gte: dto.startDate,
-                lte: dto.endDate,
-              },
-            }),
-        },
-      }),
-      this.attendanceRowRepository.findMany({
-        where: {
-          OR: listAttendanceTable.map((table) => {
-            return {
-              attendanceTableId: table.id,
-            };
+      !hasTables
+        ? Promise.resolve([])
+        : this.attendanceRowRepository.findMany({
+            where: {
+              OR: listAttendanceTable.map((table) => {
+                return {
+                  attendanceTableId: table.id,
+                };
+              }),
+              ...(dto.startDate &&
+                dto.endDate && {
+                  startDate: {
+                    gte: dto.startDate,
+                    lte: dto.endDate,
+                  },
+                }),
+            },
           }),
-          ...(dto.startDate &&
-            dto.endDate && {
-              startDate: {
-                gte: dto.startDate,
-                lte: dto.endDate,
-              },
-            }),
-        },
-      }),
       this.attendanceStatusListSRepository.findMany({
         where: {
           subjectId: dto.subjectId,

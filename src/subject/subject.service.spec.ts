@@ -498,6 +498,26 @@ describe('SubjectService', () => {
       expect(result[0].teachers.length).toBe(1);
       expect(result[0].class.id).toBe('c1');
     });
+
+    it('should return [] without querying teachers or classes when school has no subjects', async () => {
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
+        schoolId: 'sch1',
+      });
+      (service.subjectRepository.findMany as jest.Mock).mockResolvedValue([]);
+
+      const result = await service.getBySchoolId(
+        { schoolId: 'sch1', educationYear: '2024' },
+        { id: 'u1' } as any,
+      );
+
+      // OR: [] compiles to an always-false $expr that COLLSCANs the whole
+      // collection on MongoDB — the queries must be skipped entirely.
+      expect(result).toEqual([]);
+      expect(
+        mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany,
+      ).not.toHaveBeenCalled();
+      expect(mockClassService.classRepository.findMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('getSubjectsThatStudentBelongTo', () => {

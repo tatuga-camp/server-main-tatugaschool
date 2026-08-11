@@ -55,6 +55,7 @@ model User {
 
   @@index([verifyEmailToken])
   @@index([resetPasswordToken])
+  @@index([lastActiveAt]) // scheduler analytics-warm active-user sweep
 }
 
 enum Language {
