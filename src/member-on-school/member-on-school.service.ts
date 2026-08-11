@@ -86,6 +86,12 @@ export class MemberOnSchoolService {
     members: MemberOnSchool[];
   }): Promise<void> {
     try {
+      // OR: [] compiles to an always-false $expr on MongoDB that still
+      // COLLSCANs the whole collection — skip the query entirely.
+      if (members.length === 0) {
+        return;
+      }
+
       const users = await this.userRepository.findMany({
         where: {
           OR: members.map((member) => ({ id: member.userId })),
@@ -122,6 +128,13 @@ export class MemberOnSchoolService {
       const memberOnSchools = await this.memberOnSchoolRepository.getByUserId({
         userId: user.id,
       });
+
+      // OR: [] compiles to an always-false $expr on MongoDB that still
+      // COLLSCANs the whole collection — skip the query entirely.
+      if (memberOnSchools.length === 0) {
+        return [];
+      }
+
       const school = await this.schoolService.schoolRepository.findMany({
         where: {
           OR: memberOnSchools.map((m) => ({ id: m.schoolId })),

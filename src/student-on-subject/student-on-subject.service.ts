@@ -339,17 +339,21 @@ export class StudentOnSubjectService {
     })[];
   }> {
     try {
-      const studentOnAssignments = await this.studentOnAssignmentRepository
-        .findMany({
-          where: {
-            OR: assignments.map((a) => {
-              return {
-                studentOnSubjectId: studentOnSubjectId,
-                assignmentId: a.id,
-              };
-            }),
-          },
-        })
+      // OR: [] compiles to an always-false $expr on MongoDB that still
+      // COLLSCANs the whole collection — skip the query entirely.
+      const studentOnAssignments = await (assignments.length === 0
+        ? Promise.resolve([])
+        : this.studentOnAssignmentRepository.findMany({
+            where: {
+              OR: assignments.map((a) => {
+                return {
+                  studentOnSubjectId: studentOnSubjectId,
+                  assignmentId: a.id,
+                };
+              }),
+            },
+          })
+        )
         .then((res) => {
           return res.map((studentOnAssignment) => {
             const assignment = assignments.find(

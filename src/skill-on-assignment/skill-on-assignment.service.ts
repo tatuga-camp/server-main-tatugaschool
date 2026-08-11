@@ -54,12 +54,16 @@ export class SkillOnAssignmentService {
           assignmentId: dto.assignmentId,
         });
 
-      const skills = await this.skillRepository
-        .findMany({
-          where: {
-            OR: skillOnAssignment.map((skill) => ({ id: skill.skillId })),
-          },
-        })
+      // OR: [] compiles to an always-false $expr on MongoDB that still
+      // COLLSCANs the whole collection — skip the query entirely.
+      const skills = await (skillOnAssignment.length === 0
+        ? Promise.resolve([])
+        : this.skillRepository.findMany({
+            where: {
+              OR: skillOnAssignment.map((skill) => ({ id: skill.skillId })),
+            },
+          })
+        )
         .then((res) => {
           return res.map((skill) => {
             delete skill.vector;
