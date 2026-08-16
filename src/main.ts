@@ -39,6 +39,16 @@ function buildLoggerConfig() {
   };
 }
 
+// Bun terminates the process on unhandled promise rejections; log instead so
+// a single floating promise (e.g. fire-and-forget service calls) cannot crash
+// the whole server.
+process.on('unhandledRejection', (reason) => {
+  new Logger('UnhandledRejection').error(reason);
+});
+process.on('uncaughtException', (error) => {
+  new Logger('UncaughtException').error(error);
+});
+
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,

@@ -256,6 +256,47 @@ describe('StudentOnAssignmentService', () => {
       expect(result.id).toBe('sa1');
     });
 
+    it('should not produce an unhandled rejection when suggestCreate rejects', async () => {
+      const dto: any = {
+        query: { studentOnAssignmentId: 'sa1' },
+        body: { score: 5 },
+      };
+      (
+        service.studentOnAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue({ id: 'sa1', assignmentId: 'a1', subjectId: 's1' });
+      (service as any).assignmentRepository.getById.mockResolvedValue({
+        id: 'a1',
+        maxScore: 10,
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        isLocked: false,
+      });
+      (
+        service.studentOnAssignmentRepository.update as jest.Mock
+      ).mockResolvedValue({ id: 'sa1', score: 5 });
+      mockSkillOnStudentAssignmentService.suggestCreate.mockRejectedValue(
+        new BadRequestException(
+          'This skill on student assignment already exists',
+        ),
+      );
+
+      let unhandled: unknown = null;
+      const listener = (reason: unknown) => {
+        unhandled = reason;
+      };
+      process.on('unhandledRejection', listener);
+
+      const result = await service.update(dto, { id: 'u1' } as any);
+      await new Promise((resolve) => setImmediate(resolve));
+
+      process.removeListener('unhandledRejection', listener);
+
+      expect(result.id).toBe('sa1');
+      expect(unhandled).toBeNull();
+    });
+
     it('should throw BadRequestException if score exceeds max', async () => {
       const dto: any = {
         query: { studentOnAssignmentId: 'sa1' },

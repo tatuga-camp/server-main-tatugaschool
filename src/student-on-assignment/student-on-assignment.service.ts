@@ -407,9 +407,13 @@ export class StudentOnAssignmentService {
       });
 
       if (dto.body.score) {
-        this.skillOnStudentAssignmentService.suggestCreate({
-          studentOnAssignmentId: studentOnAssignment.id,
-        });
+        this.skillOnStudentAssignmentService
+          .suggestCreate({
+            studentOnAssignmentId: studentOnAssignment.id,
+          })
+          .catch((err) => {
+            this.logger.error('Failed to suggest skill on student assignment', err);
+          });
       }
 
       return update;
