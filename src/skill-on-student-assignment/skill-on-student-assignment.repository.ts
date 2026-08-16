@@ -22,6 +22,9 @@ type Repository = {
   update(
     request: Prisma.SkillOnStudentAssignmentUpdateArgs,
   ): Promise<SkillOnStudentAssignment>;
+  upsert(
+    request: Prisma.SkillOnStudentAssignmentUpsertArgs,
+  ): Promise<SkillOnStudentAssignment>;
   delete(
     request: Prisma.SkillOnStudentAssignmentDeleteArgs,
   ): Promise<SkillOnStudentAssignment>;
@@ -122,6 +125,26 @@ export class SkillOnStudentAssignmentRepository implements Repository {
         } else if (result.subjectId) {
           await this.redisService?.del(this.getCacheKey(result.subjectId));
         }
+      }
+      return result;
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async upsert(
+    request: Prisma.SkillOnStudentAssignmentUpsertArgs,
+  ): Promise<SkillOnStudentAssignment> {
+    try {
+      const result = await this.prisma.skillOnStudentAssignment.upsert(request);
+      if (result?.subjectId) {
+        await this.redisService?.del(this.getCacheKey(result.subjectId));
       }
       return result;
     } catch (error) {

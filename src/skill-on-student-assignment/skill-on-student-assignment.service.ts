@@ -202,38 +202,26 @@ export class SkillOnStudentAssignmentService {
 
       let skillOnStudentAssignmentsCreated: SkillOnStudentAssignment[] = [];
       for (const skill of skillOnStudentAssignments) {
-        const skillOnStudentAssignment =
-          await this.skillOnStudentAssignmentRepository.findFirst({
+        skillOnStudentAssignmentsCreated.push(
+          await this.skillOnStudentAssignmentRepository.upsert({
             where: {
-              studentOnAssignmentId: studentOnAssignment.id,
-              skillId: skill.skillId,
-            },
-          });
-
-        if (skillOnStudentAssignment) {
-          skillOnStudentAssignmentsCreated.push(
-            await this.skillOnStudentAssignmentRepository.update({
-              where: {
-                id: skillOnStudentAssignment.id,
-              },
-              data: {
-                weight: weigth,
-              },
-            }),
-          );
-        } else {
-          skillOnStudentAssignmentsCreated.push(
-            await this.skillOnStudentAssignmentRepository.create({
-              data: {
+              skillId_studentOnAssignmentId: {
                 skillId: skill.skillId,
-                studentId: student.id,
-                subjectId: skill.subjectId,
                 studentOnAssignmentId: studentOnAssignment.id,
-                weight: weigth,
               },
-            }),
-          );
-        }
+            },
+            create: {
+              skillId: skill.skillId,
+              studentId: student.id,
+              subjectId: skill.subjectId,
+              studentOnAssignmentId: studentOnAssignment.id,
+              weight: weigth,
+            },
+            update: {
+              weight: weigth,
+            },
+          }),
+        );
       }
 
       return skillOnStudentAssignmentsCreated;

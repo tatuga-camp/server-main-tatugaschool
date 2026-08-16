@@ -47,6 +47,7 @@ describe('SkillOnStudentAssignmentService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      upsert: jest.fn(),
       delete: jest.fn(),
       findUnique: jest.fn(),
     } as any;
@@ -164,24 +165,34 @@ describe('SkillOnStudentAssignmentService', () => {
         { skillId: 'sk1', assignmentId: 'a1', subjectId: 's1' },
       ]);
 
-      // Assume one is new, one is existing
-      (service.skillOnStudentAssignmentRepository.findFirst as jest.Mock)
-        .mockResolvedValueOnce({ id: 'ssa1' }) // first call updates
-        .mockResolvedValueOnce(null); // second call creates (if there were two skills)
-
       (
-        service.skillOnStudentAssignmentRepository.update as jest.Mock
-      ).mockResolvedValue({ id: 'ssa1_updated' });
+        service.skillOnStudentAssignmentRepository.upsert as jest.Mock
+      ).mockResolvedValue({ id: 'ssa1_upserted' });
 
       const result = await service.suggestCreate({
         studentOnAssignmentId: 'sa1',
       });
 
       expect(
-        service.skillOnStudentAssignmentRepository.update,
-      ).toHaveBeenCalledWith(expect.objectContaining({ data: { weight: 80 } }));
+        service.skillOnStudentAssignmentRepository.upsert,
+      ).toHaveBeenCalledWith({
+        where: {
+          skillId_studentOnAssignmentId: {
+            skillId: 'sk1',
+            studentOnAssignmentId: 'sa1',
+          },
+        },
+        create: {
+          skillId: 'sk1',
+          studentId: 'st1',
+          subjectId: 's1',
+          studentOnAssignmentId: 'sa1',
+          weight: 80,
+        },
+        update: { weight: 80 },
+      });
       expect(result.length).toBe(1);
-      expect(result[0].id).toBe('ssa1_updated');
+      expect(result[0].id).toBe('ssa1_upserted');
     });
 
     it('should throw Error if student on assignment not found', async () => {
