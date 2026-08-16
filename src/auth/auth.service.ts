@@ -241,13 +241,13 @@ export class AuthService {
         if (findUnverifiedInvitations.length > 0) {
           // create account with password and have invitation token, so we can link invitation to user and redirect to school page
           await Promise.allSettled(
-            findUnverifiedInvitations.map((invitation) => {
+            findUnverifiedInvitations.map((invitation) =>
               this.memberOnSchoolService.linkInvitationToUser({
                 token: invitation.invitationToken,
                 userId: user.id,
                 email: dto.email,
-              });
-            }),
+              }),
+            ),
           );
           await this.usersRepository.updateVerified({ email: user.email });
           user = await this.usersRepository.update({

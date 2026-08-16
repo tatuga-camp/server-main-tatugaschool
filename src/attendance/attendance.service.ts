@@ -462,7 +462,7 @@ export class AttendanceService {
     );
 
     const workbook = new Workbook();
-    data.forEach(async (row) => {
+    data.forEach((row) => {
       const sanitizedWorksheetName = row.worksheetName.replace(
         /[*?:\\/\[\]]/g,
         '',

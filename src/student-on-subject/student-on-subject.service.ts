@@ -516,7 +516,7 @@ export class StudentOnSubjectService {
         });
 
       if (dto.data?.isActive === false) {
-        this.studentOnAssignmentRepository.updateMany({
+        await this.studentOnAssignmentRepository.updateMany({
           where: {
             studentOnSubjectId: studentOnSubject.id,
           },

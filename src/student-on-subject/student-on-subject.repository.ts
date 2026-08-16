@@ -336,7 +336,7 @@ export class StudentOnSubjectRepository
       }
 
       // Use Promise.allSettled to delete files in Google Storage
-      Promise.allSettled(
+      const deleteFileResults = await Promise.allSettled(
         fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
           .map((file) =>
@@ -345,6 +345,11 @@ export class StudentOnSubjectRepository
             }),
           ),
       );
+      deleteFileResults.forEach((result) => {
+        if (result.status === 'rejected') {
+          this.logger.error('Failed to delete file on storage', result.reason);
+        }
+      });
       const studentOnAssignmentIds = studentOnAssignments.map((s) => s.id);
 
       if (studentOnAssignmentIds.length > 0) {

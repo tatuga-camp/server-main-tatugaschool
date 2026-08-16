@@ -205,15 +205,20 @@ export class FileOnStudentAssignmentRepository
       const fileOnStudentAssignments =
         await this.prisma.fileOnStudentAssignment.findMany(request);
 
-      Promise.allSettled(
+      const deleteFileResults = await Promise.allSettled(
         fileOnStudentAssignments
           .filter((f) => f.contentType === 'FILE')
-          .map(async (fileOnStudentAssignment) => {
-            await this.storageService.DeleteFileOnStorage({
+          .map((fileOnStudentAssignment) =>
+            this.storageService.DeleteFileOnStorage({
               fileName: fileOnStudentAssignment.body,
-            });
-          }),
+            }),
+          ),
       );
+      deleteFileResults.forEach((result) => {
+        if (result.status === 'rejected') {
+          this.logger.error('Failed to delete file on storage', result.reason);
+        }
+      });
 
       await Promise.all(
         fileOnStudentAssignments.map((f) =>
