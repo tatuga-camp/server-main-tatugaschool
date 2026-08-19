@@ -51,6 +51,7 @@ describe('WebhooksService', () => {
 
   const mockPrismaService = {
     subject: { findUnique: jest.fn(), update: jest.fn() },
+    user: { findUnique: jest.fn() },
   };
 
   const mockAiService = {
@@ -63,6 +64,7 @@ describe('WebhooksService', () => {
 
   const mockEmailService = {
     sendBulk: jest.fn(),
+    sendMail: jest.fn(),
   };
 
   const mockConfigService = {
@@ -71,6 +73,7 @@ describe('WebhooksService', () => {
       if (key === 'SANITY_DATASET') return 'production';
       if (key === 'SANITY_WEBHOOK_SECRET') return 'test-secret';
       if (key === 'SANITY_NEWS_SEND_DELAY_MS') return 0;
+      if (key === 'CLIENT_URL') return 'https://app.test';
       return null;
     }),
   };
@@ -364,6 +367,161 @@ describe('WebhooksService', () => {
         'inv_1',
       );
       expect(mockSchoolService.upgradePlanFree).toHaveBeenCalledWith('sch1');
+      expect(reply.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should downgrade the school when its subscription goes past_due', async () => {
+      const mockEvent = {
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_1', status: 'past_due' } },
+      };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
+
+      mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockSchoolService.schoolRepository.findFirst.mockResolvedValue({
+        id: 'sch1',
+        title: 'Tatuga Academy',
+        plan: 'PREMIUM',
+        billingManagerId: 'u1',
+      });
+      mockSchoolService.upgradePlanFree.mockResolvedValue({ id: 'sch1' });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        email: 'manager@example.com',
+      });
+
+      await service.handleStripeWebhook(req, reply);
+
+      expect(mockSchoolService.schoolRepository.findFirst).toHaveBeenCalledWith(
+        {
+          where: { stripe_subscription_id: 'sub_1' },
+        },
+      );
+      expect(mockSchoolService.upgradePlanFree).toHaveBeenCalledWith('sch1');
+      expect(mockEmailService.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'manager@example.com',
+          subject:
+            'แพ็กเกจของโรงเรียน Tatuga Academy ถูกปรับเป็นแผนฟรีเนื่องจากค้างชำระ',
+        }),
+      );
+      expect(reply.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should still downgrade when the school has no billing manager', async () => {
+      const mockEvent = {
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_1', status: 'past_due' } },
+      };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
+
+      mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockSchoolService.schoolRepository.findFirst.mockResolvedValue({
+        id: 'sch1',
+        title: 'Tatuga Academy',
+        plan: 'PREMIUM',
+        billingManagerId: null,
+      });
+      mockSchoolService.upgradePlanFree.mockResolvedValue({ id: 'sch1' });
+
+      await service.handleStripeWebhook(req, reply);
+
+      expect(mockSchoolService.upgradePlanFree).toHaveBeenCalledWith('sch1');
+      expect(mockEmailService.sendMail).not.toHaveBeenCalled();
+      expect(reply.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should still return 200 when the downgrade email fails to send', async () => {
+      const mockEvent = {
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_1', status: 'past_due' } },
+      };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
+
+      mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockSchoolService.schoolRepository.findFirst.mockResolvedValue({
+        id: 'sch1',
+        title: 'Tatuga Academy',
+        plan: 'PREMIUM',
+        billingManagerId: 'u1',
+      });
+      mockSchoolService.upgradePlanFree.mockResolvedValue({ id: 'sch1' });
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        email: 'manager@example.com',
+      });
+      mockEmailService.sendMail.mockRejectedValue(new Error('smtp down'));
+
+      await service.handleStripeWebhook(req, reply);
+
+      expect(mockSchoolService.upgradePlanFree).toHaveBeenCalledWith('sch1');
+      expect(reply.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should ignore subscription.updated when the subscription is not past_due', async () => {
+      const mockEvent = {
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_1', status: 'active' } },
+      };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
+
+      mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
+
+      await service.handleStripeWebhook(req, reply);
+
+      expect(mockSchoolService.schoolRepository.findFirst).not.toHaveBeenCalled();
+      expect(mockSchoolService.upgradePlanFree).not.toHaveBeenCalled();
+      expect(reply.status).toHaveBeenCalledWith(200);
+    });
+
+    it('should no-op past_due for a subscription no school points at', async () => {
+      const mockEvent = {
+        type: 'customer.subscription.updated',
+        data: { object: { id: 'sub_gone', status: 'past_due' } },
+      };
+      const req: any = {
+        rawBody: Buffer.from('body'),
+        headers: { 'stripe-signature': 'sig' },
+      };
+      const reply: any = {
+        status: jest.fn().mockReturnThis(),
+        send: jest.fn().mockReturnThis(),
+      };
+
+      mockStripeService.webhooks.constructEvent.mockReturnValue(mockEvent);
+      mockSchoolService.schoolRepository.findFirst.mockResolvedValue(null);
+
+      await service.handleStripeWebhook(req, reply);
+
+      expect(mockSchoolService.upgradePlanFree).not.toHaveBeenCalled();
       expect(reply.status).toHaveBeenCalledWith(200);
     });
   });

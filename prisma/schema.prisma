@@ -118,6 +118,10 @@ model School {
   billingManagerId String? @db.ObjectId
   billingManager   User?   @relation(fields: [billingManagerId], references: [id])
 
+  // "<stripe_subscription_expireAt ISO>|<comma-joined reminder stages sent>"
+  // e.g. "2026-08-29T12:00:00.000Z|10,3" — resets implicitly when expireAt changes.
+  subscriptionReminders String?
+
   memberOnSchools          MemberOnSchool[]
   classes                  Class[]
   students                 Student[]

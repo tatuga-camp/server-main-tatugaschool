@@ -19,6 +19,7 @@ import { AiService } from '../ai/ai.service';
 import { UsersService } from '../users/users.service';
 import { SanityNewsWebhookPayload } from './sanity-news.dto';
 import { buildSanityNewsEmail } from './sanity-news-email';
+import { buildPastDueDowngradeEmail } from '../subscription/past-due-downgrade.email';
 
 @Injectable()
 export class WebhooksService {
@@ -324,6 +325,64 @@ export class WebhooksService {
           school_subscription_delete.id,
         );
         reply.status(200).send(school_subscription_delete);
+        break;
+
+      case 'customer.subscription.updated':
+        const subscriptionUpdate = dataObject as Stripe.Subscription;
+        // An unpaid renewal invoice moves the subscription active ->
+        // past_due long before Stripe cancels it and the deleted event
+        // fires. Downgrade as soon as the school's own subscription is
+        // past due; if the customer later pays the open invoice,
+        // invoice.paid re-promotes the school by customer id.
+        if (subscriptionUpdate.status !== 'past_due') {
+          reply.status(200).send({ received: true });
+          break;
+        }
+
+        const school_past_due =
+          await this.schoolService.schoolRepository.findFirst({
+            where: {
+              stripe_subscription_id: subscriptionUpdate.id,
+            },
+          });
+
+        if (!school_past_due) {
+          reply.status(200).send('stripe_subscription_id not found on School');
+          break;
+        }
+
+        const school_downgraded = await this.schoolService.upgradePlanFree(
+          school_past_due.id,
+        );
+
+        // Notify the billing manager (Thai only). A mail failure must not
+        // fail the webhook — the downgrade already happened.
+        if (school_past_due.billingManagerId) {
+          try {
+            const billingManager = await this.prisma.user.findUnique({
+              where: { id: school_past_due.billingManagerId },
+            });
+            if (billingManager) {
+              const { subject, html } = buildPastDueDowngradeEmail({
+                schoolTitle: school_past_due.title,
+                plan: school_past_due.plan,
+                billingUrl: `${this.config.get('CLIENT_URL')}/school/${school_past_due.id}?menu=Subscription`,
+              });
+              await this.email.sendMail({
+                to: billingManager.email,
+                subject,
+                html,
+              });
+            }
+          } catch (error) {
+            this.logger.error(
+              `Failed to send past_due downgrade email for school ${school_past_due.id}`,
+              (error as Error).stack,
+            );
+          }
+        }
+
+        reply.status(200).send(school_downgraded);
         break;
 
       case 'invoice.updated':

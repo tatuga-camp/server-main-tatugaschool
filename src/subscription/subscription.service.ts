@@ -42,6 +42,19 @@ export type UpgradePreviewResponse =
     }
   | { valid: false; reason: string };
 
+export type RenewalPreviewResponse =
+  | {
+      valid: true;
+      plan: string;
+      interval: string;
+      fullPrice: number;
+      credit: number;
+      amountDue: number;
+      currency: string;
+      currentExpireAt: string;
+    }
+  | { valid: false; reason: string };
+
 const PLAN_RANK: Record<string, number> = {
   'Tatuga School Basic': 1,
   'Tatuga School Premium': 2,
@@ -503,6 +516,63 @@ export class SubscriptionService {
     }
   }
 
+  // Shared by resolveUpgradeContext and resolveRenewalContext: fetches the
+  // school, verifies the caller is the billing manager, and retrieves the
+  // active Stripe subscription with its first item. Messages are
+  // parameterized so each caller's error text stays exactly as before.
+  private async resolveActiveSubscriptionContext(
+    schoolId: string,
+    user: UserJwtPayload,
+    messages: { forbidden: string; noActive: string },
+  ): Promise<{
+    school: School;
+    subscription: Stripe.Subscription;
+    currentItem: Stripe.SubscriptionItem;
+  }> {
+    const school = await this.schoolService.schoolRepository.findUnique({
+      where: { id: schoolId },
+    });
+    if (!school) {
+      throw new NotFoundException('school not found');
+    }
+    if (school.billingManagerId !== user.id) {
+      throw new ForbiddenException(messages.forbidden);
+    }
+    if (!school.stripe_subscription_id) {
+      throw new BadRequestException(messages.noActive);
+    }
+
+    const subscription = await this.stripe.subscriptions.retrieve(
+      school.stripe_subscription_id,
+    );
+    if (subscription.status !== 'active') {
+      throw new BadRequestException(messages.noActive);
+    }
+
+    const currentItem = subscription.items.data[0];
+    if (!currentItem) {
+      throw new BadRequestException('Current subscription has no plan item');
+    }
+
+    return { school, subscription, currentItem };
+  }
+
+  // Sums the negative (credit) proration lines from a Stripe upcoming
+  // invoice preview. Shared by computeUnusedPlanCredit and
+  // computeCancelNowCredit, which each simulate a different action
+  // (plan swap vs. cancel-now) but read the same kind of credit lines.
+  private sumNegativeProrationCredit(
+    lines: Stripe.ApiList<Stripe.InvoiceLineItem>,
+  ): number {
+    let credit = 0;
+    for (const line of lines.data) {
+      if (line.proration && line.amount < 0) {
+        credit += Math.abs(line.amount);
+      }
+    }
+    return credit;
+  }
+
   private async resolveUpgradeContext(
     dto: { schoolId: string; priceId: string; members?: number },
     user: UserJwtPayload,
@@ -514,32 +584,11 @@ export class SubscriptionService {
     targetProduct: Stripe.Product;
     targetQuantity: number;
   }> {
-    const school = await this.schoolService.schoolRepository.findUnique({
-      where: { id: dto.schoolId },
-    });
-    if (!school) {
-      throw new NotFoundException('school not found');
-    }
-    if (school.billingManagerId !== user.id) {
-      throw new ForbiddenException(
-        'Only the billing manager can upgrade the plan',
-      );
-    }
-    if (!school.stripe_subscription_id) {
-      throw new BadRequestException('No active subscription to upgrade');
-    }
-
-    const subscription = await this.stripe.subscriptions.retrieve(
-      school.stripe_subscription_id,
-    );
-    if (subscription.status !== 'active') {
-      throw new BadRequestException('No active subscription to upgrade');
-    }
-
-    const currentItem = subscription.items.data[0];
-    if (!currentItem) {
-      throw new BadRequestException('Current subscription has no plan item');
-    }
+    const { subscription, currentItem } =
+      await this.resolveActiveSubscriptionContext(dto.schoolId, user, {
+        forbidden: 'Only the billing manager can upgrade the plan',
+        noActive: 'No active subscription to upgrade',
+      });
 
     // Use the exact price the billing manager selected — no interval
     // normalization. An upgrade may also change the billing interval.
@@ -605,13 +654,143 @@ export class SubscriptionService {
       subscription_proration_behavior: 'always_invoice',
     });
 
-    let credit = 0;
-    for (const line of upcoming.lines.data) {
-      if (line.proration && line.amount < 0) {
-        credit += Math.abs(line.amount);
+    return this.sumNegativeProrationCredit(upcoming.lines);
+  }
+
+  private async resolveRenewalContext(
+    dto: { schoolId: string },
+    user: UserJwtPayload,
+  ): Promise<{
+    school: School;
+    subscription: Stripe.Subscription;
+    currentItem: Stripe.SubscriptionItem;
+    currentProduct: Stripe.Product;
+  }> {
+    const { school, subscription, currentItem } =
+      await this.resolveActiveSubscriptionContext(dto.schoolId, user, {
+        forbidden: 'Only the billing manager can renew the plan',
+        noActive: 'No active subscription to renew',
+      });
+
+    const currentProduct = await this.stripe.products.retrieve(
+      currentItem.price.product.toString(),
+    );
+
+    return { school, subscription, currentItem, currentProduct };
+  }
+
+  private async computeCancelNowCredit(
+    subscription: Stripe.Subscription,
+  ): Promise<number> {
+    // Simulate cancelling the subscription right now purely to let Stripe
+    // price the unused remaining time (a swap simulation cannot be used for
+    // renewal: swapping to the SAME price yields no proration lines). Only
+    // the negative (credit) lines are read; nothing is actually cancelled.
+    const upcoming = await this.stripe.invoices.retrieveUpcoming({
+      customer: subscription.customer.toString(),
+      subscription: subscription.id,
+      subscription_cancel_now: true,
+    });
+
+    return this.sumNegativeProrationCredit(upcoming.lines);
+  }
+
+  async previewRenewal(
+    dto: { schoolId: string },
+    user: UserJwtPayload,
+  ): Promise<RenewalPreviewResponse> {
+    try {
+      const { subscription, currentItem, currentProduct } =
+        await this.resolveRenewalContext(dto, user);
+
+      const credit = await this.computeCancelNowCredit(subscription);
+      const fullPrice =
+        (currentItem.price.unit_amount ?? 0) * (currentItem.quantity ?? 1);
+
+      return {
+        valid: true,
+        plan: currentProduct.name,
+        interval: currentItem.price.recurring?.interval ?? 'month',
+        fullPrice,
+        credit,
+        amountDue: Math.max(0, fullPrice - credit),
+        currency: currentItem.price.currency,
+        currentExpireAt: new Date(
+          subscription.current_period_end * 1000,
+        ).toISOString(),
+      };
+    } catch (error) {
+      // Same convention as previewUpgrade: business-rule failures surface as
+      // { valid: false }; auth and Stripe errors are logged and rethrown.
+      if (error instanceof BadRequestException) {
+        return { valid: false, reason: error.message };
       }
+      this.logger.error(error);
+      throw error;
     }
-    return credit;
+  }
+
+  async renewSubscription(
+    dto: { schoolId: string },
+    user: UserJwtPayload,
+  ): Promise<{
+    subscriptionId: string;
+    clientSecret: string | null;
+    price: number;
+  }> {
+    try {
+      const { subscription, currentItem, currentProduct } =
+        await this.resolveRenewalContext(dto, user);
+
+      const credit = await this.computeCancelNowCredit(subscription);
+
+      // The credit is swept into the new subscription's first invoice as a
+      // negative invoice item — same mechanism as upgrades.
+      let creditInvoiceItemId: string | null = null;
+      if (credit > 0) {
+        const creditItem = await this.stripe.invoiceItems.create({
+          customer: subscription.customer.toString(),
+          amount: -credit,
+          currency: currentItem.price.currency,
+          description: `Credit for unused ${currentProduct.name} time`,
+        });
+        creditInvoiceItemId = creditItem.id;
+      }
+
+      // New subscription on the SAME price and quantity. The old
+      // subscription is left untouched; the invoice.paid webhook promotes
+      // the school to the fresh period and cancels the old subscription.
+      let result: {
+        paymentIntent: Stripe.PaymentIntent | null;
+        subscription: Stripe.Subscription;
+        price: number;
+      };
+      try {
+        result = await this.create(
+          subscription.customer.toString(),
+          currentItem.price.id,
+          currentItem.quantity ?? 1,
+        );
+      } catch (error) {
+        // Roll back the orphaned credit so it cannot leak onto the
+        // customer's next unrelated invoice.
+        if (creditInvoiceItemId) {
+          await this.stripe.invoiceItems
+            .del(creditInvoiceItemId)
+            .catch(() => undefined);
+        }
+        throw error;
+      }
+
+      return {
+        subscriptionId: result.subscription.id,
+        clientSecret: result.paymentIntent?.client_secret ?? null,
+        price: result.price,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async previewUpgrade(
