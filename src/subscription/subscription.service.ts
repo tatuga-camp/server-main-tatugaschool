@@ -42,6 +42,19 @@ export type UpgradePreviewResponse =
     }
   | { valid: false; reason: string };
 
+export type RenewalPreviewResponse =
+  | {
+      valid: true;
+      plan: string;
+      interval: string;
+      fullPrice: number;
+      credit: number;
+      amountDue: number;
+      currency: string;
+      currentExpireAt: string;
+    }
+  | { valid: false; reason: string };
+
 const PLAN_RANK: Record<string, number> = {
   'Tatuga School Basic': 1,
   'Tatuga School Premium': 2,
@@ -612,6 +625,106 @@ export class SubscriptionService {
       }
     }
     return credit;
+  }
+
+  private async resolveRenewalContext(
+    dto: { schoolId: string },
+    user: UserJwtPayload,
+  ): Promise<{
+    school: School;
+    subscription: Stripe.Subscription;
+    currentItem: Stripe.SubscriptionItem;
+    currentProduct: Stripe.Product;
+  }> {
+    const school = await this.schoolService.schoolRepository.findUnique({
+      where: { id: dto.schoolId },
+    });
+    if (!school) {
+      throw new NotFoundException('school not found');
+    }
+    if (school.billingManagerId !== user.id) {
+      throw new ForbiddenException(
+        'Only the billing manager can renew the plan',
+      );
+    }
+    if (!school.stripe_subscription_id) {
+      throw new BadRequestException('No active subscription to renew');
+    }
+
+    const subscription = await this.stripe.subscriptions.retrieve(
+      school.stripe_subscription_id,
+    );
+    if (subscription.status !== 'active') {
+      throw new BadRequestException('No active subscription to renew');
+    }
+
+    const currentItem = subscription.items.data[0];
+    if (!currentItem) {
+      throw new BadRequestException('Current subscription has no plan item');
+    }
+
+    const currentProduct = await this.stripe.products.retrieve(
+      currentItem.price.product.toString(),
+    );
+
+    return { school, subscription, currentItem, currentProduct };
+  }
+
+  private async computeCancelNowCredit(
+    subscription: Stripe.Subscription,
+  ): Promise<number> {
+    // Simulate cancelling the subscription right now purely to let Stripe
+    // price the unused remaining time (a swap simulation cannot be used for
+    // renewal: swapping to the SAME price yields no proration lines). Only
+    // the negative (credit) lines are read; nothing is actually cancelled.
+    const upcoming = await this.stripe.invoices.retrieveUpcoming({
+      customer: subscription.customer.toString(),
+      subscription: subscription.id,
+      subscription_cancel_now: true,
+    });
+
+    let credit = 0;
+    for (const line of upcoming.lines.data) {
+      if (line.proration && line.amount < 0) {
+        credit += Math.abs(line.amount);
+      }
+    }
+    return credit;
+  }
+
+  async previewRenewal(
+    dto: { schoolId: string },
+    user: UserJwtPayload,
+  ): Promise<RenewalPreviewResponse> {
+    try {
+      const { subscription, currentItem, currentProduct } =
+        await this.resolveRenewalContext(dto, user);
+
+      const credit = await this.computeCancelNowCredit(subscription);
+      const fullPrice =
+        (currentItem.price.unit_amount ?? 0) * (currentItem.quantity ?? 1);
+
+      return {
+        valid: true,
+        plan: currentProduct.name,
+        interval: currentItem.price.recurring?.interval ?? 'month',
+        fullPrice,
+        credit,
+        amountDue: Math.max(0, fullPrice - credit),
+        currency: currentItem.price.currency,
+        currentExpireAt: new Date(
+          subscription.current_period_end * 1000,
+        ).toISOString(),
+      };
+    } catch (error) {
+      // Same convention as previewUpgrade: business-rule failures surface as
+      // { valid: false }; auth and Stripe errors are logged and rethrown.
+      if (error instanceof BadRequestException) {
+        return { valid: false, reason: error.message };
+      }
+      this.logger.error(error);
+      throw error;
+    }
   }
 
   async previewUpgrade(

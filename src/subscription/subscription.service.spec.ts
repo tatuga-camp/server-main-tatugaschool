@@ -1220,4 +1220,102 @@ describe('SubscriptionService', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('previewRenewal', () => {
+    const user = { id: 'u1' } as any;
+    const activeSub = {
+      id: 'sub_1',
+      status: 'active',
+      customer: 'cus_1',
+      current_period_end: 1790000000,
+      items: {
+        data: [
+          {
+            id: 'si_1',
+            quantity: 1,
+            price: {
+              id: 'price_1',
+              unit_amount: 29900,
+              currency: 'thb',
+              product: 'prod_1',
+              recurring: { interval: 'month' },
+            },
+          },
+        ],
+      },
+    };
+
+    beforeEach(() => {
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        id: 'sch1',
+        billingManagerId: 'u1',
+        stripe_customer_id: 'cus_1',
+        stripe_subscription_id: 'sub_1',
+      });
+      mockStripeService.subscriptions.retrieve.mockResolvedValue(activeSub);
+      mockStripeService.products.retrieve.mockResolvedValue({
+        id: 'prod_1',
+        name: 'Tatuga School Premium',
+      });
+    });
+
+    it('returns full price minus cancel-now credit', async () => {
+      mockStripeService.invoices.retrieveUpcoming.mockResolvedValue({
+        lines: {
+          data: [
+            { proration: true, amount: -10000 },
+            { proration: false, amount: 29900 },
+          ],
+        },
+      });
+
+      const result = await service.previewRenewal({ schoolId: 'sch1' }, user);
+
+      expect(mockStripeService.invoices.retrieveUpcoming).toHaveBeenCalledWith({
+        customer: 'cus_1',
+        subscription: 'sub_1',
+        subscription_cancel_now: true,
+      });
+      expect(result).toEqual({
+        valid: true,
+        plan: 'Tatuga School Premium',
+        interval: 'month',
+        fullPrice: 29900,
+        credit: 10000,
+        amountDue: 19900,
+        currency: 'thb',
+        currentExpireAt: new Date(1790000000 * 1000).toISOString(),
+      });
+    });
+
+    it('rejects a non-billing-manager', async () => {
+      await expect(
+        service.previewRenewal({ schoolId: 'sch1' }, { id: 'other' } as any),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('returns invalid when there is no active subscription', async () => {
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        id: 'sch1',
+        billingManagerId: 'u1',
+        stripe_customer_id: 'cus_1',
+        stripe_subscription_id: null,
+      });
+
+      const result = await service.previewRenewal({ schoolId: 'sch1' }, user);
+      expect(result).toEqual({
+        valid: false,
+        reason: 'No active subscription to renew',
+      });
+    });
+
+    it('clamps amountDue at zero when credit exceeds full price', async () => {
+      mockStripeService.invoices.retrieveUpcoming.mockResolvedValue({
+        lines: { data: [{ proration: true, amount: -99999 }] },
+      });
+
+      const result = await service.previewRenewal({ schoolId: 'sch1' }, user);
+      expect(result).toMatchObject({ valid: true, amountDue: 0 });
+    });
+  });
 });
