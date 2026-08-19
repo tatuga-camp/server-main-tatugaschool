@@ -516,6 +516,63 @@ export class SubscriptionService {
     }
   }
 
+  // Shared by resolveUpgradeContext and resolveRenewalContext: fetches the
+  // school, verifies the caller is the billing manager, and retrieves the
+  // active Stripe subscription with its first item. Messages are
+  // parameterized so each caller's error text stays exactly as before.
+  private async resolveActiveSubscriptionContext(
+    schoolId: string,
+    user: UserJwtPayload,
+    messages: { forbidden: string; noActive: string },
+  ): Promise<{
+    school: School;
+    subscription: Stripe.Subscription;
+    currentItem: Stripe.SubscriptionItem;
+  }> {
+    const school = await this.schoolService.schoolRepository.findUnique({
+      where: { id: schoolId },
+    });
+    if (!school) {
+      throw new NotFoundException('school not found');
+    }
+    if (school.billingManagerId !== user.id) {
+      throw new ForbiddenException(messages.forbidden);
+    }
+    if (!school.stripe_subscription_id) {
+      throw new BadRequestException(messages.noActive);
+    }
+
+    const subscription = await this.stripe.subscriptions.retrieve(
+      school.stripe_subscription_id,
+    );
+    if (subscription.status !== 'active') {
+      throw new BadRequestException(messages.noActive);
+    }
+
+    const currentItem = subscription.items.data[0];
+    if (!currentItem) {
+      throw new BadRequestException('Current subscription has no plan item');
+    }
+
+    return { school, subscription, currentItem };
+  }
+
+  // Sums the negative (credit) proration lines from a Stripe upcoming
+  // invoice preview. Shared by computeUnusedPlanCredit and
+  // computeCancelNowCredit, which each simulate a different action
+  // (plan swap vs. cancel-now) but read the same kind of credit lines.
+  private sumNegativeProrationCredit(
+    lines: Stripe.ApiList<Stripe.InvoiceLineItem>,
+  ): number {
+    let credit = 0;
+    for (const line of lines.data) {
+      if (line.proration && line.amount < 0) {
+        credit += Math.abs(line.amount);
+      }
+    }
+    return credit;
+  }
+
   private async resolveUpgradeContext(
     dto: { schoolId: string; priceId: string; members?: number },
     user: UserJwtPayload,
@@ -527,32 +584,11 @@ export class SubscriptionService {
     targetProduct: Stripe.Product;
     targetQuantity: number;
   }> {
-    const school = await this.schoolService.schoolRepository.findUnique({
-      where: { id: dto.schoolId },
-    });
-    if (!school) {
-      throw new NotFoundException('school not found');
-    }
-    if (school.billingManagerId !== user.id) {
-      throw new ForbiddenException(
-        'Only the billing manager can upgrade the plan',
-      );
-    }
-    if (!school.stripe_subscription_id) {
-      throw new BadRequestException('No active subscription to upgrade');
-    }
-
-    const subscription = await this.stripe.subscriptions.retrieve(
-      school.stripe_subscription_id,
-    );
-    if (subscription.status !== 'active') {
-      throw new BadRequestException('No active subscription to upgrade');
-    }
-
-    const currentItem = subscription.items.data[0];
-    if (!currentItem) {
-      throw new BadRequestException('Current subscription has no plan item');
-    }
+    const { subscription, currentItem } =
+      await this.resolveActiveSubscriptionContext(dto.schoolId, user, {
+        forbidden: 'Only the billing manager can upgrade the plan',
+        noActive: 'No active subscription to upgrade',
+      });
 
     // Use the exact price the billing manager selected — no interval
     // normalization. An upgrade may also change the billing interval.
@@ -618,13 +654,7 @@ export class SubscriptionService {
       subscription_proration_behavior: 'always_invoice',
     });
 
-    let credit = 0;
-    for (const line of upcoming.lines.data) {
-      if (line.proration && line.amount < 0) {
-        credit += Math.abs(line.amount);
-      }
-    }
-    return credit;
+    return this.sumNegativeProrationCredit(upcoming.lines);
   }
 
   private async resolveRenewalContext(
@@ -636,32 +666,11 @@ export class SubscriptionService {
     currentItem: Stripe.SubscriptionItem;
     currentProduct: Stripe.Product;
   }> {
-    const school = await this.schoolService.schoolRepository.findUnique({
-      where: { id: dto.schoolId },
-    });
-    if (!school) {
-      throw new NotFoundException('school not found');
-    }
-    if (school.billingManagerId !== user.id) {
-      throw new ForbiddenException(
-        'Only the billing manager can renew the plan',
-      );
-    }
-    if (!school.stripe_subscription_id) {
-      throw new BadRequestException('No active subscription to renew');
-    }
-
-    const subscription = await this.stripe.subscriptions.retrieve(
-      school.stripe_subscription_id,
-    );
-    if (subscription.status !== 'active') {
-      throw new BadRequestException('No active subscription to renew');
-    }
-
-    const currentItem = subscription.items.data[0];
-    if (!currentItem) {
-      throw new BadRequestException('Current subscription has no plan item');
-    }
+    const { school, subscription, currentItem } =
+      await this.resolveActiveSubscriptionContext(dto.schoolId, user, {
+        forbidden: 'Only the billing manager can renew the plan',
+        noActive: 'No active subscription to renew',
+      });
 
     const currentProduct = await this.stripe.products.retrieve(
       currentItem.price.product.toString(),
@@ -683,13 +692,7 @@ export class SubscriptionService {
       subscription_cancel_now: true,
     });
 
-    let credit = 0;
-    for (const line of upcoming.lines.data) {
-      if (line.proration && line.amount < 0) {
-        credit += Math.abs(line.amount);
-      }
-    }
-    return credit;
+    return this.sumNegativeProrationCredit(upcoming.lines);
   }
 
   async previewRenewal(
