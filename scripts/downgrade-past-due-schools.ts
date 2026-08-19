@@ -22,8 +22,10 @@
  * Idempotent: a school already on FREE (or with no subscription id) is never
  * selected, so re-running is safe.
  */
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, School } from '@prisma/client';
 import Stripe from 'stripe';
+import { EmailParams, MailerSend, Recipient, Sender } from 'mailersend';
+import { buildPastDueDowngradeEmail } from '../src/subscription/past-due-downgrade.email';
 
 const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -32,6 +34,56 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 
 const APPLY = process.argv.includes('--apply');
 const INCLUDE_MISSING = process.argv.includes('--include-missing');
+
+const mailerSend = process.env.EMAIL_API_KEY
+  ? new MailerSend({ apiKey: process.env.EMAIL_API_KEY })
+  : null;
+
+/**
+ * Thai-only notice to the billing manager, same content as the webhook path.
+ * Sent directly via MailerSend (the script does not boot Nest, so
+ * EmailService's NODE_ENV production guard does not apply here — this script
+ * is only ever run intentionally against real data).
+ */
+async function notifyBillingManager(school: School): Promise<void> {
+  if (!school.billingManagerId) {
+    console.log(`           (no billing manager — no email)`);
+    return;
+  }
+  const manager = await prisma.user.findUnique({
+    where: { id: school.billingManagerId },
+  });
+  if (!manager) {
+    console.log(`           (billing manager ${school.billingManagerId} not found — no email)`);
+    return;
+  }
+  const { subject, html } = buildPastDueDowngradeEmail({
+    schoolTitle: school.title,
+    plan: school.plan,
+    billingUrl: `${process.env.CLIENT_URL ?? 'https://app.tatugaschool.com'}/school/${school.id}?menu=Subscription`,
+  });
+
+  if (!APPLY) {
+    console.log(`           would email ${manager.email}: "${subject}"`);
+    return;
+  }
+  if (!mailerSend) {
+    console.log(`           EMAIL_API_KEY not set — SKIPPED email to ${manager.email}`);
+    return;
+  }
+  try {
+    await mailerSend.email.send(
+      new EmailParams()
+        .setFrom(new Sender('support@tatugaschool.com', 'Tatuga School'))
+        .setTo([new Recipient(manager.email)])
+        .setSubject(subject)
+        .setHtml(html),
+    );
+    console.log(`           emailed ${manager.email}`);
+  } catch (error) {
+    console.error(`           FAILED to email ${manager.email}:`, error);
+  }
+}
 
 /** Same effects as SchoolService.upgradePlanFree, without booting Nest. */
 async function downgradeToFree(schoolId: string): Promise<void> {
@@ -103,10 +155,13 @@ async function main() {
         console.log(
           `[missing]  school ${school.id} (${school.title}) — subscription ${subId} not found in Stripe (missed deleted webhook?)${INCLUDE_MISSING ? '' : ' — skipped; use --include-missing to downgrade'}`,
         );
-        if (INCLUDE_MISSING && APPLY) {
-          await downgradeToFree(school.id);
-          downgraded++;
-          console.log(`           -> downgraded to FREE`);
+        if (INCLUDE_MISSING) {
+          if (APPLY) {
+            await downgradeToFree(school.id);
+            downgraded++;
+            console.log(`           -> downgraded to FREE`);
+          }
+          await notifyBillingManager(school);
         }
         continue;
       }
@@ -129,6 +184,7 @@ async function main() {
       downgraded++;
       console.log(`           -> downgraded to FREE`);
     }
+    await notifyBillingManager(school);
   }
 
   console.log(

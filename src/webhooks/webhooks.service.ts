@@ -19,6 +19,7 @@ import { AiService } from '../ai/ai.service';
 import { UsersService } from '../users/users.service';
 import { SanityNewsWebhookPayload } from './sanity-news.dto';
 import { buildSanityNewsEmail } from './sanity-news-email';
+import { buildPastDueDowngradeEmail } from '../subscription/past-due-downgrade.email';
 
 @Injectable()
 export class WebhooksService {
@@ -353,6 +354,34 @@ export class WebhooksService {
         const school_downgraded = await this.schoolService.upgradePlanFree(
           school_past_due.id,
         );
+
+        // Notify the billing manager (Thai only). A mail failure must not
+        // fail the webhook — the downgrade already happened.
+        if (school_past_due.billingManagerId) {
+          try {
+            const billingManager = await this.prisma.user.findUnique({
+              where: { id: school_past_due.billingManagerId },
+            });
+            if (billingManager) {
+              const { subject, html } = buildPastDueDowngradeEmail({
+                schoolTitle: school_past_due.title,
+                plan: school_past_due.plan,
+                billingUrl: `${this.config.get('CLIENT_URL')}/school/${school_past_due.id}?menu=Subscription`,
+              });
+              await this.email.sendMail({
+                to: billingManager.email,
+                subject,
+                html,
+              });
+            }
+          } catch (error) {
+            this.logger.error(
+              `Failed to send past_due downgrade email for school ${school_past_due.id}`,
+              (error as Error).stack,
+            );
+          }
+        }
+
         reply.status(200).send(school_downgraded);
         break;
 
