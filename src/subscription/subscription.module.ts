@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { SubscriptionService } from './subscription.service';
 import { SubscriptionController } from './subscription.controller';
+import { SubscriptionReminderService } from './subscription-reminder.service';
+import { SubscriptionReminderController } from './subscription-reminder.controller';
 import { SchoolService } from '../school/school.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { StudentService } from '../student/student.service';
@@ -27,6 +29,7 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
   imports: [HttpModule],
   providers: [
     SubscriptionService,
+    SubscriptionReminderService,
     SchoolService,
     MemberOnSchoolService,
     StudentService,
@@ -48,6 +51,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     AttendanceStatusListService,
     AssignmentVideoQuizRepository,
   ],
-  controllers: [SubscriptionController],
+  controllers: [SubscriptionController, SubscriptionReminderController],
 })
 export class SubscriptionModule {}
