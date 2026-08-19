@@ -727,6 +727,69 @@ export class SubscriptionService {
     }
   }
 
+  async renewSubscription(
+    dto: { schoolId: string },
+    user: UserJwtPayload,
+  ): Promise<{
+    subscriptionId: string;
+    clientSecret: string | null;
+    price: number;
+  }> {
+    try {
+      const { subscription, currentItem, currentProduct } =
+        await this.resolveRenewalContext(dto, user);
+
+      const credit = await this.computeCancelNowCredit(subscription);
+
+      // The credit is swept into the new subscription's first invoice as a
+      // negative invoice item — same mechanism as upgrades.
+      let creditInvoiceItemId: string | null = null;
+      if (credit > 0) {
+        const creditItem = await this.stripe.invoiceItems.create({
+          customer: subscription.customer.toString(),
+          amount: -credit,
+          currency: currentItem.price.currency,
+          description: `Credit for unused ${currentProduct.name} time`,
+        });
+        creditInvoiceItemId = creditItem.id;
+      }
+
+      // New subscription on the SAME price and quantity. The old
+      // subscription is left untouched; the invoice.paid webhook promotes
+      // the school to the fresh period and cancels the old subscription.
+      let result: {
+        paymentIntent: Stripe.PaymentIntent | null;
+        subscription: Stripe.Subscription;
+        price: number;
+      };
+      try {
+        result = await this.create(
+          subscription.customer.toString(),
+          currentItem.price.id,
+          currentItem.quantity ?? 1,
+        );
+      } catch (error) {
+        // Roll back the orphaned credit so it cannot leak onto the
+        // customer's next unrelated invoice.
+        if (creditInvoiceItemId) {
+          await this.stripe.invoiceItems
+            .del(creditInvoiceItemId)
+            .catch(() => undefined);
+        }
+        throw error;
+      }
+
+      return {
+        subscriptionId: result.subscription.id,
+        clientSecret: result.paymentIntent?.client_secret ?? null,
+        price: result.price,
+      };
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
+  }
+
   async previewUpgrade(
     dto: { schoolId: string; priceId: string; members?: number },
     user: UserJwtPayload,

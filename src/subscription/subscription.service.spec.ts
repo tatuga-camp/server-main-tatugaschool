@@ -1318,4 +1318,114 @@ describe('SubscriptionService', () => {
       expect(result).toMatchObject({ valid: true, amountDue: 0 });
     });
   });
+
+  describe('renewSubscription', () => {
+    const user = { id: 'u1' } as any;
+    const activeSub = {
+      id: 'sub_1',
+      status: 'active',
+      customer: 'cus_1',
+      current_period_end: 1790000000,
+      items: {
+        data: [
+          {
+            id: 'si_1',
+            quantity: 2,
+            price: {
+              id: 'price_1',
+              unit_amount: 29900,
+              currency: 'thb',
+              product: 'prod_1',
+              recurring: { interval: 'month' },
+            },
+          },
+        ],
+      },
+    };
+
+    beforeEach(() => {
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        id: 'sch1',
+        billingManagerId: 'u1',
+        stripe_customer_id: 'cus_1',
+        stripe_subscription_id: 'sub_1',
+      });
+      mockStripeService.subscriptions.retrieve.mockResolvedValue(activeSub);
+      mockStripeService.products.retrieve.mockResolvedValue({
+        id: 'prod_1',
+        name: 'Tatuga School Premium',
+      });
+      mockStripeService.invoices.retrieveUpcoming.mockResolvedValue({
+        lines: { data: [{ proration: true, amount: -10000 }] },
+      });
+      mockStripeService.invoiceItems.create.mockResolvedValue({ id: 'ii_1' });
+      mockStripeService.subscriptions.create.mockResolvedValue({
+        id: 'sub_new',
+        latest_invoice: { id: 'in_1' },
+      });
+      mockStripeService.invoices.finalizeInvoice.mockResolvedValue({
+        id: 'in_1',
+        amount_due: 49800,
+        payment_intent: 'pi_1',
+      });
+      mockStripeService.paymentIntents.retrieve.mockResolvedValue({
+        id: 'pi_1',
+        client_secret: 'secret_1',
+      });
+    });
+
+    it('creates a credit item and a new same-price subscription', async () => {
+      const result = await service.renewSubscription({ schoolId: 'sch1' }, user);
+
+      expect(mockStripeService.invoiceItems.create).toHaveBeenCalledWith({
+        customer: 'cus_1',
+        amount: -10000,
+        currency: 'thb',
+        description: 'Credit for unused Tatuga School Premium time',
+      });
+      expect(mockStripeService.subscriptions.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customer: 'cus_1',
+          items: [{ price: 'price_1', quantity: 2 }],
+        }),
+      );
+      expect(result).toEqual({
+        subscriptionId: 'sub_new',
+        clientSecret: 'secret_1',
+        price: 49800,
+      });
+    });
+
+    it('skips the credit invoice item when credit is zero', async () => {
+      mockStripeService.invoices.retrieveUpcoming.mockResolvedValue({
+        lines: { data: [] },
+      });
+
+      await service.renewSubscription({ schoolId: 'sch1' }, user);
+      expect(mockStripeService.invoiceItems.create).not.toHaveBeenCalled();
+    });
+
+    it('rolls back the credit item when subscription creation fails', async () => {
+      mockStripeService.subscriptions.create.mockRejectedValue(
+        new Error('stripe down'),
+      );
+      mockStripeService.invoiceItems.del.mockResolvedValue({});
+
+      await expect(
+        service.renewSubscription({ schoolId: 'sch1' }, user),
+      ).rejects.toThrow('stripe down');
+      expect(mockStripeService.invoiceItems.del).toHaveBeenCalledWith('ii_1');
+    });
+
+    it('rejects when there is no active subscription', async () => {
+      mockStripeService.subscriptions.retrieve.mockResolvedValue({
+        ...activeSub,
+        status: 'canceled',
+      });
+
+      await expect(
+        service.renewSubscription({ schoolId: 'sch1' }, user),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
 });

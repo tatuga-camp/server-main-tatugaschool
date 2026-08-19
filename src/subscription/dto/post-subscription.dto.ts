@@ -71,3 +71,9 @@ export class UpgradeSubscriptionDto {
   @Min(1)
   members?: number;
 }
+
+export class RenewSubscriptionDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  schoolId: string;
+}

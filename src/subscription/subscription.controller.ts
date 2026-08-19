@@ -3,6 +3,7 @@ import {
   ApplyDiscountDto,
   CreateSubscriptionDto,
   GetSubscriptionMangamentDto,
+  RenewSubscriptionDto,
   UpgradeSubscriptionDto,
   ValidateDiscountDto,
 } from './dto';
@@ -59,6 +60,19 @@ export class SubscriptionController {
     @GetUser() user: UserJwtPayload,
   ) {
     return this.subscriptionService.upgradeSubscription(dto, user);
+  }
+
+  @Post('renewal-preview')
+  PreviewRenewal(
+    @Body() dto: RenewSubscriptionDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
+    return this.subscriptionService.previewRenewal(dto, user);
+  }
+
+  @Post('renew')
+  Renew(@Body() dto: RenewSubscriptionDto, @GetUser() user: UserJwtPayload) {
+    return this.subscriptionService.renewSubscription(dto, user);
   }
 
   @Post()
