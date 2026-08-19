@@ -326,6 +326,36 @@ export class WebhooksService {
         reply.status(200).send(school_subscription_delete);
         break;
 
+      case 'customer.subscription.updated':
+        const subscriptionUpdate = dataObject as Stripe.Subscription;
+        // An unpaid renewal invoice moves the subscription active ->
+        // past_due long before Stripe cancels it and the deleted event
+        // fires. Downgrade as soon as the school's own subscription is
+        // past due; if the customer later pays the open invoice,
+        // invoice.paid re-promotes the school by customer id.
+        if (subscriptionUpdate.status !== 'past_due') {
+          reply.status(200).send({ received: true });
+          break;
+        }
+
+        const school_past_due =
+          await this.schoolService.schoolRepository.findFirst({
+            where: {
+              stripe_subscription_id: subscriptionUpdate.id,
+            },
+          });
+
+        if (!school_past_due) {
+          reply.status(200).send('stripe_subscription_id not found on School');
+          break;
+        }
+
+        const school_downgraded = await this.schoolService.upgradePlanFree(
+          school_past_due.id,
+        );
+        reply.status(200).send(school_downgraded);
+        break;
+
       case 'invoice.updated':
         const invoiceUpdate = dataObject as Stripe.Invoice;
         if (invoiceUpdate.status === 'uncollectible') {
