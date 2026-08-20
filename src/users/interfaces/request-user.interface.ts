@@ -1,4 +1,4 @@
-import { Provider, UserRole } from '@prisma/client';
+import { Provider, User, UserRole } from '@prisma/client';
 
 export type RequestFindByEmail = {
   email: string;
@@ -24,6 +24,7 @@ export type RequestCreateUser = {
   provider: Provider;
   providerId?: string;
   photo: string;
+  language?: User['language'];
 };
 export type RequestUpdateUser = {
   query: {
