@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsIn,
   IsMongoId,
   IsNotEmpty,
   IsOptional,
@@ -9,6 +10,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { Language } from '@prisma/client';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -40,6 +42,10 @@ export class UpdateUserDto {
   @IsOptional()
   @IsMongoId()
   favoritSchool?: string;
+
+  @IsOptional()
+  @IsIn(Object.values(Language))
+  language?: Language;
 }
 
 export class UpdatePasswordDto {

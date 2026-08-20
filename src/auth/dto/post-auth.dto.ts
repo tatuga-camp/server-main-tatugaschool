@@ -1,4 +1,4 @@
-import { Provider } from '@prisma/client';
+import { Language, Provider } from '@prisma/client';
 import {
   IsEmail,
   IsIn,
@@ -49,6 +49,10 @@ export class SignUpDto {
   @IsOptional()
   @IsString()
   invitationToken?: string;
+
+  @IsOptional()
+  @IsIn(Object.values(Language))
+  language?: Language;
 }
 
 export class ForgotPasswordDto {

@@ -193,6 +193,7 @@ export class AuthService {
         provider: dto.provider,
         photo,
         password: hashedPassword,
+        language: dto.language,
       });
 
       if (dto.invitationToken) {
