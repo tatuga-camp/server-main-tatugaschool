@@ -370,8 +370,8 @@ export class WebhooksService {
           school_past_due.id,
         );
 
-        // Notify the billing manager (Thai only). A mail failure must not
-        // fail the webhook — the downgrade already happened.
+        // Notify the billing manager (in the manager's language). A mail
+        // failure must not fail the webhook — the downgrade already happened.
         if (school_past_due.billingManagerId) {
           try {
             const billingManager = await this.prisma.user.findUnique({
@@ -382,6 +382,7 @@ export class WebhooksService {
                 schoolTitle: school_past_due.title,
                 plan: school_past_due.plan,
                 billingUrl: `${this.config.get('CLIENT_URL')}/school/${school_past_due.id}?menu=Subscription`,
+                language: billingManager.language === 'th' ? 'th' : 'en',
               });
               await this.email.sendMail({
                 to: billingManager.email,

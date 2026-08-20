@@ -40,10 +40,10 @@ const mailerSend = process.env.EMAIL_API_KEY
   : null;
 
 /**
- * Thai-only notice to the billing manager, same content as the webhook path.
- * Sent directly via MailerSend (the script does not boot Nest, so
- * EmailService's NODE_ENV production guard does not apply here — this script
- * is only ever run intentionally against real data).
+ * Notice in the manager's stored language to the billing manager, same
+ * content as the webhook path. Sent directly via MailerSend (the script does
+ * not boot Nest, so EmailService's NODE_ENV production guard does not apply
+ * here — this script is only ever run intentionally against real data).
  */
 async function notifyBillingManager(school: School): Promise<void> {
   if (!school.billingManagerId) {
@@ -61,6 +61,7 @@ async function notifyBillingManager(school: School): Promise<void> {
     schoolTitle: school.title,
     plan: school.plan,
     billingUrl: `${process.env.CLIENT_URL ?? 'https://app.tatugaschool.com'}/school/${school.id}?menu=Subscription`,
+    language: manager.language === 'th' ? 'th' : 'en',
   });
 
   if (!APPLY) {
