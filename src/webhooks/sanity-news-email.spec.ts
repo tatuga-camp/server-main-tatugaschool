@@ -44,43 +44,52 @@ describe('resolveSanityImageUrl', () => {
   });
 });
 
+const CTX = { projectId: PROJECT_ID, dataset: DATASET };
+
 describe('buildSanityNewsEmail', () => {
-  it('produces a subject combining both languages with the news emoji', () => {
-    const { subject } = buildSanityNewsEmail(basePayload, {
-      projectId: PROJECT_ID,
-      dataset: DATASET,
-    });
-    expect(subject).toBe(
-      '📰 New feature: announcements / ฟีเจอร์ใหม่: ประกาศ',
-    );
+  it('en: subject uses only the English title with the news emoji', () => {
+    const { subject } = buildSanityNewsEmail(basePayload, CTX, 'en');
+    expect(subject).toBe('📰 New feature: announcements');
+  });
+
+  it('th: subject uses only the Thai title with the news emoji', () => {
+    const { subject } = buildSanityNewsEmail(basePayload, CTX, 'th');
+    expect(subject).toBe('📰 ฟีเจอร์ใหม่: ประกาศ');
   });
 
   it('truncates subject to 100 characters', () => {
     const longTitle = 'x'.repeat(120);
     const { subject } = buildSanityNewsEmail(
       { ...basePayload, titleEn: longTitle, titleTh: longTitle },
-      { projectId: PROJECT_ID, dataset: DATASET },
+      CTX,
+      'en',
     );
     expect(subject.length).toBeLessThanOrEqual(100);
   });
 
-  it('includes both titles in the HTML body', () => {
-    const { html } = buildSanityNewsEmail(basePayload, {
-      projectId: PROJECT_ID,
-      dataset: DATASET,
-    });
+  it('en: body contains the English title and copy, not the Thai copy', () => {
+    const { html } = buildSanityNewsEmail(basePayload, CTX, 'en');
     expect(html).toContain('New feature: announcements');
-    expect(html).toContain('ฟีเจอร์ใหม่: ประกาศ');
+    expect(html).toContain("There's something new on Tatuga School");
+    expect(html).not.toContain('ฟีเจอร์ใหม่: ประกาศ');
+    expect(html).not.toContain('มีอัปเดตใหม่จาก Tatuga School');
   });
 
-  it('links to tatugaschool.com/news/<slug>', () => {
-    const { html } = buildSanityNewsEmail(basePayload, {
-      projectId: PROJECT_ID,
-      dataset: DATASET,
-    });
-    expect(html).toContain(
-      'https://tatugaschool.com/news/new-feature-announcements',
-    );
+  it('th: body contains the Thai title and copy, not the English copy', () => {
+    const { html } = buildSanityNewsEmail(basePayload, CTX, 'th');
+    expect(html).toContain('ฟีเจอร์ใหม่: ประกาศ');
+    expect(html).toContain('มีอัปเดตใหม่จาก Tatuga School');
+    expect(html).not.toContain('New feature: announcements');
+    expect(html).not.toContain("There's something new on Tatuga School");
+  });
+
+  it('links to tatugaschool.com/news/<slug> in both languages', () => {
+    for (const lang of ['en', 'th'] as const) {
+      const { html } = buildSanityNewsEmail(basePayload, CTX, lang);
+      expect(html).toContain(
+        'https://tatugaschool.com/news/new-feature-announcements',
+      );
+    }
   });
 
   it('includes the resolved cover image URL when present', () => {
@@ -89,7 +98,8 @@ describe('buildSanityNewsEmail', () => {
         ...basePayload,
         coverImage: { asset: { _ref: 'image-abc-1200x800-jpg' } },
       },
-      { projectId: PROJECT_ID, dataset: DATASET },
+      CTX,
+      'en',
     );
     expect(html).toContain(
       'https://cdn.sanity.io/images/projX/production/abc-1200x800.jpg',
@@ -97,36 +107,33 @@ describe('buildSanityNewsEmail', () => {
   });
 
   it('omits the cover image when coverImage is absent', () => {
-    const { html } = buildSanityNewsEmail(basePayload, {
-      projectId: PROJECT_ID,
-      dataset: DATASET,
-    });
+    const { html } = buildSanityNewsEmail(basePayload, CTX, 'en');
     expect(html).not.toContain('cdn.sanity.io');
   });
 
-  it('includes the brand logo and banner in every email', () => {
-    const { html } = buildSanityNewsEmail(basePayload, {
-      projectId: PROJECT_ID,
-      dataset: DATASET,
-    });
-    expect(html).toContain('logo-tatugaschool.png');
-    expect(html).toContain('banner-tatugaschool.jpg');
+  it('includes the brand logo, banner, and address footer in every email', () => {
+    for (const lang of ['en', 'th'] as const) {
+      const { html } = buildSanityNewsEmail(basePayload, CTX, lang);
+      expect(html).toContain('logo-tatugaschool.png');
+      expect(html).toContain('banner-tatugaschool.jpg');
+      expect(html).toContain('ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์');
+    }
   });
 
-  it('includes the Thai company address footer', () => {
-    const { html } = buildSanityNewsEmail(basePayload, {
-      projectId: PROJECT_ID,
-      dataset: DATASET,
-    });
-    expect(html).toContain('ห้างหุ้นส่วนจำกัด ทาทูก้าแคมป์');
-    expect(html).toContain('permlap@tatugacamp.com');
-  });
-
-  it('renders a type badge', () => {
-    const { html } = buildSanityNewsEmail(
+  it('renders the type badge in the requested language only', () => {
+    const en = buildSanityNewsEmail(
       { ...basePayload, type: 'announcement' },
-      { projectId: PROJECT_ID, dataset: DATASET },
+      CTX,
+      'en',
     );
-    expect(html.toLowerCase()).toContain('announcement');
+    expect(en.html).toContain('Announcement');
+    expect(en.html).not.toContain('ประกาศ');
+    const th = buildSanityNewsEmail(
+      { ...basePayload, type: 'announcement' },
+      CTX,
+      'th',
+    );
+    expect(th.html).toContain('ประกาศ');
+    expect(th.html).not.toContain('Announcement');
   });
 });

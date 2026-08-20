@@ -192,19 +192,34 @@ export class WebhooksService {
         await new Promise((resolve) => setTimeout(resolve, delayMs));
       }
 
-      const { subject, html } = buildSanityNewsEmail(payload, {
-        projectId: this.config.get<string>('SANITY_PROJECT_ID') ?? '',
-        dataset: this.config.get<string>('SANITY_DATASET') ?? '',
-      });
+      const groups: Record<'en' | 'th', string[]> = { en: [], th: [] };
+      for (const r of recipients) {
+        groups[r.language === 'th' ? 'th' : 'en'].push(r.email);
+      }
 
-      const result = await this.email.sendBulk({
-        to: recipients.map((r) => r.email),
-        subject,
-        html,
-      });
+      let sent = 0;
+      let failed = 0;
+      for (const lang of ['en', 'th'] as const) {
+        if (groups[lang].length === 0) continue;
+        const { subject, html } = buildSanityNewsEmail(
+          payload,
+          {
+            projectId: this.config.get<string>('SANITY_PROJECT_ID') ?? '',
+            dataset: this.config.get<string>('SANITY_DATASET') ?? '',
+          },
+          lang,
+        );
+        const result = await this.email.sendBulk({
+          to: groups[lang],
+          subject,
+          html,
+        });
+        sent += result.sent;
+        failed += result.failed;
+      }
 
       this.logger.log(
-        `sanity-news ${payload._id}: sent=${result.sent} failed=${result.failed} recipients=${recipients.length} duration=${Date.now() - start}ms`,
+        `sanity-news ${payload._id}: sent=${sent} failed=${failed} en=${groups.en.length} th=${groups.th.length} duration=${Date.now() - start}ms`,
       );
     } catch (error) {
       this.logger.error(
