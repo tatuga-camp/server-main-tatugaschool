@@ -106,6 +106,7 @@ export class SubscriptionReminderService {
           daysLeft,
           expireAt,
           renewUrl: `${this.config.get('CLIENT_URL')}/school/${school.id}?menu=Subscription`,
+          language: manager.language === 'th' ? 'th' : 'en',
         });
         await this.email.sendMail({ to: manager.email, subject, html });
         summary.sent++;

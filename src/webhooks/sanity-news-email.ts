@@ -1,3 +1,4 @@
+import { Language } from '@prisma/client';
 import {
   SanityImageRef,
   SanityNewsType,
@@ -49,9 +50,23 @@ function truncate(value: string, max: number): string {
 export function buildSanityNewsEmail(
   payload: SanityNewsWebhookPayload,
   context: SanityImageContext,
+  language: Language,
 ): { subject: string; html: string } {
+  const isTh = language === 'th';
+  const labels = TYPE_LABELS[payload.type];
+
+  const title = escapeHtml(isTh ? payload.titleTh : payload.titleEn);
+  const label = escapeHtml(isTh ? labels.th : labels.en);
+  const intro = isTh
+    ? 'มีอัปเดตใหม่จาก Tatuga School คลิกที่ลิงก์ด้านล่างเพื่ออ่านบนเว็บไซต์ของเรา'
+    : "There's something new on Tatuga School. Click the link below to read it on our website.";
+  const noReply = isTh
+    ? 'อีเมลนี้ถูกสร้างขึ้นโดยอัตโนมัติ กรุณาอย่าตอบกลับ หากมีคำถาม โปรดติดต่อ permlap@tatugacamp.com หรือที่อยู่ด้านล่าง'
+    : 'Do not reply to this email, this email is automatically generated. If you have any questions, please contact this email permlap@tatugacamp.com or the address below';
+  const cta = isTh ? 'อ่านต่อ' : 'Read more';
+
   const subject = truncate(
-    `📰 ${payload.titleEn} / ${payload.titleTh}`,
+    `📰 ${isTh ? payload.titleTh : payload.titleEn}`,
     MAX_SUBJECT_LENGTH,
   );
 
@@ -61,12 +76,6 @@ export function buildSanityNewsEmail(
     context.projectId,
     context.dataset,
   );
-  const labels = TYPE_LABELS[payload.type];
-
-  const titleEn = escapeHtml(payload.titleEn);
-  const titleTh = escapeHtml(payload.titleTh);
-  const labelEn = escapeHtml(labels.en);
-  const labelTh = escapeHtml(labels.th);
 
   const coverImageBlock = imageUrl
     ? `<img alt="" style="display:block; width:100%; border-radius:6px; margin:0 0 20px;" src="${imageUrl}" />`
@@ -79,31 +88,19 @@ export function buildSanityNewsEmail(
     <img class="ax-center" style="display: block; margin: 40px auto 0; width: 96px;" src="https://storage.googleapis.com/public-tatugaschool/logo-tatugaschool.png" />
     <div style="background-color: #ffffff; padding: 24px 32px; margin: 40px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
       <p style="display: inline-block; padding: 4px 12px; background-color: #e7f1ff; color: #0d6efd; border-radius: 999px; font-size: 12px; font-weight: 700; margin: 0 0 16px;">
-        ${labelEn} · ${labelTh}
+        ${label}
       </p>
       ${coverImageBlock}
       <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
-        ${titleEn}
+        ${title}
       </h1>
       <p style="margin: 0 0 16px;">
-        There's something new on Tatuga School. Click the link below to read it on our website.
-      </p>
-      <p style="margin: 0 0 16px; color: #6c757d">
-        Do not reply to this email, this email is automatically generated.
-        If you have any questions, please contact this email permlap@tatugacamp.com or the address below
-      </p>
-      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-      <h1 style="font-size: 20px; font-weight: 700; margin: 0 0 16px;">
-        ${titleTh}
-      </h1>
-      <p style="margin: 0 0 16px;">
-        มีอัปเดตใหม่จาก Tatuga School คลิกที่ลิงก์ด้านล่างเพื่ออ่านบนเว็บไซต์ของเรา
+        ${intro}
       </p>
       <p style="margin: 0 0 24px; color: #6c757d">
-        อีเมลนี้ถูกสร้างขึ้นโดยอัตโนมัติ กรุณาอย่าตอบกลับ
-        หากมีคำถาม โปรดติดต่อ permlap@tatugacamp.com หรือที่อยู่ด้านล่าง
+        ${noReply}
       </p>
-      <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${articleUrl}">Read more / อ่านต่อ</a>
+      <a style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 12px 24px; font-weight: 700; text-decoration: none; border-radius: 4px;" href="${articleUrl}">${cta}</a>
     </div>
     <img class="ax-center" style="display: block; margin: 40px auto 0; width: 160px;" src="https://storage.googleapis.com/public-tatugaschool/banner-tatugaschool.jpg" />
     <div style="color: #6c757d; text-align: center; margin: 24px 0;">
