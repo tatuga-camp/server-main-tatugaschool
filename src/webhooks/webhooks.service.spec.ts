@@ -250,22 +250,25 @@ describe('WebhooksService', () => {
 
     it('queries active recipients and sends a bulk email', async () => {
       mockUsersService.findActiveRecipients.mockResolvedValue([
-        { email: 'a@x.com' },
-        { email: 'b@x.com' },
+        { email: 'a@x.com', language: 'en' },
+        { email: 'b@x.com', language: 'th' },
       ]);
-      mockEmailService.sendBulk.mockResolvedValue({ sent: 2, failed: 0 });
+      mockEmailService.sendBulk.mockResolvedValue({ sent: 1, failed: 0 });
 
       await service.handleSanityNewsWebhook(payload);
 
       expect(mockUsersService.findActiveRecipients).toHaveBeenCalledWith(30);
-      expect(mockEmailService.sendBulk).toHaveBeenCalledTimes(1);
-      const sendArg = mockEmailService.sendBulk.mock.calls[0][0];
-      expect(sendArg.to).toEqual(['a@x.com', 'b@x.com']);
-      expect(sendArg.subject).toContain('Hello');
-      expect(sendArg.subject).toContain('สวัสดี');
-      expect(sendArg.html).toContain(
-        'https://tatugaschool.com/news/hello',
-      );
+      expect(mockEmailService.sendBulk).toHaveBeenCalledTimes(2);
+
+      const enArg = mockEmailService.sendBulk.mock.calls[0][0];
+      expect(enArg.to).toEqual(['a@x.com']);
+      expect(enArg.subject).toContain('Hello');
+      expect(enArg.html).toContain('https://tatugaschool.com/news/hello');
+
+      const thArg = mockEmailService.sendBulk.mock.calls[1][0];
+      expect(thArg.to).toEqual(['b@x.com']);
+      expect(thArg.subject).toContain('สวัสดี');
+      expect(thArg.html).toContain('https://tatugaschool.com/news/hello');
     });
 
     it('skips sending when there are no recipients', async () => {
@@ -395,6 +398,7 @@ describe('WebhooksService', () => {
       mockPrismaService.user.findUnique.mockResolvedValue({
         id: 'u1',
         email: 'manager@example.com',
+        language: 'th',
       });
 
       await service.handleStripeWebhook(req, reply);
