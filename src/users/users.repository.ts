@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, User } from '@prisma/client';
+import { Language, Prisma, User } from '@prisma/client';
 import {
   RequestCreateUser,
   RequestFindByEmail,
@@ -110,7 +110,9 @@ type Repository = {
   findByResetToken(request: RequestFindByResetToken): Promise<User>;
   updatePassword(request: RequestUpdatePassword): Promise<void>;
   updateLastActiveAt(request: RequestUpdateLastActiveAt): Promise<void>;
-  findActiveRecipients(thresholdDays?: number): Promise<{ email: string }[]>;
+  findActiveRecipients(
+    thresholdDays?: number,
+  ): Promise<{ email: string; language: Language }[]>;
 };
 
 @Injectable()
@@ -132,7 +134,9 @@ export class UserRepository implements Repository {
     }
   }
 
-  async findActiveRecipients(thresholdDays = 30): Promise<{ email: string }[]> {
+  async findActiveRecipients(
+    thresholdDays = 30,
+  ): Promise<{ email: string; language: Language }[]> {
     const since = new Date(Date.now() - thresholdDays * 24 * 60 * 60 * 1000);
     return this.prisma.user.findMany({
       where: {
@@ -140,7 +144,7 @@ export class UserRepository implements Repository {
         isDeleted: false,
         isVerifyEmail: true,
       },
-      select: { email: true },
+      select: { email: true, language: true },
     });
   }
 

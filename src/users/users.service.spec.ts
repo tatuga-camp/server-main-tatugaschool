@@ -258,10 +258,10 @@ describe('UsersService', () => {
     it('delegates to userRepository with the same threshold', async () => {
       const spy = jest
         .spyOn(service.userRepository, 'findActiveRecipients')
-        .mockResolvedValue([{ email: 'x@y.com' }]);
+        .mockResolvedValue([{ email: 'x@y.com', language: 'en' }]);
       const result = await service.findActiveRecipients(7);
       expect(spy).toHaveBeenCalledWith(7);
-      expect(result).toEqual([{ email: 'x@y.com' }]);
+      expect(result).toEqual([{ email: 'x@y.com', language: 'en' }]);
     });
   });
 });

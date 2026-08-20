@@ -7,7 +7,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { Language, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { UserRepository } from './users.repository';
@@ -236,7 +236,9 @@ export class UsersService {
     }
   }
 
-  findActiveRecipients(thresholdDays = 30): Promise<{ email: string }[]> {
+  findActiveRecipients(
+    thresholdDays = 30,
+  ): Promise<{ email: string; language: Language }[]> {
     return this.userRepository.findActiveRecipients(thresholdDays);
   }
 }

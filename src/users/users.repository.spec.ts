@@ -30,13 +30,15 @@ describe('UserRepository', () => {
 
   describe('findActiveRecipients', () => {
     it('queries users active within the threshold and not deleted, verified only', async () => {
-      mockPrisma.user.findMany.mockResolvedValue([{ email: 'a@b.com' }]);
+      mockPrisma.user.findMany.mockResolvedValue([
+        { email: 'a@b.com', language: 'th' },
+      ]);
 
       const result = await repo.findActiveRecipients(30);
 
       expect(mockPrisma.user.findMany).toHaveBeenCalledTimes(1);
       const args = mockPrisma.user.findMany.mock.calls[0][0];
-      expect(args.select).toEqual({ email: true });
+      expect(args.select).toEqual({ email: true, language: true });
       expect(args.where.isDeleted).toBe(false);
       expect(args.where.isVerifyEmail).toBe(true);
       const since = args.where.lastActiveAt.gte as Date;
@@ -44,7 +46,7 @@ describe('UserRepository', () => {
         Date.parse('2026-05-23T12:00:00Z') - 30 * 24 * 60 * 60 * 1000,
       );
       expect(since.getTime()).toBe(expected.getTime());
-      expect(result).toEqual([{ email: 'a@b.com' }]);
+      expect(result).toEqual([{ email: 'a@b.com', language: 'th' }]);
     });
 
     it('defaults to a 30-day threshold when no argument is given', async () => {
