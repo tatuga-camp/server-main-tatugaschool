@@ -54,6 +54,7 @@ describe('UsersService', () => {
     service.userRepository = {
       findById: jest.fn(),
       findMany: jest.fn(),
+      findManyVerifiedByEmailPrefix: jest.fn(),
       update: jest.fn(),
       findActiveRecipients: jest.fn(),
     } as any;
@@ -112,15 +113,30 @@ describe('UsersService', () => {
   });
 
   describe('GetUserByEmail', () => {
-    it('should return verified users matching email', async () => {
-      (service.userRepository.findMany as jest.Mock).mockResolvedValue([
-        { email: 'test@example.com', password: 'xxx' },
+    it('should return verified users matching email via the raw prefix search', async () => {
+      (
+        service.userRepository.findManyVerifiedByEmailPrefix as jest.Mock
+      ).mockResolvedValue([
+        {
+          email: 'test@example.com',
+          password: 'xxx',
+          resetPasswordToken: 'r',
+          verifyEmailToken: 'v',
+        },
       ]);
 
       const result = await service.GetUserByEmail({ email: 'test' });
 
+      expect(
+        service.userRepository.findManyVerifiedByEmailPrefix,
+      ).toHaveBeenCalledWith({ email: 'test', limit: 5 });
+      // The old Prisma `contains` path compiled to a full-collection $expr
+      // scan — the service must not fall back to findMany for this search.
+      expect(service.userRepository.findMany).not.toHaveBeenCalled();
       expect(result[0].email).toBe('test@example.com');
       expect(result[0].password).toBeUndefined();
+      expect(result[0].resetPasswordToken).toBeUndefined();
+      expect(result[0].verifyEmailToken).toBeUndefined();
     });
   });
 

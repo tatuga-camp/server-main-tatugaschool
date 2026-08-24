@@ -12,6 +12,7 @@ import {
   RequestFindById,
   RequestFindByResetToken,
   RequestFindByVerifyToken,
+  RequestFindManyVerifiedByEmailPrefix,
   RequestUpdateLastActiveAt,
   RequestUpdatePassword,
   RequestUpdateResetToken,
@@ -100,6 +101,9 @@ function fromRawUser(doc: RawUser): User {
 
 type Repository = {
   findMany(request: Prisma.UserFindManyArgs): Promise<User[]>;
+  findManyVerifiedByEmailPrefix(
+    request: RequestFindManyVerifiedByEmailPrefix,
+  ): Promise<User[]>;
   findById(request: RequestFindById): Promise<User | null>;
   findByEmail(request: RequestFindByEmail): Promise<User>;
   update(request: Prisma.UserUpdateArgs): Promise<User>;
@@ -123,6 +127,38 @@ export class UserRepository implements Repository {
   async findMany(request: Prisma.UserFindManyArgs): Promise<User[]> {
     try {
       return await this.prisma.user.findMany(request);
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  // Prisma `email: { contains }` compiles to an unanchored $regexMatch inside
+  // a non-index-eligible `$expr` pipeline — every invite-teacher email search
+  // scanned the entire User collection. A plain prefix-anchored, case-sensitive
+  // $regex plus a { email: 1 } sort lets the { email } unique index serve the
+  // match, the sort, and the limit.
+  async findManyVerifiedByEmailPrefix(
+    request: RequestFindManyVerifiedByEmailPrefix,
+  ): Promise<User[]> {
+    if (!request.email) {
+      return [];
+    }
+    const escaped = request.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    try {
+      const docs = (await this.prisma.user.findRaw({
+        filter: {
+          email: { $regex: `^${escaped}` },
+          isVerifyEmail: true,
+        },
+        options: { limit: request.limit ?? 5, sort: { email: 1 } },
+      })) as unknown as RawUser[];
+      return docs.map(fromRawUser);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

@@ -39,6 +39,11 @@ export type RequestUpdateUser = {
   };
 };
 
+export type RequestFindManyVerifiedByEmailPrefix = {
+  email: string;
+  limit?: number;
+};
+
 export type RequestFindByVerifyToken = {
   verifyEmailToken: string;
 };

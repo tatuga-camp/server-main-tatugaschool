@@ -81,14 +81,9 @@ export class UsersService {
   async GetUserByEmail(dto: GetUserByEmailDto): Promise<User[] | []> {
     try {
       return await this.userRepository
-        .findMany({
-          take: 5,
-          where: {
-            email: {
-              contains: dto.email,
-            },
-            isVerifyEmail: true,
-          },
+        .findManyVerifiedByEmailPrefix({
+          email: dto.email,
+          limit: 5,
         })
         .then((users) => {
           return users.map((user) => {

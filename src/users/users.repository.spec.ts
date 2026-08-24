@@ -224,6 +224,76 @@ describe('UserRepository', () => {
     });
   });
 
+  // Regression tests for the User COLLSCAN on the invite-teacher email search:
+  // Prisma `email: { contains }` compiles to an unanchored $regexMatch inside a
+  // non-index-eligible `$expr` — every search scanned the whole User
+  // collection. Must use findRaw with a plain prefix-anchored $regex so the
+  // { email } unique index serves both the match and the sort.
+  describe('findManyVerifiedByEmailPrefix', () => {
+    const rawUser = {
+      _id: { $oid: '5f4b4a4e481e3caefd634a01' },
+      createAt: { $date: '2026-01-01T00:00:00.000Z' },
+      updateAt: { $date: '2026-01-01T00:00:00.000Z' },
+      firstName: 'Will',
+      lastName: 'T.',
+      email: 'will@example.com',
+      phone: '0812345678',
+      photo: 'photo.png',
+      role: 'USER',
+      isVerifyEmail: true,
+      language: 'th',
+      lastActiveAt: { $date: '2026-05-23T00:00:00.000Z' },
+      provider: 'LOCAL',
+    };
+
+    it('uses a plain (non-$expr) prefix-anchored filter served by the email index', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([rawUser]);
+
+      const users = await repo.findManyVerifiedByEmailPrefix({
+        email: 'will@example',
+        limit: 5,
+      });
+
+      expect(mockPrisma.user.findRaw).toHaveBeenCalledWith({
+        filter: {
+          email: { $regex: '^will@example' },
+          isVerifyEmail: true,
+        },
+        options: { limit: 5, sort: { email: 1 } },
+      });
+      expect(users).toHaveLength(1);
+      expect(users[0]).toMatchObject({
+        id: '5f4b4a4e481e3caefd634a01',
+        email: 'will@example.com',
+        isVerifyEmail: true,
+      });
+      expect(users[0].createAt).toBeInstanceOf(Date);
+    });
+
+    it('escapes regex metacharacters in the user-supplied input', async () => {
+      mockPrisma.user.findRaw.mockResolvedValue([]);
+
+      await repo.findManyVerifiedByEmailPrefix({ email: 'a.b+c@x' });
+
+      expect(mockPrisma.user.findRaw).toHaveBeenCalledWith({
+        filter: {
+          email: { $regex: '^a\\.b\\+c@x' },
+          isVerifyEmail: true,
+        },
+        options: { limit: 5, sort: { email: 1 } },
+      });
+    });
+
+    it('returns [] for a falsy input without querying', async () => {
+      const users = await repo.findManyVerifiedByEmailPrefix({
+        email: '',
+      });
+
+      expect(users).toEqual([]);
+      expect(mockPrisma.user.findRaw).not.toHaveBeenCalled();
+    });
+  });
+
   // Regression test for the CommentOnAssignment COLLSCAN: userId is optional,
   // so Prisma's updateMany filter compiles to a non-index-eligible
   // `$expr`/`$ne: [field, "$$REMOVE"]` pipeline. The author-info sync must use
