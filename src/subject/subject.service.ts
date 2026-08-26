@@ -55,6 +55,10 @@ import { StudentOnGroupRepository } from '../student-on-group/student-on-group.r
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { UserRepository } from '../users/users.repository';
+import { RubricRepository } from '../rubric/rubric.repository';
+import { AnnouncementRepository } from '../announcement/announcement.repository';
+import { CommentOnAnnouncementRepository } from '../comment-on-announcement/comment-on-announcement.repository';
+import { FileOnAnnouncementRepository } from '../file-on-announcement/file-on-announcement.repository';
 
 @Injectable()
 export class SubjectService {
@@ -74,6 +78,10 @@ export class SubjectService {
   private studentOnGroupRepository: StudentOnGroupRepository;
   private assignmentVideoQuizRepository: AssignmentVideoQuizRepository;
   private userRepository: UserRepository;
+  private rubricRepository: RubricRepository;
+  private announcementRepository: AnnouncementRepository;
+  private commentOnAnnouncementRepository: CommentOnAnnouncementRepository;
+  private fileOnAnnouncementRepository: FileOnAnnouncementRepository;
 
   constructor(
     private prisma: PrismaService,
@@ -136,6 +144,14 @@ export class SubjectService {
       this.prisma,
     );
     this.userRepository = new UserRepository(this.prisma);
+    this.rubricRepository = new RubricRepository(this.prisma);
+    this.announcementRepository = new AnnouncementRepository(this.prisma);
+    this.commentOnAnnouncementRepository = new CommentOnAnnouncementRepository(
+      this.prisma,
+    );
+    this.fileOnAnnouncementRepository = new FileOnAnnouncementRepository(
+      this.prisma,
+    );
   }
 
   async leaveGroupLine(request: { groupId: string }): Promise<Subject | void> {
@@ -1203,6 +1219,11 @@ export class SubjectService {
         scoreOnSubjects,
         attendanceRows,
         teacherOnSubjects,
+        rubrics,
+        rubricScoreOnStudentAssignments,
+        announcements,
+        fileOnAnnouncements,
+        commentOnAnnouncements,
       ] = await Promise.all([
         this.attendanceTableService.attendanceTableRepository.findMany({
           where: { subjectId: subject.id },
@@ -1265,6 +1286,19 @@ export class SubjectService {
           where: { subjectId: subject.id },
         }),
         this.teacherOnSubjectService.teacherOnSubjectRepository.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.rubricRepository.findManyBySubjectWithTree(subject.id),
+        this.rubricRepository.findScoresBySubject(subject.id),
+        this.announcementRepository.findMany({
+          where: { subjectId: subject.id },
+          orderBy: { createAt: 'desc' },
+          take: 20,
+        }),
+        this.fileOnAnnouncementRepository.findMany({
+          where: { subjectId: subject.id },
+        }),
+        this.commentOnAnnouncementRepository.findMany({
           where: { subjectId: subject.id },
         }),
       ]);
@@ -1374,6 +1408,31 @@ export class SubjectService {
           description:
             'This data contains the list of teachers managing or teaching the subject.',
           data: teacherOnSubjects,
+        },
+        rubrics: {
+          description:
+            'This data contains the grading rubrics created for the subject. Each rubric has criteria (what is being assessed, with a weight) and each criterion has levels (quality tiers with points, e.g. Excellent = 4). Assignments may reference a rubric via rubricId to define how they are graded.',
+          data: rubrics,
+        },
+        rubricScoreOnStudentAssignments: {
+          description:
+            'This data contains the rubric-based scores given to students on their assignments. Each record links a student assignment to a rubric criterion and the level the teacher selected, with the points earned and an optional comment.',
+          data: rubricScoreOnStudentAssignments,
+        },
+        announcements: {
+          description:
+            'This data contains the latest 20 announcements posted by teachers in the subject (title, content, author name, and posted date), newest first. Use this to answer questions about news, updates, or events in the subject.',
+          data: announcements,
+        },
+        fileOnAnnouncements: {
+          description:
+            'This data contains files or materials attached to announcements in the subject.',
+          data: fileOnAnnouncements,
+        },
+        commentOnAnnouncements: {
+          description:
+            'This data contains comments left by teachers or students on announcements in the subject.',
+          data: commentOnAnnouncements,
         },
       };
     } catch (error) {

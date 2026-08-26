@@ -42,6 +42,10 @@ describe('SubjectService', () => {
     questionOnVideo: { findMany: jest.fn(), create: jest.fn() },
     studentOnSubject: { findMany: jest.fn() },
     rubric: { findMany: jest.fn(), create: jest.fn() },
+    rubricScoreOnStudentAssignment: { findMany: jest.fn() },
+    announcement: { findMany: jest.fn() },
+    fileOnAnnouncement: { findMany: jest.fn() },
+    commentOnAnnouncement: { findMany: jest.fn() },
     assignment: { update: jest.fn() },
   };
 
@@ -918,6 +922,11 @@ describe('SubjectService', () => {
       const result = await service.getAllSubjectData({ subjectId: 's1' });
       expect(result.subject.data.id).toBe('s1');
       expect(result.attendanceTables).toBeDefined();
+      expect(result.rubrics).toBeDefined();
+      expect(result.rubricScoreOnStudentAssignments).toBeDefined();
+      expect(result.announcements).toBeDefined();
+      expect(result.fileOnAnnouncements).toBeDefined();
+      expect(result.commentOnAnnouncements).toBeDefined();
     });
   });
 

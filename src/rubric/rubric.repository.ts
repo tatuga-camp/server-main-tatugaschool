@@ -46,6 +46,34 @@ export class RubricRepository {
     }
   }
 
+  async findManyBySubjectWithTree(subjectId: string) {
+    try {
+      return await this.prisma.rubric.findMany({
+        where: { subjectId },
+        include: {
+          criteria: {
+            orderBy: { order: 'asc' },
+            include: { levels: { orderBy: { order: 'asc' } } },
+          },
+        },
+      });
+    } catch (e) {
+      this.handle(e);
+    }
+  }
+
+  async findScoresBySubject(
+    subjectId: string,
+  ): Promise<RubricScoreOnStudentAssignment[]> {
+    try {
+      return await this.prisma.rubricScoreOnStudentAssignment.findMany({
+        where: { subjectId },
+      });
+    } catch (e) {
+      this.handle(e);
+    }
+  }
+
   async findByIdWithTree(rubricId: string) {
     try {
       return await this.prisma.rubric.findUnique({
