@@ -7,6 +7,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "production:db:push": "dotenv -e .env.production -- bunx prisma db push",
+    "export:marketing": "bun run scripts/export-users-for-marketing.ts",
+    "production:export:marketing": "dotenv -e .env.production -- bun run scripts/export-users-for-marketing.ts",
     "production:prisma:studio": "dotenv -e .env.production -- bunx prisma studio",
     "timeout": "bun -e \"await Bun.sleep(3000)\"",
     "docker:build:run": "bun run docker:build && bun run docker:run",
