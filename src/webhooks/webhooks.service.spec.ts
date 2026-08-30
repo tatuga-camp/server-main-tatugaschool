@@ -55,7 +55,7 @@ describe('WebhooksService', () => {
   };
 
   const mockAiService = {
-    generateLineBotSummary: jest.fn(),
+    answerSubjectQuestion: jest.fn(),
   };
 
   const mockUsersService = {
@@ -173,12 +173,16 @@ describe('WebhooksService', () => {
       mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
         plan: 'PREMIUM',
       });
-      mockSubjectService.getAllSubjectData.mockResolvedValue({});
-      mockAiService.generateLineBotSummary.mockResolvedValue('AI Response');
+      mockAiService.answerSubjectQuestion.mockResolvedValue('AI Response');
 
       await service.handleLineWebhook(dto);
 
-      expect(mockAiService.generateLineBotSummary).toHaveBeenCalled();
+      expect(mockAiService.answerSubjectQuestion).toHaveBeenCalledWith({
+        subjectId: 's1',
+        question: '@Tatuga tell me',
+      });
+      // the whole-subject dump must no longer be loaded for AI questions
+      expect(mockSubjectService.getAllSubjectData).not.toHaveBeenCalled();
       expect(mockLineBotService.replyOrPushMessage).toHaveBeenCalledWith({
         replyToken: 'rt1',
         groupId: 'g1',
@@ -228,12 +232,47 @@ describe('WebhooksService', () => {
       mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
         plan: 'PREMIUM',
       });
-      mockSubjectService.getAllSubjectData.mockResolvedValue({});
-      mockAiService.generateLineBotSummary.mockRejectedValue(
+      mockAiService.answerSubjectQuestion.mockRejectedValue(
         new Error('ECONNRESET'),
       );
 
       await expect(service.handleLineWebhook(dto)).resolves.toBeUndefined();
+    });
+
+    it('replies with an apology instead of silence when the AI fails', async () => {
+      const mockEvent = {
+        type: 'message',
+        source: { type: 'group', groupId: 'g1' },
+        replyToken: 'rt1',
+        message: {
+          type: 'text',
+          text: '@Tatuga tell me',
+          mention: { mentionees: [{ isSelf: true }] },
+        },
+      };
+      const dto: any = { events: [mockEvent] };
+
+      mockSubjectService.subjectRepository.findFirst.mockResolvedValue({
+        id: 's1',
+        isVerifyLine: true,
+        lineGroupId: 'g1',
+        schoolId: 'sch1',
+      });
+      mockSchoolService.schoolRepository.findUnique.mockResolvedValue({
+        plan: 'PREMIUM',
+      });
+      const apiError: any = new Error('input token count exceeds the maximum');
+      apiError.name = 'ApiError';
+      apiError.status = 400;
+      mockAiService.answerSubjectQuestion.mockRejectedValue(apiError);
+
+      await service.handleLineWebhook(dto);
+
+      expect(mockLineBotService.replyOrPushMessage).toHaveBeenCalledWith({
+        replyToken: 'rt1',
+        groupId: 'g1',
+        message: expect.stringContaining('ขออภัย'),
+      });
     });
   });
 
