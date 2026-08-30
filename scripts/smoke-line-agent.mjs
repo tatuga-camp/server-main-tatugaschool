@@ -30,7 +30,6 @@ const TOKEN_WINDOW = 1_048_576;
 const LINE_TEXT_LIMIT = 5000;
 const REPLY_TOKEN_DEADLINE_MS = 60_000;
 const MAX_TOOL_ROUNDS = 4; // keep in sync with AiService.MAX_TOOL_ROUNDS
-const MODEL = 'gemini-3.1-flash-lite';
 
 const distPath = [
   'dist/ai/subject-query-tool.js',
@@ -51,7 +50,13 @@ if (!apiKey) {
 const args = process.argv.slice(2);
 const qIndex = args.indexOf('--question');
 const oneShotQuestion = qIndex >= 0 ? args[qIndex + 1] : undefined;
-const idOrCode = args.filter((a, i) => !a.startsWith('--') && i !== qIndex + 1)[0];
+const mIndex = args.indexOf('--model');
+// Default matches AiService.answerSubjectQuestion.
+const MODEL = (mIndex >= 0 && args[mIndex + 1]) || 'gemini-3.1-flash-lite';
+const idOrCode = args.filter(
+  (a, i) => !a.startsWith('--') && i !== qIndex + 1 && i !== mIndex + 1,
+)[0];
+console.log(idOrCode);
 if (!idOrCode) {
   console.error(
     'Usage: node --env-file=.env.production scripts/smoke-line-agent.mjs <subjectId|code> [--question "..."]',
@@ -177,8 +182,13 @@ async function ask(question) {
     const usage = trackUsage(data);
 
     const parts = partsOf(data);
-    const calls = parts.filter((p) => p.functionCall).map((p) => p.functionCall);
-    const text = parts.filter((p) => p.text).map((p) => p.text).join('');
+    const calls = parts
+      .filter((p) => p.functionCall)
+      .map((p) => p.functionCall);
+    const text = parts
+      .filter((p) => p.text)
+      .map((p) => p.text)
+      .join('');
 
     console.log(
       `  round ${round + 1}: ${Date.now() - roundStart}ms  prompt=${fmt(usage.promptTokenCount)}tok  output=${fmt(usage.candidatesTokenCount)}tok${usage.thoughtsTokenCount ? `  thoughts=${fmt(usage.thoughtsTokenCount)}tok` : ''}`,
@@ -193,7 +203,11 @@ async function ask(question) {
     const responseParts = [];
     for (const call of calls) {
       const toolStart = Date.now();
-      const result = await tool.handleCall(subject.id, call.name, call.args ?? {});
+      const result = await tool.handleCall(
+        subject.id,
+        call.name,
+        call.args ?? {},
+      );
       const size = JSON.stringify(result).length;
       console.log(
         `    tool: ${call.name} ${JSON.stringify(call.args ?? {})}` +
@@ -210,7 +224,10 @@ async function ask(question) {
     const roundStart = Date.now();
     const data = await generateContent(baseBody(contents, false));
     const usage = trackUsage(data);
-    answer = partsOf(data).filter((p) => p.text).map((p) => p.text).join('');
+    answer = partsOf(data)
+      .filter((p) => p.text)
+      .map((p) => p.text)
+      .join('');
     console.log(
       `  forced final: ${Date.now() - roundStart}ms  prompt=${fmt(usage.promptTokenCount)}tok  output=${fmt(usage.candidatesTokenCount)}tok`,
     );
@@ -218,7 +235,9 @@ async function ask(question) {
 
   const totalMs = elapsed();
   console.log('\n───────── ANSWER ─────────');
-  console.log(answer || '(no answer text — production would send the apology fallback)');
+  console.log(
+    answer || '(no answer text — production would send the apology fallback)',
+  );
   console.log('──────────────────────────');
   console.log(
     `duration: ${(totalMs / 1000).toFixed(1)}s ${
@@ -252,7 +271,10 @@ if (oneShotQuestion) {
     process.exitCode = 1;
   }
 } else {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
   console.log('Type a question (empty line to exit):');
   for (;;) {
     const question = (await rl.question('\nQ> ')).trim();

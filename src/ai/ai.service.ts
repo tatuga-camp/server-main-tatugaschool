@@ -59,7 +59,7 @@ export class AiService implements AiType {
 
   async generateContent(
     request: ContentListUnion,
-    model: string = 'gemini-3.1-flash-lite',
+    model: string = 'gemini-3.5-flash-lite',
     maxOutputTokens: number = 65536,
     thinkingLevel: ThinkingLevel = ThinkingLevel.HIGH,
   ) {
@@ -488,7 +488,7 @@ export class AiService implements AiType {
     subjectId: string;
     question: string;
   }): Promise<string> {
-    const model = 'gemini-3.1-flash-lite';
+    const model = 'gemini-3.5-flash-lite';
     try {
       const preamble = await this.subjectQueryTool.getPreamble(dto.subjectId);
 
