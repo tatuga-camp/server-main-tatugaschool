@@ -85,6 +85,37 @@ describe('LineBotService', () => {
     });
   });
 
+  describe('text length cap', () => {
+    it('truncates a pushed message longer than the LINE 5000-char limit', async () => {
+      await service.sendMessage({ groupId: 'g1', message: 'a'.repeat(6000) });
+
+      const sent = mockPushMessage.mock.calls[0][0].messages[0].text;
+      expect(sent.length).toBeLessThanOrEqual(5000);
+      expect(sent.endsWith('…')).toBe(true);
+    });
+
+    it('truncates a replied message longer than the LINE 5000-char limit', async () => {
+      await service.replyMessage({ replyToken: 'rt1', message: 'a'.repeat(6000) });
+
+      const sent = mockReplyMessage.mock.calls[0][0].messages[0].text;
+      expect(sent.length).toBeLessThanOrEqual(5000);
+      expect(sent.endsWith('…')).toBe(true);
+    });
+
+    it('does not split an emoji surrogate pair at the cut point', async () => {
+      // 4999 chars then an emoji straddling the 5000 boundary.
+      await service.sendMessage({
+        groupId: 'g1',
+        message: 'a'.repeat(4999) + '😀'.repeat(10),
+      });
+
+      const sent = mockPushMessage.mock.calls[0][0].messages[0].text;
+      expect(sent.length).toBeLessThanOrEqual(5000);
+      // No lone surrogate anywhere in the payload.
+      expect(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(sent)).toBe(false);
+    });
+  });
+
   describe('replyOrPushMessage', () => {
     it('replies and does not push when reply succeeds', async () => {
       mockReplyMessage.mockResolvedValue(undefined);

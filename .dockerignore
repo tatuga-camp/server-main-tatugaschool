@@ -63,9 +63,10 @@ typings/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# dotenv environment variables files — .env.production carries live DB URLs
+# and API keys; `COPY . .` in the builder stage must never see any of them
 .env
-.env.test
+.env.*
 
 # parcel-bundler cache files
 .cache
@@ -102,8 +103,17 @@ typings/
 .pnp.*
 
 # Docker
-Dockerfile
+Dockerfile*
 docker-compose.yml
+
+# Operational/diagnostic scripts (run manually against production with
+# --env-file; not part of the app) and internal docs — keep out of image layers
+scripts/
+docs/
+
+# Tests are not compiled by nest build; keep them out of the context
+test/
+**/*.spec.ts
 
 # Git
 .git

@@ -7,11 +7,13 @@ import { catchError, firstValueFrom, lastValueFrom } from 'rxjs';
 import axios from 'axios';
 import {
   ContentListUnion,
+  FunctionCallingConfigMode,
   GoogleGenAI,
   HarmBlockThreshold,
   HarmCategory,
   ThinkingLevel,
 } from '@google/genai';
+import { SubjectQueryToolService } from './subject-query-tool';
 
 type AiType = {
   embbedingText(text: string, accessToken: string): Promise<EmbeddingsResponse>;
@@ -34,7 +36,10 @@ type AiType = {
     keywords: string[];
     description: string;
   }>;
-  generateLineBotSummary(userInput: string, serverData: any): Promise<string>;
+  answerSubjectQuestion(dto: {
+    subjectId: string;
+    question: string;
+  }): Promise<string>;
 };
 
 @Injectable()
@@ -44,6 +49,7 @@ export class AiService implements AiType {
   constructor(
     private config: ConfigService,
     private httpService: HttpService,
+    private subjectQueryTool: SubjectQueryToolService,
   ) {
     this.logger = new Logger(AiService.name);
     this.googleAI = new GoogleGenAI({
@@ -445,36 +451,139 @@ export class AiService implements AiType {
     }
   }
 
-  async generateLineBotSummary(
-    userInput: string,
-    serverData: string,
-  ): Promise<string> {
-    try {
-      const prompt = `You are an AI assistant helping a user via a LINE bot. 
-The user asked or stated: "${userInput}"
+  // A whole subject serialized into one prompt was measured at 1.07M tokens —
+  // past Gemini's input window (400 INVALID_ARGUMENT). The bot therefore sends
+  // only a small roster preamble and lets the model pull detail rows through
+  // the constrained query_subject_data tool, a few capped rounds at a time.
+  private static readonly MAX_TOOL_ROUNDS = 4;
 
-Here is the relevant information from the server:
-${serverData}
+  private lineAgentConfig() {
+    return {
+      maxOutputTokens: 65536,
+      temperature: 1,
+      topP: 0.95,
+      thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.OFF,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.OFF,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.OFF,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.OFF,
+        },
+      ],
+    };
+  }
+
+  async answerSubjectQuestion(dto: {
+    subjectId: string;
+    question: string;
+  }): Promise<string> {
+    const model = 'gemini-3.1-flash-lite';
+    try {
+      const preamble = await this.subjectQueryTool.getPreamble(dto.subjectId);
+
+      const prompt = `You are an AI assistant helping a teacher via a LINE bot for the subject below.
+The user asked or stated: "${dto.question}"
+
+Subject reference data (students, assignments, attendance sessions, score types, groups, rubrics — resolve names and numbers mentioned by the user to their ids using this):
+${JSON.stringify(preamble)}
 
 Your tasks:
-1. Analyze the user's input and predict what the user needs or is trying to achieve.
-2. Provide a concise, helpful response based on the server information that directly addresses the user's needs.
+1. Analyze the user's input and decide what data you need. When the user asks about a specific student (by name or number) or wants a student's summary, call get_student_summary with that student's studentOnSubjectId from the roster, then present a DETAILED report covering: ข้อมูลนักเรียน (student info), สรุปการเข้าเรียน (attendance summary), คะแนนพฤติกรรม (behavior scores — break down per title using behaviorScoreByTitle, e.g. for each title how many points and how many times, plus the total), สถานะการส่งงาน per assignment (submission status, use assignment titles from the reference data), คอมเม้นของคุณครู (teacher comments), and rubric scores if any. Whenever you report a student's score on an assignment that is rubric-graded (the assignment has a rubricId), ALSO include the rubric breakdown: each criterion (criterionTitle), the selected level (levelTitle), the points earned, and any comment — get_student_summary returns these resolved in rubricScores; otherwise query rubricScoreOnStudentAssignments with the studentOnAssignmentId and resolve titles from the rubrics reference data. For other questions use query_subject_data; prefer mode "groupBy" or "count" for totals and overviews.
+2. Provide a helpful response that directly addresses the user's needs, in the same language the user asked in. Include every relevant detail you fetched; do not say data is missing unless a tool result actually came back empty.
 3. Format your response so it is suitable for a LINE bot message (use emojis, bullet points, keep it friendly and easy to read on mobile screens).
 4. Don't use **. Instead, use ALL CAPS for emphasis if needed. ** **`;
-      const response = await this.generateContent([
-        {
-          role: 'user',
-          parts: [
-            {
-              text: prompt,
-            },
-          ],
-        },
-      ]);
 
-      return response;
+      const contents: any[] = [{ role: 'user', parts: [{ text: prompt }] }];
+      const tools = [
+        { functionDeclarations: this.subjectQueryTool.functionDeclarations },
+      ];
+
+      let totalTokens = 0;
+      const queried: string[] = [];
+
+      for (let round = 0; round < AiService.MAX_TOOL_ROUNDS; round++) {
+        const response = await this.googleAI.models.generateContent({
+          model,
+          contents,
+          config: {
+            ...this.lineAgentConfig(),
+            tools,
+            toolConfig: {
+              functionCallingConfig: { mode: FunctionCallingConfigMode.AUTO },
+            },
+          },
+        });
+        totalTokens += response.usageMetadata?.totalTokenCount ?? 0;
+
+        const calls = response.functionCalls;
+        if (!calls || calls.length === 0) {
+          if (response.text) {
+            this.logger.log(
+              `answerSubjectQuestion done: subject=${dto.subjectId} rounds=${round} queried=[${queried.join(', ')}] tokens=${totalTokens}`,
+            );
+            return response.text;
+          }
+          break;
+        }
+
+        contents.push(
+          response.candidates?.[0]?.content ?? {
+            role: 'model',
+            parts: calls.map((call) => ({ functionCall: call })),
+          },
+        );
+
+        const responseParts: any[] = [];
+        for (const call of calls) {
+          const result = await this.subjectQueryTool.handleCall(
+            dto.subjectId,
+            call.name,
+            call.args as any,
+          );
+          queried.push(
+            String((call.args as any)?.collection ?? call.name ?? '?'),
+          );
+          responseParts.push({
+            functionResponse: { name: call.name, response: result },
+          });
+        }
+        contents.push({ role: 'user', parts: responseParts });
+      }
+
+      // Out of tool rounds (or a round returned neither calls nor text):
+      // force a text answer from what has been gathered.
+      const finalResponse = await this.googleAI.models.generateContent({
+        model,
+        contents,
+        config: this.lineAgentConfig(),
+      });
+      totalTokens += finalResponse.usageMetadata?.totalTokenCount ?? 0;
+
+      if (!finalResponse.text) {
+        throw new Error('AI returned no answer text');
+      }
+      this.logger.log(
+        `answerSubjectQuestion done (forced): subject=${dto.subjectId} rounds=${AiService.MAX_TOOL_ROUNDS} queried=[${queried.join(', ')}] tokens=${totalTokens}`,
+      );
+      return finalResponse.text;
     } catch (error) {
-      this.logger.error('Failed to generate LINE bot summary:', error);
+      // Log message + status explicitly: serializing the ApiError object drops
+      // its (non-enumerable) message, which hides the actual Gemini reason.
+      this.logger.error(
+        `answerSubjectQuestion failed (subject=${dto.subjectId}, status=${(error as any)?.status}): ${(error as Error)?.message}`,
+        (error as Error)?.stack,
+      );
       throw error;
     }
   }

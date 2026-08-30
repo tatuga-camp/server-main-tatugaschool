@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AiService } from './ai.service';
+import { SubjectQueryToolService } from './subject-query-tool';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { AuthService } from '../auth/auth.service';
@@ -16,8 +17,10 @@ jest.mock('@google/genai', () => {
     GoogleGenAI: jest.fn().mockImplementation(() => ({
       models: {
         generateContentStream: jest.fn(),
+        generateContent: jest.fn(),
       },
     })),
+    FunctionCallingConfigMode: { AUTO: 'AUTO', NONE: 'NONE' },
     ThinkingLevel: { HIGH: 'HIGH' },
     HarmCategory: {
       HARM_CATEGORY_HATE_SPEECH: 'HARM_CATEGORY_HATE_SPEECH',
@@ -37,10 +40,20 @@ describe('AiService', () => {
   let configService: ConfigService;
   let httpService: HttpService;
 
+  const mockSubjectQueryTool = {
+    getPreamble: jest.fn().mockResolvedValue({ subject: { title: 'Math' } }),
+    handleCall: jest.fn().mockResolvedValue({ rows: [] }),
+    functionDeclarations: [
+      { name: 'get_student_summary' },
+      { name: 'query_subject_data' },
+    ],
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiService,
+        { provide: SubjectQueryToolService, useValue: mockSubjectQueryTool },
         {
           provide: ConfigService,
           useValue: {
@@ -380,22 +393,108 @@ describe('AiService', () => {
     });
   });
 
-  describe('generateLineBotSummary', () => {
-    it('should call generateContent with correct prompt', async () => {
-      jest
-        .spyOn(service, 'generateContent')
-        .mockResolvedValue('Line bot response');
+  describe('answerSubjectQuestion', () => {
+    let mockGenerateContent: jest.Mock;
 
-      const result = await service.generateLineBotSummary(
-        'user message',
-        'server data',
+    beforeEach(() => {
+      mockGenerateContent = jest.fn();
+      (service as any).googleAI.models.generateContent = mockGenerateContent;
+      mockSubjectQueryTool.getPreamble.mockResolvedValue({
+        subject: { title: 'Math' },
+      });
+      mockSubjectQueryTool.handleCall.mockResolvedValue({ rows: [] });
+    });
+
+    it('answers directly when the model needs no tool call', async () => {
+      mockGenerateContent.mockResolvedValue({ text: 'answer', functionCalls: undefined });
+
+      const result = await service.answerSubjectQuestion({
+        subjectId: 's1',
+        question: 'สรุปคะแนน',
+      });
+
+      expect(result).toBe('answer');
+      expect(mockSubjectQueryTool.getPreamble).toHaveBeenCalledWith('s1');
+      expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+
+      const call = mockGenerateContent.mock.calls[0][0];
+      const promptText = call.contents[0].parts[0].text;
+      expect(promptText).toContain('สรุปคะแนน');
+      expect(promptText).toContain('Math'); // preamble embedded
+      expect(
+        call.config.tools[0].functionDeclarations.map((d: any) => d.name),
+      ).toEqual(['get_student_summary', 'query_subject_data']);
+    });
+
+    it('executes tool calls with the server-held subjectId and feeds results back', async () => {
+      mockGenerateContent
+        .mockResolvedValueOnce({
+          functionCalls: [
+            {
+              name: 'query_subject_data',
+              args: { collection: 'attendances', filters: { studentOnSubjectId: 'sos1' } },
+            },
+          ],
+          candidates: [{ content: { role: 'model', parts: [{ functionCall: {} }] } }],
+        })
+        .mockResolvedValueOnce({ text: 'done', functionCalls: undefined });
+      mockSubjectQueryTool.handleCall.mockResolvedValue({
+        rows: [{ status: 'ABSENT' }],
+      });
+
+      const result = await service.answerSubjectQuestion({
+        subjectId: 's1',
+        question: 'q',
+      });
+
+      expect(result).toBe('done');
+      expect(mockSubjectQueryTool.handleCall).toHaveBeenCalledWith(
+        's1',
+        'query_subject_data',
+        {
+          collection: 'attendances',
+          filters: { studentOnSubjectId: 'sos1' },
+        },
       );
+      // second call carries the tool result back as a functionResponse
+      const secondContents = mockGenerateContent.mock.calls[1][0].contents;
+      const lastTurn = secondContents[secondContents.length - 1];
+      expect(lastTurn.parts[0].functionResponse.response).toEqual({
+        rows: [{ status: 'ABSENT' }],
+      });
+    });
 
-      expect(service.generateContent).toHaveBeenCalled();
-      const callArgs = (service.generateContent as jest.Mock).mock.calls[0][0];
-      expect(callArgs[0].parts[0].text).toContain('user message');
-      expect(callArgs[0].parts[0].text).toContain('server data');
-      expect(result).toBe('Line bot response');
+    it('forces a final answer after exhausting tool rounds', async () => {
+      const toolCallResponse = {
+        functionCalls: [
+          { name: 'query_subject_data', args: { collection: 'attendances' } },
+        ],
+        candidates: [{ content: { role: 'model', parts: [] } }],
+      };
+      mockGenerateContent
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce({ text: 'forced answer' });
+
+      const result = await service.answerSubjectQuestion({
+        subjectId: 's1',
+        question: 'q',
+      });
+
+      expect(result).toBe('forced answer');
+      expect(mockGenerateContent).toHaveBeenCalledTimes(5);
+      // the forced call must not offer tools again
+      expect(mockGenerateContent.mock.calls[4][0].config.tools).toBeUndefined();
+    });
+
+    it('throws when the model produces no answer text at all', async () => {
+      mockGenerateContent.mockResolvedValue({ text: undefined, functionCalls: undefined });
+
+      await expect(
+        service.answerSubjectQuestion({ subjectId: 's1', question: 'q' }),
+      ).rejects.toThrow('no answer text');
     });
   });
 });
