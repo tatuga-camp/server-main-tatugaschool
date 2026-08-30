@@ -137,19 +137,30 @@ export class WebhooksService {
             );
 
             if (school.plan === 'ENTERPRISE' || school.plan === 'PREMIUM') {
-              const summarydata = await this.subjectService.getAllSubjectData({
-                subjectId: subject.id,
-              });
-
-              const messageAI = await this.ai.generateLineBotSummary(
-                message.text,
-                JSON.stringify(summarydata),
-              );
-              await this.line.replyOrPushMessage({
-                replyToken: event.replyToken,
-                groupId: event.source.groupId,
-                message: messageAI,
-              });
+              // If the AI call fails, still answer the user — silence looks
+              // like the bot is broken.
+              try {
+                const messageAI = await this.ai.answerSubjectQuestion({
+                  subjectId: subject.id,
+                  question: message.text,
+                });
+                await this.line.replyOrPushMessage({
+                  replyToken: event.replyToken,
+                  groupId: event.source.groupId,
+                  message: messageAI,
+                });
+              } catch (error) {
+                this.logger.error(
+                  `AI summary failed for subject ${subject.id}: ${(error as Error)?.message}`,
+                  (error as Error)?.stack,
+                );
+                await this.line.replyOrPushMessage({
+                  replyToken: event.replyToken,
+                  groupId: event.source.groupId,
+                  message:
+                    'ขออภัยค่ะ ระบบไม่สามารถประมวลผลคำถามได้ในขณะนี้ กรุณาลองใหม่อีกครั้งภายหลัง\n(Sorry, we could not process your question right now. Please try again later.)',
+                });
+              }
               return;
             } else {
               const upgradeText =
@@ -164,7 +175,12 @@ export class WebhooksService {
         }
       }
     } catch (error) {
-      this.logger.error('Error handling LINE webhook', error);
+      // Log message + stack explicitly: serializing the error object drops the
+      // (non-enumerable) message, leaving only { name, status } in the logs.
+      this.logger.error(
+        `Error handling LINE webhook: ${(error as Error)?.message}`,
+        (error as Error)?.stack,
+      );
     }
   }
 

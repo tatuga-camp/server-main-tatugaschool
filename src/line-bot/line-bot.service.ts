@@ -12,19 +12,35 @@ export class LineBotService {
     });
   }
 
+  // LINE rejects a text message over 5000 chars with 400 "Length must be
+  // between 0 and 5000" — on BOTH reply and push, so an over-long AI answer
+  // would otherwise reach the user as pure silence.
+  private static readonly LINE_TEXT_LIMIT = 5000;
+
+  private toTextMessage(text: string): TextMessage {
+    if (text.length <= LineBotService.LINE_TEXT_LIMIT) {
+      return { type: 'text', text };
+    }
+    this.logger.warn(
+      `Truncating outgoing LINE message from ${text.length} to ${LineBotService.LINE_TEXT_LIMIT} chars`,
+    );
+    let truncated = text.slice(0, LineBotService.LINE_TEXT_LIMIT - 1);
+    // Never end on the high half of a surrogate pair (e.g. a split emoji).
+    if (/[\uD800-\uDBFF]$/.test(truncated)) {
+      truncated = truncated.slice(0, -1);
+    }
+    return { type: 'text', text: truncated + '…' };
+  }
+
   async sendMessage(request: { groupId: string; message: string }) {
     try {
       if (!request.message) {
         throw new BadRequestException('Message is required');
       }
 
-      const message: TextMessage = {
-        type: 'text',
-        text: request.message,
-      };
       await this.lineClient.pushMessage({
         to: request.groupId,
-        messages: [message],
+        messages: [this.toTextMessage(request.message)],
       });
     } catch (error) {
       throw error;
@@ -36,13 +52,9 @@ export class LineBotService {
       if (!request.message) {
         throw new BadRequestException('Message is required');
       }
-      const message: TextMessage = {
-        type: 'text',
-        text: request.message,
-      };
       await this.lineClient.replyMessage({
         replyToken: request.replyToken,
-        messages: [message],
+        messages: [this.toTextMessage(request.message)],
       });
     } catch (error) {
       throw error;
