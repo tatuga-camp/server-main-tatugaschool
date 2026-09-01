@@ -193,12 +193,16 @@ export class StorageService {
         ? `schoolId:${schoolId}/ID:${id}/${replacedString}`
         : `userId:${userId}/ID:${id}/${replacedString}`;
 
-      // Create the command for a PutObject operation
+      // Create the command for a PutObject operation.
+      // Do NOT set ContentLength here: the presigner adds it to
+      // X-Amz-SignedHeaders, so R2 rejects the browser PUT whenever the
+      // actual byte count differs from the size reported at sign time
+      // (common with Android content-provider files). Quota validation
+      // above already uses fileSize.
       const command = new PutObjectCommand({
         Bucket: this.bucketName,
         Key: r2FileName,
         ContentType: fileType,
-        ContentLength: fileSize, // ContentLength is often useful for upload policies
       });
 
       // Generate the pre-signed URL

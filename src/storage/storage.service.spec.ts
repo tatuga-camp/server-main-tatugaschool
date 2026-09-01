@@ -129,6 +129,33 @@ describe('StorageService', () => {
       expect(result.contentType).toBe('image/jpeg');
     });
 
+    it('should not sign ContentLength so browser uploads are not rejected when the real byte count drifts from the reported size', async () => {
+      mockPrismaService.school.findUnique.mockResolvedValue({
+        id: 'sch1',
+        totalStorage: 100,
+        limitTotalStorage: 10_000_000,
+      });
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
+        status: 'ACCEPT',
+      });
+
+      await service.getUploadSignedUrl(
+        {
+          fileName: 'work.pdf',
+          fileSize: 123456,
+          fileType: 'application/pdf',
+          userId: 'u1',
+          schoolId: 'sch1',
+        },
+        { id: 'u1' } as any,
+      );
+
+      const commandInput = (PutObjectCommand as unknown as jest.Mock).mock
+        .calls[0][0];
+      expect(commandInput.ContentType).toBe('application/pdf');
+      expect(commandInput).not.toHaveProperty('ContentLength');
+    });
+
     it('should throw BadRequestException if file is too large', async () => {
       const dto = {
         fileName: 'test.jpg',
