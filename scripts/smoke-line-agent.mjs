@@ -1,15 +1,19 @@
 /**
- * Smoke test for the LINE-bot agent WITHOUT LINE: runs the same flow as
- * WebhooksService → AiService.answerSubjectQuestion against production data,
- * with you typing the question. Reports per-round timing, tool calls, token
- * usage vs the 1,048,576 window, total duration vs LINE's ~60s reply-token
- * deadline, and answer length vs LINE's 5000-char text cap.
+ * Smoke test for the LINE-bot agent WITHOUT LINE: runs the REAL compiled
+ * AiService.answerSubjectQuestion (imported from dist/) against production
+ * data, with you typing the question. Prompt, tool loop, model choice, and
+ * DSL guards are all the production code — change ai.service.ts, run
+ * `npm run build`, and this script exercises the change with no mirror to
+ * keep in sync.
  *
- * The DSL guards, preamble, and tool executor are the REAL compiled code
- * (imported from dist/), so what you exercise here is what production runs.
- * Only the Gemini call itself is mirrored over REST, because @google/genai
- * cannot load on Node >= 25 (SlowBuffer removed). Keep the loop below in sync
- * with AiService.answerSubjectQuestion if you change either.
+ * Reports per-round timing, tool calls, token usage vs the 1,048,576 window,
+ * total duration vs LINE's ~60s reply-token deadline, and answer length vs
+ * LINE's 5000-char text cap.
+ *
+ * Node >= 25 removed SlowBuffer, which @google/genai's dependency chain
+ * (jwa → buffer-equal-constant-time) still dereferences at import time; the
+ * polyfill below restores it BEFORE dist/ is imported. It only affects the
+ * unused service-account auth path — API-key auth never touches it.
  *
  * Read-only against the DB (read replica when DATABASE_URL_READ is set); the
  * Gemini generateContent calls bill normally. No LINE messages are sent.
@@ -23,23 +27,30 @@
 
 import { pathToFileURL } from 'node:url';
 import { existsSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import readline from 'node:readline/promises';
 import { PrismaClient } from '@prisma/client';
+
+// SlowBuffer polyfill — MUST run before dist/ (and thus @google/genai) loads.
+const bufferModule = createRequire(import.meta.url)('buffer');
+if (!bufferModule.SlowBuffer) {
+  bufferModule.SlowBuffer = bufferModule.Buffer;
+}
 
 const TOKEN_WINDOW = 1_048_576;
 const LINE_TEXT_LIMIT = 5000;
 const REPLY_TOKEN_DEADLINE_MS = 60_000;
-const MAX_TOOL_ROUNDS = 4; // keep in sync with AiService.MAX_TOOL_ROUNDS
 
-const distPath = [
-  'dist/ai/subject-query-tool.js',
-  'dist/src/ai/subject-query-tool.js',
-].find(existsSync);
-if (!distPath) {
+const findDist = (rel) =>
+  [`dist/${rel}`, `dist/src/${rel}`].find(existsSync);
+const toolPath = findDist('ai/subject-query-tool.js');
+const aiPath = findDist('ai/ai.service.js');
+if (!toolPath || !aiPath) {
   console.error('dist build not found — run `npm run build` first.');
   process.exit(1);
 }
-const { SubjectQueryToolService } = await import(pathToFileURL(distPath));
+const { SubjectQueryToolService } = await import(pathToFileURL(toolPath));
+const { AiService } = await import(pathToFileURL(aiPath));
 
 const apiKey = process.env.GOOGLE_AI_KEY;
 if (!apiKey) {
@@ -50,13 +61,9 @@ if (!apiKey) {
 const args = process.argv.slice(2);
 const qIndex = args.indexOf('--question');
 const oneShotQuestion = qIndex >= 0 ? args[qIndex + 1] : undefined;
-const mIndex = args.indexOf('--model');
-// Default matches AiService.answerSubjectQuestion.
-const MODEL = (mIndex >= 0 && args[mIndex + 1]) || 'gemini-3.1-flash-lite';
 const idOrCode = args.filter(
-  (a, i) => !a.startsWith('--') && i !== qIndex + 1 && i !== mIndex + 1,
+  (a, i) => !a.startsWith('--') && i !== qIndex + 1,
 )[0];
-console.log(idOrCode);
 if (!idOrCode) {
   console.error(
     'Usage: node --env-file=.env.production scripts/smoke-line-agent.mjs <subjectId|code> [--question "..."]',
@@ -68,6 +75,9 @@ const dbUrl = process.env.DATABASE_URL_READ ?? process.env.DATABASE_URL;
 const prisma = new PrismaClient({ datasources: { db: { url: dbUrl } } });
 // Structural stand-in for PrismaReadService — same client surface.
 const tool = new SubjectQueryToolService(prisma);
+// ConfigService/HttpService stand-ins: answerSubjectQuestion only reads
+// GOOGLE_AI_KEY via config.get; httpService is never touched on this path.
+const ai = new AiService({ get: (key) => process.env[key] }, null, tool);
 
 const subject = /^[0-9a-f]{24}$/i.test(idOrCode)
   ? await prisma.subject.findUnique({ where: { id: idOrCode } })
@@ -84,160 +94,68 @@ console.log(
 
 const fmt = (n) => Number(n ?? 0).toLocaleString('en-US');
 
-async function generateContent(body) {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify(body),
-    },
+// ── Diagnostics: wrap the real collaborators instead of mirroring the loop ──
+const stats = { round: 0, totalTokens: 0, maxPromptTokens: 0 };
+const resetStats = () => {
+  stats.round = 0;
+  stats.totalTokens = 0;
+  stats.maxPromptTokens = 0;
+};
+
+const realGetPreamble = tool.getPreamble.bind(tool);
+tool.getPreamble = async (subjectId) => {
+  const start = Date.now();
+  const preamble = await realGetPreamble(subjectId);
+  console.log(
+    `  preamble: ${fmt(JSON.stringify(preamble).length)} chars in ${Date.now() - start}ms`,
   );
-  const text = await res.text();
-  if (!res.ok) {
-    const err = new Error(text.slice(0, 800));
-    err.status = res.status;
-    throw err;
-  }
-  return JSON.parse(text);
-}
+  return preamble;
+};
 
-function baseBody(contents, withTools) {
-  return {
-    contents,
-    safetySettings: [
-      'HARM_CATEGORY_HATE_SPEECH',
-      'HARM_CATEGORY_DANGEROUS_CONTENT',
-      'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-      'HARM_CATEGORY_HARASSMENT',
-    ].map((category) => ({ category, threshold: 'OFF' })),
-    generationConfig: {
-      maxOutputTokens: 65536,
-      temperature: 1,
-      topP: 0.95,
-      thinkingConfig: { thinkingLevel: 'HIGH' },
-    },
-    ...(withTools
-      ? {
-          tools: [{ functionDeclarations: restDeclarations() }],
-          toolConfig: { functionCallingConfig: { mode: 'AUTO' } },
-        }
-      : {}),
-  };
-}
+const realHandleCall = tool.handleCall.bind(tool);
+tool.handleCall = async (subjectId, name, callArgs) => {
+  const start = Date.now();
+  const result = await realHandleCall(subjectId, name, callArgs);
+  const size = JSON.stringify(result).length;
+  console.log(
+    `    tool: ${name} ${JSON.stringify(callArgs ?? {})}` +
+      ` → ${result.error ? `ERROR: ${result.error}` : `${fmt(size)} chars`} in ${Date.now() - start}ms`,
+  );
+  return result;
+};
 
-function restDeclarations() {
-  // The SDK's parametersJsonSchema field is called `parameters` on REST.
-  return tool.functionDeclarations.map(({ parametersJsonSchema, ...rest }) => ({
-    ...rest,
-    parameters: parametersJsonSchema,
-  }));
-}
-
-function partsOf(data) {
-  return data.candidates?.[0]?.content?.parts ?? [];
-}
-
-// Mirror of the prompt in AiService.answerSubjectQuestion.
-function buildPrompt(question, preamble) {
-  return `You are an AI assistant helping a teacher via a LINE bot for the subject below.
-The user asked or stated: "${question}"
-
-Subject reference data (students, assignments, attendance sessions, score types, groups, rubrics — resolve names and numbers mentioned by the user to their ids using this):
-${JSON.stringify(preamble)}
-
-Your tasks:
-1. Analyze the user's input and decide what data you need. When the user asks about a specific student (by name or number) or wants a student's summary, call get_student_summary with that student's studentOnSubjectId from the roster, then present a DETAILED report covering: ข้อมูลนักเรียน (student info), สรุปการเข้าเรียน (attendance summary), คะแนนพฤติกรรม (behavior scores — break down per title using behaviorScoreByTitle, e.g. for each title how many points and how many times, plus the total), สถานะการส่งงาน per assignment (submission status, use assignment titles from the reference data), คอมเม้นของคุณครู (teacher comments), and rubric scores if any. Whenever you report a student's score on an assignment that is rubric-graded (the assignment has a rubricId), ALSO include the rubric breakdown: each criterion (criterionTitle), the selected level (levelTitle), the points earned, and any comment — get_student_summary returns these resolved in rubricScores; otherwise query rubricScoreOnStudentAssignments with the studentOnAssignmentId and resolve titles from the rubrics reference data. For other questions use query_subject_data; prefer mode "groupBy" or "count" for totals and overviews.
-2. Provide a helpful response that directly addresses the user's needs, in the same language the user asked in. Include every relevant detail you fetched; do not say data is missing unless a tool result actually came back empty.
-3. Format your response so it is suitable for a LINE bot message (use emojis, bullet points, keep it friendly and easy to read on mobile screens).
-4. Don't use **. Instead, use ALL CAPS for emphasis if needed. ** **`;
-}
+// `googleAI` is TS-private but a plain property at runtime.
+const models = ai.googleAI.models;
+const realGenerateContent = models.generateContent.bind(models);
+models.generateContent = async (request) => {
+  const start = Date.now();
+  const response = await realGenerateContent(request);
+  const usage = response.usageMetadata ?? {};
+  stats.round += 1;
+  stats.totalTokens += usage.totalTokenCount ?? 0;
+  stats.maxPromptTokens = Math.max(
+    stats.maxPromptTokens,
+    usage.promptTokenCount ?? 0,
+  );
+  console.log(
+    `  round ${stats.round} (${request.config?.tools ? 'tools' : 'forced final'}): ${Date.now() - start}ms  prompt=${fmt(usage.promptTokenCount)}tok  output=${fmt(usage.candidatesTokenCount)}tok${usage.thoughtsTokenCount ? `  thoughts=${fmt(usage.thoughtsTokenCount)}tok` : ''}`,
+  );
+  return response;
+};
 
 async function ask(question) {
+  resetStats();
   const startedAt = Date.now();
-  const elapsed = () => Date.now() - startedAt;
 
-  const preamble = await tool.getPreamble(subject.id);
-  const preambleChars = JSON.stringify(preamble).length;
-  console.log(`  preamble: ${fmt(preambleChars)} chars in ${elapsed()}ms`);
+  // THE production entrypoint — same call WebhooksService makes.
+  const answer = await ai.answerSubjectQuestion({
+    subjectId: subject.id,
+    question,
+  });
 
-  const contents = [
-    { role: 'user', parts: [{ text: buildPrompt(question, preamble) }] },
-  ];
-
-  let totalTokens = 0;
-  let maxPromptTokens = 0;
-  let answer = null;
-
-  const trackUsage = (data) => {
-    const u = data.usageMetadata ?? {};
-    totalTokens += u.totalTokenCount ?? 0;
-    maxPromptTokens = Math.max(maxPromptTokens, u.promptTokenCount ?? 0);
-    return u;
-  };
-
-  for (let round = 0; round < MAX_TOOL_ROUNDS && answer === null; round++) {
-    const roundStart = Date.now();
-    const data = await generateContent(baseBody(contents, true));
-    const usage = trackUsage(data);
-
-    const parts = partsOf(data);
-    const calls = parts
-      .filter((p) => p.functionCall)
-      .map((p) => p.functionCall);
-    const text = parts
-      .filter((p) => p.text)
-      .map((p) => p.text)
-      .join('');
-
-    console.log(
-      `  round ${round + 1}: ${Date.now() - roundStart}ms  prompt=${fmt(usage.promptTokenCount)}tok  output=${fmt(usage.candidatesTokenCount)}tok${usage.thoughtsTokenCount ? `  thoughts=${fmt(usage.thoughtsTokenCount)}tok` : ''}`,
-    );
-
-    if (calls.length === 0) {
-      if (text) answer = text;
-      break;
-    }
-
-    contents.push(data.candidates[0].content);
-    const responseParts = [];
-    for (const call of calls) {
-      const toolStart = Date.now();
-      const result = await tool.handleCall(
-        subject.id,
-        call.name,
-        call.args ?? {},
-      );
-      const size = JSON.stringify(result).length;
-      console.log(
-        `    tool: ${call.name} ${JSON.stringify(call.args ?? {})}` +
-          ` → ${result.error ? `ERROR: ${result.error}` : `${fmt(size)} chars`} in ${Date.now() - toolStart}ms`,
-      );
-      responseParts.push({
-        functionResponse: { name: call.name, response: result },
-      });
-    }
-    contents.push({ role: 'user', parts: responseParts });
-  }
-
-  if (answer === null) {
-    const roundStart = Date.now();
-    const data = await generateContent(baseBody(contents, false));
-    const usage = trackUsage(data);
-    answer = partsOf(data)
-      .filter((p) => p.text)
-      .map((p) => p.text)
-      .join('');
-    console.log(
-      `  forced final: ${Date.now() - roundStart}ms  prompt=${fmt(usage.promptTokenCount)}tok  output=${fmt(usage.candidatesTokenCount)}tok`,
-    );
-  }
-
-  const totalMs = elapsed();
+  const totalMs = Date.now() - startedAt;
   console.log('\n───────── ANSWER ─────────');
-  console.log(
-    answer || '(no answer text — production would send the apology fallback)',
-  );
+  console.log(answer);
   console.log('──────────────────────────');
   console.log(
     `duration: ${(totalMs / 1000).toFixed(1)}s ${
@@ -247,17 +165,15 @@ async function ask(question) {
     }`,
   );
   console.log(
-    `tokens: max window usage ${fmt(maxPromptTokens)} / ${fmt(TOKEN_WINDOW)} (${((maxPromptTokens / TOKEN_WINDOW) * 100).toFixed(1)}%)  |  total billed across rounds: ${fmt(totalTokens)}`,
+    `tokens: max window usage ${fmt(stats.maxPromptTokens)} / ${fmt(TOKEN_WINDOW)} (${((stats.maxPromptTokens / TOKEN_WINDOW) * 100).toFixed(1)}%)  |  total billed across rounds: ${fmt(stats.totalTokens)}`,
   );
-  if (answer) {
-    console.log(
-      `answer length: ${fmt(answer.length)} chars ${
-        answer.length <= LINE_TEXT_LIMIT
-          ? '(fits LINE 5000 cap)'
-          : `(over LINE 5000 cap — production truncates with …)`
-      }`,
-    );
-  }
+  console.log(
+    `answer length: ${fmt(answer.length)} chars ${
+      answer.length <= LINE_TEXT_LIMIT
+        ? '(fits LINE 5000 cap)'
+        : `(over LINE 5000 cap — production truncates with …)`
+    }`,
+  );
 }
 
 if (oneShotQuestion) {

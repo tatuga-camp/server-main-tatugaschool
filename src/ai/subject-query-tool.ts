@@ -26,6 +26,8 @@ export interface SubjectQueryArgs {
 }
 
 export interface CollectionConfig {
+  /** What this collection contains — kept in sync with SubjectService.getAllSubjectData */
+  description: string;
   /** PrismaClient delegate property, e.g. prisma.attendance */
   model: string;
   /** Raw MongoDB collection name (Prisma model name; no @@map in this schema) */
@@ -44,6 +46,8 @@ export interface CollectionConfig {
 
 export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
   attendances: {
+    description:
+      'This data contains the individual attendance records for students (e.g., present, absent, late).',
     model: 'attendance',
     mongoCollection: 'Attendance',
     filters: [
@@ -65,6 +69,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'startDate',
   },
   scoreOnStudents: {
+    description:
+      'This data contains behavioral or bonus points/scores awarded directly to individual students in the subject.',
     model: 'scoreOnStudent',
     mongoCollection: 'ScoreOnStudent',
     filters: ['studentOnSubjectId', 'scoreOnSubjectId', 'studentId'],
@@ -74,6 +80,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   studentOnAssignments: {
+    description:
+      'This data contains the assignments assigned to students, including their submission status and earned scores. Student status can be "PEDDING" (assigned but not submitted), "SUBMITTED" (submitted but not reviewed), "IMPROVED" (summited but teacher ask to improve) or "REVIEWD" (submitted and reviewed with score).',
     model: 'studentOnAssignment',
     mongoCollection: 'StudentOnAssignment',
     filters: ['studentOnSubjectId', 'assignmentId', 'studentId', 'status'],
@@ -94,6 +102,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   rubricScoreOnStudentAssignments: {
+    description:
+      'This data contains the rubric-based scores given to students on their assignments. Each record links a student assignment to a rubric criterion and the level the teacher selected, with the points earned and an optional comment.',
     model: 'rubricScoreOnStudentAssignment',
     mongoCollection: 'RubricScoreOnStudentAssignment',
     filters: ['studentOnAssignmentId', 'criterionId'],
@@ -103,6 +113,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   skillOnStudentAssignments: {
+    description:
+      'This data contains the skill weights or evaluations for a student on a specific assignment.',
     model: 'skillOnStudentAssignment',
     mongoCollection: 'SkillOnStudentAssignment',
     filters: ['studentOnAssignmentId', 'studentId', 'skillId'],
@@ -112,6 +124,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   fileOnStudentAssignments: {
+    description:
+      'This data contains the files or work submitted by students for their assignments.',
     model: 'fileOnStudentAssignment',
     mongoCollection: 'FileOnStudentAssignment',
     filters: ['assignmentId', 'studentId', 'studentOnAssignmentId'],
@@ -128,6 +142,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   commentOnAssignments: {
+    description:
+      'This data contains comments or feedback left by teachers or students on specific student assignments.',
     model: 'commentOnAssignment',
     mongoCollection: 'CommentOnAssignment',
     filters: ['studentOnAssignmentId'],
@@ -136,6 +152,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   announcements: {
+    description:
+      'This data contains announcements posted by teachers in the subject (title, content, author name, and posted date). Use this to answer questions about news, updates, or events in the subject.',
     model: 'announcement',
     mongoCollection: 'Announcement',
     filters: [],
@@ -144,6 +162,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   commentOnAnnouncements: {
+    description:
+      'This data contains comments left by teachers or students on announcements in the subject.',
     model: 'commentOnAnnouncement',
     mongoCollection: 'CommentOnAnnouncement',
     filters: ['announcementId'],
@@ -152,6 +172,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   fileOnAnnouncements: {
+    description:
+      'This data contains files or materials attached to announcements in the subject.',
     model: 'fileOnAnnouncement',
     mongoCollection: 'FileOnAnnouncement',
     filters: ['announcementId'],
@@ -160,6 +182,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   fileOnAssignments: {
+    description:
+      'This data contains files or materials attached to an assignment by the teacher.',
     model: 'fileOnAssignment',
     mongoCollection: 'FileOnAssignment',
     filters: ['assignmentId'],
@@ -168,6 +192,8 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     dateField: 'createAt',
   },
   questionOnVideos: {
+    description:
+      'This data contains interactive questions embedded in video assignments for the subject.',
     model: 'questionOnVideo',
     mongoCollection: 'QuestionOnVideo',
     filters: ['assignmentId'],
@@ -192,7 +218,7 @@ export class SubjectQueryToolService {
     const perCollection = Object.entries(COLLECTION_CONFIG)
       .map(
         ([name, c]) =>
-          `- ${name}: filters(${c.filters.join(', ') || 'none'}); groupBy(${c.groupBy.join(', ') || 'none'})`,
+          `- ${name}: ${c.description} filters(${c.filters.join(', ') || 'none'}); groupBy(${c.groupBy.join(', ') || 'none'})`,
       )
       .join('\n');
     return [
