@@ -116,6 +116,15 @@ export class UsersService {
         throw new ForbiddenException('User not found');
       }
 
+      if (
+        !userInfo.isVerifyEmail &&
+        Object.keys(dto).some((key) => key !== 'email')
+      ) {
+        throw new ForbiddenException(
+          'Unverified users can only change their email',
+        );
+      }
+
       if (dto.email && userInfo.provider === 'GOOGLE') {
         throw new BadRequestException("Can't update email for Google provider");
       }

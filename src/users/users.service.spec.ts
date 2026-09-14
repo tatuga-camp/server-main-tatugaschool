@@ -180,6 +180,83 @@ describe('UsersService', () => {
         ),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('allows an unverified user to change only their email', async () => {
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        email: 'old@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: false,
+      });
+      (service.userRepository.update as jest.Mock).mockResolvedValue({
+        id: 'u1',
+        email: 'new@example.com',
+      });
+
+      await expect(
+        service.updateUser({ email: 'new@example.com' } as any, {
+          id: 'u1',
+          email: 'old@example.com',
+        } as any),
+      ).resolves.toEqual({ id: 'u1', email: 'new@example.com' });
+      expect(mockAuthService.sendVerifyEmail).toHaveBeenCalled();
+    });
+
+    it('rejects an unverified user updating any field other than email', async () => {
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        email: 'old@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: false,
+      });
+
+      const promise = service.updateUser({ firstName: 'New' } as any, {
+        id: 'u1',
+        email: 'old@example.com',
+      } as any);
+      await expect(promise).rejects.toThrow(ForbiddenException);
+      await expect(promise).rejects.toThrow(
+        'Unverified users can only change their email',
+      );
+      expect(service.userRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unverified user sending email together with other fields', async () => {
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        email: 'old@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: false,
+      });
+
+      await expect(
+        service.updateUser(
+          { email: 'new@example.com', lastName: 'X' } as any,
+          { id: 'u1', email: 'old@example.com' } as any,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(service.userRepository.update).not.toHaveBeenCalled();
+    });
+
+    it('lets a verified user update any field', async () => {
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        email: 'old@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: true,
+      });
+      (service.userRepository.update as jest.Mock).mockResolvedValue({
+        id: 'u1',
+        firstName: 'New',
+      });
+
+      await expect(
+        service.updateUser({ firstName: 'New' } as any, {
+          id: 'u1',
+          email: 'old@example.com',
+        } as any),
+      ).resolves.toEqual({ id: 'u1', firstName: 'New' });
+    });
   });
 
   describe('updatePassword', () => {
