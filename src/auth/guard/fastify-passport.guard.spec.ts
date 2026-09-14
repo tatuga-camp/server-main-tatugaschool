@@ -67,4 +67,45 @@ describe('FastifyPassportGuard', () => {
       'unverified',
     );
   });
+
+  it('awaits an async handleRequest and propagates its rejection', async () => {
+    (fastifyPassport.authenticate as jest.Mock).mockImplementation(
+      (_name, _opts, callback) => async (req: any) => {
+        await callback(req, {}, null, { id: 'u1' });
+      },
+    );
+    const Guard = createFastifyPassportGuard('user-jwt');
+    class AsyncCustom extends (Guard as any) {
+      async handleRequest(_err: unknown, _user: any) {
+        await Promise.resolve();
+        throw new UnauthorizedException('async-rejected');
+      }
+    }
+    const guard = new AsyncCustom();
+    await expect(guard.canActivate(buildContext())).rejects.toThrow(
+      'async-rejected',
+    );
+  });
+
+  it('attaches the resolved value of an async handleRequest to req.user', async () => {
+    (fastifyPassport.authenticate as jest.Mock).mockImplementation(
+      (_name, _opts, callback) => async (req: any) => {
+        await callback(req, {}, null, { id: 'u1' });
+      },
+    );
+    const Guard = createFastifyPassportGuard('user-jwt');
+    class AsyncCustom extends (Guard as any) {
+      async handleRequest(_err: unknown, user: any) {
+        await Promise.resolve();
+        return { ...user, enriched: true };
+      }
+    }
+    const guard = new AsyncCustom();
+    const ctx = buildContext();
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(ctx.switchToHttp().getRequest().user).toEqual({
+      id: 'u1',
+      enriched: true,
+    });
+  });
 });

@@ -30,7 +30,12 @@ export function createFastifyPassportGuard(
       return new Promise<boolean>((resolve, reject) => {
         const cb: AuthCb = async (_req, _reply, err, user, info, status) => {
           try {
-            const resolved = (this as any).handleRequest(err, user, info, status);
+            const resolved = await (this as any).handleRequest(
+              err,
+              user,
+              info,
+              status,
+            );
             (req as any).user = resolved;
             resolve(true);
           } catch (e) {
@@ -46,7 +51,11 @@ export function createFastifyPassportGuard(
       });
     }
 
-    handleRequest(err: unknown, user: unknown, _info?: unknown): unknown {
+    handleRequest(
+      err: unknown,
+      user: unknown,
+      _info?: unknown,
+    ): unknown | Promise<unknown> {
       if (err || !user) throw new UnauthorizedException('Access denied');
       return user;
     }
