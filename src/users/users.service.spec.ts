@@ -202,6 +202,37 @@ describe('UsersService', () => {
       expect(mockAuthService.sendVerifyEmail).toHaveBeenCalled();
     });
 
+    it('ignores undefined keys left by ValidationPipe transform when the unverified user sends only email', async () => {
+      service.userRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        email: 'old@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: false,
+      });
+      (service.userRepository.update as jest.Mock).mockResolvedValue({
+        id: 'u1',
+        email: 'new@example.com',
+      });
+
+      const transformedDto = {
+        email: 'new@example.com',
+        firstName: undefined,
+        lastName: undefined,
+        photo: undefined,
+        blurHash: undefined,
+        phone: undefined,
+        favoritSchool: undefined,
+        language: undefined,
+      };
+
+      await expect(
+        service.updateUser(transformedDto as any, {
+          id: 'u1',
+          email: 'old@example.com',
+        } as any),
+      ).resolves.toEqual({ id: 'u1', email: 'new@example.com' });
+    });
+
     it('rejects an unverified user updating any field other than email', async () => {
       service.userRepository.findById = jest.fn().mockResolvedValue({
         id: 'u1',

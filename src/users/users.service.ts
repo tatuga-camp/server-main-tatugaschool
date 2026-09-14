@@ -118,7 +118,9 @@ export class UsersService {
 
       if (
         !userInfo.isVerifyEmail &&
-        Object.keys(dto).some((key) => key !== 'email')
+        Object.entries(dto).some(
+          ([key, value]) => key !== 'email' && value !== undefined,
+        )
       ) {
         throw new ForbiddenException(
           'Unverified users can only change their email',
