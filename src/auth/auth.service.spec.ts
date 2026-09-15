@@ -13,6 +13,7 @@ import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import {
+  BadRequestException,
   NotFoundException,
   ForbiddenException,
   ConflictException,
@@ -182,6 +183,7 @@ describe('AuthService', () => {
         id: 'u1',
         email: 'test@example.com',
         firstName: 'John',
+        isVerifyEmail: false,
       };
 
       (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
@@ -205,9 +207,65 @@ describe('AuthService', () => {
 
       expect(service.usersRepository.createUser).toHaveBeenCalled();
       expect(mockReply.setCookie).toHaveBeenCalledTimes(2);
+      expect(mockJwtService.signAsync.mock.calls[0][0]).toEqual({
+        id: 'u1',
+        email: 'test@example.com',
+        isVerifyEmail: false,
+      });
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         token: 'verify-token',
+      });
+    });
+
+    it('issues the access token after auto-verifying via pending invitations', async () => {
+      const dto = {
+        email: 'invited@example.com',
+        password: 'password123',
+        provider: 'LOCAL',
+        firstName: 'Ann',
+        lastName: 'Lee',
+      } as any;
+
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue(
+        null,
+      );
+      mockImageService.generateBase64Image.mockReturnValue('base64image');
+      (service.usersRepository.createUser as jest.Mock).mockResolvedValue({
+        id: 'u2',
+        email: 'invited@example.com',
+        isVerifyEmail: false,
+      });
+      (service.usersRepository.update as jest.Mock).mockResolvedValue({
+        id: 'u2',
+        email: 'invited@example.com',
+        isVerifyEmail: true,
+        favoritSchool: 'sch-1',
+      });
+      const memberSvc = (service as any).memberOnSchoolService;
+      memberSvc.memberOnSchoolRepository.findMany.mockResolvedValue([
+        { invitationToken: 'inv-tok', schoolId: 'sch-1' },
+      ]);
+      memberSvc.linkInvitationToUser.mockResolvedValue({});
+      mockJwtService.signAsync.mockResolvedValue('token');
+      jest
+        .spyOn(service, 'sendVerifyEmail')
+        .mockResolvedValue({ token: 'verify-token' });
+
+      const mockReply = { setCookie: jest.fn() } as any;
+      const result = await service.signup(dto, mockReply);
+
+      expect(service.usersRepository.updateVerified).toHaveBeenCalledWith({
+        email: 'invited@example.com',
+      });
+      expect(mockJwtService.signAsync.mock.calls[0][0]).toEqual({
+        id: 'u2',
+        email: 'invited@example.com',
+        isVerifyEmail: true,
+      });
+      expect(service.sendVerifyEmail).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        redirectUrl: `${process.env.CLIENT_URL}/school/sch-1`,
       });
     });
 
@@ -250,10 +308,43 @@ describe('AuthService', () => {
       );
 
       expect(mockReply.setCookie).toHaveBeenCalledTimes(2);
+      expect(mockJwtService.signAsync.mock.calls[0][0]).toEqual({
+        id: 'u1',
+        email: 'test@example.com',
+        isVerifyEmail: true,
+      });
       expect(result).toEqual({
         redirectUrl: process.env.CLIENT_URL,
         refreshToken: 'token',
         accessToken: 'token',
+      });
+    });
+
+    it('issues an access token carrying isVerifyEmail=false for an unverified user', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u1',
+        email: 'test@example.com',
+        provider: 'LOCAL',
+        password: await bcrypt.hash('password123', 10),
+        isVerifyEmail: false,
+      });
+      mockJwtService.signAsync.mockResolvedValue('token');
+      (
+        service.usersRepository.updateLastActiveAt as jest.Mock
+      ).mockResolvedValue({});
+
+      const result = await service.signIn(
+        { email: 'test@example.com', password: 'password123' },
+        { setCookie: jest.fn() } as any,
+      );
+
+      expect(mockJwtService.signAsync.mock.calls[0][0]).toEqual({
+        id: 'u1',
+        email: 'test@example.com',
+        isVerifyEmail: false,
+      });
+      expect(result).toEqual({
+        redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
       });
     });
 
@@ -268,6 +359,57 @@ describe('AuthService', () => {
           {} as any,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('UserRefreshToken', () => {
+    it('re-reads isVerifyEmail from the database and puts it in the new access token', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        id: 'u1',
+        email: 'test@example.com',
+      });
+      service.usersRepository.findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        email: 'test@example.com',
+        isVerifyEmail: true,
+      });
+      mockJwtService.signAsync.mockResolvedValue('new-access');
+
+      const result = await service.UserRefreshToken(
+        { refreshToken: 'refresh' },
+        {} as any,
+      );
+
+      expect(service.usersRepository.findById).toHaveBeenCalledWith({
+        id: 'u1',
+      });
+      expect(mockJwtService.signAsync.mock.calls[0][0]).toEqual({
+        id: 'u1',
+        email: 'test@example.com',
+        isVerifyEmail: true,
+      });
+      expect(result).toEqual({ accessToken: 'new-access' });
+    });
+
+    it('rejects when the refresh token belongs to a user that no longer exists', async () => {
+      mockJwtService.verifyAsync.mockResolvedValue({
+        id: 'gone',
+        email: 'gone@example.com',
+      });
+      service.usersRepository.findById = jest.fn().mockResolvedValue(null);
+
+      await expect(
+        service.UserRefreshToken({ refreshToken: 'refresh' }, {} as any),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockJwtService.signAsync).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid or expired refresh token', async () => {
+      mockJwtService.verifyAsync.mockRejectedValue(new Error('jwt expired'));
+
+      await expect(
+        service.UserRefreshToken({ refreshToken: 'bad' }, {} as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

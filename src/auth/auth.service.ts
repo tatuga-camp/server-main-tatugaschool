@@ -177,6 +177,8 @@ export class AuthService {
         language: dto.language,
       });
 
+      let linkedSchoolId: string | null = null;
+
       if (dto.invitationToken) {
         const memberOnSchool =
           await this.memberOnSchoolService.linkInvitationToUser({
@@ -191,27 +193,8 @@ export class AuthService {
             favoritSchool: memberOnSchool.schoolId,
           },
         });
-      }
-
-      const accessToken = await this.GenerateAccessToken({
-        userId: user.id,
-        email: user.email,
-      });
-      const refreshToken = await this.GenerateRefreshToken({
-        userId: user.id,
-        email: user.email,
-      });
-      this.setCookieAccessToken(reply, accessToken);
-      this.setCookieRefreshToken(reply, refreshToken);
-
-      if (dto.invitationToken) {
-        // create account with google and have invitation token, so we can redirect to school page
-        return {
-          redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
-        };
-      }
-
-      if (!dto.invitationToken) {
+        linkedSchoolId = memberOnSchool.schoolId;
+      } else {
         const findUnverifiedInvitations =
           await this.memberOnSchoolService.memberOnSchoolRepository.findMany({
             where: {
@@ -221,7 +204,6 @@ export class AuthService {
           });
 
         if (findUnverifiedInvitations.length > 0) {
-          // create account with password and have invitation token, so we can link invitation to user and redirect to school page
           await Promise.allSettled(
             findUnverifiedInvitations.map((invitation) =>
               this.memberOnSchoolService.linkInvitationToUser({
@@ -238,14 +220,30 @@ export class AuthService {
               favoritSchool: findUnverifiedInvitations[0].schoolId,
             },
           });
-
-          return {
-            redirectUrl: `${process.env.CLIENT_URL}/school/${user.favoritSchool}`,
-          };
+          linkedSchoolId = findUnverifiedInvitations[0].schoolId;
         }
       }
 
-      // create account with google or password and no invitation token, so we can redirect to wait verify email page
+      // Tokens are issued only after any invitation auto-verify so the
+      // isVerifyEmail claim reflects the final state of the new account.
+      const accessToken = await this.GenerateAccessToken({
+        userId: user.id,
+        email: user.email,
+        isVerifyEmail: user.isVerifyEmail,
+      });
+      const refreshToken = await this.GenerateRefreshToken({
+        userId: user.id,
+        email: user.email,
+      });
+      this.setCookieAccessToken(reply, accessToken);
+      this.setCookieRefreshToken(reply, refreshToken);
+
+      if (linkedSchoolId) {
+        return {
+          redirectUrl: `${process.env.CLIENT_URL}/school/${linkedSchoolId}`,
+        };
+      }
+
       const token = await this.sendVerifyEmail(user);
 
       return {
@@ -336,6 +334,7 @@ export class AuthService {
       const accessToken = await this.GenerateAccessToken({
         userId: user.id,
         email: user.email,
+        isVerifyEmail: user.isVerifyEmail,
       });
       const refreshToken = await this.GenerateRefreshToken({
         userId: user.id,
@@ -420,9 +419,15 @@ export class AuthService {
           throw new BadRequestException('Refresh token is Expired or Invalid');
         });
 
+      const user = await this.usersRepository.findById({ id: verify.id });
+      if (!user) {
+        throw new BadRequestException('Refresh token is invalid');
+      }
+
       const accessToken = await this.GenerateAccessToken({
-        userId: verify.id,
-        email: verify.email,
+        userId: user.id,
+        email: user.email,
+        isVerifyEmail: user.isVerifyEmail,
       });
       return { accessToken };
     } catch (error) {
@@ -483,6 +488,7 @@ export class AuthService {
         const accessToken = await this.GenerateAccessToken({
           userId: user.id,
           email: user.email,
+          isVerifyEmail: user.isVerifyEmail,
         });
         const refreshToken = await this.GenerateRefreshToken({
           userId: user.id,
@@ -605,11 +611,13 @@ export class AuthService {
   async GenerateAccessToken(input: {
     userId: string;
     email: string;
+    isVerifyEmail: boolean;
   }): Promise<string> {
     try {
-      const payload = {
+      const payload: UserJwtPayload = {
         id: input.userId,
         email: input.email,
+        isVerifyEmail: input.isVerifyEmail,
       };
 
       return await this.jwtService.signAsync(payload, {
