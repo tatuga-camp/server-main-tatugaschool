@@ -38,6 +38,7 @@ import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { TurnstileService } from '../turnstile/turnstile.service';
 import { buildResetPasswordEmail } from './reset-password.email';
 import { buildVerifyEmail } from './verify-email.email';
 
@@ -60,6 +61,7 @@ export class AuthService {
     private prismaReadService: PrismaReadService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
+    private turnstileService: TurnstileService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
@@ -135,6 +137,10 @@ export class AuthService {
 
   async signup(dto: SignUpDto, reply: FastifyReply) {
     try {
+      // Verify the bot check before any DB lookup so failed attempts can't
+      // be used to probe which emails are registered.
+      await this.turnstileService.verify(dto.turnstileToken);
+
       const existingUser = await this.usersRepository.findByEmail({
         email: dto.email,
       });
@@ -203,6 +209,8 @@ export class AuthService {
             },
           });
 
+        console.log(findUnverifiedInvitations);
+
         if (findUnverifiedInvitations.length > 0) {
           await Promise.allSettled(
             findUnverifiedInvitations.map((invitation) =>
@@ -239,6 +247,7 @@ export class AuthService {
       this.setCookieRefreshToken(reply, refreshToken);
 
       if (linkedSchoolId) {
+        console.log(linkedSchoolId);
         return {
           redirectUrl: `${process.env.CLIENT_URL}/school/${linkedSchoolId}`,
         };
@@ -518,7 +527,6 @@ export class AuthService {
 
       const signUpParams = new URLSearchParams({
         email: data.email,
-
         firstName: data.firstName,
         lastName: data.lastName,
         provider: 'google',

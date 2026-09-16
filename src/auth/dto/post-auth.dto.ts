@@ -53,6 +53,12 @@ export class SignUpDto {
   @IsOptional()
   @IsIn(Object.values(Language))
   language?: Language;
+
+  // Optional at the DTO level so the NODE_ENV=test skip in TurnstileService
+  // can apply; outside test, TurnstileService rejects a missing token.
+  @IsOptional()
+  @IsString()
+  turnstileToken?: string;
 }
 
 export class ForgotPasswordDto {
