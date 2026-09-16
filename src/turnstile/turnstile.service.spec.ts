@@ -9,10 +9,12 @@ import { TurnstileService } from './turnstile.service';
 describe('TurnstileService', () => {
   let service: TurnstileService;
   let secret: string | undefined;
+  let nodeEnv: string | undefined;
   let fetchMock: jest.Mock;
 
   beforeEach(async () => {
     secret = 'test-secret';
+    nodeEnv = 'production';
     fetchMock = jest.fn();
     global.fetch = fetchMock as any;
 
@@ -22,9 +24,11 @@ describe('TurnstileService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string) =>
-              key === 'TURNSTILE_SECRET_KEY' ? secret : undefined,
-            ),
+            get: jest.fn((key: string) => {
+              if (key === 'TURNSTILE_SECRET_KEY') return secret;
+              if (key === 'NODE_ENV') return nodeEnv;
+              return undefined;
+            }),
           },
         },
       ],
@@ -78,6 +82,14 @@ describe('TurnstileService', () => {
     fetchMock.mockRejectedValue(new Error('network down'));
 
     await expect(service.verify('tok')).rejects.toThrow(BadRequestException);
+  });
+
+  it('skips verification entirely when NODE_ENV is test (Postman CI has no widget or secret)', async () => {
+    nodeEnv = 'test';
+    secret = undefined;
+
+    await expect(service.verify(undefined)).resolves.toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('throws InternalServerErrorException when the secret key is not configured', async () => {

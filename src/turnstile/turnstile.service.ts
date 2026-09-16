@@ -25,7 +25,14 @@ export class TurnstileService {
    * throws BadRequestException otherwise. Tokens are single-use, so the
    * client must reset its widget after any failed sign-up attempt.
    */
-  async verify(token: string): Promise<void> {
+  async verify(token: string | undefined): Promise<void> {
+    // The Postman CI workflow runs with NODE_ENV=test, no widget and no
+    // secret, so the bot check is skipped there (same pattern as EmailService).
+    if (this.config.get('NODE_ENV') === 'test') {
+      this.logger.warn('Skipping Turnstile verification because NODE_ENV=test');
+      return;
+    }
+
     const secret = this.config.get<string>('TURNSTILE_SECRET_KEY');
     if (!secret) {
       this.logger.error('TURNSTILE_SECRET_KEY is not configured');
