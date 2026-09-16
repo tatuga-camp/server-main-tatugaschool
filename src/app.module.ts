@@ -8,6 +8,7 @@ import { AttendanceStatusListModule } from './attendance-status-list/attendance-
 import { AttendanceTableModule } from './attendance-table/attendance-table.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
+import { TurnstileModule } from './turnstile/turnstile.module';
 import { CareerModule } from './career/career.module';
 import { ClassModule } from './class/class.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
@@ -61,6 +62,7 @@ import { RubricModule } from './rubric/rubric.module';
 
 @Module({
   imports: [
+    TurnstileModule,
     AuthModule,
     UsersModule,
     PrismaModule,

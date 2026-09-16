@@ -53,6 +53,10 @@ export class SignUpDto {
   @IsOptional()
   @IsIn(Object.values(Language))
   language?: Language;
+
+  @IsNotEmpty()
+  @IsString()
+  turnstileToken: string;
 }
 
 export class ForgotPasswordDto {

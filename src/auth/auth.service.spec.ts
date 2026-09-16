@@ -12,6 +12,7 @@ import { SchoolService } from '../school/school.service';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { TurnstileService } from '../turnstile/turnstile.service';
 import {
   BadRequestException,
   NotFoundException,
@@ -77,7 +78,13 @@ describe('AuthService', () => {
     createSchool: jest.fn(),
   };
 
+  const mockTurnstileService = {
+    verify: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
+    mockTurnstileService.verify.mockReset().mockResolvedValue(undefined);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -88,6 +95,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: {} },
         { provide: SchoolService, useValue: mockSchoolService },
+        { provide: TurnstileService, useValue: mockTurnstileService },
         { provide: RedisService, useValue: {} },
         { provide: PrismaReadService, useValue: {} },
         {
@@ -267,6 +275,90 @@ describe('AuthService', () => {
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/school/sch-1`,
       });
+    });
+
+    it('verifies the Turnstile token before looking up the email', async () => {
+      const order: string[] = [];
+      mockTurnstileService.verify.mockImplementation(async () => {
+        order.push('verify');
+      });
+      (service.usersRepository.findByEmail as jest.Mock).mockImplementation(
+        async () => {
+          order.push('findByEmail');
+          return null;
+        },
+      );
+      mockImageService.generateBase64Image.mockReturnValue('img');
+      (service.usersRepository.createUser as jest.Mock).mockResolvedValue({
+        id: 'u3',
+        email: 'x@example.com',
+        isVerifyEmail: false,
+      });
+      mockJwtService.signAsync.mockResolvedValue('token');
+      jest
+        .spyOn(service, 'sendVerifyEmail')
+        .mockResolvedValue({ token: 'verify-token' });
+
+      await service.signup(
+        {
+          email: 'x@example.com',
+          password: 'password123',
+          provider: 'LOCAL',
+          firstName: 'A',
+          lastName: 'B',
+          turnstileToken: 'cf-token',
+        } as any,
+        { setCookie: jest.fn() } as any,
+      );
+
+      expect(mockTurnstileService.verify).toHaveBeenCalledWith('cf-token');
+      expect(order).toEqual(['verify', 'findByEmail']);
+    });
+
+    it('rejects the sign-up and creates nothing when Turnstile verification fails', async () => {
+      mockTurnstileService.verify.mockRejectedValue(
+        new BadRequestException('Turnstile verification failed'),
+      );
+
+      await expect(
+        service.signup(
+          {
+            email: 'x@example.com',
+            password: 'password123',
+            provider: 'LOCAL',
+            firstName: 'A',
+            lastName: 'B',
+            turnstileToken: 'bad',
+          } as any,
+          { setCookie: jest.fn() } as any,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(service.usersRepository.findByEmail).not.toHaveBeenCalled();
+      expect(service.usersRepository.createUser).not.toHaveBeenCalled();
+    });
+
+    it('also verifies the Turnstile token for GOOGLE sign-ups', async () => {
+      mockTurnstileService.verify.mockRejectedValue(
+        new BadRequestException('Turnstile verification failed'),
+      );
+
+      await expect(
+        service.signup(
+          {
+            email: 'g@example.com',
+            provider: 'GOOGLE',
+            providerId: 'gid',
+            firstName: 'A',
+            lastName: 'B',
+            turnstileToken: 'bad',
+          } as any,
+          { setCookie: jest.fn() } as any,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockTurnstileService.verify).toHaveBeenCalledWith('bad');
+      expect(service.usersRepository.createUser).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException if email exists', async () => {
