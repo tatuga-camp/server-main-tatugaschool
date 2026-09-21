@@ -178,6 +178,87 @@ describe('AuthService', () => {
     });
   });
 
+  describe('googleLogin', () => {
+    const req = {
+      user: {
+        email: 'g@example.com',
+        firstName: 'G',
+        lastName: 'U',
+        providerId: 'p1',
+        photo: '',
+      },
+    } as any;
+
+    const parseRedirect = (reply: any) => {
+      expect(reply.redirect).toHaveBeenCalledTimes(1);
+      const [url, status] = reply.redirect.mock.calls[0];
+      expect(status).toBe(302);
+      const [base, hash] = (url as string).split('#');
+      return { base, params: new URLSearchParams(hash ?? '') };
+    };
+
+    it('sends verified Google users to the app callback with tokens in the URL fragment', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u1',
+        email: 'g@example.com',
+        provider: 'GOOGLE',
+        isVerifyEmail: true,
+        favoritSchool: 'sch-1',
+      });
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access-1')
+        .mockResolvedValueOnce('refresh-1');
+      const reply = { setCookie: jest.fn(), redirect: jest.fn() } as any;
+
+      await service.googleLogin(req, reply);
+
+      expect(reply.setCookie).toHaveBeenCalledTimes(2);
+      const { base, params } = parseRedirect(reply);
+      expect(base).toBe(`${process.env.CLIENT_URL}/auth/callback`);
+      expect(params.get('access_token')).toBe('access-1');
+      expect(params.get('refresh_token')).toBe('refresh-1');
+      expect(params.get('next')).toBe('/school/sch-1');
+    });
+
+    it('sends unverified Google users to the callback with next=wait-verify-email', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u2',
+        email: 'g@example.com',
+        provider: 'GOOGLE',
+        isVerifyEmail: false,
+        favoritSchool: null,
+      });
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access-2')
+        .mockResolvedValueOnce('refresh-2');
+      const reply = { setCookie: jest.fn(), redirect: jest.fn() } as any;
+
+      await service.googleLogin(req, reply);
+
+      const { base, params } = parseRedirect(reply);
+      expect(base).toBe(`${process.env.CLIENT_URL}/auth/callback`);
+      expect(params.get('refresh_token')).toBe('refresh-2');
+      expect(params.get('next')).toBe('/auth/wait-verify-email');
+    });
+
+    it('keeps the plain sign-in redirect (no tokens) for non-Google accounts', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u3',
+        email: 'g@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: true,
+      });
+      const reply = { setCookie: jest.fn(), redirect: jest.fn() } as any;
+
+      await service.googleLogin(req, reply);
+
+      expect(reply.setCookie).not.toHaveBeenCalled();
+      const [url] = reply.redirect.mock.calls[0];
+      expect(url).toContain('/auth/sign-in?error=');
+      expect(url).not.toContain('refresh_token');
+    });
+  });
+
   describe('signup', () => {
     it('should sign up a user successfully', async () => {
       const dto = {
@@ -223,6 +304,8 @@ describe('AuthService', () => {
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         token: 'verify-token',
+        accessToken: 'token',
+        refreshToken: 'token',
       });
     });
 
@@ -274,6 +357,8 @@ describe('AuthService', () => {
       expect(service.sendVerifyEmail).not.toHaveBeenCalled();
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/school/sch-1`,
+        accessToken: 'token',
+        refreshToken: 'token',
       });
     });
 
@@ -563,6 +648,8 @@ describe('AuthService', () => {
       expect(reply.setCookie).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/school/sch-invited`,
+        accessToken: 'jwt',
+        refreshToken: 'jwt',
       });
     });
 
