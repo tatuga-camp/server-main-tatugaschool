@@ -477,7 +477,13 @@ export class SubjectService {
             path: subject.wheelOfNamePath,
           })
           .catch(async (error) => {
-            if (error?.response?.status === 404) {
+            if (error?.response?.status !== 404) {
+              return;
+            }
+            // wheelofnames.com is a non-critical dependency: if re-creating
+            // the wheel fails (e.g. upstream 503) log it and still return the
+            // subject instead of turning the page load into a 500.
+            try {
               const studentOnSubjects =
                 await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId(
                   {
@@ -503,6 +509,8 @@ export class SubjectService {
                   wheelOfNamePath: create.data.path,
                 },
               });
+            } catch (wheelError) {
+              this.logger.error(wheelError);
             }
           });
       }

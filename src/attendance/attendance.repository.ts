@@ -1,5 +1,6 @@
 import {
   Injectable,
+  ConflictException,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
@@ -46,6 +47,11 @@ export class AttendanceRepository implements AttendanceRepositoryType {
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictException(
+            'Attendance already exists for this student on this row',
+          );
+        }
         throw new InternalServerErrorException(
           `message: ${error.message} - codeError: ${error.code}`,
         );

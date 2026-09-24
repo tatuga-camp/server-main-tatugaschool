@@ -31,6 +31,7 @@ describe('AttendanceService', () => {
     memberOnSchool: { findFirst: jest.fn() },
     teacherOnSubject: { findFirst: jest.fn() },
     subject: { findUnique: jest.fn() },
+    attendance: { findUnique: jest.fn() },
   };
 
   const mockStorageService = {};
@@ -208,6 +209,75 @@ describe('AttendanceService', () => {
 
       expect(service.attendanceRepository.create).toHaveBeenCalled();
       expect(result).toEqual({ id: 'att1' });
+    });
+
+    it('should update the existing attendance instead of failing when the student/row pair already exists', async () => {
+      const mockRow = {
+        id: 'r1',
+        subjectId: 's1',
+        attendanceTableId: 't1',
+        startDate: new Date(),
+        endDate: new Date(),
+      };
+      const mockStudent = {
+        id: 'st1',
+        studentId: 'std1',
+        schoolId: 'sch1',
+        subjectId: 's1',
+      };
+      const mockSubject = { id: 's1', isLocked: false };
+
+      (
+        service as any
+      ).attendanceRowRepository.getAttendanceRowById.mockResolvedValue(mockRow);
+      (
+        service as any
+      ).studentOnSubjectRepository.getStudentOnSubjectById.mockResolvedValue(
+        mockStudent,
+      );
+      mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
+      jest.spyOn(service, 'validateAccess').mockResolvedValue(undefined);
+      (
+        service as any
+      ).attendanceStatusListSRepository.findMany.mockResolvedValue([
+        { title: 'Present' },
+      ]);
+      mockPrismaService.attendance.findUnique.mockResolvedValue({
+        id: 'att-existing',
+        studentOnSubjectId: 'st1',
+        attendanceRowId: 'r1',
+        status: 'UNKNOW',
+      });
+      (
+        service.attendanceRepository.updateAttendanceById as jest.Mock
+      ).mockResolvedValue({ id: 'att-existing', status: 'Present' });
+
+      const result = await service.create(
+        {
+          attendanceRowId: 'r1',
+          studentOnSubjectId: 'st1',
+          status: 'Present',
+          note: 'late bus',
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(mockPrismaService.attendance.findUnique).toHaveBeenCalledWith({
+        where: {
+          studentOnSubjectId_attendanceRowId: {
+            studentOnSubjectId: 'st1',
+            attendanceRowId: 'r1',
+          },
+        },
+      });
+      expect(service.attendanceRepository.create).not.toHaveBeenCalled();
+      expect(
+        service.attendanceRepository.updateAttendanceById,
+      ).toHaveBeenCalledWith({
+        query: { attendanceId: 'att-existing' },
+        body: { status: 'Present', note: 'late bus' },
+      });
+      expect(result).toEqual({ id: 'att-existing', status: 'Present' });
     });
 
     it('should throw NotFoundException if student not found', async () => {
