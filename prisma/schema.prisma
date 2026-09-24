@@ -52,6 +52,7 @@ model User {
   announcements             Announcement[]
   commentOnAnnouncements    CommentOnAnnouncement[]
   reactionOnAnnouncements   ReactionOnAnnouncement[]
+  issueReports              IssueReport[]
 
   @@index([verifyEmailToken])
   @@index([resetPasswordToken])
@@ -994,6 +995,57 @@ model FileOnTeachingMaterial {
   teachingMaterial   TeachingMaterial @relation(fields: [teachingMaterialId], references: [id])
 }
 
+enum IssueStatus {
+  OPEN
+  RESOLVED
+}
+
+model IssueGroup {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  fingerprint          String      @unique
+  status               IssueStatus @default(OPEN)
+  errorName            String
+  message              String
+  samplePageUrl        String
+  sampleStack          String
+  sampleComponentStack String
+  count                Int         @default(0)
+  affectedUserCount    Int         @default(0)
+  firstSeenAt          DateTime
+  lastSeenAt           DateTime
+  resolvedAt           DateTime?
+  resolvedByUserId     String?     @db.ObjectId
+
+  reports IssueReport[]
+
+  @@index([status, lastSeenAt])
+}
+
+model IssueReport {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+
+  groupId        String     @db.ObjectId
+  group          IssueGroup @relation(fields: [groupId], references: [id])
+  fingerprint    String
+  errorName      String
+  message        String
+  stack          String
+  componentStack String
+  pageUrl        String
+  userAgent      String
+  capturedAt     DateTime
+  userId         String?    @db.ObjectId
+  user           User?      @relation(fields: [userId], references: [id])
+  userEmail      String?
+
+  @@index([groupId, createAt])
+  @@index([userId])
+}
+
 model Feedback {
   id              String           @id @default(auto()) @map("_id") @db.ObjectId
   body            String
@@ -1150,11 +1202,11 @@ model WordCloudSet {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  title             String?
-  status            WordCloudStatus @default(OPEN)
-  accessMode        WordCloudAccess @default(PUBLIC)
-  allowMultiple     Boolean         @default(false)
-  activeWordCloudId String?         @db.ObjectId
+  title              String?
+  status             WordCloudStatus @default(OPEN)
+  accessMode         WordCloudAccess @default(PUBLIC)
+  allowMultiple      Boolean         @default(false)
+  activeWordCloudId  String?         @db.ObjectId
   publicResultsToken String?
 
   subjectId String @db.ObjectId
@@ -1211,7 +1263,7 @@ model RubricCriterion {
 
   title       String
   description String?
-  weight      Float  @default(1)
+  weight      Float   @default(1)
   order       Int
 
   rubricId String @db.ObjectId
@@ -1278,9 +1330,9 @@ model Announcement {
   photo     String?
   blurHash  String?
 
-  userId    String @db.ObjectId
-  subjectId String @db.ObjectId
-  schoolId  String @db.ObjectId
+  userId    String  @db.ObjectId
+  subjectId String  @db.ObjectId
+  schoolId  String  @db.ObjectId
   user      User    @relation(fields: [userId], references: [id])
   subject   Subject @relation(fields: [subjectId], references: [id])
   school    School  @relation(fields: [schoolId], references: [id])
@@ -1304,9 +1356,9 @@ model FileOnAnnouncement {
   size     Float
   blurHash String?
 
-  announcementId String @db.ObjectId
-  subjectId      String @db.ObjectId
-  schoolId       String @db.ObjectId
+  announcementId String       @db.ObjectId
+  subjectId      String       @db.ObjectId
+  schoolId       String       @db.ObjectId
   announcement   Announcement @relation(fields: [announcementId], references: [id])
   subject        Subject      @relation(fields: [subjectId], references: [id])
   school         School       @relation(fields: [schoolId], references: [id])
@@ -1333,11 +1385,11 @@ model CommentOnAnnouncement {
   role      MemberRole?
   email     String?
 
-  announcementId String  @db.ObjectId
-  subjectId      String  @db.ObjectId
-  schoolId       String  @db.ObjectId
-  studentId      String? @db.ObjectId
-  userId         String? @db.ObjectId
+  announcementId String       @db.ObjectId
+  subjectId      String       @db.ObjectId
+  schoolId       String       @db.ObjectId
+  studentId      String?      @db.ObjectId
+  userId         String?      @db.ObjectId
   announcement   Announcement @relation(fields: [announcementId], references: [id])
   subject        Subject      @relation(fields: [subjectId], references: [id])
   school         School       @relation(fields: [schoolId], references: [id])
@@ -1358,11 +1410,11 @@ model ReactionOnAnnouncement {
   firstName String
   photo     String?
 
-  announcementId String  @db.ObjectId
-  subjectId      String  @db.ObjectId
-  schoolId       String  @db.ObjectId
-  studentId      String? @db.ObjectId
-  userId         String? @db.ObjectId
+  announcementId String       @db.ObjectId
+  subjectId      String       @db.ObjectId
+  schoolId       String       @db.ObjectId
+  studentId      String?      @db.ObjectId
+  userId         String?      @db.ObjectId
   announcement   Announcement @relation(fields: [announcementId], references: [id])
   subject        Subject      @relation(fields: [subjectId], references: [id])
   school         School       @relation(fields: [schoolId], references: [id])
