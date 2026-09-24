@@ -347,8 +347,20 @@ describe('SubjectService', () => {
               weight: 2,
               order: 0,
               levels: [
-                { id: 'l1', title: 'Great', description: 'g', points: 4, order: 0 },
-                { id: 'l2', title: 'Poor', description: null, points: 1, order: 1 },
+                {
+                  id: 'l1',
+                  title: 'Great',
+                  description: 'g',
+                  points: 4,
+                  order: 0,
+                },
+                {
+                  id: 'l2',
+                  title: 'Poor',
+                  description: null,
+                  points: 1,
+                  order: 1,
+                },
               ],
             },
           ],
@@ -384,8 +396,16 @@ describe('SubjectService', () => {
                   order: 0,
                   levels: {
                     create: [
-                      expect.objectContaining({ title: 'Great', points: 4, order: 0 }),
-                      expect.objectContaining({ title: 'Poor', points: 1, order: 1 }),
+                      expect.objectContaining({
+                        title: 'Great',
+                        points: 4,
+                        order: 0,
+                      }),
+                      expect.objectContaining({
+                        title: 'Poor',
+                        points: 1,
+                        order: 1,
+                      }),
                     ],
                   },
                 }),
@@ -466,6 +486,33 @@ describe('SubjectService', () => {
 
       expect(mockWheelOfNameService.create).toHaveBeenCalled();
       expect(service.subjectRepository.update).toHaveBeenCalled();
+      expect(result.id).toBe('s1');
+    });
+
+    it('should still return the subject when re-creating the wheel of name fails (e.g. upstream 503)', async () => {
+      (service.subjectRepository.getSubjectById as jest.Mock).mockResolvedValue(
+        { id: 's1', isDeleted: false, wheelOfNamePath: 'path1', title: 'Math' },
+      );
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockWheelOfNameService.get.mockRejectedValue({
+        response: { status: 404 },
+      });
+      (
+        service as any
+      ).studentOnSubjectRepository.getStudentOnSubjectsBySubjectId.mockResolvedValue(
+        [{ title: 'Mr', firstName: 'John', lastName: 'Doe' }],
+      );
+      mockWheelOfNameService.create.mockRejectedValue({
+        response: { status: 503 },
+        message: 'Request failed with status code 503',
+      });
+
+      const result = await service.getSubjectById({ subjectId: 's1' }, {
+        id: 'u1',
+      } as any);
+
+      expect(mockWheelOfNameService.create).toHaveBeenCalled();
+      expect(service.subjectRepository.update).not.toHaveBeenCalled();
       expect(result.id).toBe('s1');
     });
   });

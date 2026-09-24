@@ -185,6 +185,25 @@ export class AttendanceService {
       if (!status.some((s) => s.title === dto.status)) {
         throw new ForbiddenException('Status not found');
       }
+      // The (studentOnSubjectId, attendanceRowId) pair is unique. A client can
+      // still POST for a pair that already exists (stale list, second tab,
+      // replica lag right after a row was created). Treat that as an update
+      // instead of letting the unique index throw P2002 -> 500.
+      const existing = await this.prisma.attendance.findUnique({
+        where: {
+          studentOnSubjectId_attendanceRowId: {
+            studentOnSubjectId: dto.studentOnSubjectId,
+            attendanceRowId: dto.attendanceRowId,
+          },
+        },
+      });
+      if (existing) {
+        return await this.attendanceRepository.updateAttendanceById({
+          query: { attendanceId: existing.id },
+          body: { status: dto.status, note: dto.note },
+        });
+      }
+
       return await this.attendanceRepository.create({
         data: {
           ...dto,
