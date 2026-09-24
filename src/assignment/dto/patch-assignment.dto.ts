@@ -59,6 +59,10 @@ class UpdateAssignmentBody {
   preventFastForward?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  allowStudentViewScore?: boolean;
+
+  @IsOptional()
   @IsEnum(AssignmentStatus)
   status: AssignmentStatus;
 
