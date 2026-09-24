@@ -488,9 +488,10 @@ model Assignment {
   beginDate DateTime
   dueDate   DateTime?
 
-  vector             Float[]
-  vectorResouce      String?
-  preventFastForward Boolean?
+  vector                Float[]
+  vectorResouce         String?
+  preventFastForward    Boolean?
+  allowStudentViewScore Boolean  @default(true)
 
   tags String[]
 
