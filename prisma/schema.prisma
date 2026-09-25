@@ -284,9 +284,11 @@ model Subject {
   user   User?  @relation(fields: [userId], references: [id])
   school School @relation(fields: [schoolId], references: [id])
 
-  lineGroupId     String?
-  isVerifyLine    Boolean @default(false)
-  verifyLineToken String?
+  lineGroupId         String?
+  isVerifyLine        Boolean             @default(false)
+  verifyLineToken     String?
+  publicProgressToken String?
+  publicProgressLevel PublicProgressLevel @default(STATUS)
 
   studentOnSubjects         StudentOnSubject[]
   assignments               Assignment[]
@@ -318,6 +320,9 @@ model Subject {
   reactionOnAnnouncements   ReactionOnAnnouncement[]
 
   @@index([educationYear, schoolId])
+  // Not @unique: Prisma-Mongo unique indexes are non-sparse and would collide
+  // on every subject without a token. Looked up with findRaw (see service).
+  @@index([publicProgressToken])
   @@index([isVerifyLine, lineGroupId])
   @@index([schoolId]) // standalone lookups (compound prefix `educationYear` cannot be used alone)
   @@index([classId])
@@ -527,6 +532,12 @@ enum AssignmentType {
 enum AssignmentStatus {
   Published
   Draft
+}
+
+enum PublicProgressLevel {
+  STATUS
+  SCORE
+  GRADE
 }
 
 model FileOnAssignment {
