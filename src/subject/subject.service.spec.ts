@@ -695,6 +695,22 @@ describe('SubjectService', () => {
       expect(result.studentOnSubjects.length).toBe(1);
       expect(result.teacherOnSubjects.length).toBe(1);
     });
+
+    it('never returns the public progress token (route is unauthenticated)', async () => {
+      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue({
+        id: 's1',
+        publicProgressToken: 'a'.repeat(32),
+      });
+      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue([]);
+      mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany.mockResolvedValue(
+        [],
+      );
+
+      const result = await service.getSubjectWithTeacherAndStudent({
+        code: 'ABC123',
+      });
+      expect(result.publicProgressToken).toBeNull();
+    });
   });
 
   describe('createSubject', () => {

@@ -7,6 +7,7 @@ import {
   parseGradeRules,
   PublicProgressInputs,
   specialContribution,
+  withoutPublicProgressToken,
 } from './public-progress.util';
 
 const NOW = new Date('2026-09-25T07:05:00.000Z');
@@ -76,6 +77,21 @@ describe('public-progress helpers', () => {
     expect(parseGradeRules([{ min: 0, max: 100, grade: 'P' }])).toEqual([
       { min: 0, max: 100, grade: 'P' },
     ]);
+  });
+
+  it('parseGradeRules keeps an empty stored list (grade N/A, like the teacher table)', () => {
+    expect(parseGradeRules('[]')).toEqual([]);
+    expect(gradeFor(parseGradeRules('[]'), 90)).toBe('N/A');
+  });
+
+  it('withoutPublicProgressToken clears the token and keeps everything else', () => {
+    const subject = { id: 's1', title: 'Math', publicProgressToken: 'a'.repeat(32) };
+    expect(withoutPublicProgressToken(subject)).toEqual({
+      id: 's1',
+      title: 'Math',
+      publicProgressToken: null,
+    });
+    expect(subject.publicProgressToken).toBe('a'.repeat(32)); // not mutated
   });
 
   it('gradeFor picks the highest matching min', () => {

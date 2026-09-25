@@ -40,6 +40,7 @@ import {
   UpdateverifyLineToken,
 } from './dto';
 import { SubjectRepository } from './subject.repository';
+import { withoutPublicProgressToken } from './public-progress/public-progress.util';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { LineBotService } from '../line-bot/line-bot.service';
@@ -515,7 +516,8 @@ export class SubjectService {
           });
       }
 
-      return subject;
+      // Only teachers may see the public progress token.
+      return user ? subject : withoutPublicProgressToken(subject);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -642,7 +644,10 @@ export class SubjectService {
 
       // 🛑 GUARD 3: If there are no assignments, all subjects are technically "complete" (0/0)
       if (assignments.length === 0) {
-        return subjects.map((subject) => ({ ...subject, status: 'complete' }));
+        return subjects.map((subject) => ({
+          ...withoutPublicProgressToken(subject),
+          status: 'complete',
+        }));
       }
 
       const assignmentIds = assignments.map((a) => a.id);
@@ -667,7 +672,7 @@ export class SubjectService {
             (s.status === 'REVIEWD' || s.status === 'SUBMITTED'),
         ).length;
         return {
-          ...subject,
+          ...withoutPublicProgressToken(subject),
           status:
             totalAssignment === completeAssignment ? 'complete' : 'uncomplete',
         };
@@ -711,8 +716,10 @@ export class SubjectService {
         }),
       ]);
 
+      // Unauthenticated (by join code) and student routes use this — never
+      // hand out the public progress token here.
       return {
-        ...subject,
+        ...withoutPublicProgressToken(subject),
         studentOnSubjects: students,
         teacherOnSubjects: teachers,
       };

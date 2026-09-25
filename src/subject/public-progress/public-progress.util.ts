@@ -139,15 +139,25 @@ export function specialContribution(
   return (Math.min(sumRaw, max) / max) * weight;
 }
 
+// An empty stored array stays empty (grade 'N/A'), matching the teacher
+// table's `gradeRules ?? defaultGradeRule`.
 export function parseGradeRules(raw: unknown): GradeRule[] {
   try {
     const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    return Array.isArray(value) && value.length > 0
-      ? (value as GradeRule[])
-      : DEFAULT_GRADE_RULES;
+    return Array.isArray(value) ? (value as GradeRule[]) : DEFAULT_GRADE_RULES;
   } catch {
     return DEFAULT_GRADE_RULES;
   }
+}
+
+/**
+ * The share token is teacher-only. Student and unauthenticated subject
+ * responses (e.g. GET v1/subjects/code/:code) must go through this.
+ */
+export function withoutPublicProgressToken<
+  T extends { publicProgressToken?: string | null },
+>(subject: T): T {
+  return { ...subject, publicProgressToken: null };
 }
 
 export function gradeFor(rules: GradeRule[], total: number): string {
