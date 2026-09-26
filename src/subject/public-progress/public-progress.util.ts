@@ -70,7 +70,12 @@ export type PublicProgressStudent = {
 };
 
 export type PublicProgress = {
-  subject: { title: string; educationYear: string; className: string };
+  subject: {
+    title: string;
+    educationYear: string;
+    className: string;
+    backgroundImage: string | null;
+  };
   level: PublicProgressLevel;
   columns: PublicProgressColumn[];
   groups: PublicProgressGroup[];
@@ -80,7 +85,11 @@ export type PublicProgress = {
 };
 
 export type PublicProgressInputs = {
-  subject: { title: string; educationYear: string };
+  subject: {
+    title: string;
+    educationYear: string;
+    backgroundImage: string | null;
+  };
   className: string;
   assignments: Pick<
     Assignment,
@@ -314,6 +323,7 @@ export function buildPublicProgress(
       title: inputs.subject.title,
       educationYear: inputs.subject.educationYear,
       className: inputs.className,
+      backgroundImage: inputs.subject.backgroundImage,
     },
     level,
     columns,

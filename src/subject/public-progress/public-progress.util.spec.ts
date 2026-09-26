@@ -14,7 +14,7 @@ const NOW = new Date('2026-09-25T07:05:00.000Z');
 
 function fixture(): PublicProgressInputs {
   return {
-    subject: { title: 'Math', educationYear: '1/2026' },
+    subject: { title: 'Math', educationYear: '1/2026', backgroundImage: 'https://cdn.example/banner.jpg' },
     className: 'M.1/2',
     assignments: [
       { id: 'a1', title: 'Worksheet 1', tags: ['Unit 1'], maxScore: 10, weight: null, allowStudentViewScore: true },
@@ -121,7 +121,12 @@ describe('buildPublicProgress', () => {
     expect(ann.assignedCount).toBe(3);
     expect(result.students[1].submittedCount).toBe(3);
     expect(result.students[1].assignedCount).toBe(4);
-    expect(result.subject).toEqual({ title: 'Math', educationYear: '1/2026', className: 'M.1/2' });
+    expect(result.subject).toEqual({
+      title: 'Math',
+      educationYear: '1/2026',
+      className: 'M.1/2',
+      backgroundImage: 'https://cdn.example/banner.jpg',
+    });
     expect(result.updatedAt).toBe(NOW.toISOString());
   });
 

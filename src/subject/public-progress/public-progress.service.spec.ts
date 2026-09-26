@@ -134,11 +134,28 @@ describe('PublicProgressService', () => {
       });
       const result = await service.getByToken(TOKEN);
       expect(result.level).toBe('SCORE');
-      expect(result.subject).toEqual({ title: 'Math', educationYear: '1/2026', className: 'M.1/2' });
+      expect(result.subject).toEqual({
+        title: 'Math',
+        educationYear: '1/2026',
+        className: 'M.1/2',
+        backgroundImage: null,
+      });
       expect(prisma.subject.findRaw).toHaveBeenCalledWith({
         filter: { publicProgressToken: TOKEN },
         options: { limit: 1, projection: { _id: 1 } },
       });
+    });
+
+    it('passes the subject banner through', async () => {
+      const { prisma, service } = setup();
+      prisma.subject.findRaw.mockResolvedValue([{ _id: { $oid: 's1' } }]);
+      prisma.subject.findUnique.mockResolvedValue({
+        id: 's1', title: 'Math', educationYear: '1/2026', isDeleted: false,
+        backgroundImage: 'https://cdn.example/banner.jpg',
+        publicProgressToken: TOKEN, publicProgressLevel: 'STATUS', class: { title: 'M.1/2' },
+      });
+      const result = await service.getByToken(TOKEN);
+      expect(result.subject.backgroundImage).toBe('https://cdn.example/banner.jpg');
     });
   });
 });
