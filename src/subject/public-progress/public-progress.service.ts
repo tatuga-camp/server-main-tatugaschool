@@ -135,7 +135,11 @@ export class PublicProgressService {
 
     return buildPublicProgress(
       {
-        subject: { title: subject.title, educationYear: subject.educationYear },
+        subject: {
+          title: subject.title,
+          educationYear: subject.educationYear,
+          backgroundImage: subject.backgroundImage ?? null,
+        },
         className: subject.class?.title ?? '',
         assignments,
         studentOnAssignments,
