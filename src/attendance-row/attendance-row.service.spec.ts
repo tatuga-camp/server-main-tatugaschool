@@ -29,6 +29,7 @@ describe('AttendanceRowService', () => {
     attendanceTable: { findUnique: jest.fn() },
     subject: { findUnique: jest.fn() },
     attendanceRow: { findUnique: jest.fn() },
+    attendance: { findMany: jest.fn() },
   };
 
   const mockStudentOnSubjectService = {
@@ -171,7 +172,7 @@ describe('AttendanceRowService', () => {
       (
         service.attendanceRowRepository.createAttendanceRow as jest.Mock
       ).mockResolvedValue({ id: 'r1' });
-      (service as any).attendanceRepository.findMany.mockResolvedValue([]);
+      mockPrismaService.attendance.findMany.mockResolvedValue([]);
 
       const result = await service.CreateAttendanceRow(dto, user);
 
@@ -180,6 +181,39 @@ describe('AttendanceRowService', () => {
       ).toHaveBeenCalled();
       expect(result.id).toBe('r1');
       expect(result.attendances).toEqual([]);
+    });
+
+    it('reads the just-created attendances from the primary, not the read replica', async () => {
+      (service as any).attendanceTableRepository.findUnique.mockResolvedValue({
+        id: 't1',
+        subjectId: 's1',
+        schoolId: 'sch1',
+      });
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        isLocked: false,
+      });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (
+        service.attendanceRowRepository.createAttendanceRow as jest.Mock
+      ).mockResolvedValue({ id: 'r1' });
+      // replica has not replicated the createMany yet
+      (service as any).attendanceRepository.findMany.mockResolvedValue([]);
+      mockPrismaService.attendance.findMany.mockResolvedValue([
+        { id: 'a1', attendanceRowId: 'r1', studentOnSubjectId: 'sos1' },
+      ]);
+
+      const result = await service.CreateAttendanceRow(
+        { attendanceTableId: 't1', type: 'NORMAL' } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(result.attendances).toEqual([
+        { id: 'a1', attendanceRowId: 'r1', studentOnSubjectId: 'sos1' },
+      ]);
+      expect(
+        (service as any).attendanceRepository.findMany,
+      ).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if type SCAN misses params', async () => {
