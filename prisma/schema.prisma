@@ -77,7 +77,7 @@ model SubscriptionNotification {
   userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id])
   studentId String?  @db.ObjectId
-  student   Student? @relation(fields: [studentId], references: [id])
+  student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([endpoint, userId, studentId])
   @@index([userId, createAt]) // latest-subscription-per-user lookup on notification send
