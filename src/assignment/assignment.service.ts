@@ -55,6 +55,28 @@ import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
 import { AssignmentReads } from './assignment.reads';
 import { EMPTY_COUNTS } from './submission-counts';
+import { CacheRefs } from '../cache/cache-refs';
+import { GradeReads } from '../grade/grade.reads';
+
+// The teacher grade table needs scores and statuses, plus the student fields
+// the client grade popup shows. Never the answer `body`.
+const OVERVIEW_SUBMISSION_SELECT = {
+  id: true,
+  assignmentId: true,
+  studentOnSubjectId: true,
+  studentId: true,
+  score: true,
+  status: true,
+  isAssigned: true,
+  firstName: true,
+  lastName: true,
+  number: true,
+  photo: true,
+} satisfies Prisma.StudentOnAssignmentSelect;
+
+type OverviewSubmission = Prisma.StudentOnAssignmentGetPayload<{
+  select: typeof OVERVIEW_SUBMISSION_SELECT;
+}>;
 
 @Injectable()
 export class AssignmentService {
@@ -64,6 +86,8 @@ export class AssignmentService {
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   private studentOnSubjectRepository: StudentOnSubjectRepository;
   reads: AssignmentReads;
+  refs: CacheRefs;
+  gradeReads: GradeReads;
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
@@ -107,6 +131,8 @@ export class AssignmentService {
       this.cache,
     );
     this.reads = new AssignmentReads(this.prisma, this.cache);
+    this.refs = new CacheRefs(this.prisma, this.cache);
+    this.gradeReads = new GradeReads(this.prisma, this.cache);
   }
 
   async getAssignmentById(
@@ -225,11 +251,7 @@ export class AssignmentService {
   }> {
     try {
       const [subject, student] = await Promise.all([
-        this.subjectService.subjectRepository.findUnique({
-          where: {
-            id: dto.subjectId,
-          },
-        }),
+        this.refs.subject(dto.subjectId),
         this.studentService.studentRepository.findById({
           studentId: dto.studentId,
         }),
@@ -248,49 +270,32 @@ export class AssignmentService {
         );
       }
 
-      const studentOnSubject =
-        await this.studentOnSubjectService.studentOnSubjectRepository.findFirst(
-          {
-            where: {
-              subjectId: subject.id,
-              studentId: student.id,
-            },
-          },
-        );
+      const enrollment = await this.reads.enrollment(
+        dto.subjectId,
+        student.id,
+      );
+      if (!enrollment) {
+        throw new ForbiddenException('Student not enrolled in this subject');
+      }
 
       const [
-        assignments,
+        { assignments: subjectAssignments },
         studentOnAssignments,
-        grade,
-        scoreOnSubjects,
+        { grade, scoreOnSubjects },
         scoreOnStudents,
       ] = await Promise.all([
-        this.assignmentRepository.findMany({
-          where: {
-            subjectId: dto.subjectId,
-            status: 'Published',
-            type: 'Assignment',
-          },
-        }),
-        this.studentOnAssignmentRepository.findMany({
-          where: { studentOnSubjectId: studentOnSubject.id },
-        }),
-        this.gradeService.gradeRepository.findUnique({
-          where: {
-            subjectId: dto.subjectId,
-          },
-        }),
-        this.scoreOnSubjectService.scoreOnSubjectRepository.findMany({
-          where: {
-            subjectId: dto.subjectId,
-          },
-        }),
+        this.reads.subjectAssignments(dto.subjectId),
+        this.reads.studentSubmissions(dto.subjectId, enrollment.id),
+        this.gradeReads.subjectGrades(dto.subjectId),
         this.scoreOnStudentService.scoreOnStudentRepository.findMany({
           where: {
-            studentOnSubjectId: studentOnSubject.id,
+            studentOnSubjectId: enrollment.id,
           },
         }),
       ]);
+      const assignments = subjectAssignments.filter(
+        (a) => a.status === 'Published' && a.type === 'Assignment',
+      ) as Assignment[];
       return {
         grade: grade
           ? { ...grade, gradeRules: JSON.parse(grade.gradeRules as string) }
@@ -325,7 +330,7 @@ export class AssignmentService {
     user: UserJwtPayload,
   ): Promise<{
     grade: GradeRange | null;
-    assignments: { assignment: Assignment; students: StudentOnAssignment[] }[];
+    assignments: { assignment: Assignment; students: OverviewSubmission[] }[];
     scoreOnSubjects: {
       scoreOnSubject: ScoreOnSubject;
       students: ScoreOnStudent[];
@@ -338,47 +343,29 @@ export class AssignmentService {
       });
 
       const [
-        assignments,
+        { assignments: subjectAssignments },
         studentOnAssignments,
-        grade,
-        scoreOnSubjects,
+        { grade, scoreOnSubjects },
         scoreOnStudents,
       ] = await Promise.all([
-        this.assignmentRepository.findMany({
-          where: {
-            OR: [
-              {
-                subjectId: dto.subjectId,
-                status: 'Published',
-                type: 'Assignment',
-              },
-              {
-                subjectId: dto.subjectId,
-                status: 'Published',
-                type: 'VideoQuiz',
-              },
-            ],
-          },
-        }),
-        this.studentOnAssignmentRepository.findMany({
+        this.reads.subjectAssignments(dto.subjectId),
+        // Uncached, but without answer bodies: only what the grade table reads.
+        this.prisma.studentOnAssignment.findMany({
           where: { subjectId: dto.subjectId },
+          select: OVERVIEW_SUBMISSION_SELECT,
         }),
-        this.gradeService.gradeRepository.findUnique({
-          where: {
-            subjectId: dto.subjectId,
-          },
-        }),
-        this.scoreOnSubjectService.scoreOnSubjectRepository.findMany({
-          where: {
-            subjectId: dto.subjectId,
-          },
-        }),
+        this.gradeReads.subjectGrades(dto.subjectId),
         this.scoreOnStudentService.scoreOnStudentRepository.findMany({
           where: {
             subjectId: dto.subjectId,
           },
         }),
       ]);
+      const assignments = subjectAssignments.filter(
+        (a) =>
+          a.status === 'Published' &&
+          (a.type === 'Assignment' || a.type === 'VideoQuiz'),
+      ) as Assignment[];
 
       return {
         grade: grade

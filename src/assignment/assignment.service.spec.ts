@@ -41,6 +41,9 @@ describe('AssignmentService', () => {
     subject: {
       findUnique: jest.fn(),
     },
+    studentOnAssignment: {
+      findMany: jest.fn(),
+    },
   };
 
   const mockTeacherOnSubjectService = {
@@ -433,42 +436,58 @@ describe('AssignmentService', () => {
   // ─────────────────────────────────────────────────────────────────────────────
   describe('getOverviewScoreOnAssignment', () => {
     const mockStudentRequest = { id: 'st1' } as any;
+    let reads: {
+      subjectAssignments: jest.Mock;
+      studentSubmissions: jest.Mock;
+      enrollment: jest.Mock;
+    };
+    let refs: { subject: jest.Mock };
+    let gradeReads: { subjectGrades: jest.Mock };
+
+    beforeEach(() => {
+      reads = {
+        subjectAssignments: jest
+          .fn()
+          .mockResolvedValue({ assignments: [], files: [], questions: [] }),
+        studentSubmissions: jest.fn().mockResolvedValue([]),
+        enrollment: jest.fn().mockResolvedValue({ id: 'sos1' }),
+      };
+      refs = { subject: jest.fn().mockResolvedValue({ schoolId: 'sch1' }) };
+      gradeReads = {
+        subjectGrades: jest
+          .fn()
+          .mockResolvedValue({ grade: null, scoreOnSubjects: [] }),
+      };
+      (service as any).reads = reads;
+      (service as any).refs = refs;
+      (service as any).gradeReads = gradeReads;
+      mockStudentService.studentRepository.findById.mockResolvedValue({
+        id: 'st1',
+      });
+      mockScoreOnStudentService.scoreOnStudentRepository.findMany.mockResolvedValue(
+        [],
+      );
+    });
 
     it('should return grade, assignments, and scoreOnSubjects for a student', async () => {
-      const mockSubject = { id: 's1' };
-      const mockStudent = { id: 'st1' };
-      const mockStudentOnSubject = { id: 'sos1' };
-      const mockAssignments = [{ id: 'a1', subjectId: 's1' }];
-      const mockStudentOnAssignments = [
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [
+          { id: 'a1', status: 'Published', type: 'Assignment' },
+          { id: 'a2', status: 'Draft', type: 'Assignment' },
+          { id: 'a3', status: 'Published', type: 'VideoQuiz' },
+        ],
+        files: [],
+        questions: [],
+      });
+      reads.studentSubmissions.mockResolvedValue([
         { id: 'sa1', assignmentId: 'a1', studentOnSubjectId: 'sos1' },
-      ];
-      const mockGrade = { id: 'g1', subjectId: 's1', gradeRules: '[]' };
-      const mockScoreOnSubjects = [{ id: 'sc1', subjectId: 's1' }];
-      const mockScoreOnStudents = [
-        { id: 'scs1', scoreOnSubjectId: 'sc1', studentOnSubjectId: 'sos1' },
-      ];
-
-      mockSubjectService.subjectRepository.findUnique.mockResolvedValue(
-        mockSubject,
-      );
-      mockStudentService.studentRepository.findById.mockResolvedValue(
-        mockStudent,
-      );
-      mockStudentOnSubjectService.studentOnSubjectRepository.findFirst.mockResolvedValue(
-        mockStudentOnSubject,
-      );
-      (service.assignmentRepository.findMany as jest.Mock).mockResolvedValue(
-        mockAssignments,
-      );
-      (service as any).studentOnAssignmentRepository.findMany.mockResolvedValue(
-        mockStudentOnAssignments,
-      );
-      mockGradeService.gradeRepository.findUnique.mockResolvedValue(mockGrade);
-      mockScoreOnSubjectService.scoreOnSubjectRepository.findMany.mockResolvedValue(
-        mockScoreOnSubjects,
-      );
+      ]);
+      gradeReads.subjectGrades.mockResolvedValue({
+        grade: { id: 'g1', subjectId: 's1', gradeRules: '[]' },
+        scoreOnSubjects: [{ id: 'sc1', subjectId: 's1' }],
+      });
       mockScoreOnStudentService.scoreOnStudentRepository.findMany.mockResolvedValue(
-        mockScoreOnStudents,
+        [{ id: 'scs1', scoreOnSubjectId: 'sc1', studentOnSubjectId: 'sos1' }],
       );
 
       const result = await service.getOverviewScoreOnAssignment(
@@ -476,16 +495,27 @@ describe('AssignmentService', () => {
         mockStudentRequest,
       );
 
-      expect(result.grade).not.toBeNull();
+      expect(refs.subject).toHaveBeenCalledWith('s1');
+      expect(reads.enrollment).toHaveBeenCalledWith('s1', 'st1');
+      expect(reads.studentSubmissions).toHaveBeenCalledWith('s1', 'sos1');
+      expect(gradeReads.subjectGrades).toHaveBeenCalledWith('s1');
+      expect(
+        mockScoreOnStudentService.scoreOnStudentRepository.findMany,
+      ).toHaveBeenCalledWith({ where: { studentOnSubjectId: 'sos1' } });
+      expect(result.grade).toEqual({
+        id: 'g1',
+        subjectId: 's1',
+        gradeRules: [],
+      });
       expect(result.assignments).toHaveLength(1);
+      expect(result.assignments[0].assignment.id).toBe('a1');
+      expect(result.assignments[0].studentOnAssignment.id).toBe('sa1');
       expect(result.scoreOnSubjects).toHaveLength(1);
+      expect(result.scoreOnSubjects[0].students).toHaveLength(1);
     });
 
     it('should throw NotFoundException if subject not found', async () => {
-      mockSubjectService.subjectRepository.findUnique.mockResolvedValue(null);
-      mockStudentService.studentRepository.findById.mockResolvedValue({
-        id: 'st1',
-      });
+      refs.subject.mockResolvedValue(null);
 
       await expect(
         service.getOverviewScoreOnAssignment(
@@ -496,9 +526,6 @@ describe('AssignmentService', () => {
     });
 
     it('should throw NotFoundException if student not found', async () => {
-      mockSubjectService.subjectRepository.findUnique.mockResolvedValue({
-        id: 's1',
-      });
       mockStudentService.studentRepository.findById.mockResolvedValue(null);
 
       await expect(
@@ -510,9 +537,6 @@ describe('AssignmentService', () => {
     });
 
     it('should throw ForbiddenException if student tries to access another student data', async () => {
-      mockSubjectService.subjectRepository.findUnique.mockResolvedValue({
-        id: 's1',
-      });
       mockStudentService.studentRepository.findById.mockResolvedValue({
         id: 'st2',
       }); // different student
@@ -525,34 +549,19 @@ describe('AssignmentService', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
+    it('should throw ForbiddenException if the student is not enrolled', async () => {
+      reads.enrollment.mockResolvedValue(null);
+
+      await expect(
+        service.getOverviewScoreOnAssignment(
+          { subjectId: 's1', studentId: 'st1' },
+          mockStudentRequest,
+        ),
+      ).rejects.toThrow(ForbiddenException);
+      expect(reads.studentSubmissions).not.toHaveBeenCalled();
+    });
+
     it('should return null grade when no grade rule exists', async () => {
-      const mockSubject = { id: 's1' };
-      const mockStudent = { id: 'st1' };
-      const mockStudentOnSubject = { id: 'sos1' };
-
-      mockSubjectService.subjectRepository.findUnique.mockResolvedValue(
-        mockSubject,
-      );
-      mockStudentService.studentRepository.findById.mockResolvedValue(
-        mockStudent,
-      );
-      mockStudentOnSubjectService.studentOnSubjectRepository.findFirst.mockResolvedValue(
-        mockStudentOnSubject,
-      );
-      (service.assignmentRepository.findMany as jest.Mock).mockResolvedValue(
-        [],
-      );
-      (service as any).studentOnAssignmentRepository.findMany.mockResolvedValue(
-        [],
-      );
-      mockGradeService.gradeRepository.findUnique.mockResolvedValue(null);
-      mockScoreOnSubjectService.scoreOnSubjectRepository.findMany.mockResolvedValue(
-        [],
-      );
-      mockScoreOnStudentService.scoreOnStudentRepository.findMany.mockResolvedValue(
-        [],
-      );
-
       const result = await service.getOverviewScoreOnAssignment(
         { subjectId: 's1', studentId: 'st1' },
         mockStudentRequest,
@@ -566,31 +575,51 @@ describe('AssignmentService', () => {
   // getOverviewScoreOnAssignments (teacher view)
   // ─────────────────────────────────────────────────────────────────────────────
   describe('getOverviewScoreOnAssignments', () => {
+    let reads: { subjectAssignments: jest.Mock };
+    let gradeReads: { subjectGrades: jest.Mock };
+
+    beforeEach(() => {
+      reads = {
+        subjectAssignments: jest
+          .fn()
+          .mockResolvedValue({ assignments: [], files: [], questions: [] }),
+      };
+      gradeReads = {
+        subjectGrades: jest
+          .fn()
+          .mockResolvedValue({ grade: null, scoreOnSubjects: [] }),
+      };
+      (service as any).reads = reads;
+      (service as any).gradeReads = gradeReads;
+      mockPrismaService.studentOnAssignment.findMany.mockResolvedValue([]);
+      mockScoreOnStudentService.scoreOnStudentRepository.findMany.mockResolvedValue(
+        [],
+      );
+    });
+
     it('should return grade, assignments, and scoreOnSubjects for a teacher', async () => {
       const mockUser = { id: 'u1' } as any;
-      const mockAssignments = [{ id: 'a1', subjectId: 's1' }];
-      const mockStudentOnAssignments = [
-        { id: 'sa1', assignmentId: 'a1', subjectId: 's1' },
-      ];
-      const mockGrade = { id: 'g1', subjectId: 's1', gradeRules: '[]' };
-      const mockScoreOnSubjects = [{ id: 'sc1', subjectId: 's1' }];
-      const mockScoreOnStudents = [
-        { id: 'scs1', scoreOnSubjectId: 'sc1', subjectId: 's1' },
-      ];
 
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.findMany as jest.Mock).mockResolvedValue(
-        mockAssignments,
-      );
-      (service as any).studentOnAssignmentRepository.findMany.mockResolvedValue(
-        mockStudentOnAssignments,
-      );
-      mockGradeService.gradeRepository.findUnique.mockResolvedValue(mockGrade);
-      mockScoreOnSubjectService.scoreOnSubjectRepository.findMany.mockResolvedValue(
-        mockScoreOnSubjects,
-      );
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [
+          { id: 'a1', status: 'Published', type: 'Assignment' },
+          { id: 'a2', status: 'Published', type: 'VideoQuiz' },
+          { id: 'a3', status: 'Published', type: 'Material' },
+          { id: 'a4', status: 'Draft', type: 'Assignment' },
+        ],
+        files: [],
+        questions: [],
+      });
+      mockPrismaService.studentOnAssignment.findMany.mockResolvedValue([
+        { id: 'sa1', assignmentId: 'a1' },
+      ]);
+      gradeReads.subjectGrades.mockResolvedValue({
+        grade: { id: 'g1', subjectId: 's1', gradeRules: '[]' },
+        scoreOnSubjects: [{ id: 'sc1', subjectId: 's1' }],
+      });
       mockScoreOnStudentService.scoreOnStudentRepository.findMany.mockResolvedValue(
-        mockScoreOnStudents,
+        [{ id: 'scs1', scoreOnSubjectId: 'sc1', subjectId: 's1' }],
       );
 
       const result = await service.getOverviewScoreOnAssignments(
@@ -602,28 +631,52 @@ describe('AssignmentService', () => {
         userId: 'u1',
         subjectId: 's1',
       });
-      expect(result.assignments).toHaveLength(1);
+      expect(reads.subjectAssignments).toHaveBeenCalledWith('s1');
+      expect(gradeReads.subjectGrades).toHaveBeenCalledWith('s1');
+      expect(result.assignments.map((a) => a.assignment.id)).toEqual([
+        'a1',
+        'a2',
+      ]);
       expect(result.assignments[0].students).toHaveLength(1);
+      expect(result.assignments[1].students).toHaveLength(0);
       expect(result.scoreOnSubjects).toHaveLength(1);
+      expect(result.scoreOnSubjects[0].students).toHaveLength(1);
+    });
+
+    it('should read submissions without answer bodies', async () => {
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+
+      await service.getOverviewScoreOnAssignments({ subjectId: 's1' }, {
+        id: 'u1',
+      } as any);
+
+      expect(
+        mockPrismaService.studentOnAssignment.findMany,
+      ).toHaveBeenCalledWith({
+        where: { subjectId: 's1' },
+        select: {
+          id: true,
+          assignmentId: true,
+          studentOnSubjectId: true,
+          studentId: true,
+          score: true,
+          status: true,
+          isAssigned: true,
+          firstName: true,
+          lastName: true,
+          number: true,
+          photo: true,
+        },
+      });
+      const args =
+        mockPrismaService.studentOnAssignment.findMany.mock.calls[0][0];
+      expect(args.select.body).toBeUndefined();
     });
 
     it('should return null grade when no grade rule exists', async () => {
       const mockUser = { id: 'u1' } as any;
 
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.findMany as jest.Mock).mockResolvedValue(
-        [],
-      );
-      (service as any).studentOnAssignmentRepository.findMany.mockResolvedValue(
-        [],
-      );
-      mockGradeService.gradeRepository.findUnique.mockResolvedValue(null);
-      mockScoreOnSubjectService.scoreOnSubjectRepository.findMany.mockResolvedValue(
-        [],
-      );
-      mockScoreOnStudentService.scoreOnStudentRepository.findMany.mockResolvedValue(
-        [],
-      );
 
       const result = await service.getOverviewScoreOnAssignments(
         { subjectId: 's1' },
