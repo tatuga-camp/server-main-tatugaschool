@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AttendanceStatusListService } from './attendance-status-list.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import {
   NotFoundException,
@@ -44,7 +45,7 @@ describe('AttendanceStatusListService', () => {
           provide: TeacherOnSubjectService,
           useValue: mockTeacherOnSubjectService,
         },
-        { provide: RedisService, useValue: {} },
+        { provide: CacheService, useValue: createPassthroughCache() },
         { provide: PrismaReadService, useValue: {} },
       ],
     }).compile();

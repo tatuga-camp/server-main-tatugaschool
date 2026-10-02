@@ -10,7 +10,8 @@ import {
 import { Attendance, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 
 export type AttendanceRepositoryType = {
@@ -26,22 +27,16 @@ export class AttendanceRepository implements AttendanceRepositoryType {
   logger: Logger;
   constructor(
     private prisma: PrismaService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(AttendanceRepository.name);
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `attendance_subjectId:${subjectId}`;
   }
 
   async create(request: Prisma.AttendanceCreateArgs): Promise<Attendance> {
     try {
       const result = await this.prisma.attendance.create(request);
-      if (result.subjectId) {
-        await this.redisService.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'attendance'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -58,24 +53,6 @@ export class AttendanceRepository implements AttendanceRepositoryType {
     request: Prisma.AttendanceFindManyArgs,
   ): Promise<Attendance[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string') {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result =
-          await this.prismaReadService.attendance.findMany(request);
-        if (result && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
-
       return await this.prismaReadService.attendance.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -120,9 +97,7 @@ export class AttendanceRepository implements AttendanceRepositoryType {
           ...request.body,
         },
       });
-      if (result.subjectId) {
-        await this.redisService.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'attendance'));
       return result;
     } catch (error) {
       this.logger.error(error);

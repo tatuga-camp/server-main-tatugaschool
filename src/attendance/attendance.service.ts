@@ -50,13 +50,17 @@ export class AttendanceService {
     this.logger = new Logger(AttendanceService.name);
     this.attendanceRepository = new AttendanceRepository(
       this.prisma,
-      this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       this.prisma,
+      this.cache,
     );
-    this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
+    this.attendanceRowRepository = new AttendanceRowRepository(
+      this.prisma,
+      this.cache,
+    );
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,

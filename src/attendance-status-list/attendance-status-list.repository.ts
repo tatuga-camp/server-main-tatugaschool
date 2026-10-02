@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type Repository = {
   findUnique(
@@ -26,6 +27,7 @@ type Repository = {
   ): Promise<AttendanceStatusList>;
   deleteMany(
     request: Prisma.AttendanceStatusListDeleteManyArgs,
+    subjectId: string,
   ): Promise<Prisma.BatchPayload>;
 };
 @Injectable()
@@ -33,7 +35,7 @@ export class AttendanceStatusListSRepository implements Repository {
   private logger: Logger = new Logger(AttendanceStatusListSRepository.name);
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findUnique(
@@ -56,22 +58,6 @@ export class AttendanceStatusListSRepository implements Repository {
     request: Prisma.AttendanceStatusListFindManyArgs,
   ): Promise<AttendanceStatusList[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.attendanceStatusList.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.attendanceStatusList.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -89,9 +75,7 @@ export class AttendanceStatusListSRepository implements Repository {
   ): Promise<AttendanceStatusList> {
     try {
       const result = await this.prisma.attendanceStatusList.create(request);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'attendance'));
 
       return result;
     } catch (error) {
@@ -112,9 +96,7 @@ export class AttendanceStatusListSRepository implements Repository {
       const updated = await this.prisma.attendanceStatusList.update(request);
 
       const result = updated;
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'attendance'));
 
       return result;
     } catch (error) {
@@ -133,9 +115,7 @@ export class AttendanceStatusListSRepository implements Repository {
   ): Promise<AttendanceStatusList> {
     try {
       const result = await this.prisma.attendanceStatusList.delete(request);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'attendance'));
 
       return result;
     } catch (error) {
@@ -167,14 +147,11 @@ export class AttendanceStatusListSRepository implements Repository {
 
   async deleteMany(
     request: Prisma.AttendanceStatusListDeleteManyArgs,
+    subjectId: string,
   ): Promise<Prisma.BatchPayload> {
     try {
       const result = await this.prisma.attendanceStatusList.deleteMany(request);
-
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        await this.redisService?.del(this.getCacheKey(subjectId));
-      }
+      await this.cache.bump(subjectScope(subjectId, 'attendance'));
 
       return result;
     } catch (error) {
@@ -186,9 +163,5 @@ export class AttendanceStatusListSRepository implements Repository {
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `subjectId:${subjectId}`;
   }
 }

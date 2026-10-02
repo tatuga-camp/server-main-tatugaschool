@@ -5,7 +5,8 @@ import { StudentOnSubjectService } from '../student-on-subject/student-on-subjec
 import { SubjectService } from '../subject/subject.service';
 import { AttendanceStatusListService } from '../attendance-status-list/attendance-status-list.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import {
   NotFoundException,
@@ -65,7 +66,7 @@ describe('AttendanceRowService', () => {
           provide: TeacherOnSubjectService,
           useValue: mockTeacherOnSubjectService,
         },
-        { provide: RedisService, useValue: {} },
+        { provide: CacheService, useValue: createPassthroughCache() },
         { provide: PrismaReadService, useValue: {} },
       ],
     }).compile();

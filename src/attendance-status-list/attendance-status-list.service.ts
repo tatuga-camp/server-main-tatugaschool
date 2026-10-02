@@ -1,5 +1,4 @@
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { RedisService } from '../redis/redis.service';
 import { AttendanceTableRepository } from './../attendance-table/attendance-table.repository';
 import { AttendanceStatusListSRepository } from './attendance-status-list.repository';
 import {
@@ -18,6 +17,7 @@ import {
 import { AttendanceStatusList, User } from '@prisma/client';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class AttendanceStatusListService {
@@ -27,17 +27,18 @@ export class AttendanceStatusListService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(AttendanceStatusListService.name);
     this.attendanceStatusListSRepository = new AttendanceStatusListSRepository(
       this.prisma,
+      this.cache,
     );
     this.attendanceTableRepository = new AttendanceTableRepository(
       this.prisma,
-      this.redisService,
       this.prismaReadService,
+      this.cache,
     );
   }
 

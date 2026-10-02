@@ -1,6 +1,5 @@
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceStatusListService } from './../attendance-status-list/attendance-status-list.service';
-import { RedisService } from '../redis/redis.service';
 import {
   BadRequestException,
   ForbiddenException,
@@ -32,6 +31,7 @@ import {
 import { ResponseGetAttendanceRowById } from './interfaces';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class AttendanceRowService {
@@ -46,20 +46,23 @@ export class AttendanceRowService {
     private subjectService: SubjectService,
     private attendanceStatusListService: AttendanceStatusListService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(AttendanceRowService.name);
-    this.attendanceRowRepository = new AttendanceRowRepository(this.prisma);
+    this.attendanceRowRepository = new AttendanceRowRepository(
+      this.prisma,
+      this.cache,
+    );
     this.attendanceRepository = new AttendanceRepository(
       this.prisma,
-      this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.attendanceTableRepository = new AttendanceTableRepository(
       this.prisma,
-      this.redisService,
       this.prismaReadService,
+      this.cache,
     );
   }
 
