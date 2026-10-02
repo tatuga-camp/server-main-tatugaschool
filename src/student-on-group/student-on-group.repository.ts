@@ -7,7 +7,6 @@ import {
 import { Prisma, StudentOnGroup } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
 
 type Repository = {
   findFirst(
@@ -29,10 +28,7 @@ type Repository = {
 @Injectable()
 export class StudentOnGroupRepository implements Repository {
   private logger: Logger;
-  constructor(
-    private prisma: PrismaService,
-    private redisService?: RedisService,
-  ) {
+  constructor(private prisma: PrismaService) {
     this.logger = new Logger(StudentOnGroupRepository.name);
   }
 
@@ -71,22 +67,6 @@ export class StudentOnGroupRepository implements Repository {
     request: Prisma.StudentOnGroupFindManyArgs,
   ): Promise<StudentOnGroup[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.studentOnGroup.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.studentOnGroup.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -104,10 +84,6 @@ export class StudentOnGroupRepository implements Repository {
   ): Promise<StudentOnGroup> {
     try {
       const result = await this.prisma.studentOnGroup.create(request);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
-
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -130,17 +106,6 @@ export class StudentOnGroupRepository implements Repository {
   ): Promise<StudentOnGroup> {
     try {
       const result = await this.prisma.studentOnGroup.update(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        } else if (result.subjectId) {
-          await this.redisService?.del(this.getCacheKey(result.subjectId));
-        }
-      }
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -158,17 +123,6 @@ export class StudentOnGroupRepository implements Repository {
   ): Promise<StudentOnGroup> {
     try {
       const result = await this.prisma.studentOnGroup.delete(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        } else if (result.subjectId) {
-          await this.redisService?.del(this.getCacheKey(result.subjectId));
-        }
-      }
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -185,14 +139,7 @@ export class StudentOnGroupRepository implements Repository {
     request: Prisma.StudentOnGroupDeleteManyArgs,
   ): Promise<Prisma.BatchPayload> {
     try {
-      const result = await this.prisma.studentOnGroup.deleteMany(request);
-
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        await this.redisService?.del(this.getCacheKey(subjectId));
-      }
-
-      return result;
+      return await this.prisma.studentOnGroup.deleteMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -202,9 +149,5 @@ export class StudentOnGroupRepository implements Repository {
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `student_group_subjectId:${subjectId}`;
   }
 }

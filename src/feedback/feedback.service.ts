@@ -6,6 +6,7 @@ import { FeedbackRepository } from './feedback.repository';
 import { PrismaService } from '../prisma/prisma.service';
 import { User } from '@prisma/client';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class FeedbackService {
@@ -13,8 +14,9 @@ export class FeedbackService {
   constructor(
     private feedbackRepository: FeedbackRepository,
     private prisma: PrismaService,
+    private cache: CacheService,
   ) {
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async create(user: UserJwtPayload, dto: CreateFeedbackDto) {

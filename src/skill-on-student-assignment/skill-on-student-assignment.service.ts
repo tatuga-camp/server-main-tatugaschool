@@ -54,7 +54,6 @@ export class SkillOnStudentAssignmentService {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );
@@ -71,7 +70,7 @@ export class SkillOnStudentAssignmentService {
       this.storageService,
       this.cache,
     );
-    this.skillRepository = new SkillRepository(this.prisma);
+    this.skillRepository = new SkillRepository(this.prisma, this.cache);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,

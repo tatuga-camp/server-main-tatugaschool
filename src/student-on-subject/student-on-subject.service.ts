@@ -104,18 +104,16 @@ export class StudentOnSubjectService {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
     this.attendanceRepository = new AttendanceRepository(
       this.prisma,
       this.prismaReadService,

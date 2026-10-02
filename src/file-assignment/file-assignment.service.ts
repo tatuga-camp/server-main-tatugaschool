@@ -53,6 +53,7 @@ export class FileAssignmentService {
       this.subjectService,
       this.classService,
       this.stripe,
+      this.cache,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,

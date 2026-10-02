@@ -18,6 +18,7 @@ import { CareerRepository } from './career.repository';
 import { CreateCareerDto, DeleteCareerDto, UpdateCareerDto } from './dto';
 import { AiService } from '../ai/ai.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class CareerService {
@@ -34,10 +35,11 @@ export class CareerService {
     private memberOnSchoolService: MemberOnSchoolService,
     private studentService: StudentService,
     private authService: AuthService,
+    private cache: CacheService,
   ) {
     this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
     this.careerRepository = new CareerRepository(this.prisma);
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async suggest(

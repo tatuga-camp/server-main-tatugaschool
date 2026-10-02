@@ -60,6 +60,7 @@ export class FileOnStudentAssignmentService {
       this.subjectService,
       this.classService,
       this.stripe,
+      this.cache,
     );
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,

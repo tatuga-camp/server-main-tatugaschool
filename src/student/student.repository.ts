@@ -1,4 +1,3 @@
-import { RedisService } from './../redis/redis.service';
 import { StorageService } from '../storage/storage.service';
 import { StudentOnSubjectRepository } from './../student-on-subject/student-on-subject.repository';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
@@ -18,6 +17,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { AssignmentRepository } from '../assignment/assignment.repository';
 import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type Repository = {
   create(request: RequestCreateStudent): Promise<Student>;
@@ -36,7 +36,6 @@ export class StudentRepository implements Repository {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
     private cache: CacheService,
   ) {
@@ -120,6 +119,14 @@ export class StudentRepository implements Repository {
           data: data,
         }),
       ]);
+      // StudentOnAssignment, CommentOnAssignment and ScoreOnStudent hold copies
+      // of the student's name and photo.
+      await this.cache.bump(
+        ...studentOnSubjects.flatMap((studentOnSubject) => [
+          subjectScope(studentOnSubject.subjectId, 'submissions'),
+          subjectScope(studentOnSubject.subjectId, 'grades'),
+        ]),
+      );
 
       return student;
     } catch (error) {
@@ -205,6 +212,11 @@ export class StudentRepository implements Repository {
         }),
       ).then((result) =>
         result.filter((r) => r.status === 'fulfilled').map((r) => r.value),
+      );
+      await this.cache.bump(
+        ...assignments.map((assignment) =>
+          subjectScope(assignment.subjectId, 'submissions'),
+        ),
       );
 
       return student;

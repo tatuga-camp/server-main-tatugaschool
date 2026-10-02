@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserRepository } from './users.repository';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,8 +8,14 @@ describe('UserRepository', () => {
   let repo: UserRepository;
   const mockPrisma = {
     user: { findMany: jest.fn(), update: jest.fn(), findRaw: jest.fn() },
-    memberOnSchool: { updateMany: jest.fn() },
-    teacherOnSubject: { updateMany: jest.fn() },
+    memberOnSchool: {
+      updateMany: jest.fn(),
+      findRaw: jest.fn().mockResolvedValue([]),
+    },
+    teacherOnSubject: {
+      updateMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     commentOnAssignment: { updateMany: jest.fn() },
     $runCommandRaw: jest.fn(),
   };
@@ -16,6 +24,7 @@ describe('UserRepository', () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-05-23T12:00:00Z'));
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         UserRepository,
         { provide: PrismaService, useValue: mockPrisma },
       ],

@@ -13,6 +13,8 @@ import {
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type SkillRepositoryType = {
   findById(request: RequestFindSkillById): Promise<Skill | null>;
@@ -27,7 +29,10 @@ type SkillRepositoryType = {
 export class SkillRepository implements SkillRepositoryType {
   logger: Logger = new Logger(SkillRepository.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async findMany(request: Prisma.SkillFindManyArgs): Promise<Skill[]> {
     try {
@@ -156,9 +161,18 @@ export class SkillRepository implements SkillRepositoryType {
 
   async delete(request: RequestDeleteSkill): Promise<{ message: string }> {
     try {
+      const skillOnAssignments = await this.prisma.skillOnAssignment.findMany({
+        where: { skillId: request.skillId },
+        select: { subjectId: true },
+      });
       await this.prisma.skillOnAssignment.deleteMany({
         where: { skillId: request.skillId },
       });
+      await this.cache.bump(
+        ...skillOnAssignments.map((skillOnAssignment) =>
+          subjectScope(skillOnAssignment.subjectId, 'assignments'),
+        ),
+      );
       await this.prisma.skillOnCareer.deleteMany({
         where: { skillId: request.skillId },
       });

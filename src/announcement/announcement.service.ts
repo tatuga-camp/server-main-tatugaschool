@@ -19,6 +19,7 @@ import {
   UpdateAnnouncementDto,
 } from './dto';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 const STUDENT_CLIENT_URL = 'https://student.tatugaschool.com';
 
@@ -34,9 +35,10 @@ export class AnnouncementService {
     private notificationService: NotificationService,
     private lineBotService: LineBotService,
     private storageService: StorageService,
+    private cache: CacheService,
   ) {
     this.announcementRepository = new AnnouncementRepository(this.prisma);
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   private feedInclude = {

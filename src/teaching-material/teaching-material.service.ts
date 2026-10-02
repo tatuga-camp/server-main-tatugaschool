@@ -28,6 +28,7 @@ import * as cheerio from 'cheerio';
 import { AiService } from '../ai/ai.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { UserRepository } from '../users/users.repository';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class TeachingMaterialService {
@@ -43,13 +44,14 @@ export class TeachingMaterialService {
     private fileOnTeachingMaterialService: FileOnTeachingMaterialService,
     private imageService: ImageService,
     private httpService: HttpService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(TeachingMaterialService.name);
     this.teachingMaterialRepository = new TeachingMaterialRepository(
       this.prisma,
       this.storageService,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async get(

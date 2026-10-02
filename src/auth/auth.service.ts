@@ -65,11 +65,10 @@ export class AuthService {
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
-    this.usersRepository = new UserRepository(prisma);
+    this.usersRepository = new UserRepository(prisma, this.cache);
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );

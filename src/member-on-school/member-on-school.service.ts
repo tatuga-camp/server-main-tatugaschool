@@ -47,7 +47,7 @@ export class MemberOnSchoolService {
       prisma,
       this.cache,
     );
-    this.userRepository = new UserRepository(prisma);
+    this.userRepository = new UserRepository(prisma, this.cache);
     this.logger = new Logger(MemberOnSchoolService.name);
   }
 

@@ -7,7 +7,6 @@ import {
 import { Prisma, SkillOnStudentAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
 
 type Repository = {
   findFirst(
@@ -39,10 +38,7 @@ type Repository = {
 @Injectable()
 export class SkillOnStudentAssignmentRepository implements Repository {
   private logger: Logger = new Logger(SkillOnStudentAssignmentRepository.name);
-  constructor(
-    private prisma: PrismaService,
-    private redisService?: RedisService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async findFirst(
     request: Prisma.SkillOnStudentAssignmentFindFirstArgs,
@@ -81,17 +77,6 @@ export class SkillOnStudentAssignmentRepository implements Repository {
   ): Promise<SkillOnStudentAssignment> {
     try {
       const result = await this.prisma.skillOnStudentAssignment.create(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        } else if (result.subjectId) {
-          await this.redisService?.del(this.getCacheKey(result.subjectId));
-        }
-      }
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -115,17 +100,6 @@ export class SkillOnStudentAssignmentRepository implements Repository {
   ): Promise<SkillOnStudentAssignment> {
     try {
       const result = await this.prisma.skillOnStudentAssignment.update(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        } else if (result.subjectId) {
-          await this.redisService?.del(this.getCacheKey(result.subjectId));
-        }
-      }
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -143,9 +117,6 @@ export class SkillOnStudentAssignmentRepository implements Repository {
   ): Promise<SkillOnStudentAssignment> {
     try {
       const result = await this.prisma.skillOnStudentAssignment.upsert(request);
-      if (result?.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -163,17 +134,6 @@ export class SkillOnStudentAssignmentRepository implements Repository {
   ): Promise<SkillOnStudentAssignment> {
     try {
       const result = await this.prisma.skillOnStudentAssignment.delete(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        } else if (result.subjectId) {
-          await this.redisService?.del(this.getCacheKey(result.subjectId));
-        }
-      }
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -190,23 +150,6 @@ export class SkillOnStudentAssignmentRepository implements Repository {
     request: Prisma.SkillOnStudentAssignmentFindManyArgs,
   ): Promise<SkillOnStudentAssignment[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result =
-          await this.prisma.skillOnStudentAssignment.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.skillOnStudentAssignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -238,15 +181,7 @@ export class SkillOnStudentAssignmentRepository implements Repository {
     request: Prisma.SkillOnStudentAssignmentDeleteManyArgs,
   ): Promise<{ count: number }> {
     try {
-      const result =
-        await this.prisma.skillOnStudentAssignment.deleteMany(request);
-
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        await this.redisService?.del(this.getCacheKey(subjectId));
-      }
-
-      return result;
+      return await this.prisma.skillOnStudentAssignment.deleteMany(request);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -256,9 +191,5 @@ export class SkillOnStudentAssignmentRepository implements Repository {
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `skill_student_assignment_subjectId:${subjectId}`;
   }
 }

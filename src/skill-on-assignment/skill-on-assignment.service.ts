@@ -28,7 +28,7 @@ export class SkillOnAssignmentService {
       this.googleStorageService,
       this.cache,
     );
-    this.skillRepository = new SkillRepository(this.prisma);
+    this.skillRepository = new SkillRepository(this.prisma, this.cache);
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
       this.cache,

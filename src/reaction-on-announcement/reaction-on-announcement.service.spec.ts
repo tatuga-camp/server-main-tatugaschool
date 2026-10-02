@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException } from '@nestjs/common';
 import { ReactionOnAnnouncementService } from './reaction-on-announcement.service';
@@ -34,6 +36,7 @@ describe('ReactionOnAnnouncementService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         ReactionOnAnnouncementService,
         { provide: PrismaService, useValue: mockPrismaService },
         {

@@ -37,7 +37,7 @@ export class SkillService {
     private authService: AuthService,
     private cache: CacheService,
   ) {
-    this.skillRepository = new SkillRepository(this.prisma);
+    this.skillRepository = new SkillRepository(this.prisma, this.cache);
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,
       this.cache,
@@ -47,7 +47,7 @@ export class SkillService {
       this.googleStorageService,
       this.cache,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async getOne(dto: { skillId: string }) {

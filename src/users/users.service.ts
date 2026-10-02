@@ -15,6 +15,7 @@ import { GetUserByEmailDto, UpdatePasswordDto, UpdateUserDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 @Injectable()
 export class UsersService {
   private logger: Logger = new Logger(UsersService.name);
@@ -22,8 +23,9 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private authService: AuthService,
+    private cache: CacheService,
   ) {
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async GetUser(user: UserJwtPayload): Promise<User> {

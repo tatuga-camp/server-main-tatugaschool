@@ -54,14 +54,12 @@ export class ClassService {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );

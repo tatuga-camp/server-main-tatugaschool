@@ -41,7 +41,7 @@ export class CommentAssignmentService {
       this.prisma,
       this.cache,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async getByStudentOnAssignment(

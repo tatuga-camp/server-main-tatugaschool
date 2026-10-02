@@ -16,6 +16,7 @@ import {
   UpdateCommentOnAnnouncementDto,
 } from './dto';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class CommentOnAnnouncementService {
@@ -26,11 +27,12 @@ export class CommentOnAnnouncementService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private cache: CacheService,
   ) {
     this.commentOnAnnouncementRepository = new CommentOnAnnouncementRepository(
       this.prisma,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   private async getAnnouncementOrThrow(announcementId: string) {

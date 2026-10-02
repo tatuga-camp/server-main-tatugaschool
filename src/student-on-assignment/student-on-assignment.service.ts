@@ -63,7 +63,6 @@ export class StudentOnAssignmentService {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );

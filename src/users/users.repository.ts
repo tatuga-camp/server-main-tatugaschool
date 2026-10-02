@@ -20,6 +20,9 @@ import {
   RequestUpdateVerified,
 } from './interfaces';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CacheService } from '../cache/cache.service';
+import { schoolMembersScope, subjectScope } from '../cache/cache-scopes';
+import { findManyMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 
 // verifyEmailToken/resetPasswordToken are optional fields, so Prisma findFirst
 // filters on them compile to `$expr`/`$ne: [field, "$$REMOVE"]` pipelines that
@@ -122,7 +125,10 @@ type Repository = {
 @Injectable()
 export class UserRepository implements Repository {
   private logger: Logger = new Logger(UserRepository.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async findMany(request: Prisma.UserFindManyArgs): Promise<User[]> {
     try {
@@ -238,6 +244,15 @@ export class UserRepository implements Repository {
         photo: user.photo,
         blurHash: user.blurHash,
       };
+      // MemberOnSchool, TeacherOnSubject and CommentOnAssignment hold copies of
+      // the user's name, photo and email, so their cached scopes are bumped.
+      const [memberOnSchools, teacherOnSubjects] = await Promise.all([
+        findManyMemberOnSchoolByUser(this.prisma, { userId: user.id }),
+        this.prisma.teacherOnSubject.findMany({
+          where: { userId: user.id },
+          select: { subjectId: true },
+        }),
+      ]);
       await Promise.allSettled([
         // userId is optional on MemberOnSchool, so Prisma's updateMany filter
         // compiles to a $expr/$ne-$$REMOVE pipeline MongoDB cannot serve from
@@ -282,6 +297,13 @@ export class UserRepository implements Repository {
           ],
         }),
       ]);
+      await this.cache.bump(
+        ...memberOnSchools.map((member) => schoolMembersScope(member.schoolId)),
+        ...teacherOnSubjects.flatMap((teacher) => [
+          subjectScope(teacher.subjectId, 'roster'),
+          subjectScope(teacher.subjectId, 'submissions'),
+        ]),
+      );
 
       return user;
     } catch (error) {

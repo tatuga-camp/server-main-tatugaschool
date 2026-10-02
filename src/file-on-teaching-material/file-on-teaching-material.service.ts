@@ -13,6 +13,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FileOnTeachingMaterial, User } from '@prisma/client';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { UserRepository } from '../users/users.repository';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class FileOnTeachingMaterialService {
@@ -24,11 +25,12 @@ export class FileOnTeachingMaterialService {
     private storageService: StorageService,
     @Inject(forwardRef(() => TeachingMaterialService))
     private teachingMaterialService: TeachingMaterialService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(FileOnTeachingMaterialService.name);
     this.fileOnTeachingMaterialRepository =
       new FileOnTeachingMaterialRepository(this.prisma, this.storageService);
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async create(

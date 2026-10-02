@@ -26,6 +26,7 @@ import { SchoolRepository } from './school.repository';
 import { UsersService } from '../users/users.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { UserRepository } from '../users/users.repository';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class SchoolService {
@@ -46,6 +47,7 @@ export class SchoolService {
     @Inject(forwardRef(() => SubscriptionService))
     private subscriptionService: SubscriptionService,
     private userService: UsersService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(SchoolService.name);
     this.schoolRepository = new SchoolRepository(
@@ -54,8 +56,9 @@ export class SchoolService {
       this.subjectService,
       this.classService,
       this.stripe,
+      this.cache,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async getSchools(user: UserJwtPayload): Promise<School[]> {

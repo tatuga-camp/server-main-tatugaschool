@@ -16,6 +16,7 @@ import {
 } from './dto';
 import { SkillOnCareerRepository } from './skill-on-career.repository';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class SkillOnCareerService {
@@ -24,11 +25,14 @@ export class SkillOnCareerService {
   private userRepository: UserRepository;
   private skillRepository: SkillRepository;
   private careerRepository: CareerRepository;
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {
     this.careerRepository = new CareerRepository(this.prisma);
-    this.skillRepository = new SkillRepository(this.prisma);
+    this.skillRepository = new SkillRepository(this.prisma, this.cache);
     this.skillOnCareerRepository = new SkillOnCareerRepository(this.prisma);
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   async getByCareerId(dto: GetByCarrerIdDto) {

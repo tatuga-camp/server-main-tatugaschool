@@ -10,6 +10,7 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { UserRepository } from '../users/users.repository';
 import { ToggleReactionDto } from './dto';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 export type ToggleReactionResult = {
   action: 'added' | 'removed' | 'switched';
@@ -69,8 +70,9 @@ export class ReactionOnAnnouncementService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private cache: CacheService,
   ) {
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
   }
 
   private async getAnnouncementOrThrow(announcementId: string) {

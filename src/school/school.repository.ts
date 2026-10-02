@@ -10,6 +10,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { StorageService } from '../storage/storage.service';
 import { StripeService } from '../stripe/stripe.service';
+import { CacheService } from '../cache/cache.service';
+import { schoolMembersScope } from '../cache/cache-scopes';
 
 export type SchoolRepositoryType = {
   findMany(request: Prisma.SchoolFindManyArgs): Promise<School[]>;
@@ -31,6 +33,7 @@ export class SchoolRepository implements SchoolRepositoryType {
     private subjectService: SubjectService,
     private classService: ClassService,
     private stripe: StripeService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(SchoolRepository.name);
   }
@@ -170,6 +173,7 @@ export class SchoolRepository implements SchoolRepositoryType {
       await this.prisma.memberOnSchool.deleteMany({
         where: { schoolId: schoolId },
       });
+      await this.cache.bump(schoolMembersScope(schoolId));
 
       const school = await this.prisma.school.delete({
         where: { id: schoolId },

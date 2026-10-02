@@ -121,7 +121,6 @@ export class SubjectService {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
       this.prismaReadService,
       this.cache,
     );
@@ -162,7 +161,7 @@ export class SubjectService {
       this.prisma,
       this.cache,
     );
-    this.userRepository = new UserRepository(this.prisma);
+    this.userRepository = new UserRepository(this.prisma, this.cache);
     this.rubricRepository = new RubricRepository(this.prisma);
     this.announcementRepository = new AnnouncementRepository(this.prisma);
     this.commentOnAnnouncementRepository = new CommentOnAnnouncementRepository(
