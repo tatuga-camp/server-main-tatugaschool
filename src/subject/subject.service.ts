@@ -107,7 +107,10 @@ export class SubjectService {
     private redisService: RedisService,
     private cache: CacheService,
   ) {
-    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
+    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(
+      this.prisma,
+      this.cache,
+    );
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
@@ -137,7 +140,10 @@ export class SubjectService {
         this.storageService,
         this.cache,
       );
-    this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
+    this.scoreOnStudentRepository = new ScoreOnStudentRepository(
+      this.prisma,
+      this.cache,
+    );
     this.commentAssignmentRepository = new CommentAssignmentRepository(
       this.prisma,
       this.cache,

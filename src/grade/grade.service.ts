@@ -12,6 +12,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { GradeRange, User } from '@prisma/client';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 export type GradeRule = {
   min: number;
@@ -28,9 +29,10 @@ export class GradeService {
     @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(GradeService.name);
-    this.gradeRepository = new GradeRepository(this.prisma);
+    this.gradeRepository = new GradeRepository(this.prisma, this.cache);
   }
 
   async assignGrade(

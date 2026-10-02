@@ -13,6 +13,8 @@ import {
 import { Prisma, ScoreOnStudent } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type ScoreOnStudentRepositoryType = {
   findMany(
@@ -38,7 +40,10 @@ type ScoreOnStudentRepositoryType = {
 @Injectable()
 export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
   logger: Logger = new Logger(ScoreOnStudentRepository.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   async findMany(
     request: Prisma.ScoreOnStudentFindManyArgs,
@@ -100,11 +105,13 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestCreateScoreOnStudent,
   ): Promise<ScoreOnStudent> {
     try {
-      return await this.prisma.scoreOnStudent.create({
+      const result = await this.prisma.scoreOnStudent.create({
         data: {
           ...request,
         },
       });
+      await this.cache.bump(subjectScope(result.subjectId, 'grades'));
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -120,7 +127,7 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestUpdateScoreOnStudent,
   ): Promise<ScoreOnStudent> {
     try {
-      return await this.prisma.scoreOnStudent.update({
+      const result = await this.prisma.scoreOnStudent.update({
         where: {
           id: request.query.scoreOnStudentId,
         },
@@ -128,6 +135,8 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
           ...request.body,
         },
       });
+      await this.cache.bump(subjectScope(result.subjectId, 'grades'));
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -143,11 +152,12 @@ export class ScoreOnStudentRepository implements ScoreOnStudentRepositoryType {
     request: RequestDeleteScoreOnStudent,
   ): Promise<{ message: string }> {
     try {
-      await this.prisma.scoreOnStudent.delete({
+      const deleted = await this.prisma.scoreOnStudent.delete({
         where: {
           id: request.scoreOnStudentId,
         },
       });
+      await this.cache.bump(subjectScope(deleted.subjectId, 'grades'));
       return { message: 'Delete score on student successfully' };
     } catch (error) {
       this.logger.error(error);

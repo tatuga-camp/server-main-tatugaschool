@@ -11,7 +11,8 @@ import {
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 export type ScoreOnSubjectRepositoryType = {
   getAllScoreOnSubjectBySubjectId(
@@ -36,7 +37,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
   logger: Logger = new Logger(ScoreOnSubjectRepository.name);
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findUnique(
@@ -59,22 +60,6 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
     request: Prisma.ScoreOnSubjectFindManyArgs,
   ): Promise<ScoreOnSubject[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.scoreOnSubject.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.scoreOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -117,9 +102,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
           ...request,
         },
       });
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'grades'));
 
       return result;
     } catch (error) {
@@ -145,9 +128,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
           ...request.body,
         },
       });
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'grades'));
 
       return result;
     } catch (error) {
@@ -174,9 +155,7 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
           id: request.scoreOnSubjectId,
         },
       });
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'grades'));
 
       return result;
     } catch (error) {
@@ -188,9 +167,5 @@ export class ScoreOnSubjectRepository implements ScoreOnSubjectRepositoryType {
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `score_subject_subjectId:${subjectId}`;
   }
 }

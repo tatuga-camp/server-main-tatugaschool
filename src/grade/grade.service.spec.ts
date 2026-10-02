@@ -3,6 +3,8 @@ import { GradeService } from './grade.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import {
   NotFoundException,
   BadRequestException,
@@ -43,6 +45,7 @@ describe('GradeService', () => {
           provide: TeacherOnSubjectService,
           useValue: mockTeacherOnSubjectService,
         },
+        { provide: CacheService, useValue: createPassthroughCache() },
       ],
     }).compile();
 

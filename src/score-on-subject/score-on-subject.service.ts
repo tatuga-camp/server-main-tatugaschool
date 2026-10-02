@@ -40,7 +40,10 @@ export class ScoreOnSubjectService {
       this.prismaReadService,
       this.cache,
     );
-    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
+    this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(
+      this.prisma,
+      this.cache,
+    );
   }
 
   async GetAllScoreOnSubjectBySubjectId(
