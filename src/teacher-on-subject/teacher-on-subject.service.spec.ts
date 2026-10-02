@@ -2,7 +2,11 @@ jest.mock('../member-on-school/member-on-school.raw');
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { CacheService } from '../cache/cache.service';
-import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import {
+  createPassthroughCache,
+  createTestCache,
+} from '../cache/testing/cache-test-utils';
+import { schoolMembersScope, subjectScope } from '../cache/cache-scopes';
 import { TeacherOnSubjectService } from './teacher-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -311,5 +315,82 @@ describe('TeacherOnSubjectService', () => {
         } as any),
       ).rejects.toThrow(BadRequestException);
     });
+  });
+});
+
+describe('TeacherOnSubjectService.ValidateAccess (cached)', () => {
+  let service: TeacherOnSubjectService;
+  let cache: CacheService;
+  const prisma = { subject: { findUnique: jest.fn() } };
+
+  beforeEach(async () => {
+    cache = createTestCache().cache;
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        TeacherOnSubjectService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
+        { provide: EmailService, useValue: { sendMail: jest.fn() } },
+        { provide: CacheService, useValue: cache },
+      ],
+    }).compile();
+    service = module.get<TeacherOnSubjectService>(TeacherOnSubjectService);
+
+    prisma.subject.findUnique.mockResolvedValue({ schoolId: 'sch1' });
+    (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
+      status: 'ACCEPT',
+      role: 'TEACHER',
+    });
+    service.teacherOnSubjectRepository = {
+      getByTeacherIdAndSubjectId: jest
+        .fn()
+        .mockResolvedValue({ id: 't1', status: 'ACCEPT' }),
+    } as any;
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('caches a successful access check', async () => {
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    expect(
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId,
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  it('roster bump revokes access', async () => {
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    (
+      service.teacherOnSubjectRepository
+        .getByTeacherIdAndSubjectId as jest.Mock
+    ).mockResolvedValue(null);
+    await cache.bump(subjectScope('s1', 'roster'));
+    await expect(
+      service.ValidateAccess({ userId: 'u1', subjectId: 's1' }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
+  it('school-members bump re-evaluates membership', async () => {
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    await cache.bump(schoolMembersScope('sch1'));
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    expect(
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId,
+    ).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not cache a refusal', async () => {
+    (
+      service.teacherOnSubjectRepository
+        .getByTeacherIdAndSubjectId as jest.Mock
+    ).mockResolvedValueOnce(null);
+    await expect(
+      service.ValidateAccess({ userId: 'u1', subjectId: 's1' }),
+    ).rejects.toThrow(ForbiddenException);
+    await expect(
+      service.ValidateAccess({ userId: 'u1', subjectId: 's1' }),
+    ).resolves.toBeDefined();
   });
 });

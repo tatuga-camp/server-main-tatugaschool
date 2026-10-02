@@ -10,6 +10,9 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { CacheRefs } from '../cache/cache-refs';
+import { TTL } from '../cache/cache-ttl';
+import { schoolMembersScope, subjectScope } from '../cache/cache-scopes';
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import {
   CreateTeacherOnSubjectDto,
@@ -29,6 +32,7 @@ export class TeacherOnSubjectService {
   teacherOnSubjectRepository: TeacherOnSubjectRepository;
 
   memberOnSchoolRepository: MemberOnSchoolRepository;
+  refs: CacheRefs;
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
@@ -43,6 +47,7 @@ export class TeacherOnSubjectService {
       this.prisma,
       this.cache,
     );
+    this.refs = new CacheRefs(this.prisma, this.cache);
   }
 
   async ValidateAccess({
@@ -52,20 +57,26 @@ export class TeacherOnSubjectService {
     userId: string;
     subjectId: string;
   }): Promise<TeacherOnSubject | 'admin-school'> {
+    const subject = await this.refs.subject(subjectId);
+    if (!subject) throw new NotFoundException('Subject Not Found');
+    return this.cache.getOrSet(
+      `access:${subjectId}:${userId}`,
+      [subjectScope(subjectId, 'roster'), schoolMembersScope(subject.schoolId)],
+      TTL.SHORT,
+      () => this.loadAccess(userId, subjectId, subject.schoolId),
+    );
+  }
+
+  // Throws are deliberately not cached: CacheService only stores resolved values.
+  private async loadAccess(
+    userId: string,
+    subjectId: string,
+    schoolId: string,
+  ): Promise<TeacherOnSubject | 'admin-school'> {
     try {
-      const subject = await this.prisma.subject.findUnique({
-        where: {
-          id: subjectId,
-        },
-      });
-
-      if (!subject) {
-        throw new NotFoundException('Subject Not Found');
-      }
-
       const memberOnSchool = await findFirstMemberOnSchoolByUser(this.prisma, {
         userId: userId,
-        schoolId: subject.schoolId,
+        schoolId: schoolId,
       });
 
       if (!memberOnSchool || memberOnSchool?.status !== 'ACCEPT') {
