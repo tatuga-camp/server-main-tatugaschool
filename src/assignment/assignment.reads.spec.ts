@@ -1,6 +1,11 @@
 import { AssignmentReads } from './assignment.reads';
 import { createTestCache } from '../cache/testing/cache-test-utils';
-import { subjectScope } from '../cache/cache-scopes';
+import {
+  ALL_SUBJECT_SCOPE_KINDS,
+  SubjectScopeKind,
+  schoolMembersScope,
+  subjectScope,
+} from '../cache/cache-scopes';
 
 describe('AssignmentReads', () => {
   function setup() {
@@ -150,5 +155,106 @@ describe('AssignmentReads', () => {
 
       expect(prisma.studentOnSubject.findFirst).toHaveBeenCalledTimes(2);
     });
+
+    it('serves a found enrolment from cache on the second call', async () => {
+      const { prisma, reads } = setup();
+      prisma.studentOnSubject.findFirst.mockResolvedValue({
+        id: 'sos1',
+        subjectId: 's1',
+        studentId: 'st1',
+      });
+
+      const first = await reads.enrollment('s1', 'st1');
+      const second = await reads.enrollment('s1', 'st1');
+
+      expect(second).toEqual(first);
+      expect(first).toEqual({ id: 'sos1', subjectId: 's1', studentId: 'st1' });
+      expect(prisma.studentOnSubject.findFirst).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('subjectAssignments second call', () => {
+    it('does not re-read files or questions', async () => {
+      const { prisma, reads } = setup();
+      prisma.assignment.findMany.mockResolvedValue([
+        { id: 'a1', type: 'VideoQuiz' },
+      ]);
+
+      await reads.subjectAssignments('s1');
+      await reads.subjectAssignments('s1');
+
+      expect(prisma.fileOnAssignment.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.questionOnVideo.findMany).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // Each unit must reload only when one of its declared scopes moves.
+  describe('no reload after an unrelated bump', () => {
+    const units: {
+      name: string;
+      call: (r: AssignmentReads) => Promise<unknown>;
+      mock: (p: any) => jest.Mock;
+      declared: SubjectScopeKind[];
+    }[] = [
+      {
+        name: 'subjectAssignments',
+        call: (r) => r.subjectAssignments('s1'),
+        mock: (p) => p.assignment.findMany,
+        declared: ['assignments'],
+      },
+      {
+        name: 'submissionCounts',
+        call: (r) => r.submissionCounts('s1'),
+        mock: (p) => p.studentOnAssignment.groupBy,
+        declared: ['submissions'],
+      },
+      {
+        name: 'studentSubmissions',
+        call: (r) => r.studentSubmissions('s1', 'sos1'),
+        mock: (p) => p.studentOnAssignment.findMany,
+        declared: ['submissions'],
+      },
+      {
+        name: 'enrollment',
+        call: (r) => r.enrollment('s1', 'st1'),
+        mock: (p) => p.studentOnSubject.findFirst,
+        declared: ['roster'],
+      },
+    ];
+
+    it.each(units)(
+      '$name ignores bumps of its other-kind scopes and of another subject',
+      async ({ call, mock, declared }) => {
+        const { prisma, cache, reads } = setup();
+        const unrelated = ALL_SUBJECT_SCOPE_KINDS.filter(
+          (k) => !declared.includes(k),
+        );
+
+        await call(reads);
+        await cache.bump(
+          ...unrelated.map((k) => subjectScope('s1', k)),
+          ...ALL_SUBJECT_SCOPE_KINDS.map((k) => subjectScope('s2', k)),
+          schoolMembersScope('sch1'),
+        );
+        await call(reads);
+
+        expect(mock(prisma)).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it.each(units)(
+      '$name reloads after a bump of each declared scope',
+      async ({ call, mock, declared }) => {
+        const { prisma, cache, reads } = setup();
+
+        await call(reads);
+        for (const kind of declared) {
+          await cache.bump(subjectScope('s1', kind));
+          await call(reads);
+        }
+
+        expect(mock(prisma)).toHaveBeenCalledTimes(1 + declared.length);
+      },
+    );
   });
 });

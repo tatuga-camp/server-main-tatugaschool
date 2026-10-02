@@ -6,7 +6,11 @@ import {
   createPassthroughCache,
   createTestCache,
 } from '../cache/testing/cache-test-utils';
-import { schoolMembersScope, subjectScope } from '../cache/cache-scopes';
+import {
+  ALL_SUBJECT_SCOPE_KINDS,
+  schoolMembersScope,
+  subjectScope,
+} from '../cache/cache-scopes';
 import { TeacherOnSubjectService } from './teacher-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -363,8 +367,7 @@ describe('TeacherOnSubjectService.ValidateAccess (cached)', () => {
   it('roster bump revokes access', async () => {
     await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
     (
-      service.teacherOnSubjectRepository
-        .getByTeacherIdAndSubjectId as jest.Mock
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId as jest.Mock
     ).mockResolvedValue(null);
     await cache.bump(subjectScope('s1', 'roster'));
     await expect(
@@ -381,10 +384,43 @@ describe('TeacherOnSubjectService.ValidateAccess (cached)', () => {
     ).toHaveBeenCalledTimes(2);
   });
 
+  it('roster bump reloads the access check', async () => {
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    await cache.bump(subjectScope('s1', 'roster'));
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    expect(
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId,
+    ).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not reload after an unrelated bump', async () => {
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    await cache.bump(
+      ...ALL_SUBJECT_SCOPE_KINDS.filter((k) => k !== 'roster').map((k) =>
+        subjectScope('s1', k),
+      ),
+      subjectScope('s2', 'roster'),
+      schoolMembersScope('sch2'),
+    );
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    expect(
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId,
+    ).toHaveBeenCalledTimes(1);
+    expect(findFirstMemberOnSchoolByUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('caches the subject ref across checks and users', async () => {
+    await service.ValidateAccess({ userId: 'u1', subjectId: 's1' });
+    await service.ValidateAccess({ userId: 'u2', subjectId: 's1' });
+    expect(prisma.subject.findUnique).toHaveBeenCalledTimes(1);
+    expect(
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId,
+    ).toHaveBeenCalledTimes(2);
+  });
+
   it('does not cache a refusal', async () => {
     (
-      service.teacherOnSubjectRepository
-        .getByTeacherIdAndSubjectId as jest.Mock
+      service.teacherOnSubjectRepository.getByTeacherIdAndSubjectId as jest.Mock
     ).mockResolvedValueOnce(null);
     await expect(
       service.ValidateAccess({ userId: 'u1', subjectId: 's1' }),

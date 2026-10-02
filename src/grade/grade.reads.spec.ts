@@ -1,6 +1,10 @@
 import { GradeReads } from './grade.reads';
 import { createTestCache } from '../cache/testing/cache-test-utils';
-import { subjectScope } from '../cache/cache-scopes';
+import {
+  ALL_SUBJECT_SCOPE_KINDS,
+  schoolMembersScope,
+  subjectScope,
+} from '../cache/cache-scopes';
 
 describe('GradeReads', () => {
   function setup() {
@@ -59,6 +63,23 @@ describe('GradeReads', () => {
 
       expect(prisma.gradeRange.findUnique).toHaveBeenCalledTimes(2);
       expect(prisma.scoreOnSubject.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not reload after an unrelated bump', async () => {
+      const { prisma, cache, reads } = setup();
+
+      await reads.subjectGrades('s1');
+      await cache.bump(
+        ...ALL_SUBJECT_SCOPE_KINDS.filter((k) => k !== 'grades').map((k) =>
+          subjectScope('s1', k),
+        ),
+        subjectScope('s2', 'grades'),
+        schoolMembersScope('sch1'),
+      );
+      await reads.subjectGrades('s1');
+
+      expect(prisma.gradeRange.findUnique).toHaveBeenCalledTimes(1);
+      expect(prisma.scoreOnSubject.findMany).toHaveBeenCalledTimes(1);
     });
   });
 });
