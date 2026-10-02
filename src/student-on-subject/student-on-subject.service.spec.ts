@@ -1,5 +1,6 @@
 import { CacheService } from '../cache/cache.service';
 import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StudentOnSubjectService } from './student-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -28,6 +29,7 @@ describe('StudentOnSubjectService', () => {
 
   const mockPrismaService = {
     student: { findUnique: jest.fn() },
+    studentOnSubject: { update: jest.fn() },
   };
 
   const mockTeacherOnSubjectService = {
@@ -415,6 +417,31 @@ describe('StudentOnSubjectService', () => {
           {} as any,
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('sortStudentOnSubjects', () => {
+    it('bumps roster after reordering', async () => {
+      (
+        service.studentOnSubjectRepository.findMany as jest.Mock
+      ).mockResolvedValue([
+        { id: 'sos1', subjectId: 's1' },
+        { id: 'sos2', subjectId: 's1' },
+      ]);
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockPrismaService.studentOnSubject.update.mockImplementation(
+        async ({ where }) => ({ id: where.id }),
+      );
+
+      const result = await service.sortStudentOnSubjects(
+        { studentOnSubjectIds: ['sos2', 'sos1'] } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(result).toHaveLength(2);
+      expect((service as any).cache.bump).toHaveBeenCalledWith(
+        subjectScope('s1', 'roster'),
+      );
     });
   });
 

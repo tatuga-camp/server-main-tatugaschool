@@ -18,6 +18,7 @@ import { AttendanceStatusList, User } from '@prisma/client';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 @Injectable()
 export class AttendanceStatusListService {
@@ -170,6 +171,7 @@ export class AttendanceStatusListService {
             status: update.title,
           },
         });
+        await this.cache.bump(subjectScope(status.subjectId, 'attendance'));
       }
       return update;
     } catch (error) {

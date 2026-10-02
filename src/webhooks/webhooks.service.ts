@@ -20,6 +20,8 @@ import { UsersService } from '../users/users.service';
 import { SanityNewsWebhookPayload } from './sanity-news.dto';
 import { buildSanityNewsEmail } from './sanity-news-email';
 import { buildPastDueDowngradeEmail } from '../subscription/past-due-downgrade.email';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 @Injectable()
 export class WebhooksService {
@@ -35,6 +37,7 @@ export class WebhooksService {
     private prisma: PrismaService,
     private ai: AiService,
     private users: UsersService,
+    private cache: CacheService,
   ) {}
 
   async handleLineWebhook(dto: WebhookRequestBody) {
@@ -110,6 +113,7 @@ export class WebhooksService {
                 verifyLineToken,
               },
             });
+            await this.cache.bump(subjectScope(subject.id, 'roster'));
 
             await this.line.replyMessage({
               replyToken: event.replyToken,

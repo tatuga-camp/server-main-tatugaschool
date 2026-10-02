@@ -22,6 +22,8 @@ import {
   UpdateRubricDto,
 } from './dto';
 import { AiDraftResult, RubricDraft } from './interfaces';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 @Injectable()
 export class RubricService {
@@ -32,6 +34,7 @@ export class RubricService {
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private ai: AiService,
+    private cache: CacheService,
   ) {
     this.repo = new RubricRepository(this.prisma);
   }
@@ -215,6 +218,7 @@ export class RubricService {
         data: { score, status: 'REVIEWD', reviewdAt: new Date() },
       });
     });
+    await this.cache.bump(subjectScope(soa.subjectId, 'submissions'));
 
     return {
       studentOnAssignmentId: dto.studentOnAssignmentId,

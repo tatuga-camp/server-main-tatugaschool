@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { CacheService } from '../cache/cache.service';
 import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import {
   NotFoundException,
@@ -150,6 +151,9 @@ describe('AttendanceStatusListService', () => {
         data: { status: 'New' },
       });
       expect(result.title).toBe('New');
+      expect((service as any).cache.bump).toHaveBeenCalledWith(
+        subjectScope('s1', 'attendance'),
+      );
     });
 
     it('should throw ForbiddenException if subject is locked', async () => {

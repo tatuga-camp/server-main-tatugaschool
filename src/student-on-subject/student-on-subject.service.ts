@@ -51,6 +51,7 @@ import {
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 @Injectable()
 export class StudentOnSubjectService {
@@ -706,6 +707,9 @@ export class StudentOnSubjectService {
             },
           });
         }),
+      );
+      await this.cache.bump(
+        subjectScope(studentOnSubjects[0].subjectId, 'roster'),
       );
       const filterSuccess = updates.filter(
         (update) => update.status === 'fulfilled',

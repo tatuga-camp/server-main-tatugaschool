@@ -1,6 +1,7 @@
 jest.mock('../member-on-school/member-on-school.raw');
 import { CacheService } from '../cache/cache.service';
 import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubjectService } from './subject.service';
@@ -305,6 +306,10 @@ describe('SubjectService', () => {
       ).toHaveBeenCalled();
       expect(mockAssignmentService.createAssignment).toHaveBeenCalled();
       expect(result).toEqual(mockSubject);
+      expect((service as any).cache.bump).toHaveBeenCalledWith(
+        subjectScope('s2', 'assignments'),
+        subjectScope('s2', 'roster'),
+      );
     });
 
     it('should duplicate rubrics and re-attach them to duplicated assignments', async () => {
@@ -761,6 +766,9 @@ describe('SubjectService', () => {
         (service as any).scoreOnSubjectRepository.createSocreOnSubject,
       ).toHaveBeenCalled(); // Should be called 5 times for defaults
       expect(result.id).toBe('s1');
+      expect((service as any).cache.bump).toHaveBeenCalledWith(
+        subjectScope('s1', 'roster'),
+      );
     });
   });
 

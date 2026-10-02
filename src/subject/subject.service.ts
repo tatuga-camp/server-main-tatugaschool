@@ -60,6 +60,7 @@ import { AnnouncementRepository } from '../announcement/announcement.repository'
 import { CommentOnAnnouncementRepository } from '../comment-on-announcement/comment-on-announcement.repository';
 import { FileOnAnnouncementRepository } from '../file-on-announcement/file-on-announcement.repository';
 import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 @Injectable()
 export class SubjectService {
@@ -447,6 +448,10 @@ export class SubjectService {
           }),
         );
       }
+      await this.cache.bump(
+        subjectScope(create.id, 'assignments'),
+        subjectScope(create.id, 'roster'),
+      );
       return subject;
     } catch (error) {
       this.logger.error(error);
@@ -925,6 +930,7 @@ export class SubjectService {
           schoolId: dto.schoolId,
         },
       });
+      await this.cache.bump(subjectScope(subject.id, 'roster'));
 
       await Promise.all([
         this.gradeService.gradeRepository.create({

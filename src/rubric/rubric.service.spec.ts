@@ -11,6 +11,8 @@ import {
 jest.mock('../ai/ai.service', () => ({ AiService: class AiService {} }));
 
 import { RubricService } from './rubric.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
 
 const subject = { id: 'sub1', schoolId: 'school1' };
 
@@ -20,7 +22,8 @@ function makeService() {
   };
   const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
   const ai: any = { generateContent: jest.fn(), summarizeFile: jest.fn() };
-  const service = new RubricService(prisma, teacher, ai);
+  const cache = createPassthroughCache();
+  const service = new RubricService(prisma, teacher, ai, cache);
   (service as any).repo = {
     createFull: jest.fn().mockResolvedValue({ id: 'r1' }),
     findManyBySubject: jest.fn().mockResolvedValue([]),
@@ -203,7 +206,8 @@ describe('RubricService.gradeStudent', () => {
     };
     const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
     const ai: any = {};
-    const service = new RubricService(prisma, teacher, ai);
+    const cache = createPassthroughCache();
+    const service = new RubricService(prisma, teacher, ai, cache);
     (service as any).repo = {
       getStudentOnAssignment: jest.fn().mockResolvedValue({
         id: 'soa1',
@@ -225,7 +229,7 @@ describe('RubricService.gradeStudent', () => {
         },
       ],
     });
-    return { service, prisma, teacher };
+    return { service, prisma, teacher, cache };
   }
 
   it('rejects an item whose criterion is not in the assignment rubric', async () => {
@@ -272,6 +276,22 @@ describe('RubricService.gradeStudent', () => {
       }),
     );
   });
+
+  it('bumps submissions after the grading transaction resolves', async () => {
+    const { service, prisma, cache } = gradingService();
+    await service.gradeStudent(
+      {
+        studentOnAssignmentId: 'soa1',
+        items: [{ criterionId: 'c1', selectedLevelId: 'l-hi' }],
+      } as any,
+      { id: 'u1' } as any,
+    );
+    const bump = cache.bump as jest.Mock;
+    expect(bump).toHaveBeenCalledWith(subjectScope('sub1', 'submissions'));
+    expect(prisma.$transaction.mock.invocationCallOrder[0]).toBeLessThan(
+      bump.mock.invocationCallOrder[0],
+    );
+  });
 });
 
 describe('RubricService.readBreakdownForStudent', () => {
@@ -279,7 +299,8 @@ describe('RubricService.readBreakdownForStudent', () => {
     const prisma: any = {};
     const teacher: any = { ValidateAccess: jest.fn() };
     const ai: any = {};
-    const service = new RubricService(prisma, teacher, ai);
+    const cache = createPassthroughCache();
+    const service = new RubricService(prisma, teacher, ai, cache);
     (service as any).repo = {
       findBreakdown: jest.fn().mockResolvedValue({
         soa: { id: 'soa1', studentId: 'studentA', subjectId: 'sub1', score: 5, assignment: { id: 'a1', maxScore: 10, rubric: null } },
@@ -298,7 +319,8 @@ describe('RubricService.readBreakdownForStudent', () => {
     const prisma: any = {};
     const teacher: any = {};
     const ai: any = {};
-    const service = new RubricService(prisma, teacher, ai);
+    const cache = createPassthroughCache();
+    const service = new RubricService(prisma, teacher, ai, cache);
     (service as any).repo = {
       findBreakdown: jest.fn().mockResolvedValue({
         soa: { id: 'soa1', studentId: 'studentA', subjectId: 'sub1', score: 8, assignment: { id: 'a1', maxScore: 10, rubric: { id: 'r1', title: 'R', criteria: [{ id: 'c1', title: 'C1', description: null, weight: 1, levels: [{ id: 'l1', title: 'Good', description: null, points: 4 }] }] } } },
@@ -325,7 +347,8 @@ describe('RubricService.aiDraft', () => {
       generateContent: jest.fn().mockResolvedValue(modelText),
       summarizeFile: jest.fn(),
     };
-    const service = new RubricService(prisma, teacher, ai);
+    const cache = createPassthroughCache();
+    const service = new RubricService(prisma, teacher, ai, cache);
     return { service, ai };
   }
 

@@ -9,6 +9,9 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { UsersService } from '../users/users.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -91,6 +94,7 @@ describe('WebhooksService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: UsersService, useValue: mockUsersService },
         { provide: AiService, useValue: mockAiService },
+        { provide: CacheService, useValue: createPassthroughCache() },
       ],
     }).compile();
 
@@ -149,6 +153,9 @@ describe('WebhooksService', () => {
 
       expect(mockPrismaService.subject.update).toHaveBeenCalled();
       expect(mockLineBotService.replyMessage).toHaveBeenCalled();
+      expect((service as any).cache.bump).toHaveBeenCalledWith(
+        subjectScope('s1', 'roster'),
+      );
     });
 
     it('should answer AI for verified group if Premium', async () => {
