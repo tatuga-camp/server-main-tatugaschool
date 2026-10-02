@@ -164,3 +164,13 @@ describe('assignments-scope repositories bump after writes', () => {
     expect(cache.bump).not.toHaveBeenCalled();
   });
 });
+
+describe('no bump when the write throws', () => {
+  it.each(cases)('$name', async ({ run }) => {
+    const cache = createPassthroughCache();
+    await run(cache, createPrismaStub(record, { failWrites: true })).catch(
+      () => undefined,
+    );
+    expect(cache.bump).not.toHaveBeenCalled();
+  });
+});

@@ -155,3 +155,24 @@ describe('submissions-scope repositories bump after writes', () => {
     expect(cache.bump).not.toHaveBeenCalled();
   });
 });
+
+describe('no bump when the write throws', () => {
+  it.each(cases)('$name', async ({ run }) => {
+    const cache = createPassthroughCache();
+    await run(cache, createPrismaStub(record, { failWrites: true })).catch(
+      () => undefined,
+    );
+    expect(cache.bump).not.toHaveBeenCalled();
+  });
+});
+
+describe('submissions-scope edge cases', () => {
+  it('SoA.createMany with empty data bumps nothing and does not throw', async () => {
+    const cache = createPassthroughCache();
+    await new StudentOnAssignmentRepository(
+      createPrismaStub(record),
+      cache,
+    ).createMany({ data: [] });
+    expect(cache.bump).not.toHaveBeenCalled();
+  });
+});

@@ -183,3 +183,96 @@ describe('roster and school-member repositories bump after writes', () => {
     expect(cache.bump).not.toHaveBeenCalled();
   });
 });
+
+describe('no bump when the write throws', () => {
+  it.each(cases)('$name', async ({ run }) => {
+    const cache = createPassthroughCache();
+    await run(cache, createPrismaStub(record, { failWrites: true })).catch(
+      () => undefined,
+    );
+    expect(cache.bump).not.toHaveBeenCalled();
+  });
+});
+
+describe('roster edge cases', () => {
+  it('MoS.delete bumps the roster of every subject the teacher was removed from', async () => {
+    const cache = createPassthroughCache();
+    const prisma: any = {
+      memberOnSchool: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 'm1', userId: 'u1', schoolId: 'sch1' }),
+        delete: jest.fn().mockResolvedValue({ id: 'm1', schoolId: 'sch1' }),
+      },
+      teacherOnSubject: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ subjectId: 's1' }, { subjectId: 's2' }]),
+        deleteMany: jest.fn().mockResolvedValue({ count: 2 }),
+      },
+    };
+    await new MemberOnSchoolRepository(prisma, cache).delete({
+      memberOnSchoolId: 'm1',
+    });
+    const bumped = (cache.bump as jest.Mock).mock.calls.flat();
+    expect(bumped).toEqual(
+      expect.arrayContaining([
+        schoolMembersScope('sch1'),
+        subjectScope('s1', 'roster'),
+        subjectScope('s2', 'roster'),
+      ]),
+    );
+  });
+
+  it('MoS.delete of a member without a user bumps only the school members', async () => {
+    const cache = createPassthroughCache();
+    const prisma: any = {
+      memberOnSchool: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 'm1', userId: null, schoolId: 'sch1' }),
+        delete: jest.fn().mockResolvedValue({ id: 'm1', schoolId: 'sch1' }),
+      },
+      teacherOnSubject: { findMany: jest.fn(), deleteMany: jest.fn() },
+    };
+    await new MemberOnSchoolRepository(prisma, cache).delete({
+      memberOnSchoolId: 'm1',
+    });
+    expect((cache.bump as jest.Mock).mock.calls.flat()).toEqual([
+      schoolMembersScope('sch1'),
+    ]);
+  });
+
+  it('Subject.updateMany bumps every listed subject, and nothing for an empty list', async () => {
+    const cache = createPassthroughCache();
+    const repo = new SubjectRepository(
+      createPrismaStub(record),
+      storage,
+      createPrismaStub(record),
+      cache,
+    );
+    await repo.updateMany({ where: {}, data: {} }, []);
+    expect(cache.bump).not.toHaveBeenCalled();
+    await repo.updateMany({ where: {}, data: {} }, ['s1', 's2']);
+    expect(cache.bump).toHaveBeenCalledWith(
+      subjectScope('s1', 'roster'),
+      subjectScope('s2', 'roster'),
+    );
+  });
+
+  it('Subject.reorderSubjects bumps the roster of each reordered subject', async () => {
+    const cache = createPassthroughCache();
+    const prisma: any = {
+      subject: {
+        update: jest.fn(async ({ where }) => ({ id: where.id })),
+      },
+    };
+    await new SubjectRepository(prisma, storage, prisma, cache).reorderSubjects(
+      { subjectIds: ['s1', 's2'] } as any,
+    );
+    expect(cache.bump).toHaveBeenCalledWith(
+      subjectScope('s1', 'roster'),
+      subjectScope('s2', 'roster'),
+    );
+  });
+});

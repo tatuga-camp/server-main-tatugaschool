@@ -94,3 +94,13 @@ describe('grades-scope repositories bump after writes', () => {
     for (const scope of scopes) expect(cache.bump).toHaveBeenCalledWith(scope);
   });
 });
+
+describe('no bump when the write throws', () => {
+  it.each(cases)('$name', async ({ run }) => {
+    const cache = createPassthroughCache();
+    await run(cache, createPrismaStub(record, { failWrites: true })).catch(
+      () => undefined,
+    );
+    expect(cache.bump).not.toHaveBeenCalled();
+  });
+});

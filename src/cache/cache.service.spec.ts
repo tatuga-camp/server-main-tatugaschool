@@ -80,4 +80,31 @@ describe('CacheService', () => {
     await cache.getOrSet('code:ABC', [], 60, loader);
     expect(loader).toHaveBeenCalledTimes(2);
   });
+
+  it('bump with no scopes does not touch Redis', async () => {
+    const { cache, redis } = createTestCache();
+    const pipeline = jest.spyOn(redis, 'pipeline');
+    await cache.bump();
+    expect(pipeline).not.toHaveBeenCalled();
+  });
+
+  it('bump increments each distinct scope once', async () => {
+    const { cache, redis } = createTestCache();
+    const other = subjectScope('s1', 'roster');
+    await cache.bump(scope, scope, other);
+    expect(redis.store.get(`ver:${scope}`)).toBe('1');
+    expect(redis.store.get(`ver:${other}`)).toBe('1');
+  });
+
+  it('returns the loaded value when the cache write fails', async () => {
+    const { cache, redis } = createTestCache();
+    jest.spyOn(redis, 'set').mockRejectedValue(new Error('redis down'));
+    expect(await cache.getOrSet('x', [scope], 60, async () => 'live')).toBe('live');
+  });
+
+  it('del swallows Redis errors', async () => {
+    const { cache, redis } = createTestCache();
+    redis.failing = true;
+    await expect(cache.del('code:ABC')).resolves.toBeUndefined();
+  });
 });

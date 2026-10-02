@@ -53,4 +53,17 @@ describe('cache invalidation guard', () => {
     }
     expect(offenders).toEqual([]);
   });
+
+  it('every allow-list entry still matches a direct write (no stale entries)', () => {
+    const root = join(__dirname, '..');
+    const seen = new Set<string>();
+    for (const file of walk(root)) {
+      if (!file.endsWith('.ts') || file.endsWith('.spec.ts')) continue;
+      const rel = relative(root, file).split('\\').join('/');
+      for (const m of readFileSync(file, 'utf8').matchAll(PATTERN)) {
+        seen.add(`${rel}:${m[1]}.${m[2]}`);
+      }
+    }
+    expect(Object.keys(ALLOWED).filter((key) => !seen.has(key))).toEqual([]);
+  });
 });
