@@ -28,6 +28,7 @@ import { FastifyRequest } from 'fastify';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 @Injectable()
 export class AttendanceService {
   private logger: Logger;
@@ -44,6 +45,7 @@ export class AttendanceService {
     private attendanceRowService: AttendanceRowService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.logger = new Logger(AttendanceService.name);
     this.attendanceRepository = new AttendanceRepository(
@@ -65,6 +67,7 @@ export class AttendanceService {
       this.prisma,
       this.storageService,
       this.prismaReadService,
+      this.cache,
     );
   }
 

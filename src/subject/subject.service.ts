@@ -59,6 +59,7 @@ import { RubricRepository } from '../rubric/rubric.repository';
 import { AnnouncementRepository } from '../announcement/announcement.repository';
 import { CommentOnAnnouncementRepository } from '../comment-on-announcement/comment-on-announcement.repository';
 import { FileOnAnnouncementRepository } from '../file-on-announcement/file-on-announcement.repository';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class SubjectService {
@@ -104,6 +105,7 @@ export class SubjectService {
     private line: LineBotService,
     private prismaReadService: PrismaReadService,
     private redisService: RedisService,
+    private cache: CacheService,
   ) {
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
@@ -117,11 +119,13 @@ export class SubjectService {
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
       this.prismaReadService,
+      this.cache,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
@@ -134,6 +138,7 @@ export class SubjectService {
     );
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.skillOnStudentAssignmentRepository =
       new SkillOnStudentAssignmentRepository(this.prisma);
@@ -142,6 +147,7 @@ export class SubjectService {
     this.studentOnGroupRepository = new StudentOnGroupRepository(this.prisma);
     this.assignmentVideoQuizRepository = new AssignmentVideoQuizRepository(
       this.prisma,
+      this.cache,
     );
     this.userRepository = new UserRepository(this.prisma);
     this.rubricRepository = new RubricRepository(this.prisma);

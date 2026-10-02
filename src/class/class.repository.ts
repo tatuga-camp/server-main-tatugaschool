@@ -16,6 +16,7 @@ import {
 } from './interfaces/class.interface';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
 
 export type Repository = {
   create(request: RequestCreateClass): Promise<Class>;
@@ -37,17 +38,20 @@ export class ClassRepository implements Repository {
     private storageService: StorageService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.subjectRepositry = new SubjectRepository(
       this.prisma,
       this.storageService,
       this.prismaReadService,
+      this.cache,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
   }
 

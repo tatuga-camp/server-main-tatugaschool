@@ -24,6 +24,7 @@ import { TeacherOnSubjectRepository } from '../teacher-on-subject/teacher-on-sub
 import { SchoolRepository } from '../school/school.repository';
 import { StripeService } from '../stripe/stripe.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class FileAssignmentService {
@@ -40,6 +41,7 @@ export class FileAssignmentService {
     @Inject(forwardRef(() => ClassService))
     private classService: ClassService,
     private stripe: StripeService,
+    private cache: CacheService,
   ) {
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,
@@ -54,10 +56,12 @@ export class FileAssignmentService {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
   }
 

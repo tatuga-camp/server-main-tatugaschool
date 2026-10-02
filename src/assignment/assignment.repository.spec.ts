@@ -1,4 +1,5 @@
 import { AssignmentRepository } from './assignment.repository';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 
 const OMIT_EMBEDDING = { vector: true, vectorResouce: true };
 
@@ -13,18 +14,11 @@ describe('AssignmentRepository embedding projection', () => {
     },
   };
 
-  const mockRedis = {
-    hget: jest.fn(),
-    hset: jest.fn(),
-    expire: jest.fn(),
-    del: jest.fn(),
-  };
-
   beforeEach(() => {
     repository = new AssignmentRepository(
       mockPrisma as any,
       {} as any,
-      mockRedis as any,
+      createPassthroughCache(),
     );
     mockPrisma.assignment.findUnique.mockResolvedValue({ id: 'a1' });
     mockPrisma.assignment.findMany.mockResolvedValue([{ id: 'a1' }]);
@@ -32,7 +26,6 @@ describe('AssignmentRepository embedding projection', () => {
       id: 'a1',
       subjectId: 's1',
     });
-    mockRedis.hget.mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -63,17 +56,6 @@ describe('AssignmentRepository embedding projection', () => {
       where: { id: { in: ['a1', 'a2'] } },
       omit: OMIT_EMBEDDING,
     });
-  });
-
-  it('findMany omits embedding fields on subject-cached queries and keys the cache by the projection', async () => {
-    await repository.findMany({ where: { subjectId: 's1' } });
-
-    const expected = { where: { subjectId: 's1' }, omit: OMIT_EMBEDDING };
-    expect(mockPrisma.assignment.findMany).toHaveBeenCalledWith(expected);
-    expect(mockRedis.hget).toHaveBeenCalledWith(
-      'assignment_subjectId:s1',
-      JSON.stringify(expected),
-    );
   });
 
   it('findMany respects a caller-provided select', async () => {

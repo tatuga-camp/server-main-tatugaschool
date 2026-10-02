@@ -16,7 +16,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { StorageService } from '../storage/storage.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 // Each embedding is ~10–12 KB on the wire; only vector search needs it.
 const OMIT_EMBEDDING = {
@@ -53,10 +54,11 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
@@ -64,6 +66,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
     this.fileOnStudentAssignmentRepository =
       new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
@@ -94,22 +97,6 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   ): Promise<Assignment[]> {
     try {
       request = withEmbeddingOmitted(request);
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.assignment.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.assignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -139,9 +126,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   async create(request: Prisma.AssignmentCreateArgs): Promise<Assignment> {
     try {
       const result = await this.prisma.assignment.create(request);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'assignments'));
 
       return result;
     } catch (error) {
@@ -160,9 +145,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
       const result = await this.prisma.assignment.update(
         withEmbeddingOmitted(request),
       );
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'assignments'));
 
       return result;
     } catch (error) {
@@ -206,6 +189,11 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestDeleteAssignment,
   ): Promise<{ message: string; totalDeleteSize: number }> {
     try {
+      const ref = await this.prisma.assignment.findUnique({
+        where: { id: request.assignmentId },
+        select: { subjectId: true },
+      });
+
       const totalDeleteSize = await this.getTotalDeleteSize({
         assignmentId: request.assignmentId,
       });
@@ -280,6 +268,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
       await this.skillOnAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
+        subjectId: ref.subjectId,
       });
 
       await this.studentOnAssignmentRepository.deleteByAssignmentId({
@@ -297,9 +286,10 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         totalDeleteSize: totalDeleteSize,
       };
 
-      if (assignment.subjectId) {
-        await this.redisService?.del(this.getCacheKey(assignment.subjectId));
-      }
+      await this.cache.bump(
+        subjectScope(assignment.subjectId, 'assignments'),
+        subjectScope(assignment.subjectId, 'submissions'),
+      );
 
       return result;
     } catch (error) {
@@ -311,9 +301,5 @@ export class AssignmentRepository implements AssignmentRepositoryType {
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `assignment_subjectId:${subjectId}`;
   }
 }

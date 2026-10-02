@@ -26,6 +26,7 @@ import { StudentOnAssignmentRepository } from '../student-on-assignment/student-
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class SkillOnStudentAssignmentService {
@@ -46,6 +47,7 @@ export class SkillOnStudentAssignmentService {
     private storageService: StorageService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.skillOnStudentAssignmentRepository =
       new SkillOnStudentAssignmentRepository(this.prisma);
@@ -54,9 +56,11 @@ export class SkillOnStudentAssignmentService {
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
@@ -64,6 +68,7 @@ export class SkillOnStudentAssignmentService {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
     this.skillRepository = new SkillRepository(this.prisma);
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(

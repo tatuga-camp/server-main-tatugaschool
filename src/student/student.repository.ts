@@ -17,6 +17,7 @@ import { Logger } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { AssignmentRepository } from '../assignment/assignment.repository';
+import { CacheService } from '../cache/cache.service';
 
 type Repository = {
   create(request: RequestCreateStudent): Promise<Student>;
@@ -37,6 +38,7 @@ export class StudentRepository implements Repository {
     private storageService: StorageService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -47,7 +49,7 @@ export class StudentRepository implements Repository {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
     );
   }
 

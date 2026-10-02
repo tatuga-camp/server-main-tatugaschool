@@ -21,6 +21,7 @@ import { StudentRepository } from './student.repository';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class StudentService {
@@ -35,12 +36,14 @@ export class StudentService {
     private classroomService: ClassService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
   }
 

@@ -9,6 +9,7 @@ import { SkillRepository } from './../skill/skill.repository';
 import { CreateSkillOnAssignmentDto, DeleteSkillOnAssignmentDto } from './dto';
 import { SkillOnAssignmentRepository } from './skill-on-assignment.repository';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class SkillOnAssignmentService {
@@ -20,14 +21,17 @@ export class SkillOnAssignmentService {
     private prisma: PrismaService,
     private googleStorageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private cache: CacheService,
   ) {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.googleStorageService,
+      this.cache,
     );
     this.skillRepository = new SkillRepository(this.prisma);
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
   }
 
@@ -56,22 +60,22 @@ export class SkillOnAssignmentService {
 
       // OR: [] compiles to an always-false $expr on MongoDB that still
       // COLLSCANs the whole collection — skip the query entirely.
-      const skills = await (skillOnAssignment.length === 0
-        ? Promise.resolve([])
-        : this.skillRepository.findMany({
-            where: {
-              OR: skillOnAssignment.map((skill) => ({ id: skill.skillId })),
-            },
-          })
-        )
-        .then((res) => {
-          return res.map((skill) => {
-            delete skill.vector;
-            return {
-              ...skill,
-            };
-          });
+      const skills = await (
+        skillOnAssignment.length === 0
+          ? Promise.resolve([])
+          : this.skillRepository.findMany({
+              where: {
+                OR: skillOnAssignment.map((skill) => ({ id: skill.skillId })),
+              },
+            })
+      ).then((res) => {
+        return res.map((skill) => {
+          delete skill.vector;
+          return {
+            ...skill,
+          };
         });
+      });
 
       return skillOnAssignment.map((skill) => ({
         ...skill,

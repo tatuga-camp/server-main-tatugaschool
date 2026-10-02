@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StudentRepository } from './student.repository';
 import { PrismaService } from '../prisma/prisma.service';
@@ -34,6 +36,7 @@ describe('StudentRepository', () => {
     jest.useFakeTimers().setSystemTime(new Date('2026-08-10T12:00:00Z'));
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         StudentRepository,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: PrismaReadService, useValue: mockPrismaRead },
@@ -62,7 +65,11 @@ describe('StudentRepository', () => {
       });
       mockPrisma.studentOnSubject.findMany.mockResolvedValue([]);
       mockPrismaRead.studentOnSubject.findMany.mockResolvedValue([]);
-      mockPrisma.$runCommandRaw.mockResolvedValue({ n: 0, nModified: 0, ok: 1 });
+      mockPrisma.$runCommandRaw.mockResolvedValue({
+        n: 0,
+        nModified: 0,
+        ok: 1,
+      });
 
       await repo.update({
         query: { studentId: STUDENT_ID },

@@ -40,6 +40,7 @@ import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
 import { buildResetPasswordEmail } from './reset-password.email';
 import { buildVerifyEmail } from './verify-email.email';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class AuthService {
@@ -60,6 +61,7 @@ export class AuthService {
     private prismaReadService: PrismaReadService,
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
+    private cache: CacheService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
@@ -69,6 +71,7 @@ export class AuthService {
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
   }
 

@@ -25,6 +25,7 @@ import {
 import { FileOnStudentAssignment, Student, User } from '@prisma/client';
 import * as archiver from 'archiver';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class FileOnStudentAssignmentService {
@@ -41,6 +42,7 @@ export class FileOnStudentAssignmentService {
     private classService: ClassService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private stripe: StripeService,
+    private cache: CacheService,
   ) {
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
@@ -60,6 +62,7 @@ export class FileOnStudentAssignmentService {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
   }
 

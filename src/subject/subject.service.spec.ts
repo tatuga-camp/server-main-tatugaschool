@@ -1,4 +1,6 @@
 jest.mock('../member-on-school/member-on-school.raw');
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubjectService } from './subject.service';
@@ -118,6 +120,7 @@ describe('SubjectService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         SubjectService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: {} },
@@ -347,8 +350,20 @@ describe('SubjectService', () => {
               weight: 2,
               order: 0,
               levels: [
-                { id: 'l1', title: 'Great', description: 'g', points: 4, order: 0 },
-                { id: 'l2', title: 'Poor', description: null, points: 1, order: 1 },
+                {
+                  id: 'l1',
+                  title: 'Great',
+                  description: 'g',
+                  points: 4,
+                  order: 0,
+                },
+                {
+                  id: 'l2',
+                  title: 'Poor',
+                  description: null,
+                  points: 1,
+                  order: 1,
+                },
               ],
             },
           ],
@@ -384,8 +399,16 @@ describe('SubjectService', () => {
                   order: 0,
                   levels: {
                     create: [
-                      expect.objectContaining({ title: 'Great', points: 4, order: 0 }),
-                      expect.objectContaining({ title: 'Poor', points: 1, order: 1 }),
+                      expect.objectContaining({
+                        title: 'Great',
+                        points: 4,
+                        order: 0,
+                      }),
+                      expect.objectContaining({
+                        title: 'Poor',
+                        points: 1,
+                        order: 1,
+                      }),
                     ],
                   },
                 }),
@@ -654,7 +677,9 @@ describe('SubjectService', () => {
       (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue({
         id: 's1',
       });
-      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue([]);
+      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue(
+        [],
+      );
       mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany.mockResolvedValue(
         [],
       );

@@ -19,6 +19,7 @@ import { SubjectRepository } from '../subject/subject.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class ScoreOnSubjectService {
@@ -31,11 +32,13 @@ export class ScoreOnSubjectService {
     private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.subjectRepository = new SubjectRepository(
       this.prisma,
       this.storageService,
       this.prismaReadService,
+      this.cache,
     );
     this.scoreOnSubjectRepository = new ScoreOnSubjectRepository(this.prisma);
   }

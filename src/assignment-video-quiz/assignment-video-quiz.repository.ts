@@ -6,7 +6,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, QuestionOnVideo } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 export type Repository = {
   findFirst(
@@ -32,7 +33,7 @@ export class AssignmentVideoQuizRepository implements Repository {
 
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findFirst(
@@ -71,22 +72,6 @@ export class AssignmentVideoQuizRepository implements Repository {
     args: Prisma.QuestionOnVideoFindManyArgs,
   ): Promise<QuestionOnVideo[]> {
     try {
-      const subjectId = args.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(args);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.questionOnVideo.findMany(args);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.questionOnVideo.findMany(args);
     } catch (error) {
       this.logger.error(error);
@@ -104,9 +89,7 @@ export class AssignmentVideoQuizRepository implements Repository {
   ): Promise<QuestionOnVideo> {
     try {
       const result = await this.prisma.questionOnVideo.update(args);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'assignments'));
 
       return result;
     } catch (error) {
@@ -125,9 +108,7 @@ export class AssignmentVideoQuizRepository implements Repository {
   ): Promise<QuestionOnVideo> {
     try {
       const result = await this.prisma.questionOnVideo.create(args);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'assignments'));
 
       return result;
     } catch (error) {
@@ -147,9 +128,11 @@ export class AssignmentVideoQuizRepository implements Repository {
     try {
       const result = await this.prisma.questionOnVideo.createMany(args);
 
-      const subjectId = args.data[0]?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        await this.redisService?.del(this.getCacheKey(subjectId));
+      const subjectId = Array.isArray(args.data)
+        ? args.data[0]?.subjectId
+        : args.data?.subjectId;
+      if (subjectId) {
+        await this.cache.bump(subjectScope(subjectId, 'assignments'));
       }
 
       return result;
@@ -169,9 +152,7 @@ export class AssignmentVideoQuizRepository implements Repository {
   ): Promise<QuestionOnVideo> {
     try {
       const result = await this.prisma.questionOnVideo.delete(args);
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'assignments'));
 
       return result;
     } catch (error) {
@@ -183,9 +164,5 @@ export class AssignmentVideoQuizRepository implements Repository {
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `assignment_video_subjectId:${subjectId}`;
   }
 }

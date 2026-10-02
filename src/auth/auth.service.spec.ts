@@ -1,4 +1,6 @@
 jest.mock('../member-on-school/member-on-school.raw');
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { findManyMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
@@ -80,6 +82,7 @@ describe('AuthService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         AuthService,
         { provide: EmailService, useValue: mockEmailService },
         { provide: JwtService, useValue: mockJwtService },

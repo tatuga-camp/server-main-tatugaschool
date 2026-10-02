@@ -53,6 +53,7 @@ import { AiService } from '../ai/ai.service';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class AssignmentService {
@@ -82,6 +83,7 @@ export class AssignmentService {
     private linebotService: LineBotService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -95,10 +97,12 @@ export class AssignmentService {
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
   }
 

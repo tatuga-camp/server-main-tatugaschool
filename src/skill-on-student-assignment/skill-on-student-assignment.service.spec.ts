@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SkillOnStudentAssignmentService } from './skill-on-student-assignment.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -28,6 +30,7 @@ describe('SkillOnStudentAssignmentService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         SkillOnStudentAssignmentService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MemberOnSchoolService, useValue: mockMemberOnSchoolService },

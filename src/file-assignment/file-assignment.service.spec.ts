@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileAssignmentService } from './file-assignment.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -24,6 +26,7 @@ describe('FileAssignmentService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         FileAssignmentService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: {} },
@@ -134,10 +137,14 @@ describe('FileAssignmentService', () => {
 
     it('persists name when updating a file', async () => {
       const file = { id: 'file1', subjectId: 'subj1' };
-      (service.fileAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
+      (service.fileAssignmentRepository.getById as jest.Mock).mockResolvedValue(
+        file,
+      );
       (
         service as any
-      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
+        { id: 't1' },
+      );
       const updateSpy = service.fileAssignmentRepository.update as jest.Mock;
       updateSpy.mockResolvedValue({ ...file, name: 'My Report' });
 
@@ -224,7 +231,11 @@ describe('FileAssignmentService', () => {
       (service as any).schoolRepository.update.mockResolvedValue({});
 
       await service.createFileAssignment(
-        { type: 'video/mp4', assignmentId: 'a1', name: 'Homework Sheet' } as any,
+        {
+          type: 'video/mp4',
+          assignmentId: 'a1',
+          name: 'Homework Sheet',
+        } as any,
         { id: 'u1' } as any,
       );
 

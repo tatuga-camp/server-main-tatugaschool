@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FileOnStudentAssignmentService } from './file-on-student-assignment.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -56,6 +58,7 @@ describe('FileOnStudentAssignmentService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         FileOnStudentAssignmentService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: mockStorageService },
@@ -340,12 +343,23 @@ describe('FileOnStudentAssignmentService', () => {
 
     it('does not delete storage when renaming a FILE without a new body', async () => {
       const file = {
-        id: 'f1', subjectId: 's1', studentId: 'stu1',
-        contentType: 'FILE', body: 'schools/s1/original.pdf',
+        id: 'f1',
+        subjectId: 's1',
+        studentId: 'stu1',
+        contentType: 'FILE',
+        body: 'schools/s1/original.pdf',
       };
-      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
-      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
-      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue({ ...file, name: 'Final essay' });
+      (
+        service.fileOnStudentAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue(file);
+      (
+        service as any
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
+        { id: 't1' },
+      );
+      (
+        service.fileOnStudentAssignmentRepository.update as jest.Mock
+      ).mockResolvedValue({ ...file, name: 'Final essay' });
 
       await service.updateFile(
         { query: { id: 'f1' }, body: { name: 'Final essay' } } as any,
@@ -358,12 +372,23 @@ describe('FileOnStudentAssignmentService', () => {
 
     it('deletes the old storage file only when a different body is provided', async () => {
       const file = {
-        id: 'f1', subjectId: 's1', studentId: 'stu1',
-        contentType: 'FILE', body: 'schools/s1/original.pdf',
+        id: 'f1',
+        subjectId: 's1',
+        studentId: 'stu1',
+        contentType: 'FILE',
+        body: 'schools/s1/original.pdf',
       };
-      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
-      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
-      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue(file);
+      (
+        service.fileOnStudentAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue(file);
+      (
+        service as any
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
+        { id: 't1' },
+      );
+      (
+        service.fileOnStudentAssignmentRepository.update as jest.Mock
+      ).mockResolvedValue(file);
 
       await service.updateFile(
         { query: { id: 'f1' }, body: { body: 'schools/s1/new.pdf' } } as any,
@@ -378,15 +403,29 @@ describe('FileOnStudentAssignmentService', () => {
 
     it('does not delete storage when the same body value is re-submitted', async () => {
       const file = {
-        id: 'f1', subjectId: 's1', studentId: 'stu1',
-        contentType: 'FILE', body: 'schools/s1/original.pdf',
+        id: 'f1',
+        subjectId: 's1',
+        studentId: 'stu1',
+        contentType: 'FILE',
+        body: 'schools/s1/original.pdf',
       };
-      (service.fileOnStudentAssignmentRepository.getById as jest.Mock).mockResolvedValue(file);
-      (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue({ id: 't1' });
-      (service.fileOnStudentAssignmentRepository.update as jest.Mock).mockResolvedValue(file);
+      (
+        service.fileOnStudentAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue(file);
+      (
+        service as any
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
+        { id: 't1' },
+      );
+      (
+        service.fileOnStudentAssignmentRepository.update as jest.Mock
+      ).mockResolvedValue(file);
 
       await service.updateFile(
-        { query: { id: 'f1' }, body: { body: 'schools/s1/original.pdf' } } as any,
+        {
+          query: { id: 'f1' },
+          body: { body: 'schools/s1/original.pdf' },
+        } as any,
         { id: 'teacher1' } as any,
         null,
       );

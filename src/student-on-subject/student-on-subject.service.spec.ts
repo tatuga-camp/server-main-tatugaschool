@@ -1,3 +1,5 @@
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { StudentOnSubjectService } from './student-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -57,6 +59,7 @@ describe('StudentOnSubjectService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        { provide: CacheService, useValue: createPassthroughCache() },
         StudentOnSubjectService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: {} },
@@ -203,12 +206,17 @@ describe('StudentOnSubjectService', () => {
       (
         service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
       ).mockResolvedValue({ id: 'sos1' });
-      (service as any).studentRepository.update.mockResolvedValue({ id: 'st1' });
+      (service as any).studentRepository.update.mockResolvedValue({
+        id: 'st1',
+      });
 
       await service.update(
         {
           query: { id: 'sos1' },
-          data: { photo: 'https://example.com/p.png', blurHash: 'LKO2?U%2Tw=w' },
+          data: {
+            photo: 'https://example.com/p.png',
+            blurHash: 'LKO2?U%2Tw=w',
+          },
         } as any,
         { id: 'u1' } as any,
       );
@@ -328,10 +336,9 @@ describe('StudentOnSubjectService', () => {
       ).mockResolvedValue(null);
 
       await expect(
-        service.getStudentOnSubjectById(
-          { studentOnSubjectId: 'sos1' },
-          { id: 'u1' } as any,
-        ),
+        service.getStudentOnSubjectById({ studentOnSubjectId: 'sos1' }, {
+          id: 'u1',
+        } as any),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -339,7 +346,8 @@ describe('StudentOnSubjectService', () => {
   describe('getStudentOnSubjectsByStudentId', () => {
     it('should return [] when student has no subjects', async () => {
       (
-        service.studentOnSubjectRepository.getStudentOnSubjectsByStudentId as jest.Mock
+        service.studentOnSubjectRepository
+          .getStudentOnSubjectsByStudentId as jest.Mock
       ).mockResolvedValue([]);
 
       const result = await service.getStudentOnSubjectsByStudentId(
@@ -353,7 +361,8 @@ describe('StudentOnSubjectService', () => {
 
     it('should validate access against the first subject and return results', async () => {
       (
-        service.studentOnSubjectRepository.getStudentOnSubjectsByStudentId as jest.Mock
+        service.studentOnSubjectRepository
+          .getStudentOnSubjectsByStudentId as jest.Mock
       ).mockResolvedValue([
         { id: 'sos1', subjectId: 's1' },
         { id: 'sos2', subjectId: 's2' },

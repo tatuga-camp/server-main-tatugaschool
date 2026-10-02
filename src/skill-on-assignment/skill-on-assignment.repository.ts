@@ -17,7 +17,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { Prisma } from '@prisma/client';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type SkillOnAssignmentRepositoryType = {
   findMany(
@@ -33,6 +34,7 @@ type SkillOnAssignmentRepositoryType = {
   getBySubjectId(request: RequestGetBySubjectId): Promise<SkillOnAssignment[]>;
   deleteByAssignmentId(request: {
     assignmentId: string;
+    subjectId: string;
   }): Promise<{ message: string }>;
 };
 @Injectable()
@@ -42,29 +44,13 @@ export class SkillOnAssignmentRepository
   logger: Logger = new Logger(SkillOnAssignmentRepository.name);
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findMany(
     request: Prisma.SkillOnAssignmentFindManyArgs,
   ): Promise<SkillOnAssignment[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.skillOnAssignment.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.skillOnAssignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -104,9 +90,7 @@ export class SkillOnAssignmentRepository
       });
 
       const result = skillOnAssignment;
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'assignments'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -129,9 +113,7 @@ export class SkillOnAssignmentRepository
       });
 
       const result = { message: 'Skill on assignment deleted successfully' };
-      if (skill.subjectId) {
-        await this.redisService?.del(this.getCacheKey(skill.subjectId));
-      }
+      await this.cache.bump(subjectScope(skill.subjectId, 'assignments'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -206,11 +188,13 @@ export class SkillOnAssignmentRepository
 
   async deleteByAssignmentId(request: {
     assignmentId: string;
+    subjectId: string;
   }): Promise<{ message: string }> {
     try {
       await this.prisma.skillOnAssignment.deleteMany({
         where: { assignmentId: request.assignmentId },
       });
+      await this.cache.bump(subjectScope(request.subjectId, 'assignments'));
 
       const result = { message: 'Skill on assignment deleted successfully' };
 
@@ -224,9 +208,5 @@ export class SkillOnAssignmentRepository
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `skill_assignment_subjectId:${subjectId}`;
   }
 }

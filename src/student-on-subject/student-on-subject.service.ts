@@ -50,6 +50,7 @@ import {
 } from './student-on-subject.repository';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class StudentOnSubjectService {
@@ -77,6 +78,7 @@ export class StudentOnSubjectService {
     private scoreOnSubjectService: ScoreOnSubjectService,
     private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -92,18 +94,21 @@ export class StudentOnSubjectService {
       this.prisma,
       this.storageService,
       this.prismaReadService,
+      this.cache,
     );
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.userRepository = new UserRepository(this.prisma);
     this.attendanceRepository = new AttendanceRepository(
@@ -115,6 +120,7 @@ export class StudentOnSubjectService {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
   }
 
@@ -341,37 +347,37 @@ export class StudentOnSubjectService {
     try {
       // OR: [] compiles to an always-false $expr on MongoDB that still
       // COLLSCANs the whole collection — skip the query entirely.
-      const studentOnAssignments = await (assignments.length === 0
-        ? Promise.resolve([])
-        : this.studentOnAssignmentRepository.findMany({
-            where: {
-              OR: assignments.map((a) => {
-                return {
-                  studentOnSubjectId: studentOnSubjectId,
-                  assignmentId: a.id,
-                };
-              }),
-            },
-          })
-        )
-        .then((res) => {
-          return res.map((studentOnAssignment) => {
-            const assignment = assignments.find(
-              (a) => a.id === studentOnAssignment.assignmentId,
-            );
-            let score = studentOnAssignment.score ?? 0;
-            if (assignment.weight !== null) {
-              const originalScore = score / assignment.maxScore;
-              score = originalScore * assignment.weight;
-            }
+      const studentOnAssignments = await (
+        assignments.length === 0
+          ? Promise.resolve([])
+          : this.studentOnAssignmentRepository.findMany({
+              where: {
+                OR: assignments.map((a) => {
+                  return {
+                    studentOnSubjectId: studentOnSubjectId,
+                    assignmentId: a.id,
+                  };
+                }),
+              },
+            })
+      ).then((res) => {
+        return res.map((studentOnAssignment) => {
+          const assignment = assignments.find(
+            (a) => a.id === studentOnAssignment.assignmentId,
+          );
+          let score = studentOnAssignment.score ?? 0;
+          if (assignment.weight !== null) {
+            const originalScore = score / assignment.maxScore;
+            score = originalScore * assignment.weight;
+          }
 
-            return {
-              ...studentOnAssignment,
-              assignment: assignment,
-              pureScore: score,
-            };
-          });
+          return {
+            ...studentOnAssignment,
+            assignment: assignment,
+            pureScore: score,
+          };
         });
+      });
 
       const scoreOnStudents = await this.scoreOnStudentRepository.findMany({
         where: {

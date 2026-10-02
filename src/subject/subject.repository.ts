@@ -16,6 +16,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.repository';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { CacheService } from '../cache/cache.service';
 
 type Repository = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
@@ -42,11 +43,13 @@ export class SubjectRepository implements Repository {
     private prisma: PrismaService,
     private storageService: StorageService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.groupOnSubjectRepository = new GroupOnSubjectRepository(this.prisma);
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
   }
 

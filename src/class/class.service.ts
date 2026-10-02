@@ -25,6 +25,7 @@ import { CreateClassDto, DeleteClassDto, UpdateClassDto } from './dto';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class ClassService {
@@ -48,23 +49,27 @@ export class ClassService {
     private redisService: RedisService,
     @Inject(forwardRef(() => SubjectService))
     private subjectService: SubjectService,
+    private cache: CacheService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.classRepository = new ClassRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
 
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,

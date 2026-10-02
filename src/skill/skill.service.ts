@@ -21,6 +21,7 @@ import { AuthService } from '../auth/auth.service';
 import { StorageService } from '../storage/storage.service';
 import { AiService } from '../ai/ai.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class SkillService {
@@ -34,6 +35,7 @@ export class SkillService {
     private aiService: AiService,
     private googleStorageService: StorageService,
     private authService: AuthService,
+    private cache: CacheService,
   ) {
     this.skillRepository = new SkillRepository(this.prisma);
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
@@ -42,6 +44,7 @@ export class SkillService {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.googleStorageService,
+      this.cache,
     );
     this.userRepository = new UserRepository(this.prisma);
   }

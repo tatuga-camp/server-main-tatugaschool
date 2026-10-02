@@ -35,6 +35,7 @@ import { StudentOnAssignmentRepository } from './student-on-assignment.repositor
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -57,12 +58,14 @@ export class StudentOnAssignmentService {
     private line: LineBotService,
     private prismaReadService: PrismaReadService,
     private redisService: RedisService,
+    private cache: CacheService,
   ) {
     this.studentRepository = new StudentRepository(
       this.prisma,
       this.storageService,
       this.redisService,
       this.prismaReadService,
+      this.cache,
     );
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -80,6 +83,7 @@ export class StudentOnAssignmentService {
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,
+      this.cache,
     );
     this.fileOnStudentAssignmentRepository =
       new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
@@ -412,7 +416,10 @@ export class StudentOnAssignmentService {
             studentOnAssignmentId: studentOnAssignment.id,
           })
           .catch((err) => {
-            this.logger.error('Failed to suggest skill on student assignment', err);
+            this.logger.error(
+              'Failed to suggest skill on student assignment',
+              err,
+            );
           });
       }
 
