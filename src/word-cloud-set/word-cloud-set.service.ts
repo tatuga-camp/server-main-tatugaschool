@@ -8,6 +8,7 @@ import {
 import { StudentOnSubject, WordCloud, WordCloudSet } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { WordCount } from '../word-cloud/interfaces';
@@ -38,8 +39,9 @@ export class WordCloudSetService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private cache: CacheService,
   ) {
-    this.repository = new WordCloudSetRepository(this.prisma);
+    this.repository = new WordCloudSetRepository(this.prisma, this.cache);
   }
 
   private aggregate(
@@ -251,7 +253,11 @@ export class WordCloudSetService {
       if (dto.allowMultiple !== undefined)
         questionData.allowMultiple = dto.allowMultiple;
       if (Object.keys(questionData).length > 0) {
-        await this.repository.updateQuestionsBySetId(set.id, questionData);
+        await this.repository.updateQuestionsBySetId(
+          set.id,
+          set.subjectId,
+          questionData,
+        );
       }
 
       return updated;

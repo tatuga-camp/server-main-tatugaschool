@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { StudentOnSubject, WordCloud } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { WordCloudRepository } from './word-cloud.repository';
@@ -33,8 +34,9 @@ export class WordCloudService {
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
+    private cache: CacheService,
   ) {
-    this.wordCloudRepository = new WordCloudRepository(this.prisma);
+    this.wordCloudRepository = new WordCloudRepository(this.prisma, this.cache);
   }
 
   private normalize(text: string): string {

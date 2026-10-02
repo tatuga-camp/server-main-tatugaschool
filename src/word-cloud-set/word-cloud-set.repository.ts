@@ -6,6 +6,8 @@ import {
 import { Prisma, WordCloud, WordCloudSet } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 // publicResultsToken and wordCloudSetId are optional fields, so Prisma filters
 // on them compile to `$expr`/`$ne: [field, "$$REMOVE"]` pipelines MongoDB
@@ -99,7 +101,10 @@ function fromRawWordCloud(doc: RawWordCloud): WordCloud {
 @Injectable()
 export class WordCloudSetRepository {
   private logger = new Logger(WordCloudSetRepository.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   private handle(error: unknown): never {
     this.logger.error(error);
@@ -113,7 +118,9 @@ export class WordCloudSetRepository {
 
   async create(request: Prisma.WordCloudSetCreateArgs): Promise<WordCloudSet> {
     try {
-      return await this.prisma.wordCloudSet.create(request);
+      const result = await this.prisma.wordCloudSet.create(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -151,7 +158,9 @@ export class WordCloudSetRepository {
 
   async update(request: Prisma.WordCloudSetUpdateArgs): Promise<WordCloudSet> {
     try {
-      return await this.prisma.wordCloudSet.update(request);
+      const result = await this.prisma.wordCloudSet.update(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -191,6 +200,7 @@ export class WordCloudSetRepository {
 
   async updateQuestionsBySetId(
     setId: string,
+    subjectId: string,
     data: Partial<
       Pick<WordCloud, 'status' | 'accessMode' | 'allowMultiple'>
     >,
@@ -220,6 +230,7 @@ export class WordCloudSetRepository {
           )}`,
         );
       }
+      await this.cache.bump(subjectScope(subjectId, 'wordcloud'));
     } catch (error) {
       this.handle(error);
     }
@@ -239,7 +250,9 @@ export class WordCloudSetRepository {
     request: Prisma.WordCloudCreateArgs,
   ): Promise<WordCloud> {
     try {
-      return await this.prisma.wordCloud.create(request);
+      const result = await this.prisma.wordCloud.create(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -249,7 +262,9 @@ export class WordCloudSetRepository {
     request: Prisma.WordCloudUpdateArgs,
   ): Promise<WordCloud> {
     try {
-      return await this.prisma.wordCloud.update(request);
+      const result = await this.prisma.wordCloud.update(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -291,7 +306,11 @@ export class WordCloudSetRepository {
           where: { id: { in: ids } },
         });
       }
-      return await this.prisma.wordCloudSet.delete({ where: { id: setId } });
+      const result = await this.prisma.wordCloudSet.delete({
+        where: { id: setId },
+      });
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -303,7 +322,11 @@ export class WordCloudSetRepository {
       await this.prisma.wordCloudAnswer.deleteMany({
         where: { wordCloudId },
       });
-      return await this.prisma.wordCloud.delete({ where: { id: wordCloudId } });
+      const result = await this.prisma.wordCloud.delete({
+        where: { id: wordCloudId },
+      });
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }

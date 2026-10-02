@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WordCloudSetRepository } from './word-cloud-set.repository';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 
 // Regression tests for the $expr COLLSCAN on optional-field filters:
 // publicResultsToken (WordCloudSet) and wordCloudSetId (WordCloud) are
@@ -18,6 +20,7 @@ describe('WordCloudSetRepository (raw index-eligible queries)', () => {
   };
 
   const SET_ID = '6a4b4a4e481e3caefd634d01';
+  const SUBJECT_ID = '6a4b4a4e481e3caefd634f01';
 
   const rawSet = {
     _id: { $oid: SET_ID },
@@ -55,6 +58,7 @@ describe('WordCloudSetRepository (raw index-eligible queries)', () => {
       providers: [
         WordCloudSetRepository,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CacheService, useValue: createPassthroughCache() },
       ],
     }).compile();
 
@@ -214,7 +218,9 @@ describe('WordCloudSetRepository (raw index-eligible queries)', () => {
     it('issues a plain-filter multi update including updateAt', async () => {
       mockPrisma.$runCommandRaw.mockResolvedValue({ ok: 1, n: 2, nModified: 2 });
 
-      await repository.updateQuestionsBySetId(SET_ID, { status: 'CLOSED' });
+      await repository.updateQuestionsBySetId(SET_ID, SUBJECT_ID, {
+        status: 'CLOSED',
+      });
 
       expect(mockPrisma.$runCommandRaw).toHaveBeenCalledWith({
         update: 'WordCloud',
@@ -242,7 +248,9 @@ describe('WordCloudSetRepository (raw index-eligible queries)', () => {
       });
 
       await expect(
-        repository.updateQuestionsBySetId(SET_ID, { status: 'CLOSED' }),
+        repository.updateQuestionsBySetId(SET_ID, SUBJECT_ID, {
+          status: 'CLOSED',
+        }),
       ).rejects.toThrow(/Failed to cascade/);
     });
   });

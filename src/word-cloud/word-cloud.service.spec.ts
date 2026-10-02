@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { WordCloudService } from './word-cloud.service';
 
@@ -17,6 +19,7 @@ describe('WordCloudService', () => {
       providers: [
         WordCloudService,
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: CacheService, useValue: createPassthroughCache() },
         {
           provide: TeacherOnSubjectService,
           useValue: { ValidateAccess: mockValidateAccess },

@@ -6,6 +6,8 @@ import {
 import { Prisma, WordCloud, WordCloudAnswer } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 export type Repository = {
   findMany(request: Prisma.WordCloudFindManyArgs): Promise<WordCloud[]>;
@@ -27,7 +29,10 @@ export type Repository = {
 @Injectable()
 export class WordCloudRepository implements Repository {
   private logger = new Logger(WordCloudRepository.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {}
 
   private handle(error: unknown): never {
     this.logger.error(error);
@@ -61,7 +66,9 @@ export class WordCloudRepository implements Repository {
 
   async create(request: Prisma.WordCloudCreateArgs): Promise<WordCloud> {
     try {
-      return await this.prisma.wordCloud.create(request);
+      const result = await this.prisma.wordCloud.create(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -69,7 +76,9 @@ export class WordCloudRepository implements Repository {
 
   async update(request: Prisma.WordCloudUpdateArgs): Promise<WordCloud> {
     try {
-      return await this.prisma.wordCloud.update(request);
+      const result = await this.prisma.wordCloud.update(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -80,9 +89,11 @@ export class WordCloudRepository implements Repository {
       await this.prisma.wordCloudAnswer.deleteMany({
         where: { wordCloudId: request.wordCloudId },
       });
-      return await this.prisma.wordCloud.delete({
+      const result = await this.prisma.wordCloud.delete({
         where: { id: request.wordCloudId },
       });
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
@@ -112,7 +123,9 @@ export class WordCloudRepository implements Repository {
     request: Prisma.WordCloudAnswerCreateArgs,
   ): Promise<WordCloudAnswer> {
     try {
-      return await this.prisma.wordCloudAnswer.create(request);
+      const result = await this.prisma.wordCloudAnswer.create(request);
+      await this.cache.bump(subjectScope(result.subjectId, 'wordcloud'));
+      return result;
     } catch (error) {
       this.handle(error);
     }
