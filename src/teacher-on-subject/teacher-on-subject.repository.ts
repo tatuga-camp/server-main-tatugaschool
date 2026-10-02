@@ -20,7 +20,8 @@ import {
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type TeacherOnSubjectRepositoryType = {
   getById(request: RequestGetTeacherOnSubjectById): Promise<TeacherOnSubject>;
@@ -49,29 +50,13 @@ export class TeacherOnSubjectRepository
   logger: Logger = new Logger(TeacherOnSubjectRepository.name);
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findMany(
     request: Prisma.TeacherOnSubjectFindManyArgs,
   ): Promise<TeacherOnSubject[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.teacherOnSubject.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.teacherOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -186,7 +171,7 @@ export class TeacherOnSubjectRepository
 
       const result = teacherOnSubject;
       if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+        await this.cache.bump(subjectScope(result.subjectId, 'roster'));
       }
 
       return result;
@@ -216,7 +201,7 @@ export class TeacherOnSubjectRepository
 
       const result = teacherOnSubject;
       if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+        await this.cache.bump(subjectScope(result.subjectId, 'roster'));
       }
 
       return result;
@@ -241,7 +226,7 @@ export class TeacherOnSubjectRepository
 
       const result = { message: 'Teacher on subject deleted successfully' };
       if (teacher.subjectId) {
-        await this.redisService?.del(this.getCacheKey(teacher.subjectId));
+        await this.cache.bump(subjectScope(teacher.subjectId, 'roster'));
       }
 
       return result;
@@ -254,9 +239,5 @@ export class TeacherOnSubjectRepository
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `teacher_subject_subjectId:${subjectId}`;
   }
 }

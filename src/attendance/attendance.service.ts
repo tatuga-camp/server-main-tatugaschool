@@ -25,7 +25,6 @@ import { StudentOnSubjectService } from '../student-on-subject/student-on-subjec
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AttendanceRowService } from '../attendance-row/attendance-row.service';
 import { FastifyRequest } from 'fastify';
-import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
@@ -43,7 +42,6 @@ export class AttendanceService {
     private studentOnSubjectService: StudentOnSubjectService,
     private attendanceTableService: AttendanceTableService,
     private attendanceRowService: AttendanceRowService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
     private cache: CacheService,
   ) {
@@ -64,7 +62,7 @@ export class AttendanceService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.subjectRepository = new SubjectRepository(

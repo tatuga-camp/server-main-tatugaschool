@@ -26,6 +26,7 @@ import {
   UpdateMemberOnSchoolDto,
 } from './dto';
 import { MemberOnSchoolRepository } from './member-on-school.repository';
+import { CacheService } from '../cache/cache.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
@@ -40,8 +41,12 @@ export class MemberOnSchoolService {
     private pushService: PushService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
+    private cache: CacheService,
   ) {
-    this.memberOnSchoolRepository = new MemberOnSchoolRepository(prisma);
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(
+      prisma,
+      this.cache,
+    );
     this.userRepository = new UserRepository(prisma);
     this.logger = new Logger(MemberOnSchoolService.name);
   }

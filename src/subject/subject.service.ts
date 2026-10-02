@@ -111,7 +111,7 @@ export class SubjectService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.studentRepository = new StudentRepository(

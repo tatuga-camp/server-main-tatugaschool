@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import {
   CreateTeacherOnSubjectDto,
@@ -32,10 +33,15 @@ export class TeacherOnSubjectService {
     private prisma: PrismaService,
     private config: ConfigService,
     private emailService: EmailService,
+    private cache: CacheService,
   ) {
-    this.memberOnSchoolRepository = new MemberOnSchoolRepository(this.prisma);
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(
+      this.prisma,
+      this.cache,
+    );
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,
+      this.cache,
     );
   }
 

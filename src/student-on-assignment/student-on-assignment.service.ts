@@ -70,7 +70,7 @@ export class StudentOnAssignmentService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
@@ -79,8 +79,12 @@ export class StudentOnAssignmentService {
     );
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,
+      this.cache,
     );
-    this.memberOnSchoolRepository = new MemberOnSchoolRepository(this.prisma);
+    this.memberOnSchoolRepository = new MemberOnSchoolRepository(
+      this.prisma,
+      this.cache,
+    );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,
       this.storageService,

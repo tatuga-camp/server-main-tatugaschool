@@ -1,4 +1,3 @@
-import { RedisService } from './../redis/redis.service';
 import { SchoolService } from './../school/school.service';
 import {
   BadRequestException,
@@ -81,14 +80,13 @@ export class AssignmentService {
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
     private linebotService: LineBotService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
     private cache: CacheService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(

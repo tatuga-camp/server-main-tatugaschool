@@ -20,6 +20,8 @@ import {
   findMemberOnSchoolByInvitationToken,
   findPendingInvitationsByUserOrEmail,
 } from './member-on-school.raw';
+import { CacheService } from '../cache/cache.service';
+import { schoolMembersScope, subjectScope } from '../cache/cache-scopes';
 
 type Repository = {
   create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool>;
@@ -63,7 +65,10 @@ type Repository = {
 @Injectable()
 export class MemberOnSchoolRepository implements Repository {
   private logger: Logger;
-  constructor(private prisma: PrismaService) {
+  constructor(
+    private prisma: PrismaService,
+    private cache: CacheService,
+  ) {
     this.logger = new Logger(MemberOnSchoolRepository.name);
   }
 
@@ -131,11 +136,13 @@ export class MemberOnSchoolRepository implements Repository {
 
   async create(request: RequestCreateMemberOnSchool): Promise<MemberOnSchool> {
     try {
-      return await this.prisma.memberOnSchool.create({
+      const result = await this.prisma.memberOnSchool.create({
         data: {
           ...request,
         },
       });
+      await this.cache.bump(schoolMembersScope(result.schoolId));
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -171,7 +178,7 @@ export class MemberOnSchoolRepository implements Repository {
     request: RequestUpdateMemberOnSchool,
   ): Promise<MemberOnSchool> {
     try {
-      return await this.prisma.memberOnSchool.update({
+      const result = await this.prisma.memberOnSchool.update({
         where: {
           ...request.query,
         },
@@ -179,6 +186,8 @@ export class MemberOnSchoolRepository implements Repository {
           ...request.data,
         },
       });
+      await this.cache.bump(schoolMembersScope(result.schoolId));
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -198,22 +207,33 @@ export class MemberOnSchoolRepository implements Repository {
         },
       });
 
+      let affected: { subjectId: string }[] = [];
       if (memberOnSchool.userId) {
+        const teacherWhere: Prisma.TeacherOnSubjectWhereInput = {
+          userId: memberOnSchool.userId,
+          schoolId: memberOnSchool.schoolId,
+        };
+        affected = await this.prisma.teacherOnSubject.findMany({
+          where: teacherWhere,
+          select: { subjectId: true },
+        });
         await this.prisma.teacherOnSubject.deleteMany({
-          where: {
-            userId: memberOnSchool.userId,
-            schoolId: memberOnSchool.schoolId,
-          },
+          where: teacherWhere,
         });
       }
 
       // Finally, delete the MemberOnSchool record
 
-      return await this.prisma.memberOnSchool.delete({
+      const result = await this.prisma.memberOnSchool.delete({
         where: {
           id: request.memberOnSchoolId,
         },
       });
+      await this.cache.bump(
+        schoolMembersScope(result.schoolId),
+        ...affected.map((a) => subjectScope(a.subjectId, 'roster')),
+      );
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {

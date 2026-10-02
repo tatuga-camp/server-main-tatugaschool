@@ -2,7 +2,6 @@ import { AttendanceRepository } from './../attendance/attendance.repository';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { AttendanceTableRepository } from './attendance-table.repository';
-import { RedisService } from '../redis/redis.service';
 import {
   ForbiddenException,
   Injectable,
@@ -45,7 +44,6 @@ export class AttendanceTableService {
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private storageService: StorageService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
     private cache: CacheService,
   ) {
@@ -53,7 +51,7 @@ export class AttendanceTableService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.attendanceRowRepository = new AttendanceRowRepository(

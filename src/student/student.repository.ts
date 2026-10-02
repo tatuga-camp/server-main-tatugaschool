@@ -43,7 +43,7 @@ export class StudentRepository implements Repository {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.assignmentRepository = new AssignmentRepository(

@@ -16,7 +16,8 @@ import {
 } from './interfaces';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 
 export type StudentOnSubjectRepositoryType = {
@@ -55,7 +56,7 @@ export class StudentOnSubjectRepository
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-    private redisService: RedisService,
+    private cache: CacheService,
     private prismaReadService: PrismaReadService,
   ) {}
 
@@ -119,23 +120,6 @@ export class StudentOnSubjectRepository
     request: Prisma.StudentOnSubjectFindManyArgs,
   ): Promise<StudentOnSubject[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result =
-          await this.prismaReadService.studentOnSubject.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prismaReadService.studentOnSubject.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -176,7 +160,7 @@ export class StudentOnSubjectRepository
         data: request,
       });
       if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+        await this.cache.bump(subjectScope(result.subjectId, 'roster'));
       }
 
       return result;
@@ -197,10 +181,11 @@ export class StudentOnSubjectRepository
     try {
       const create = await this.prisma.studentOnSubject.createMany(request);
 
-      const subjectId = request.data[0]?.subjectId;
-
-      if (typeof subjectId === 'string' && this.redisService) {
-        await this.redisService?.del(this.getCacheKey(subjectId));
+      const first = Array.isArray(request.data)
+        ? request.data[0]
+        : request.data;
+      if (first?.subjectId) {
+        await this.cache.bump(subjectScope(first.subjectId, 'roster'));
       }
 
       return create;
@@ -226,7 +211,7 @@ export class StudentOnSubjectRepository
         data: request.data,
       });
       if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+        await this.cache.bump(subjectScope(result.subjectId, 'roster'));
       }
 
       return result;
@@ -247,7 +232,7 @@ export class StudentOnSubjectRepository
     try {
       const result = await this.prisma.studentOnSubject.update(request);
       if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+        await this.cache.bump(subjectScope(result.subjectId, 'roster'));
       }
 
       return result;
@@ -367,7 +352,12 @@ export class StudentOnSubjectRepository
       });
 
       if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
+        await this.cache.bump(
+          subjectScope(result.subjectId, 'roster'),
+          subjectScope(result.subjectId, 'attendance'),
+          subjectScope(result.subjectId, 'grades'),
+          subjectScope(result.subjectId, 'submissions'),
+        );
       }
 
       return result;
@@ -380,9 +370,5 @@ export class StudentOnSubjectRepository
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `student_subject_subjectId:${subjectId}`;
   }
 }

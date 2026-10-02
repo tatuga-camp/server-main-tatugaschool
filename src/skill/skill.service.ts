@@ -40,6 +40,7 @@ export class SkillService {
     this.skillRepository = new SkillRepository(this.prisma);
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,
+      this.cache,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,

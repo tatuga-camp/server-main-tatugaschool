@@ -75,7 +75,7 @@ export class SkillOnStudentAssignmentService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
   }

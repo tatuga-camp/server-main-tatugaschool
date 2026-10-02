@@ -18,7 +18,7 @@ import {
 import { ScoreOnStudent, User } from '@prisma/client';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 
 @Injectable()
@@ -30,13 +30,13 @@ export class ScoreOnStudentService {
     private prisma: PrismaService,
     private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-    private redisService: RedisService,
     private prismaReadService: PrismaReadService,
+    private cache: CacheService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);

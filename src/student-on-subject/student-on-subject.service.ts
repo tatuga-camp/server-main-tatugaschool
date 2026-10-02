@@ -83,7 +83,7 @@ export class StudentOnSubjectService {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
       this.storageService,
-      this.redisService,
+      this.cache,
       this.prismaReadService,
     );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);

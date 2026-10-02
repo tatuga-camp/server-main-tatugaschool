@@ -3,7 +3,8 @@ import { ScoreOnStudentService } from './score-on-student.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 
@@ -40,7 +41,7 @@ describe('ScoreOnStudentService', () => {
           provide: TeacherOnSubjectService,
           useValue: mockTeacherOnSubjectService,
         },
-        { provide: RedisService, useValue: {} },
+        { provide: CacheService, useValue: createPassthroughCache() },
         { provide: PrismaReadService, useValue: {} },
       ],
     }).compile();

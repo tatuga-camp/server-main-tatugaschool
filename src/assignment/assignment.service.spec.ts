@@ -18,7 +18,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
 import { StudentService } from '../student/student.service';
 import { SchoolService } from '../school/school.service';
 import { LineBotService } from '../line-bot/line-bot.service';
-import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import {
   NotFoundException,
@@ -142,7 +141,6 @@ describe('AssignmentService', () => {
         { provide: StudentService, useValue: mockStudentService },
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: LineBotService, useValue: mockLineBotService },
-        { provide: RedisService, useValue: {} },
         { provide: PrismaReadService, useValue: {} },
       ],
     }).compile();

@@ -9,7 +9,6 @@ import { StorageService } from '../storage/storage.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { AttendanceRowService } from '../attendance-row/attendance-row.service';
-import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import {
   NotFoundException,
@@ -41,7 +40,6 @@ describe('AttendanceService', () => {
   };
   const mockAttendanceTableService = { getBySubjectId: jest.fn() };
   const mockAttendanceRowService = {};
-  const mockRedisService = {};
   const mockPrismaReadService = {};
 
   beforeEach(async () => {
@@ -60,7 +58,6 @@ describe('AttendanceService', () => {
           useValue: mockAttendanceTableService,
         },
         { provide: AttendanceRowService, useValue: mockAttendanceRowService },
-        { provide: RedisService, useValue: mockRedisService },
         { provide: PrismaReadService, useValue: mockPrismaReadService },
       ],
     }).compile();

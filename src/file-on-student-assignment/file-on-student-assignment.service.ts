@@ -63,6 +63,7 @@ export class FileOnStudentAssignmentService {
     );
     this.teacherOnSubjectRepository = new TeacherOnSubjectRepository(
       this.prisma,
+      this.cache,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,

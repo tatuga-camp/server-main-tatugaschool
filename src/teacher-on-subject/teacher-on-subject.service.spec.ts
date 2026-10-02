@@ -1,6 +1,8 @@
 jest.mock('../member-on-school/member-on-school.raw');
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { TeacherOnSubjectService } from './teacher-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
@@ -43,6 +45,7 @@ describe('TeacherOnSubjectService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: EmailService, useValue: mockEmailService },
+        { provide: CacheService, useValue: createPassthroughCache() },
       ],
     }).compile();
 

@@ -17,6 +17,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { GroupOnSubjectRepository } from '../group-on-subject/group-on-subject.repository';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { CacheService } from '../cache/cache.service';
+import { ALL_SUBJECT_SCOPE_KINDS, subjectScope } from '../cache/cache-scopes';
 
 type Repository = {
   getSubjectById(request: RequestGetSubjectById): Promise<Subject | null>;
@@ -27,6 +28,7 @@ type Repository = {
   update(request: Prisma.SubjectUpdateArgs): Promise<Subject>;
   updateMany(
     request: Prisma.SubjectUpdateManyArgs,
+    subjectIds: string[],
   ): Promise<Prisma.BatchPayload>;
   deleteSubject(
     request: RequestDeleteSubject,
@@ -99,9 +101,16 @@ export class SubjectRepository implements Repository {
 
   async updateMany(
     request: Prisma.SubjectUpdateManyArgs,
+    subjectIds: string[],
   ): Promise<Prisma.BatchPayload> {
     try {
-      return await this.prisma.subject.updateMany(request);
+      const result = await this.prisma.subject.updateMany(request);
+      if (subjectIds.length > 0) {
+        await this.cache.bump(
+          ...subjectIds.map((id) => subjectScope(id, 'roster')),
+        );
+      }
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -151,11 +160,13 @@ export class SubjectRepository implements Repository {
 
   async createSubject(request: RequestCreateSubject): Promise<Subject> {
     try {
-      return await this.prisma.subject.create({
+      const result = await this.prisma.subject.create({
         data: {
           ...request,
         },
       });
+      await this.cache.bump(subjectScope(result.id, 'roster'));
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -169,7 +180,9 @@ export class SubjectRepository implements Repository {
 
   async update(request: Prisma.SubjectUpdateArgs): Promise<Subject> {
     try {
-      return await this.prisma.subject.update(request);
+      const result = await this.prisma.subject.update(request);
+      await this.cache.bump(subjectScope(result.id, 'roster'));
+      return result;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -194,7 +207,13 @@ export class SubjectRepository implements Repository {
         });
       });
 
-      return Promise.all(updatedSubjects);
+      const updated = await Promise.all(updatedSubjects);
+      if (updated.length > 0) {
+        await this.cache.bump(
+          ...updated.map((u) => subjectScope(u.id, 'roster')),
+        );
+      }
+      return updated;
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -350,6 +369,10 @@ export class SubjectRepository implements Repository {
       const subject = await this.prisma.subject.delete({
         where: { id: subjectId },
       });
+
+      await this.cache.bump(
+        ...ALL_SUBJECT_SCOPE_KINDS.map((k) => subjectScope(subject.id, k)),
+      );
 
       return { ...subject, totalDeleteSize };
     } catch (error) {
