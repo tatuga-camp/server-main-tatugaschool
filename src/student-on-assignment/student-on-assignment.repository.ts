@@ -16,7 +16,7 @@ import { Prisma, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CacheService } from '../cache/cache.service';
-import { subjectScope } from '../cache/cache-scopes';
+import { subjectIdsOf, subjectScope } from '../cache/cache-scopes';
 
 type StudentOnAssignmentRepositoryType = {
   getById(
@@ -190,12 +190,10 @@ export class StudentOnAssignmentRepository
   ): Promise<Prisma.BatchPayload> {
     try {
       const result = await this.prisma.studentOnAssignment.createMany(request);
-      const first = Array.isArray(request.data)
-        ? request.data[0]
-        : request.data;
-      if (first?.subjectId) {
-        await this.cache.bump(subjectScope(first.subjectId, 'submissions'));
-      }
+      const scopes = subjectIdsOf(request.data).map((id) =>
+        subjectScope(id, 'submissions'),
+      );
+      if (scopes.length > 0) await this.cache.bump(...scopes);
       return result;
     } catch (error) {
       this.logger.error(error);

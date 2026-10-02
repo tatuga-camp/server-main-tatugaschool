@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, QuestionOnVideo } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CacheService } from '../cache/cache.service';
-import { subjectScope } from '../cache/cache-scopes';
+import { subjectIdsOf, subjectScope } from '../cache/cache-scopes';
 
 export type Repository = {
   findFirst(
@@ -128,12 +128,10 @@ export class AssignmentVideoQuizRepository implements Repository {
     try {
       const result = await this.prisma.questionOnVideo.createMany(args);
 
-      const subjectId = Array.isArray(args.data)
-        ? args.data[0]?.subjectId
-        : args.data?.subjectId;
-      if (subjectId) {
-        await this.cache.bump(subjectScope(subjectId, 'assignments'));
-      }
+      const scopes = subjectIdsOf(args.data).map((id) =>
+        subjectScope(id, 'assignments'),
+      );
+      if (scopes.length > 0) await this.cache.bump(...scopes);
 
       return result;
     } catch (error) {

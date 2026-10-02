@@ -17,7 +17,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { CacheService } from '../cache/cache.service';
-import { subjectScope } from '../cache/cache-scopes';
+import { subjectIdsOf, subjectScope } from '../cache/cache-scopes';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 
 export type StudentOnSubjectRepositoryType = {
@@ -181,12 +181,10 @@ export class StudentOnSubjectRepository
     try {
       const create = await this.prisma.studentOnSubject.createMany(request);
 
-      const first = Array.isArray(request.data)
-        ? request.data[0]
-        : request.data;
-      if (first?.subjectId) {
-        await this.cache.bump(subjectScope(first.subjectId, 'roster'));
-      }
+      const scopes = subjectIdsOf(request.data).map((id) =>
+        subjectScope(id, 'roster'),
+      );
+      if (scopes.length > 0) await this.cache.bump(...scopes);
 
       return create;
     } catch (error) {

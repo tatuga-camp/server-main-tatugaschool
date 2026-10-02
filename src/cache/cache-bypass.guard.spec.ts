@@ -1,13 +1,10 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative } from 'path';
-
-const CACHED_MODELS =
-  'assignment|fileOnAssignment|questionOnVideo|skillOnAssignment|studentOnAssignment|fileOnStudentAssignment|commentOnAssignment|attendanceTable|attendanceRow|attendance|attendanceStatusList|subject|studentOnSubject|teacherOnSubject|scoreOnSubject|scoreOnStudent|gradeRange|wordCloudSet|wordCloud|wordCloudAnswer|memberOnSchool';
-const WRITE = 'create|createMany|update|updateMany|delete|deleteMany|upsert';
-const PATTERN = new RegExp(
-  `\\b(?:this\\.prisma|prisma|tx)\\.(${CACHED_MODELS})\\.(${WRITE})\\b`,
-  'g',
-);
+import {
+  findGuardOffenders,
+  guardWriteKeys,
+  GuardFile,
+} from './testing/cache-guard';
 
 // file:model.op -> why the direct write is safe (it bumps explicitly).
 const ALLOWED: Record<string, string> = {
@@ -34,36 +31,28 @@ function walk(dir: string): string[] {
   });
 }
 
+function sourceFiles(): GuardFile[] {
+  const root = join(__dirname, '..');
+  return walk(root)
+    .filter(
+      (file) =>
+        file.endsWith('.ts') &&
+        !file.endsWith('.spec.ts') &&
+        !file.includes(`${join('cache', 'testing')}`),
+    )
+    .map((file) => ({
+      rel: relative(root, file).split('\\').join('/'),
+      source: readFileSync(file, 'utf8'),
+    }));
+}
+
 describe('cache invalidation guard', () => {
-  it('no direct write to a cached model outside repositories unless allow-listed', () => {
-    const root = join(__dirname, '..');
-    const offenders: string[] = [];
-    for (const file of walk(root)) {
-      if (
-        !file.endsWith('.ts') ||
-        file.endsWith('.spec.ts') ||
-        file.endsWith('.repository.ts')
-      )
-        continue;
-      const rel = relative(root, file).split('\\').join('/');
-      for (const m of readFileSync(file, 'utf8').matchAll(PATTERN)) {
-        const key = `${rel}:${m[1]}.${m[2]}`;
-        if (!(key in ALLOWED)) offenders.push(key);
-      }
-    }
-    expect(offenders).toEqual([]);
+  it('every write to a cached model bumps: repositories call cache.bump, other files are allow-listed', () => {
+    expect(findGuardOffenders(sourceFiles(), ALLOWED)).toEqual([]);
   });
 
   it('every allow-list entry still matches a direct write (no stale entries)', () => {
-    const root = join(__dirname, '..');
-    const seen = new Set<string>();
-    for (const file of walk(root)) {
-      if (!file.endsWith('.ts') || file.endsWith('.spec.ts')) continue;
-      const rel = relative(root, file).split('\\').join('/');
-      for (const m of readFileSync(file, 'utf8').matchAll(PATTERN)) {
-        seen.add(`${rel}:${m[1]}.${m[2]}`);
-      }
-    }
+    const seen = guardWriteKeys(sourceFiles());
     expect(Object.keys(ALLOWED).filter((key) => !seen.has(key))).toEqual([]);
   });
 });
