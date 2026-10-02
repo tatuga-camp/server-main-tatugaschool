@@ -53,6 +53,8 @@ import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { AssignmentReads } from './assignment.reads';
+import { EMPTY_COUNTS } from './submission-counts';
 
 @Injectable()
 export class AssignmentService {
@@ -61,6 +63,7 @@ export class AssignmentService {
   private fileAssignmentRepository: FileAssignmentRepository;
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   private studentOnSubjectRepository: StudentOnSubjectRepository;
+  reads: AssignmentReads;
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
@@ -103,6 +106,7 @@ export class AssignmentService {
       this.storageService,
       this.cache,
     );
+    this.reads = new AssignmentReads(this.prisma, this.cache);
   }
 
   async getAssignmentById(
@@ -165,105 +169,40 @@ export class AssignmentService {
           subjectId: dto.subjectId,
         });
       }
-      let studentsOnAssignments: StudentOnAssignment[] = [];
+      let mine: StudentOnAssignment[] = [];
       if (student) {
-        const studentOnSubject =
-          await this.studentOnSubjectRepository.findFirst({
-            where: { studentId: student.id, subjectId: dto.subjectId },
-          });
-
-        if (!studentOnSubject) {
+        const enrollment = await this.reads.enrollment(
+          dto.subjectId,
+          student.id,
+        );
+        if (!enrollment) {
           throw new ForbiddenException('Student not enrolled in this subject');
         }
-        studentsOnAssignments =
-          await this.studentOnAssignmentRepository.findMany({
-            where: {
-              subjectId: dto.subjectId,
-              studentOnSubjectId: studentOnSubject.id,
-              isAssigned: true,
-            },
-          });
+        mine = (
+          await this.reads.studentSubmissions(dto.subjectId, enrollment.id)
+        ).filter((s) => s.isAssigned);
+        if (mine.length === 0) return [];
       }
-
-      let assignments =
-        student && studentsOnAssignments.length === 0
-          ? []
-          : await this.assignmentRepository.findMany({
-              where: {
-                ...(student
-                  ? {
-                      id: {
-                        in: studentsOnAssignments.map((s) => s.assignmentId),
-                      },
-                    }
-                  : { subjectId: dto.subjectId }),
-              },
-            });
-
-      if (student) {
-        assignments = assignments.filter(
-          (assignment) => assignment.status === 'Published',
-        );
-      }
-
-      const allStudentOnAssignments =
-        await this.studentOnAssignmentRepository.findMany({
-          where: {
-            subjectId: dto.subjectId,
-          },
-        });
-
-      const files =
-        assignments.length > 0
-          ? await this.fileAssignmentRepository.findMany({
-              where: {
-                assignmentId: {
-                  in: assignments.map((assignment) => assignment.id),
-                },
-              },
-            })
-          : [];
-      let questions: QuestionOnVideo[] = [];
-
-      if (assignments.some((a) => a.type === 'VideoQuiz')) {
-        questions = await this.assignmentVideoQuizRepository.findMany({
-          where: {
-            assignmentId: {
-              in: assignments
-                .filter((a) => a.type === 'VideoQuiz')
-                .map((a) => a.id),
-            },
-          },
-        });
-      }
-
-      return assignments.map((assignment) => {
-        const studentOnAssignments = allStudentOnAssignments.filter(
-          (s) => s.assignmentId === assignment.id,
-        );
-        return {
-          ...assignment,
-          questions: questions.filter((a) => a.assignmentId === assignment.id),
-          studentAssign: studentOnAssignments.length,
-          summitNumber: studentOnAssignments.filter(
-            (s) => s.status === 'SUBMITTED',
-          ).length,
-          penddingNumber: studentOnAssignments.filter(
-            (s) => s.status === 'PENDDING' && s.isAssigned === true,
-          ).length,
-          reviewNumber: studentOnAssignments.filter(
-            (s) => s.status === 'REVIEWD',
-          ).length,
-          files:
-            files.filter((file) => file.assignmentId === assignment.id) ?? [],
-          studentOnAssignment:
-            studentsOnAssignments.length > 0
-              ? studentsOnAssignments.find(
-                  (s) => s.assignmentId === assignment.id,
-                )
-              : undefined,
-        };
-      });
+      const [{ assignments, files, questions }, counts] = await Promise.all([
+        this.reads.subjectAssignments(dto.subjectId),
+        this.reads.submissionCounts(dto.subjectId),
+      ]);
+      const visible = student
+        ? assignments.filter(
+            (a) =>
+              a.status === 'Published' &&
+              mine.some((s) => s.assignmentId === a.id),
+          )
+        : assignments;
+      return visible.map((assignment) => ({
+        ...(assignment as Assignment),
+        ...(counts[assignment.id] ?? EMPTY_COUNTS),
+        questions: questions.filter((q) => q.assignmentId === assignment.id),
+        files: files.filter((f) => f.assignmentId === assignment.id),
+        studentOnAssignment: student
+          ? mine.find((s) => s.assignmentId === assignment.id)
+          : undefined,
+      }));
     } catch (error) {
       this.logger.error(error);
       throw error;
