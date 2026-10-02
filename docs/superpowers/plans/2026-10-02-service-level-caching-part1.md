@@ -4,7 +4,11 @@
 
 **Goal:** Add a `CacheService` with versioned scopes, make every cached-model repository bump the right scope after each write, and remove the old repository-level Redis caches. This is rollout step 1: behaviour-neutral, and nothing reads the new cache yet.
 
-**Architecture:** `CacheService` (global Nest module) wraps the existing ioredis `RedisService`. `bump(scope)` runs `INCR ver:<scope>`, and `getOrSet` keys values by the current scope versions. Repositories take a **required** `CacheService` constructor argument and call `bump` after each successful write. This plan has three files, executed in order: part 1 (Tasks 1–2, this file), `2026-10-02-service-level-caching-part2.md` (Tasks 3–8, the remaining repositories, bypass writes and the guard test; together these are rollout step 1), and `2026-10-02-service-level-caching-part3.md` (Tasks 9–17, the cached reads; rollout steps 2–4).
+**Architecture:** `CacheService` (global Nest module) wraps the existing ioredis `RedisService`. `bump(scope)` runs `INCR ver:<scope>`, and `getOrSet` keys values by the current scope versions. Repositories take a **required** `CacheService` constructor argument and call `bump` after each successful write. The plan has four files, executed in order:
+1. Part 1 (this file): Tasks 1–2.
+2. `2026-10-02-service-level-caching-part2.md`: Tasks 3–8, covering the remaining repositories, bypass writes and the guard test. Parts 1 and 2 together are rollout step 1.
+3. `2026-10-02-service-level-caching-part3.md`: Tasks 9–11, rollout step 2.
+4. `2026-10-02-service-level-caching-part4.md`: Tasks 12–17, rollout steps 3–4.
 
 **Tech Stack:** NestJS 10, Prisma 6.19.3 (MongoDB), ioredis 5, Jest 29 + ts-jest (`isolatedModules: true`, so **tests do not type-check; `bun run build` does**), Bun.
 
