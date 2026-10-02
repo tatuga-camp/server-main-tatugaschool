@@ -129,12 +129,18 @@ export class SubjectService {
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.fileOnStudentAssignmentRepository =
-      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
+      new FileOnStudentAssignmentRepository(
+        this.prisma,
+        this.storageService,
+        this.cache,
+      );
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
     this.commentAssignmentRepository = new CommentAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.skillOnAssignmentRepository = new SkillOnAssignmentRepository(
       this.prisma,

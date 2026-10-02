@@ -15,7 +15,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 import { Prisma } from '@prisma/client';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type CommentAssignmentRepositoryType = {
   findMany(
@@ -35,29 +36,13 @@ export class CommentAssignmentRepository
   logger: Logger = new Logger(CommentAssignmentRepository.name);
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findMany(
     request: Prisma.CommentOnAssignmentFindManyArgs,
   ): Promise<CommentOnAssignment[]> {
     try {
-      const subjectId = request.where?.subjectId;
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.commentOnAssignment.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.commentOnAssignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -97,9 +82,7 @@ export class CommentAssignmentRepository
       const result = await this.prisma.commentOnAssignment.create({
         data: request,
       });
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'submissions'));
 
       return result;
     } catch (error) {
@@ -125,9 +108,7 @@ export class CommentAssignmentRepository
           ...request.body,
         },
       });
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -151,9 +132,7 @@ export class CommentAssignmentRepository
           id: commentOnAssignmentId,
         },
       });
-      if (result.subjectId) {
-        await this.redisService?.del(this.getCacheKey(result.subjectId));
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -164,9 +143,5 @@ export class CommentAssignmentRepository
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `comment_assignment_subjectId:${subjectId}`;
   }
 }

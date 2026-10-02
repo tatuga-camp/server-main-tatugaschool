@@ -64,6 +64,7 @@ export class SkillOnStudentAssignmentService {
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.assignmentRepository = new AssignmentRepository(
       this.prisma,

@@ -89,6 +89,7 @@ export class StudentOnSubjectService {
     this.scoreOnStudentRepository = new ScoreOnStudentRepository(this.prisma);
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.subjectRepository = new SubjectRepository(
       this.prisma,
@@ -522,14 +523,17 @@ export class StudentOnSubjectService {
         });
 
       if (dto.data?.isActive === false) {
-        await this.studentOnAssignmentRepository.updateMany({
-          where: {
-            studentOnSubjectId: studentOnSubject.id,
+        await this.studentOnAssignmentRepository.updateMany(
+          {
+            where: {
+              studentOnSubjectId: studentOnSubject.id,
+            },
+            data: {
+              isAssigned: dto.data.isActive,
+            },
           },
-          data: {
-            isAssigned: dto.data.isActive,
-          },
-        });
+          studentOnSubject.subjectId,
+        );
       }
 
       if (dto.data.photo && dto.data.blurHash) {

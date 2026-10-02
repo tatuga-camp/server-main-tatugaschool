@@ -46,9 +46,14 @@ export class FileOnStudentAssignmentService {
   ) {
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.fileOnStudentAssignmentRepository =
-      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
+      new FileOnStudentAssignmentRepository(
+        this.prisma,
+        this.storageService,
+        this.cache,
+      );
     this.schoolRepository = new SchoolRepository(
       this.prisma,
       this.storageService,

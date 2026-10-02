@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { FileOnStudentAssignmentRepository } from './file-on-student-assignment.repository';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 
 describe('FileOnStudentAssignmentRepository.delete (concurrent / double delete)', () => {
   let repository: FileOnStudentAssignmentRepository;
@@ -20,6 +21,7 @@ describe('FileOnStudentAssignmentRepository.delete (concurrent / double delete)'
     repository = new FileOnStudentAssignmentRepository(
       mockPrisma as any,
       mockStorageService as any,
+      createPassthroughCache(),
     );
     // Silence the expected error log noise during the test.
     jest.spyOn(repository.logger, 'error').mockImplementation(() => undefined);

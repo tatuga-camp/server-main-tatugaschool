@@ -62,6 +62,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,
@@ -69,7 +70,11 @@ export class AssignmentRepository implements AssignmentRepositoryType {
       this.cache,
     );
     this.fileOnStudentAssignmentRepository =
-      new FileOnStudentAssignmentRepository(this.prisma, this.storageService);
+      new FileOnStudentAssignmentRepository(
+        this.prisma,
+        this.storageService,
+        this.cache,
+      );
   }
 
   async getById(request: RequestGetAssignmentById): Promise<Assignment> {
@@ -273,6 +278,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
       await this.studentOnAssignmentRepository.deleteByAssignmentId({
         assignmentId: request.assignmentId,
+        subjectId: ref.subjectId,
       });
 
       const assignment = await this.prisma.assignment.delete({

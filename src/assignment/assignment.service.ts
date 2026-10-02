@@ -93,6 +93,7 @@ export class AssignmentService {
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.fileAssignmentRepository = new FileAssignmentRepository(
       this.prisma,

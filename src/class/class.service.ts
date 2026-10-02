@@ -73,6 +73,7 @@ export class ClassService {
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
   }
 

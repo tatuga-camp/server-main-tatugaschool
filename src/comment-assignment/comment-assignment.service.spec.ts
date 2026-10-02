@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { NotificationService } from '../notification/notification.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { CacheService } from '../cache/cache.service';
+import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -45,6 +47,7 @@ describe('CommentAssignmentService', () => {
           useValue: mockTeacherOnSubjectService,
         },
         { provide: NotificationService, useValue: mockNotificationService },
+        { provide: CacheService, useValue: createPassthroughCache() },
       ],
     }).compile();
 

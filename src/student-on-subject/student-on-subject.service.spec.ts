@@ -179,6 +179,7 @@ describe('StudentOnSubjectService', () => {
         (service as any).studentOnAssignmentRepository.updateMany,
       ).toHaveBeenCalledWith(
         expect.objectContaining({ data: { isAssigned: false } }),
+        's1',
       );
       expect(result.isActive).toBe(false);
     });

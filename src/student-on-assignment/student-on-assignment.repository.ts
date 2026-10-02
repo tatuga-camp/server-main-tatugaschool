@@ -15,7 +15,8 @@ import {
 import { Prisma, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { RedisService } from '../redis/redis.service';
+import { CacheService } from '../cache/cache.service';
+import { subjectScope } from '../cache/cache-scopes';
 
 type StudentOnAssignmentRepositoryType = {
   getById(
@@ -44,12 +45,14 @@ type StudentOnAssignmentRepositoryType = {
   ): Promise<StudentOnAssignment>;
   updateMany(
     request: Prisma.StudentOnAssignmentUpdateManyArgs,
+    subjectId: string,
   ): Promise<Prisma.BatchPayload>;
   delete(
     request: RequestDeleteStudentOnAssignment,
   ): Promise<{ message: string }>;
   deleteByAssignmentId(request: {
     assignmentId: string;
+    subjectId: string;
   }): Promise<{ message: string }>;
 };
 @Injectable()
@@ -59,30 +62,13 @@ export class StudentOnAssignmentRepository
   logger: Logger = new Logger(StudentOnAssignmentRepository.name);
   constructor(
     private prisma: PrismaService,
-    private redisService?: RedisService,
+    private cache: CacheService,
   ) {}
 
   async findMany(
     request: Prisma.StudentOnAssignmentFindManyArgs,
   ): Promise<StudentOnAssignment[]> {
     try {
-      const subjectId = request.where?.subjectId;
-
-      if (typeof subjectId === 'string' && this.redisService) {
-        const cacheKey = this.getCacheKey(subjectId);
-        const field = JSON.stringify(request);
-        const cached = await this.redisService.hget(cacheKey, field);
-        if (cached) {
-          return JSON.parse(cached);
-        }
-
-        const result = await this.prisma.studentOnAssignment.findMany(request);
-        if (result && Array.isArray(result) && result.length > 0) {
-          await this.redisService.hset(cacheKey, field, JSON.stringify(result));
-          await this.redisService.expire(cacheKey, 3600);
-        }
-        return result;
-      }
       return await this.prisma.studentOnAssignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -183,15 +169,7 @@ export class StudentOnAssignmentRepository
       const result = await this.prisma.studentOnAssignment.create({
         data: request,
       });
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        }
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -211,17 +189,12 @@ export class StudentOnAssignmentRepository
     request: Prisma.StudentOnAssignmentCreateManyArgs,
   ): Promise<Prisma.BatchPayload> {
     try {
-      const create = await this.prisma.studentOnAssignment.createMany(request);
-
-      const result = create;
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        }
+      const result = await this.prisma.studentOnAssignment.createMany(request);
+      const first = Array.isArray(request.data)
+        ? request.data[0]
+        : request.data;
+      if (first?.subjectId) {
+        await this.cache.bump(subjectScope(first.subjectId, 'submissions'));
       }
       return result;
     } catch (error) {
@@ -243,15 +216,7 @@ export class StudentOnAssignmentRepository
   ): Promise<StudentOnAssignment> {
     try {
       const result = await this.prisma.studentOnAssignment.update(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        }
-      }
+      await this.cache.bump(subjectScope(result.subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -266,18 +231,11 @@ export class StudentOnAssignmentRepository
 
   async updateMany(
     request: Prisma.StudentOnAssignmentUpdateManyArgs,
+    subjectId: string,
   ): Promise<Prisma.BatchPayload> {
     try {
       const result = await this.prisma.studentOnAssignment.updateMany(request);
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        }
-      }
+      await this.cache.bump(subjectScope(subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -294,22 +252,14 @@ export class StudentOnAssignmentRepository
     request: RequestDeleteStudentOnAssignment,
   ): Promise<{ message: string }> {
     try {
-      await this.prisma.studentOnAssignment.delete({
+      const deleted = await this.prisma.studentOnAssignment.delete({
         where: {
           id: request.studentOnAssignmentId,
         },
       });
 
       const result = { message: 'Student on assignment deleted successfully' };
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        }
-      }
+      await this.cache.bump(subjectScope(deleted.subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -324,6 +274,7 @@ export class StudentOnAssignmentRepository
 
   async deleteByAssignmentId(request: {
     assignmentId: string;
+    subjectId: string;
   }): Promise<{ message: string }> {
     try {
       await this.prisma.studentOnAssignment.deleteMany({
@@ -333,15 +284,7 @@ export class StudentOnAssignmentRepository
       });
 
       const result = { message: 'Student on assignment deleted successfully' };
-      if (result) {
-        if (Array.isArray(result)) {
-          for (const item of result) {
-            if (item.subjectId) {
-              await this.redisService?.del(this.getCacheKey(item.subjectId));
-            }
-          }
-        }
-      }
+      await this.cache.bump(subjectScope(request.subjectId, 'submissions'));
       return result;
     } catch (error) {
       this.logger.error(error);
@@ -352,9 +295,5 @@ export class StudentOnAssignmentRepository
       }
       throw error;
     }
-  }
-
-  private getCacheKey(subjectId: string): string {
-    return `student_assignment_subjectId:${subjectId}`;
   }
 }

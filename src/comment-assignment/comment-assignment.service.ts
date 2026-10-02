@@ -18,6 +18,7 @@ import {
 } from './dto';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { UserRepository } from '../users/users.repository';
+import { CacheService } from '../cache/cache.service';
 
 @Injectable()
 export class CommentAssignmentService {
@@ -30,12 +31,15 @@ export class CommentAssignmentService {
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     private notificationService: NotificationService,
+    private cache: CacheService,
   ) {
     this.commentAssignmentRepository = new CommentAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.studentOnAssignmentRepository = new StudentOnAssignmentRepository(
       this.prisma,
+      this.cache,
     );
     this.userRepository = new UserRepository(this.prisma);
   }
