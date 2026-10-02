@@ -183,9 +183,9 @@ describe('AssignmentService', () => {
   // getAssignmentById
   // ─────────────────────────────────────────────────────────────────────────────
   describe('getAssignmentById', () => {
-    it('should return assignment with files and skills, stripping vector', async () => {
+    it('should return assignment with files and skills', async () => {
       const mockUser = { id: 'user1' } as any;
-      const mockAssignment = { id: 'a1', subjectId: 's1', vector: 'v' };
+      const mockAssignment = { id: 'a1', subjectId: 's1' };
       const mockFiles = [{ id: 'f1' }];
       const mockSkills = [{ skill: { id: 'sk1' } }];
 
@@ -215,7 +215,6 @@ describe('AssignmentService', () => {
       expect(result.id).toBe('a1');
       expect(result.files).toEqual(mockFiles);
       expect(result.skills).toEqual([{ id: 'sk1' }]);
-      expect((result as any).vector).toBeUndefined();
     });
 
     it('should throw NotFoundException if assignment is not found', async () => {
@@ -1340,12 +1339,12 @@ describe('AssignmentService', () => {
   // reorder
   // ─────────────────────────────────────────────────────────────────────────────
   describe('reorder', () => {
-    it('should reorder assignments and return sorted list without vector', async () => {
+    it('should reorder assignments and return the sorted list', async () => {
       const mockUser = { id: 'u1' } as any;
       const dto: any = { assignmentIds: ['a1', 'a2'] };
       const mockAssignments = [
-        { id: 'a1', subjectId: 's1', vector: 'v1' },
-        { id: 'a2', subjectId: 's1', vector: 'v2' },
+        { id: 'a1', subjectId: 's1' },
+        { id: 'a2', subjectId: 's1' },
       ];
 
       (service.assignmentRepository.findMany as jest.Mock).mockResolvedValue(
@@ -1353,8 +1352,8 @@ describe('AssignmentService', () => {
       );
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       (service.assignmentRepository.update as jest.Mock)
-        .mockResolvedValueOnce({ id: 'a1', order: 1, vector: 'v1' })
-        .mockResolvedValueOnce({ id: 'a2', order: 2, vector: 'v2' });
+        .mockResolvedValueOnce({ id: 'a1', order: 1 })
+        .mockResolvedValueOnce({ id: 'a2', order: 2 });
 
       const result = await service.reorder(dto, mockUser);
 
@@ -1367,7 +1366,10 @@ describe('AssignmentService', () => {
         where: { id: 'a2' },
         data: { order: 2 },
       });
-      expect(result.every((a) => (a as any).vector === undefined)).toBe(true);
+      expect(result).toEqual([
+        { id: 'a1', order: 1 },
+        { id: 'a2', order: 2 },
+      ]);
     });
 
     it('should throw NotFoundException if not all assignments are found', async () => {

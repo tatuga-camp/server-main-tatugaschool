@@ -35,8 +35,9 @@ COPY prisma ./prisma/
 RUN bun install --ci --production --no-cache && \
     rm -rf /root/.bun/install/cache
 
-# Generate Prisma client
-RUN bunx prisma generate && \
+# Pinned: the prisma CLI is a devDependency and absent here, so an unpinned
+# bunx would fetch npm latest. Keep in sync with package.json.
+RUN bunx prisma@6.19.3 generate && \
     rm -rf /root/.bun/install/cache
 
 # Copy built application from builder stage

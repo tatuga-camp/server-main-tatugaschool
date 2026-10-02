@@ -61,6 +61,7 @@ export class SkillService {
     try {
       const assignment = await this.assignmentRepository.getById({
         assignmentId: dto.assignmentId,
+        withVector: true,
       });
 
       if (!assignment) {

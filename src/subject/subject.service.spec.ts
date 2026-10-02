@@ -399,6 +399,7 @@ describe('SubjectService', () => {
       expect(mockPrismaService.assignment.update).toHaveBeenCalledWith({
         where: { id: 'na1' },
         data: { rubricId: 'r2' },
+        select: { id: true },
       });
     });
   });
@@ -647,6 +648,23 @@ describe('SubjectService', () => {
       expect(result.id).toBe('s1');
       expect(result.studentOnSubjects.length).toBe(1);
       expect(result.teacherOnSubjects.length).toBe(1);
+    });
+
+    it('does not read verifyLineToken for this unauthenticated response', async () => {
+      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue({
+        id: 's1',
+      });
+      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue([]);
+      mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany.mockResolvedValue(
+        [],
+      );
+
+      await service.getSubjectWithTeacherAndStudent({ code: 'ABC123' });
+
+      expect(service.subjectRepository.findUnique).toHaveBeenCalledWith({
+        where: { code: 'ABC123' },
+        omit: { verifyLineToken: true },
+      });
     });
   });
 

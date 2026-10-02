@@ -133,7 +133,6 @@ export class AssignmentService {
         user,
       );
 
-      assignment.vector = undefined;
       return { ...assignment, files, skills: skills.map((s) => s.skill) };
     } catch (error) {
       this.logger.error(error);
@@ -186,24 +185,17 @@ export class AssignmentService {
       let assignments =
         student && studentsOnAssignments.length === 0
           ? []
-          : await this.assignmentRepository
-              .findMany({
-                where: {
-                  ...(student
-                    ? {
-                        id: {
-                          in: studentsOnAssignments.map((s) => s.assignmentId),
-                        },
-                      }
-                    : { subjectId: dto.subjectId }),
-                },
-              })
-              .then((assignments) => {
-                return assignments.map((assignment) => {
-                  delete assignment.vector;
-                  return { ...assignment };
-                });
-              });
+          : await this.assignmentRepository.findMany({
+              where: {
+                ...(student
+                  ? {
+                      id: {
+                        in: studentsOnAssignments.map((s) => s.assignmentId),
+                      },
+                    }
+                  : { subjectId: dto.subjectId }),
+              },
+            });
 
       if (student) {
         assignments = assignments.filter(
@@ -752,10 +744,7 @@ export class AssignmentService {
         .filter((sort) => sort.status === 'fulfilled')
         .map((sort) => sort.value);
 
-      return successSort.map((sort) => {
-        delete sort.vector;
-        return sort;
-      });
+      return successSort;
     } catch (error) {
       this.logger.error(error);
       throw error;

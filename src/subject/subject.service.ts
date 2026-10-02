@@ -374,6 +374,7 @@ export class SubjectService {
               await this.prisma.assignment.update({
                 where: { id: newAssignment.id },
                 data: { rubricId: mappedRubricId },
+                select: { id: true },
               });
             }
 
@@ -685,6 +686,7 @@ export class SubjectService {
           ...(dto.code && { code: dto.code }),
           ...(dto.subjectId && { id: dto.subjectId }),
         },
+        omit: { verifyLineToken: true },
       });
       if (!subject) {
         throw new NotFoundException('Subject not found');

@@ -18,6 +18,21 @@ import { StorageService } from '../storage/storage.service';
 import { FileAssignmentRepository } from '../file-assignment/file-assignment.repository';
 import { RedisService } from '../redis/redis.service';
 
+// Each embedding is ~10–12 KB on the wire; only vector search needs it.
+const OMIT_EMBEDDING = {
+  vector: true,
+  vectorResouce: true,
+} satisfies Prisma.AssignmentOmit;
+
+function withEmbeddingOmitted<T extends { select?: unknown; omit?: unknown }>(
+  request: T,
+): T {
+  if (request.select || request.omit) {
+    return request;
+  }
+  return { ...request, omit: OMIT_EMBEDDING };
+}
+
 type AssignmentRepositoryType = {
   getById(request: RequestGetAssignmentById): Promise<Assignment>;
   findMany(request: Prisma.AssignmentFindManyArgs): Promise<Assignment[]>;
@@ -56,11 +71,13 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
   async getById(request: RequestGetAssignmentById): Promise<Assignment> {
     try {
-      return await this.prisma.assignment.findUnique({
+      const args: Prisma.AssignmentFindUniqueArgs = {
         where: {
           id: request.assignmentId,
         },
-      });
+        ...(!request.withVector && { omit: OMIT_EMBEDDING }),
+      };
+      return await this.prisma.assignment.findUnique(args);
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -76,6 +93,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: Prisma.AssignmentFindManyArgs,
   ): Promise<Assignment[]> {
     try {
+      request = withEmbeddingOmitted(request);
       const subjectId = request.where?.subjectId;
       if (typeof subjectId === 'string' && this.redisService) {
         const cacheKey = this.getCacheKey(subjectId);
@@ -139,7 +157,9 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
   async update(request: Prisma.AssignmentUpdateArgs): Promise<Assignment> {
     try {
-      const result = await this.prisma.assignment.update(request);
+      const result = await this.prisma.assignment.update(
+        withEmbeddingOmitted(request),
+      );
       if (result.subjectId) {
         await this.redisService?.del(this.getCacheKey(result.subjectId));
       }
