@@ -347,5 +347,105 @@ describe('AttendanceService', () => {
         ),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should not let a student QR check-in clear the status to UNKNOW', async () => {
+      (
+        service.attendanceRepository.getAttendanceById as jest.Mock
+      ).mockResolvedValue({
+        id: 'a1',
+        subjectId: 's1',
+        attendanceTableId: 't1',
+        attendanceRowId: 'r1',
+        status: 'Present',
+      });
+      (
+        service as any
+      ).attendanceRowRepository.getAttendanceRowById.mockResolvedValue({
+        id: 'r1',
+        expireAt: new Date(Date.now() + 60 * 60 * 1000),
+      });
+      (
+        service as any
+      ).attendanceStatusListSRepository.findMany.mockResolvedValue([
+        { title: 'Present' },
+        { title: 'Absent' },
+      ]);
+
+      await expect(
+        service.update({
+          query: { attendanceId: 'a1' },
+          body: { status: 'UNKNOW' },
+        } as any),
+      ).rejects.toThrow(ForbiddenException);
+      expect(
+        service.attendanceRepository.updateAttendanceById,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateMany', () => {
+    const arrangeMarkedAttendance = () => {
+      (
+        service.attendanceRepository.getAttendanceById as jest.Mock
+      ).mockResolvedValue({
+        id: 'a1',
+        subjectId: 's1',
+        attendanceTableId: 't1',
+        attendanceRowId: 'r1',
+        status: 'Present',
+      });
+      (
+        service as any
+      ).attendanceStatusListSRepository.findMany.mockResolvedValue([
+        { title: 'Present' },
+        { title: 'Absent' },
+      ]);
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        isLocked: false,
+      });
+      jest.spyOn(service, 'validateAccess').mockResolvedValue(undefined);
+      (
+        service.attendanceRepository.updateAttendanceById as jest.Mock
+      ).mockImplementation(async (data) => ({
+        id: data.query.attendanceId,
+        status: data.body.status,
+      }));
+    };
+
+    it('should let a teacher uncheck a student back to UNKNOW', async () => {
+      arrangeMarkedAttendance();
+
+      const result = await service.updateMany(
+        {
+          data: [{ query: { attendanceId: 'a1' }, body: { status: 'UNKNOW' } }],
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(
+        service.attendanceRepository.updateAttendanceById,
+      ).toHaveBeenCalledWith({
+        query: { attendanceId: 'a1' },
+        body: { status: 'UNKNOW' },
+      });
+      expect(result).toEqual([{ id: 'a1', status: 'UNKNOW' }]);
+    });
+
+    it('should skip a status that is not in the attendance table', async () => {
+      arrangeMarkedAttendance();
+
+      const result = await service.updateMany(
+        {
+          data: [{ query: { attendanceId: 'a1' }, body: { status: 'Bogus' } }],
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(
+        service.attendanceRepository.updateAttendanceById,
+      ).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
   });
 });
