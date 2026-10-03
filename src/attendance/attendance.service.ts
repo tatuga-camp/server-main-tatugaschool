@@ -335,7 +335,11 @@ export class AttendanceService {
             throw new NotFoundException('Attendance not found');
           }
 
-          if (!status.some((s) => s.title === data.body.status)) {
+          // UNKNOW is the unmarked default, so teachers can uncheck a student.
+          if (
+            data.body.status !== 'UNKNOW' &&
+            !status.some((s) => s.title === data.body.status)
+          ) {
             throw new ForbiddenException('Status not found');
           }
 
