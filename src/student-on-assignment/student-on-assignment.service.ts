@@ -36,6 +36,8 @@ import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { CacheRefs } from '../cache/cache-refs';
+import { AssignmentReads } from '../assignment/assignment.reads';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -47,6 +49,8 @@ export class StudentOnAssignmentService {
   private memberOnSchoolRepository: MemberOnSchoolRepository;
   private assignmentRepository: AssignmentRepository;
   private fileOnStudentAssignmentRepository: FileOnStudentAssignmentRepository;
+  refs: CacheRefs;
+  reads: AssignmentReads;
 
   constructor(
     private prisma: PrismaService,
@@ -95,6 +99,8 @@ export class StudentOnAssignmentService {
         this.storageService,
         this.cache,
       );
+    this.refs = new CacheRefs(this.prisma, this.cache);
+    this.reads = new AssignmentReads(this.prisma, this.cache);
   }
 
   async getById(
@@ -129,53 +135,26 @@ export class StudentOnAssignmentService {
     user: UserJwtPayload,
   ): Promise<(StudentOnAssignment & { files: FileOnStudentAssignment[] })[]> {
     try {
-      const assignment = await this.assignmentRepository.getById({
-        assignmentId: dto.assignmentId,
-      });
-
-      if (!assignment) {
+      const ref = await this.refs.assignment(dto.assignmentId);
+      if (!ref) {
         throw new NotFoundException('Assignment not found');
       }
-      const teacherOnSubject =
-        await this.teacherOnSubjectRepository.getByTeacherIdAndSubjectId({
-          teacherId: user.id,
-          subjectId: assignment.subjectId,
-        });
-
-      const memberOnSchool =
-        await this.memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId(
-          {
-            schoolId: assignment.schoolId,
-            userId: user.id,
-          },
-        );
-
-      if (!teacherOnSubject && memberOnSchool.role !== 'ADMIN') {
-        throw new ForbiddenException(
-          'You are not allowed to access this resource',
-        );
+      // Authorize on every request, before reading any cached subject data.
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: ref.subjectId,
+      });
+      // The immutable ref outlives a deleted assignment; the assignments unit does not.
+      const { assignments } = await this.reads.subjectAssignments(
+        ref.subjectId,
+      );
+      if (!assignments.some((a) => a.id === dto.assignmentId)) {
+        throw new NotFoundException('Assignment not found');
       }
-
-      const studentOnAssignments =
-        await this.studentOnAssignmentRepository.getByAssignmentId(dto);
-      const files =
-        studentOnAssignments.length > 0
-          ? await this.prisma.fileOnStudentAssignment.findMany({
-              where: {
-                studentOnAssignmentId: {
-                  in: studentOnAssignments.map(
-                    (studentOnAssignment) => studentOnAssignment.id,
-                  ),
-                },
-              },
-            })
-          : [];
-      return studentOnAssignments.map((studentOnAssignment) => ({
-        ...studentOnAssignment,
-        files: files.filter(
-          (file) => file.studentOnAssignmentId === studentOnAssignment.id,
-        ),
-      }));
+      return await this.reads.assignmentSubmissions(
+        ref.subjectId,
+        dto.assignmentId,
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;

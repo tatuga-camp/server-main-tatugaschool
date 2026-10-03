@@ -1,3 +1,4 @@
+import { FileOnStudentAssignment, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
@@ -66,6 +67,33 @@ export class AssignmentReads {
         this.prisma.studentOnAssignment.findMany({
           where: { subjectId, studentOnSubjectId },
         }),
+    );
+  }
+
+  // Teacher grading view (unit #6). The caller authorizes first and passes the
+  // assignment's own subjectId (from CacheRefs), so the scope is the right one.
+  assignmentSubmissions(
+    subjectId: string,
+    assignmentId: string,
+  ): Promise<(StudentOnAssignment & { files: FileOnStudentAssignment[] })[]> {
+    return this.cache.getOrSet(
+      `assignmentSubmissions:${assignmentId}`,
+      [subjectScope(subjectId, 'submissions')],
+      TTL.SHORT,
+      async () => {
+        const rows = await this.prisma.studentOnAssignment.findMany({
+          where: { assignmentId },
+        });
+        const files = rows.length
+          ? await this.prisma.fileOnStudentAssignment.findMany({
+              where: { studentOnAssignmentId: { in: rows.map((r) => r.id) } },
+            })
+          : [];
+        return rows.map((r) => ({
+          ...r,
+          files: files.filter((f) => f.studentOnAssignmentId === r.id),
+        }));
+      },
     );
   }
 

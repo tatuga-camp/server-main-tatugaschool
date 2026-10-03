@@ -17,6 +17,7 @@ describe('AssignmentReads', () => {
         groupBy: jest.fn().mockResolvedValue([]),
         findMany: jest.fn().mockResolvedValue([]),
       },
+      fileOnStudentAssignment: { findMany: jest.fn().mockResolvedValue([]) },
       studentOnSubject: { findFirst: jest.fn().mockResolvedValue(null) },
     };
     const { cache } = createTestCache();
@@ -134,6 +135,87 @@ describe('AssignmentReads', () => {
     });
   });
 
+  describe('assignmentSubmissions', () => {
+    const createAt = new Date('2026-10-01T08:00:00.000Z');
+
+    it('attaches each row its files and serves the second call from cache', async () => {
+      const { prisma, reads } = setup();
+      prisma.studentOnAssignment.findMany.mockResolvedValue([
+        { id: 'soa1', assignmentId: 'a1', createAt, completedAt: null },
+        { id: 'soa2', assignmentId: 'a1', createAt, completedAt: null },
+      ]);
+      prisma.fileOnStudentAssignment.findMany.mockResolvedValue([
+        { id: 'f1', studentOnAssignmentId: 'soa1', createAt },
+        { id: 'f2', studentOnAssignmentId: 'soa1', createAt },
+      ]);
+
+      const first = await reads.assignmentSubmissions('s1', 'a1');
+      const second = await reads.assignmentSubmissions('s1', 'a1');
+
+      // The cached copy has the same shape, with dates revived.
+      expect(second).toEqual(first);
+      expect(second[0].createAt).toBeInstanceOf(Date);
+      expect(first).toEqual([
+        {
+          id: 'soa1',
+          assignmentId: 'a1',
+          createAt,
+          completedAt: null,
+          files: [
+            { id: 'f1', studentOnAssignmentId: 'soa1', createAt },
+            { id: 'f2', studentOnAssignmentId: 'soa1', createAt },
+          ],
+        },
+        {
+          id: 'soa2',
+          assignmentId: 'a1',
+          createAt,
+          completedAt: null,
+          files: [],
+        },
+      ]);
+      expect(prisma.studentOnAssignment.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.studentOnAssignment.findMany).toHaveBeenCalledWith({
+        where: { assignmentId: 'a1' },
+      });
+      expect(prisma.fileOnStudentAssignment.findMany).toHaveBeenCalledTimes(1);
+      expect(prisma.fileOnStudentAssignment.findMany).toHaveBeenCalledWith({
+        where: { studentOnAssignmentId: { in: ['soa1', 'soa2'] } },
+      });
+    });
+
+    it('skips the file read when the assignment has no submissions', async () => {
+      const { prisma, reads } = setup();
+
+      expect(await reads.assignmentSubmissions('s1', 'a1')).toEqual([]);
+      expect(prisma.fileOnStudentAssignment.findMany).not.toHaveBeenCalled();
+    });
+
+    it('reloads rows and files after a submissions bump', async () => {
+      const { prisma, cache, reads } = setup();
+      prisma.studentOnAssignment.findMany.mockResolvedValue([{ id: 'soa1' }]);
+
+      await reads.assignmentSubmissions('s1', 'a1');
+      await cache.bump(subjectScope('s1', 'submissions'));
+      await reads.assignmentSubmissions('s1', 'a1');
+
+      expect(prisma.studentOnAssignment.findMany).toHaveBeenCalledTimes(2);
+      expect(prisma.fileOnStudentAssignment.findMany).toHaveBeenCalledTimes(2);
+    });
+
+    it('caches each assignment under its own key', async () => {
+      const { prisma, reads } = setup();
+
+      await reads.assignmentSubmissions('s1', 'a1');
+      await reads.assignmentSubmissions('s1', 'a2');
+
+      expect(prisma.studentOnAssignment.findMany).toHaveBeenCalledTimes(2);
+      expect(prisma.studentOnAssignment.findMany).toHaveBeenLastCalledWith({
+        where: { assignmentId: 'a2' },
+      });
+    });
+  });
+
   describe('enrollment', () => {
     it('returns a cached null', async () => {
       const { prisma, reads } = setup();
@@ -219,6 +301,12 @@ describe('AssignmentReads', () => {
         call: (r) => r.enrollment('s1', 'st1'),
         mock: (p) => p.studentOnSubject.findFirst,
         declared: ['roster'],
+      },
+      {
+        name: 'assignmentSubmissions',
+        call: (r) => r.assignmentSubmissions('s1', 'a1'),
+        mock: (p) => p.studentOnAssignment.findMany,
+        declared: ['submissions'],
       },
     ];
 

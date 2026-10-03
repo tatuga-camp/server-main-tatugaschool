@@ -154,35 +154,128 @@ describe('StudentOnAssignmentService', () => {
   });
 
   describe('getByAssignmentId', () => {
-    it('should return student on assignments with files', async () => {
-      (service as any).assignmentRepository.getById.mockResolvedValue({
-        id: 'a1',
-        subjectId: 's1',
-        schoolId: 'sch1',
+    const user = { id: 'u1' } as any;
+    const dto = { assignmentId: 'a1' };
+    let refs: { assignment: jest.Mock };
+    let reads: { subjectAssignments: jest.Mock; assignmentSubmissions: jest.Mock };
+
+    beforeEach(() => {
+      refs = {
+        assignment: jest
+          .fn()
+          .mockResolvedValue({ subjectId: 's1', schoolId: 'sch1' }),
+      };
+      reads = {
+        subjectAssignments: jest.fn().mockResolvedValue({
+          assignments: [{ id: 'a1', subjectId: 's1' }],
+          files: [],
+          questions: [],
+        }),
+        assignmentSubmissions: jest.fn().mockResolvedValue([]),
+      };
+      (service as any).refs = refs;
+      (service as any).reads = reads;
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue({
+        id: 'ts1',
+        status: 'ACCEPT',
       });
-      (
-        service as any
-      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
-        { id: 'ts1' },
-      );
-      (
-        service as any
-      ).memberOnSchoolRepository.getMemberOnSchoolByUserIdAndSchoolId.mockResolvedValue(
-        { role: 'TEACHER' },
-      );
-      (
-        service.studentOnAssignmentRepository.getByAssignmentId as jest.Mock
-      ).mockResolvedValue([{ id: 'sa1' }]);
-      mockPrismaService.fileOnStudentAssignment.findMany.mockResolvedValue([
-        { id: 'f1', studentOnAssignmentId: 'sa1' },
-      ]);
+    });
 
-      const result = await service.getByAssignmentId({ assignmentId: 'a1' }, {
-        id: 'u1',
-      } as any);
+    afterEach(() => {
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
+    });
 
-      expect(result[0].id).toBe('sa1');
-      expect(result[0].files[0].id).toBe('f1');
+    it('should return student on assignments with files from the cache unit', async () => {
+      const rows = [
+        {
+          id: 'sa1',
+          assignmentId: 'a1',
+          files: [{ id: 'f1', studentOnAssignmentId: 'sa1' }],
+        },
+      ];
+      reads.assignmentSubmissions.mockResolvedValue(rows);
+
+      const result = await service.getByAssignmentId(dto, user);
+
+      expect(result).toEqual(rows);
+      expect(refs.assignment).toHaveBeenCalledWith('a1');
+      expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+        userId: 'u1',
+        subjectId: 's1',
+      });
+      expect(reads.subjectAssignments).toHaveBeenCalledWith('s1');
+      expect(reads.assignmentSubmissions).toHaveBeenCalledWith('s1', 'a1');
+    });
+
+    it('should authorize on every request, before reading cached subject data', async () => {
+      await service.getByAssignmentId(dto, user);
+      await service.getByAssignmentId(dto, user);
+
+      const access = mockTeacherOnSubjectService.ValidateAccess.mock;
+      const firstRead = reads.subjectAssignments.mock;
+      expect(access.calls).toHaveLength(2);
+      expect(firstRead.calls).toHaveLength(2);
+      for (const i of [0, 1]) {
+        expect(access.invocationCallOrder[i]).toBeLessThan(
+          firstRead.invocationCallOrder[i],
+        );
+      }
+    });
+
+    it('should throw NotFoundException for an unknown assignment', async () => {
+      refs.assignment.mockResolvedValue(null);
+
+      await expect(service.getByAssignmentId(dto, user)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(refs.assignment).toHaveBeenCalledWith('a1');
+      expect(mockTeacherOnSubjectService.ValidateAccess).not.toHaveBeenCalled();
+      expect(reads.assignmentSubmissions).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException for a deleted assignment whose ref is still cached', async () => {
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [{ id: 'a2', subjectId: 's1' }],
+        files: [],
+        questions: [],
+      });
+
+      await expect(service.getByAssignmentId(dto, user)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(reads.subjectAssignments).toHaveBeenCalledWith('s1');
+      expect(reads.assignmentSubmissions).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a teacher whose access check rejects (e.g. invite not accepted)', async () => {
+      mockTeacherOnSubjectService.ValidateAccess.mockRejectedValue(
+        new ForbiddenException("You're not a teacher on this subject"),
+      );
+
+      await expect(service.getByAssignmentId(dto, user)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(reads.subjectAssignments).not.toHaveBeenCalled();
+      expect(reads.assignmentSubmissions).not.toHaveBeenCalled();
+    });
+
+    it('should not read assignments, members or teachers through repositories', async () => {
+      await service.getByAssignmentId(dto, user);
+
+      expect(
+        (service as any).assignmentRepository.getById,
+      ).not.toHaveBeenCalled();
+      expect(
+        (service as any).memberOnSchoolRepository
+          .getMemberOnSchoolByUserIdAndSchoolId,
+      ).not.toHaveBeenCalled();
+      expect(
+        (service as any).teacherOnSubjectRepository.getByTeacherIdAndSubjectId,
+      ).not.toHaveBeenCalled();
+      expect(
+        service.studentOnAssignmentRepository.getByAssignmentId,
+      ).not.toHaveBeenCalled();
     });
   });
 
