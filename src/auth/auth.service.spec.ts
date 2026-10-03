@@ -14,6 +14,7 @@ import { SchoolService } from '../school/school.service';
 import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { TurnstileService } from '../turnstile/turnstile.service';
 import {
   BadRequestException,
   NotFoundException,
@@ -79,7 +80,13 @@ describe('AuthService', () => {
     createSchool: jest.fn(),
   };
 
+  const mockTurnstileService = {
+    verify: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
+    mockTurnstileService.verify.mockReset().mockResolvedValue(undefined);
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: CacheService, useValue: createPassthroughCache() },
@@ -91,6 +98,7 @@ describe('AuthService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: {} },
         { provide: SchoolService, useValue: mockSchoolService },
+        { provide: TurnstileService, useValue: mockTurnstileService },
         { provide: RedisService, useValue: {} },
         { provide: PrismaReadService, useValue: {} },
         {
@@ -173,6 +181,87 @@ describe('AuthService', () => {
     });
   });
 
+  describe('googleLogin', () => {
+    const req = {
+      user: {
+        email: 'g@example.com',
+        firstName: 'G',
+        lastName: 'U',
+        providerId: 'p1',
+        photo: '',
+      },
+    } as any;
+
+    const parseRedirect = (reply: any) => {
+      expect(reply.redirect).toHaveBeenCalledTimes(1);
+      const [url, status] = reply.redirect.mock.calls[0];
+      expect(status).toBe(302);
+      const [base, hash] = (url as string).split('#');
+      return { base, params: new URLSearchParams(hash ?? '') };
+    };
+
+    it('sends verified Google users to the app callback with tokens in the URL fragment', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u1',
+        email: 'g@example.com',
+        provider: 'GOOGLE',
+        isVerifyEmail: true,
+        favoritSchool: 'sch-1',
+      });
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access-1')
+        .mockResolvedValueOnce('refresh-1');
+      const reply = { setCookie: jest.fn(), redirect: jest.fn() } as any;
+
+      await service.googleLogin(req, reply);
+
+      expect(reply.setCookie).toHaveBeenCalledTimes(2);
+      const { base, params } = parseRedirect(reply);
+      expect(base).toBe(`${process.env.CLIENT_URL}/auth/callback`);
+      expect(params.get('access_token')).toBe('access-1');
+      expect(params.get('refresh_token')).toBe('refresh-1');
+      expect(params.get('next')).toBe('/school/sch-1');
+    });
+
+    it('sends unverified Google users to the callback with next=wait-verify-email', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u2',
+        email: 'g@example.com',
+        provider: 'GOOGLE',
+        isVerifyEmail: false,
+        favoritSchool: null,
+      });
+      mockJwtService.signAsync
+        .mockResolvedValueOnce('access-2')
+        .mockResolvedValueOnce('refresh-2');
+      const reply = { setCookie: jest.fn(), redirect: jest.fn() } as any;
+
+      await service.googleLogin(req, reply);
+
+      const { base, params } = parseRedirect(reply);
+      expect(base).toBe(`${process.env.CLIENT_URL}/auth/callback`);
+      expect(params.get('refresh_token')).toBe('refresh-2');
+      expect(params.get('next')).toBe('/auth/wait-verify-email');
+    });
+
+    it('keeps the plain sign-in redirect (no tokens) for non-Google accounts', async () => {
+      (service.usersRepository.findByEmail as jest.Mock).mockResolvedValue({
+        id: 'u3',
+        email: 'g@example.com',
+        provider: 'LOCAL',
+        isVerifyEmail: true,
+      });
+      const reply = { setCookie: jest.fn(), redirect: jest.fn() } as any;
+
+      await service.googleLogin(req, reply);
+
+      expect(reply.setCookie).not.toHaveBeenCalled();
+      const [url] = reply.redirect.mock.calls[0];
+      expect(url).toContain('/auth/sign-in?error=');
+      expect(url).not.toContain('refresh_token');
+    });
+  });
+
   describe('signup', () => {
     it('should sign up a user successfully', async () => {
       const dto = {
@@ -218,6 +307,8 @@ describe('AuthService', () => {
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         token: 'verify-token',
+        accessToken: 'token',
+        refreshToken: 'token',
       });
     });
 
@@ -269,7 +360,93 @@ describe('AuthService', () => {
       expect(service.sendVerifyEmail).not.toHaveBeenCalled();
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/school/sch-1`,
+        accessToken: 'token',
+        refreshToken: 'token',
       });
+    });
+
+    it('verifies the Turnstile token before looking up the email', async () => {
+      const order: string[] = [];
+      mockTurnstileService.verify.mockImplementation(async () => {
+        order.push('verify');
+      });
+      (service.usersRepository.findByEmail as jest.Mock).mockImplementation(
+        async () => {
+          order.push('findByEmail');
+          return null;
+        },
+      );
+      mockImageService.generateBase64Image.mockReturnValue('img');
+      (service.usersRepository.createUser as jest.Mock).mockResolvedValue({
+        id: 'u3',
+        email: 'x@example.com',
+        isVerifyEmail: false,
+      });
+      mockJwtService.signAsync.mockResolvedValue('token');
+      jest
+        .spyOn(service, 'sendVerifyEmail')
+        .mockResolvedValue({ token: 'verify-token' });
+
+      await service.signup(
+        {
+          email: 'x@example.com',
+          password: 'password123',
+          provider: 'LOCAL',
+          firstName: 'A',
+          lastName: 'B',
+          turnstileToken: 'cf-token',
+        } as any,
+        { setCookie: jest.fn() } as any,
+      );
+
+      expect(mockTurnstileService.verify).toHaveBeenCalledWith('cf-token');
+      expect(order).toEqual(['verify', 'findByEmail']);
+    });
+
+    it('rejects the sign-up and creates nothing when Turnstile verification fails', async () => {
+      mockTurnstileService.verify.mockRejectedValue(
+        new BadRequestException('Turnstile verification failed'),
+      );
+
+      await expect(
+        service.signup(
+          {
+            email: 'x@example.com',
+            password: 'password123',
+            provider: 'LOCAL',
+            firstName: 'A',
+            lastName: 'B',
+            turnstileToken: 'bad',
+          } as any,
+          { setCookie: jest.fn() } as any,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(service.usersRepository.findByEmail).not.toHaveBeenCalled();
+      expect(service.usersRepository.createUser).not.toHaveBeenCalled();
+    });
+
+    it('also verifies the Turnstile token for GOOGLE sign-ups', async () => {
+      mockTurnstileService.verify.mockRejectedValue(
+        new BadRequestException('Turnstile verification failed'),
+      );
+
+      await expect(
+        service.signup(
+          {
+            email: 'g@example.com',
+            provider: 'GOOGLE',
+            providerId: 'gid',
+            firstName: 'A',
+            lastName: 'B',
+            turnstileToken: 'bad',
+          } as any,
+          { setCookie: jest.fn() } as any,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockTurnstileService.verify).toHaveBeenCalledWith('bad');
+      expect(service.usersRepository.createUser).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException if email exists', async () => {
@@ -474,6 +651,8 @@ describe('AuthService', () => {
       expect(reply.setCookie).toHaveBeenCalledTimes(2);
       expect(result).toEqual({
         redirectUrl: `${process.env.CLIENT_URL}/school/sch-invited`,
+        accessToken: 'jwt',
+        refreshToken: 'jwt',
       });
     });
 

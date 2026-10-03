@@ -8,6 +8,7 @@ import { AttendanceStatusListModule } from './attendance-status-list/attendance-
 import { AttendanceTableModule } from './attendance-table/attendance-table.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { AuthModule } from './auth/auth.module';
+import { TurnstileModule } from './turnstile/turnstile.module';
 import { CareerModule } from './career/career.module';
 import { ClassModule } from './class/class.module';
 import { CommentAssignmentModule } from './comment-assignment/comment-assignment.module';
@@ -17,6 +18,7 @@ import { EmailModule } from './email/email.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { FileAssignmentModule } from './file-assignment/file-assignment.module';
 import { FileOnAnnouncementModule } from './file-on-announcement/file-on-announcement.module';
+import { IssueModule } from './issue/issue.module';
 import { FileOnStudentAssignmentModule } from './file-on-student-assignment/file-on-student-assignment.module';
 import { FileOnTeachingMaterialModule } from './file-on-teaching-material/file-on-teaching-material.module';
 import { GradeModule } from './grade/grade.module';
@@ -62,6 +64,7 @@ import { RubricModule } from './rubric/rubric.module';
 
 @Module({
   imports: [
+    TurnstileModule,
     AuthModule,
     UsersModule,
     PrismaModule,
@@ -106,6 +109,7 @@ import { RubricModule } from './rubric/rubric.module';
     SubscriptionModule,
     GradeModule,
     FeedbackModule,
+    IssueModule,
     GroupOnSubjectModule,
     UnitOnGroupModule,
     StudentOnGroupModule,

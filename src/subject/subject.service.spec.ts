@@ -501,6 +501,33 @@ describe('SubjectService', () => {
       expect(service.subjectRepository.update).toHaveBeenCalled();
       expect(result.id).toBe('s1');
     });
+
+    it('should still return the subject when re-creating the wheel of name fails (e.g. upstream 503)', async () => {
+      (service.subjectRepository.getSubjectById as jest.Mock).mockResolvedValue(
+        { id: 's1', isDeleted: false, wheelOfNamePath: 'path1', title: 'Math' },
+      );
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      mockWheelOfNameService.get.mockRejectedValue({
+        response: { status: 404 },
+      });
+      (
+        service as any
+      ).studentOnSubjectRepository.getStudentOnSubjectsBySubjectId.mockResolvedValue(
+        [{ title: 'Mr', firstName: 'John', lastName: 'Doe' }],
+      );
+      mockWheelOfNameService.create.mockRejectedValue({
+        response: { status: 503 },
+        message: 'Request failed with status code 503',
+      });
+
+      const result = await service.getSubjectById({ subjectId: 's1' }, {
+        id: 'u1',
+      } as any);
+
+      expect(mockWheelOfNameService.create).toHaveBeenCalled();
+      expect(service.subjectRepository.update).not.toHaveBeenCalled();
+      expect(result.id).toBe('s1');
+    });
   });
 
   describe('getBySchoolId', () => {
@@ -683,6 +710,7 @@ describe('SubjectService', () => {
         id: 's1',
         code: 'OLD',
         title: 'Math',
+        publicProgressToken: null,
         studentOnSubjects: [{ id: 'sos1' }],
         teacherOnSubjects: [{ id: 'tos1' }],
       });
@@ -691,6 +719,7 @@ describe('SubjectService', () => {
         'id',
         'code',
         'title',
+        'publicProgressToken',
         'studentOnSubjects',
         'teacherOnSubjects',
       ]);
@@ -916,17 +945,34 @@ describe('SubjectService', () => {
       expect(result).toEqual({
         id: 's1',
         code: 'OLD',
+        publicProgressToken: null,
         studentOnSubjects: [{ id: 'sos1' }],
         teacherOnSubjects: [{ id: 'tos1' }],
       });
       expect(mockPrismaService.subject.findUnique).toHaveBeenCalledWith({
         where: { id: 's1' },
-        omit: { verifyLineToken: true },
+        omit: { verifyLineToken: true, publicProgressToken: true },
       });
       expect(mockPrismaService.studentOnSubject.findMany).toHaveBeenCalledWith({
         where: { subjectId: 's1' },
         orderBy: { order: 'asc' },
       });
+    });
+
+    it('never returns the public progress token (route is unauthenticated)', async () => {
+      // The mock ignores omit, so this also proves the service strips it.
+      mockPrismaService.subject.findUnique.mockImplementation(async (args) =>
+        args.where.code
+          ? { id: 's1' }
+          : { id: 's1', code: 'ABC123', publicProgressToken: 'a'.repeat(32) },
+      );
+      mockPrismaService.studentOnSubject.findMany.mockResolvedValue([]);
+      mockPrismaService.teacherOnSubject.findMany.mockResolvedValue([]);
+
+      const result = await service.getSubjectWithTeacherAndStudent({
+        code: 'ABC123',
+      });
+      expect(result.publicProgressToken).toBeNull();
     });
   });
 

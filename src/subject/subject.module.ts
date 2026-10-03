@@ -9,6 +9,8 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { SubjectController } from './subject.controller';
 import { SubjectService } from './subject.service';
+import { PublicProgressController } from './public-progress/public-progress.controller';
+import { PublicProgressService } from './public-progress/public-progress.service';
 import { GradeService } from '../grade/grade.service';
 import { GradeModule } from '../grade/grade.module';
 import { UsersService } from '../users/users.service';
@@ -52,8 +54,9 @@ import { ClassModule } from '../class/class.module';
     FileAssignmentService,
     AttendanceStatusListService,
     AssignmentVideoQuizRepository,
+    PublicProgressService,
   ],
-  controllers: [SubjectController],
+  controllers: [SubjectController, PublicProgressController],
   exports: [SubjectService],
 })
 export class SubjectModule {}

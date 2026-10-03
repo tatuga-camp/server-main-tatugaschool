@@ -58,7 +58,7 @@ describe('SubjectReads', () => {
       expect(prisma.subject.findUnique).toHaveBeenCalledTimes(1);
       expect(prisma.subject.findUnique).toHaveBeenCalledWith({
         where: { id: 's1' },
-        omit: { verifyLineToken: true },
+        omit: { verifyLineToken: true, publicProgressToken: true },
       });
       expect(prisma.studentOnSubject.findMany).toHaveBeenCalledTimes(1);
       expect(prisma.studentOnSubject.findMany).toHaveBeenCalledWith({
@@ -113,7 +113,7 @@ describe('SubjectReads', () => {
       expect(prisma.subject.findUnique).toHaveBeenCalledTimes(2);
       expect(prisma.subject.findUnique).toHaveBeenLastCalledWith({
         where: { id: 's2' },
-        omit: { verifyLineToken: true },
+        omit: { verifyLineToken: true, publicProgressToken: true },
       });
     });
 

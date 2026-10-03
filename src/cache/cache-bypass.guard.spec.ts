@@ -20,6 +20,8 @@ const ALLOWED: Record<string, string> = {
     'duplicate subject; bumps once at the end',
   'subject/subject.service.ts:teacherOnSubject.create':
     'createSubject; bumps roster after the write',
+  'subject/public-progress/public-progress.service.ts:subject.update':
+    'share/updateLevel/revoke; each bumps roster after the write',
   'webhooks/webhooks.service.ts:subject.update':
     'LINE link; bumps roster after the write',
 };

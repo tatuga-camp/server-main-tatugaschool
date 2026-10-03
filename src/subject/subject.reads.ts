@@ -21,7 +21,7 @@ export class SubjectReads {
       async () => {
         const subject = await this.prisma.subject.findUnique({
           where: { id: subjectId },
-          omit: { verifyLineToken: true },
+          omit: { verifyLineToken: true, publicProgressToken: true },
         });
         if (!subject) return null;
         const [students, teachers] = await Promise.all([

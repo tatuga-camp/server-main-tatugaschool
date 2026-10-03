@@ -40,6 +40,7 @@ import {
   UpdateverifyLineToken,
 } from './dto';
 import { SubjectRepository } from './subject.repository';
+import { withoutPublicProgressToken } from './public-progress/public-progress.util';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
 import { LineBotService } from '../line-bot/line-bot.service';
@@ -503,7 +504,13 @@ export class SubjectService {
             path: subject.wheelOfNamePath,
           })
           .catch(async (error) => {
-            if (error?.response?.status === 404) {
+            if (error?.response?.status !== 404) {
+              return;
+            }
+            // wheelofnames.com is a non-critical dependency: if re-creating
+            // the wheel fails (e.g. upstream 503) log it and still return the
+            // subject instead of turning the page load into a 500.
+            try {
               const studentOnSubjects =
                 await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId(
                   {
@@ -529,11 +536,14 @@ export class SubjectService {
                   wheelOfNamePath: create.data.path,
                 },
               });
+            } catch (wheelError) {
+              this.logger.error(wheelError);
             }
           });
       }
 
-      return subject;
+      // Only teachers may see the public progress token.
+      return user ? subject : withoutPublicProgressToken(subject);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -660,7 +670,10 @@ export class SubjectService {
 
       // 🛑 GUARD 3: If there are no assignments, all subjects are technically "complete" (0/0)
       if (assignments.length === 0) {
-        return subjects.map((subject) => ({ ...subject, status: 'complete' }));
+        return subjects.map((subject) => ({
+          ...withoutPublicProgressToken(subject),
+          status: 'complete',
+        }));
       }
 
       const assignmentIds = assignments.map((a) => a.id);
@@ -685,7 +698,7 @@ export class SubjectService {
             (s.status === 'REVIEWD' || s.status === 'SUBMITTED'),
         ).length;
         return {
-          ...subject,
+          ...withoutPublicProgressToken(subject),
           status:
             totalAssignment === completeAssignment ? 'complete' : 'uncomplete',
         };
@@ -720,6 +733,7 @@ export class SubjectService {
 
       return {
         ...roster.subject,
+        publicProgressToken: null,
         studentOnSubjects: roster.students,
         teacherOnSubjects: roster.teachers,
       };

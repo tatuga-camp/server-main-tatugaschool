@@ -81,6 +81,8 @@ function legacySubjectWithRoster(db: Tables, where: Row) {
   if (!row) throw new NotFoundException('Subject not found');
   return {
     ...project(row, { omit: { verifyLineToken: true } }),
+    // main nulls the public progress token on this unauthenticated route.
+    publicProgressToken: null,
     studentOnSubjects: db.studentOnSubject.filter(
       (s) => s.subjectId === row.id,
     ),

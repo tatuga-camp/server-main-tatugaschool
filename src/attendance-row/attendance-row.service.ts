@@ -234,7 +234,10 @@ export class AttendanceRowService {
         data: { ...dto, schoolId: table.schoolId, subjectId: table.subjectId },
       });
 
-      const attendances = await this.attendanceRepository.findMany({
+      // Read-after-write: must hit the primary. attendanceRepository.findMany
+      // reads the replica, which may not have the createMany yet and would
+      // return [] — the client then PATCHes an empty list and fails validation.
+      const attendances = await this.prisma.attendance.findMany({
         where: {
           attendanceRowId: row.id,
         },

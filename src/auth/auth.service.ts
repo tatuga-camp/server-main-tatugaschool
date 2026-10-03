@@ -38,6 +38,7 @@ import { PrismaReadService } from '../prisma/prisma-read.service';
 import { RedisService } from '../redis/redis.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { MemberOnSchoolService } from '../member-on-school/member-on-school.service';
+import { TurnstileService } from '../turnstile/turnstile.service';
 import { buildResetPasswordEmail } from './reset-password.email';
 import { buildVerifyEmail } from './verify-email.email';
 import { CacheService } from '../cache/cache.service';
@@ -62,6 +63,7 @@ export class AuthService {
     @Inject(forwardRef(() => MemberOnSchoolService))
     private memberOnSchoolService: MemberOnSchoolService,
     private cache: CacheService,
+    private turnstileService: TurnstileService,
   ) {
     this.initializeGoogleAuth();
     this.logger = new Logger(AuthService.name);
@@ -137,6 +139,10 @@ export class AuthService {
 
   async signup(dto: SignUpDto, reply: FastifyReply) {
     try {
+      // Verify the bot check before any DB lookup so failed attempts can't
+      // be used to probe which emails are registered.
+      await this.turnstileService.verify(dto.turnstileToken);
+
       const existingUser = await this.usersRepository.findByEmail({
         email: dto.email,
       });
@@ -205,6 +211,8 @@ export class AuthService {
             },
           });
 
+        console.log(findUnverifiedInvitations);
+
         if (findUnverifiedInvitations.length > 0) {
           await Promise.allSettled(
             findUnverifiedInvitations.map((invitation) =>
@@ -240,9 +248,14 @@ export class AuthService {
       this.setCookieAccessToken(reply, accessToken);
       this.setCookieRefreshToken(reply, refreshToken);
 
+      // Tokens also go in the body (like sign-in): the cookies above only
+      // reach the browser for this host, and the web app must store its own
+      // copy when it runs on a different host.
       if (linkedSchoolId) {
         return {
           redirectUrl: `${process.env.CLIENT_URL}/school/${linkedSchoolId}`,
+          accessToken,
+          refreshToken,
         };
       }
 
@@ -251,6 +264,8 @@ export class AuthService {
       return {
         redirectUrl: `${process.env.CLIENT_URL}/auth/wait-verify-email`,
         token: token.token,
+        accessToken,
+        refreshToken,
       };
     } catch (error) {
       this.logger.error(error);
@@ -502,15 +517,19 @@ export class AuthService {
 
         if (!user.isVerifyEmail) {
           return reply.redirect(
-            `${process.env.CLIENT_URL}/auth/wait-verify-email`,
+            this.buildClientCallbackUrl('/auth/wait-verify-email', {
+              accessToken,
+              refreshToken,
+            }),
             302,
           );
         }
         await this.usersRepository.updateLastActiveAt({ email: user.email });
-        const url = user.favoritSchool
-          ? `${process.env.CLIENT_URL}/school/${user.favoritSchool}`
-          : `${process.env.CLIENT_URL}`;
-        return reply.redirect(url, 302);
+        const next = user.favoritSchool ? `/school/${user.favoritSchool}` : '/';
+        return reply.redirect(
+          this.buildClientCallbackUrl(next, { accessToken, refreshToken }),
+          302,
+        );
       }
 
       const invitationToken =
@@ -520,7 +539,6 @@ export class AuthService {
 
       const signUpParams = new URLSearchParams({
         email: data.email,
-
         firstName: data.firstName,
         lastName: data.lastName,
         provider: 'google',
@@ -679,6 +697,25 @@ export class AuthService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  /**
+   * The cookies set above only reach the browser for THIS host. The web app
+   * gates its requests on cookies of its own origin, so when it runs on a
+   * different host (e.g. a tunnel URL in development) it needs its own copy.
+   * The tokens travel in the URL fragment: browsers never send it to any
+   * server, and the callback page scrubs it before navigating on.
+   */
+  buildClientCallbackUrl(
+    next: string,
+    tokens: { accessToken: string; refreshToken: string },
+  ): string {
+    const fragment = new URLSearchParams({
+      access_token: tokens.accessToken,
+      refresh_token: tokens.refreshToken,
+      next,
+    });
+    return `${process.env.CLIENT_URL}/auth/callback#${fragment.toString()}`;
   }
 
   setCookieAccessToken(reply: FastifyReply, accessToken: string) {

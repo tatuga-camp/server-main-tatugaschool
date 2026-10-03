@@ -73,6 +73,10 @@ export class CreateAssignmentDto {
 
   @IsOptional()
   @IsBoolean()
+  allowStudentViewScore?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
   assignAll?: boolean;
 
   @IsOptional()
