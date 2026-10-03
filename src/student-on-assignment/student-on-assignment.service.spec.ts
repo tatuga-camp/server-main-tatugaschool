@@ -157,7 +157,10 @@ describe('StudentOnAssignmentService', () => {
     const user = { id: 'u1' } as any;
     const dto = { assignmentId: 'a1' };
     let refs: { assignment: jest.Mock };
-    let reads: { subjectAssignments: jest.Mock; assignmentSubmissions: jest.Mock };
+    let reads: {
+      subjectAssignments: jest.Mock;
+      assignmentSubmissions: jest.Mock;
+    };
 
     beforeEach(() => {
       refs = {
