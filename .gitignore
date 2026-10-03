@@ -48,3 +48,5 @@ yarn.
 tsconfig.build.tsbuildinfo
 favorite-school.ts
 update-size-school.ts
+
+/docs
