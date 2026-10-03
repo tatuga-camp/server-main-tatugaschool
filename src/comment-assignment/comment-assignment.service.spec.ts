@@ -5,7 +5,12 @@ import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subjec
 import { NotificationService } from '../notification/notification.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CacheService } from '../cache/cache.service';
-import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import {
+  createPassthroughCache,
+  createTestCache,
+} from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
+import { TTL } from '../cache/cache-ttl';
 
 jest.mock('web-push', () => ({}));
 jest.mock('@google/genai', () => ({
@@ -23,6 +28,8 @@ describe('CommentAssignmentService', () => {
     subject: {
       findUnique: jest.fn(),
     },
+    studentOnAssignment: { findUnique: jest.fn() },
+    commentOnAssignment: { findMany: jest.fn() },
   };
 
   const mockTeacherOnSubjectService = {
@@ -79,49 +86,96 @@ describe('CommentAssignmentService', () => {
   });
 
   describe('getByStudentOnAssignment', () => {
-    it('should return comments', async () => {
-      const mockStudentOnAssignment = {
+    const dto = { studentOnAssignmentId: 'sa1' };
+    const user = { id: 'u1' } as any;
+    const ref = { subjectId: 's1', studentId: 'st1' };
+    let refs: { submission: jest.Mock };
+    let getOrSet: jest.Mock;
+
+    beforeEach(() => {
+      refs = { submission: jest.fn().mockResolvedValue(ref) };
+      (service as any).refs = refs;
+      getOrSet = (service as any).cache.getOrSet;
+      mockPrismaService.studentOnAssignment.findUnique.mockResolvedValue({
         id: 'sa1',
-        subjectId: 's1',
-        studentId: 'st1',
-      };
-      (
-        service['studentOnAssignmentRepository'].getById as jest.Mock
-      ).mockResolvedValue(mockStudentOnAssignment);
+      });
+      mockPrismaService.commentOnAssignment.findMany.mockResolvedValue([
+        { id: 'c1' },
+      ]);
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (
-        service.commentAssignmentRepository.findMany as jest.Mock
-      ).mockResolvedValue([{ id: 'c1' }]);
+    });
 
-      const result = await service.getByStudentOnAssignment(
-        { studentOnAssignmentId: 'sa1' },
-        { id: 'u1' } as any,
-        { id: 'st1' } as any,
-      );
+    afterEach(() => {
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
+      mockPrismaService.studentOnAssignment.findUnique.mockReset();
+      mockPrismaService.commentOnAssignment.findMany.mockReset();
+    });
 
-      expect(service.commentAssignmentRepository.findMany).toHaveBeenCalledWith(
-        { where: { studentOnAssignmentId: 'sa1' } },
+    it('should return comments from the submission comments cache unit', async () => {
+      const result = await service.getByStudentOnAssignment(dto, user, null);
+
+      expect(result).toEqual([{ id: 'c1' }]);
+      expect(refs.submission).toHaveBeenCalledWith('sa1');
+      expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+        subjectId: 's1',
+        userId: 'u1',
+      });
+      expect(getOrSet).toHaveBeenCalledWith(
+        'submissionComments:sa1',
+        [subjectScope('s1', 'submissions')],
+        TTL.SHORT,
+        expect.any(Function),
       );
-      expect(result[0].id).toBe('c1');
+      expect(
+        mockPrismaService.commentOnAssignment.findMany,
+      ).toHaveBeenCalledWith({ where: { studentOnAssignmentId: 'sa1' } });
+    });
+
+    it('should authorize on every request, before reading the cache', async () => {
+      await service.getByStudentOnAssignment(dto, user, null);
+      await service.getByStudentOnAssignment(dto, user, null);
+
+      const access = mockTeacherOnSubjectService.ValidateAccess.mock;
+      expect(access.calls).toHaveLength(2);
+      expect(getOrSet.mock.calls).toHaveLength(2);
+      for (const i of [0, 1]) {
+        expect(access.invocationCallOrder[i]).toBeLessThan(
+          getOrSet.mock.invocationCallOrder[i],
+        );
+      }
     });
 
     it('should throw ForbiddenException if student ids mismatch', async () => {
-      const mockStudentOnAssignment = {
-        id: 'sa1',
-        subjectId: 's1',
-        studentId: 'st1',
-      };
-      (
-        service['studentOnAssignmentRepository'].getById as jest.Mock
-      ).mockResolvedValue(mockStudentOnAssignment);
+      await expect(
+        service.getByStudentOnAssignment(dto, null, { id: 'st2' } as any),
+      ).rejects.toThrow(
+        new ForbiddenException("You don't have permission to access"),
+      );
+      expect(getOrSet).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException for an unknown submission', async () => {
+      refs.submission.mockResolvedValue(null);
 
       await expect(
-        service.getByStudentOnAssignment(
-          { studentOnAssignmentId: 'sa1' },
-          null,
-          { id: 'st2' } as any,
-        ),
+        service.getByStudentOnAssignment(dto, user, null),
+      ).rejects.toThrow(
+        new NotFoundException('studentOnAssignment is not found'),
+      );
+      expect(mockTeacherOnSubjectService.ValidateAccess).not.toHaveBeenCalled();
+      expect(getOrSet).not.toHaveBeenCalled();
+    });
+
+    it('should not read comments when the access check rejects', async () => {
+      mockTeacherOnSubjectService.ValidateAccess.mockRejectedValue(
+        new ForbiddenException("You're not a teacher on this subject"),
+      );
+
+      await expect(
+        service.getByStudentOnAssignment(dto, user, null),
       ).rejects.toThrow(ForbiddenException);
+      expect(getOrSet).not.toHaveBeenCalled();
     });
   });
 
@@ -320,5 +374,120 @@ describe('CommentAssignmentService', () => {
       });
       expect(result.id).toBe('c1');
     });
+  });
+});
+
+describe('CommentAssignmentService.getByStudentOnAssignment (cached)', () => {
+  const dto = { studentOnAssignmentId: 'sa1' };
+  const teacher = { id: 'u1' } as any;
+  const owner = { id: 'st1' } as any;
+  const createAt = new Date('2026-10-01T08:00:00.000Z');
+  let service: CommentAssignmentService;
+  let cache: CacheService;
+  let validateAccess: jest.Mock;
+  // What the primary Prisma client holds: the submission and its comments.
+  let submission: { subjectId: string; studentId: string } | null;
+  let comments: Record<string, unknown>[];
+  let prisma: Record<string, Record<string, jest.Mock>>;
+
+  beforeEach(async () => {
+    submission = { subjectId: 's1', studentId: 'st1' };
+    comments = [{ id: 'c1', studentOnAssignmentId: 'sa1', createAt }];
+    prisma = {
+      studentOnAssignment: {
+        // The ref selects subjectId and studentId; the existence check selects id.
+        findUnique: jest.fn(
+          async (args) =>
+            submission &&
+            (args.select?.id ? { id: args.where.id } : submission),
+        ),
+      },
+      commentOnAssignment: { findMany: jest.fn(async () => comments) },
+    };
+    validateAccess = jest.fn().mockResolvedValue(true);
+    cache = createTestCache().cache;
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        CommentAssignmentService,
+        { provide: PrismaService, useValue: prisma },
+        {
+          provide: TeacherOnSubjectService,
+          useValue: { ValidateAccess: validateAccess },
+        },
+        { provide: NotificationService, useValue: {} },
+        { provide: CacheService, useValue: cache },
+      ],
+    }).compile();
+    service = module.get<CommentAssignmentService>(CommentAssignmentService);
+  });
+
+  it('reads the comments from Prisma once across two calls', async () => {
+    const first = await service.getByStudentOnAssignment(dto, teacher, null);
+    const second = await service.getByStudentOnAssignment(dto, teacher, null);
+
+    expect(first).toEqual(comments);
+    // Served from Redis with its dates revived, so the response is unchanged.
+    expect(second).toEqual(comments);
+    expect(prisma.commentOnAssignment.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.commentOnAssignment.findMany).toHaveBeenCalledWith({
+      where: { studentOnAssignmentId: 'sa1' },
+    });
+  });
+
+  it('reloads the comments after a submissions bump', async () => {
+    await service.getByStudentOnAssignment(dto, teacher, null);
+    comments = [...comments, { id: 'c2', studentOnAssignmentId: 'sa1' }];
+    // Every CommentOnAssignment write bumps its subject's submissions scope.
+    await cache.bump(subjectScope('s1', 'submissions'));
+
+    const result = await service.getByStudentOnAssignment(dto, teacher, null);
+
+    expect(result.map((c) => c.id)).toEqual(['c1', 'c2']);
+    expect(prisma.commentOnAssignment.findMany).toHaveBeenCalledTimes(2);
+  });
+
+  it('refuses a student who does not own the submission, even with the comments cached', async () => {
+    await service.getByStudentOnAssignment(dto, null, owner);
+
+    await expect(
+      service.getByStudentOnAssignment(dto, null, { id: 'st2' } as any),
+    ).rejects.toThrow(
+      new ForbiddenException("You don't have permission to access"),
+    );
+    expect(prisma.commentOnAssignment.findMany).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns 404 for a deleted submission whose ref is still cached', async () => {
+    await service.getByStudentOnAssignment(dto, teacher, null);
+    submission = null;
+    comments = [];
+    // StudentOnAssignmentRepository.delete bumps the subject's submissions scope.
+    await cache.bump(subjectScope('s1', 'submissions'));
+
+    await expect(
+      service.getByStudentOnAssignment(dto, teacher, null),
+    ).rejects.toThrow(
+      new NotFoundException('studentOnAssignment is not found'),
+    );
+    // The ref came from the cache; the loader's existence check found nothing.
+    expect(prisma.studentOnAssignment.findUnique.mock.calls).toEqual([
+      [{ where: { id: 'sa1' }, select: { subjectId: true, studentId: true } }],
+      [{ where: { id: 'sa1' }, select: { id: true } }],
+      [{ where: { id: 'sa1' }, select: { id: true } }],
+    ]);
+  });
+
+  it('caches an empty list for a submission without comments, not a 404', async () => {
+    comments = [];
+
+    await expect(
+      service.getByStudentOnAssignment(dto, null, owner),
+    ).resolves.toEqual([]);
+    await expect(
+      service.getByStudentOnAssignment(dto, null, owner),
+    ).resolves.toEqual([]);
+    expect(prisma.commentOnAssignment.findMany).toHaveBeenCalledTimes(1);
+    // The owner reads without a teacher access check.
+    expect(validateAccess).not.toHaveBeenCalled();
   });
 });

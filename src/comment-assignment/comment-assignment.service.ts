@@ -19,6 +19,9 @@ import {
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { UserRepository } from '../users/users.repository';
 import { CacheService } from '../cache/cache.service';
+import { CacheRefs } from '../cache/cache-refs';
+import { subjectScope } from '../cache/cache-scopes';
+import { TTL } from '../cache/cache-ttl';
 
 @Injectable()
 export class CommentAssignmentService {
@@ -26,6 +29,7 @@ export class CommentAssignmentService {
   private studentOnAssignmentRepository: StudentOnAssignmentRepository;
   public commentAssignmentRepository: CommentAssignmentRepository;
   private userRepository: UserRepository;
+  refs: CacheRefs;
 
   constructor(
     private prisma: PrismaService,
@@ -42,6 +46,7 @@ export class CommentAssignmentService {
       this.cache,
     );
     this.userRepository = new UserRepository(this.prisma, this.cache);
+    this.refs = new CacheRefs(this.prisma, this.cache);
   }
 
   async getByStudentOnAssignment(
@@ -50,31 +55,46 @@ export class CommentAssignmentService {
     student: StudentJwtPayload | null,
   ) {
     try {
-      const studentOnAssignment =
-        await this.studentOnAssignmentRepository.getById({
-          studentOnAssignmentId: dto.studentOnAssignmentId,
-        });
+      const ref = await this.refs.submission(dto.studentOnAssignmentId);
 
-      if (!studentOnAssignment) {
+      if (!ref) {
         throw new NotFoundException('studentOnAssignment is not found');
       }
 
+      // Authorize on every request, before reading the cached comments.
       if (user) {
         await this.teacherOnSubjectService.ValidateAccess({
-          subjectId: studentOnAssignment.subjectId,
+          subjectId: ref.subjectId,
           userId: user.id,
         });
       }
 
-      if (student && studentOnAssignment.studentId !== student.id) {
+      if (student && ref.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");
       }
 
-      return await this.commentAssignmentRepository.findMany({
-        where: {
-          studentOnAssignmentId: dto.studentOnAssignmentId,
+      const comments = await this.cache.getOrSet(
+        `submissionComments:${dto.studentOnAssignmentId}`,
+        [subjectScope(ref.subjectId, 'submissions')],
+        TTL.SHORT,
+        async () => {
+          const exists = await this.prisma.studentOnAssignment.findUnique({
+            where: { id: dto.studentOnAssignmentId },
+            select: { id: true },
+          });
+          if (!exists) return null;
+          return this.prisma.commentOnAssignment.findMany({
+            where: { studentOnAssignmentId: dto.studentOnAssignmentId },
+          });
         },
-      });
+      );
+
+      // The immutable ref outlives a deleted submission; the comments unit does not.
+      if (!comments) {
+        throw new NotFoundException('studentOnAssignment is not found');
+      }
+
+      return comments;
     } catch (error) {
       this.logger.error(error);
       throw error;
