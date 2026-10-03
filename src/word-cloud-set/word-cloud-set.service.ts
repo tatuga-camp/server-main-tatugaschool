@@ -9,6 +9,9 @@ import { StudentOnSubject, WordCloud, WordCloudSet } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
+import { CacheRefs } from '../cache/cache-refs';
+import { subjectScope } from '../cache/cache-scopes';
+import { TTL } from '../cache/cache-ttl';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { WordCount } from '../word-cloud/interfaces';
@@ -35,6 +38,7 @@ import {
 export class WordCloudSetService {
   private logger = new Logger(WordCloudSetService.name);
   private repository: WordCloudSetRepository;
+  refs: CacheRefs;
 
   constructor(
     private prisma: PrismaService,
@@ -42,6 +46,7 @@ export class WordCloudSetService {
     private cache: CacheService,
   ) {
     this.repository = new WordCloudSetRepository(this.prisma, this.cache);
+    this.refs = new CacheRefs(this.prisma, this.cache);
   }
 
   private aggregate(
@@ -402,69 +407,93 @@ export class WordCloudSetService {
     param: WordCloudSetIdParamDto,
   ): Promise<ResponseGetWordCloudSetPublic> {
     try {
-      const set = await this.repository.findUnique({
-        where: { id: param.setId },
-      });
-      if (!set) throw new NotFoundException('Word cloud set not found');
-
-      const questions = await this.repository.findQuestionsBySetId(set.id);
-
-      const activeOrder =
-        questions.find((q) => q.id === set.activeWordCloudId)?.order ?? 0;
-      const revealed = questions.filter((q) => q.order <= activeOrder);
-
-      let students: StudentOnSubject[] = [];
-      if (set.accessMode === 'STUDENTS_ONLY') {
-        students = await this.prisma.studentOnSubject.findMany({
-          where: { subjectId: set.subjectId, isActive: true },
-        });
-      }
-
-      return {
-        id: set.id,
-        status: set.status,
-        accessMode: set.accessMode,
-        allowMultiple: set.allowMultiple,
-        subjectId: set.subjectId,
-        activeWordCloudId: set.activeWordCloudId,
-        questions: revealed.map((q) => ({
-          id: q.id,
-          question: q.question,
-          order: q.order,
-          status: q.status,
-        })),
-        students,
-      };
+      const ref = await this.refs.wordCloudSet(param.setId);
+      if (!ref) throw new NotFoundException('Word cloud set not found');
+      // Roster too: the STUDENTS_ONLY student list comes from the roster.
+      const v = await this.cache.getOrSet(
+        `wordCloudPublic:${param.setId}`,
+        [
+          subjectScope(ref.subjectId, 'wordcloud'),
+          subjectScope(ref.subjectId, 'roster'),
+        ],
+        TTL.WORDCLOUD,
+        () => this.loadPublic(param.setId),
+      );
+      if (!v) throw new NotFoundException('Word cloud set not found');
+      return v;
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
   }
 
+  private async loadPublic(setId: string) {
+    const set = await this.repository.findUnique({ where: { id: setId } });
+    if (!set) return null;
+    const questions = await this.repository.findQuestionsBySetId(set.id);
+    const activeOrder =
+      questions.find((q) => q.id === set.activeWordCloudId)?.order ?? 0;
+    const revealed = questions.filter((q) => q.order <= activeOrder);
+    let students: StudentOnSubject[] = [];
+    if (set.accessMode === 'STUDENTS_ONLY') {
+      students = await this.prisma.studentOnSubject.findMany({
+        where: { subjectId: set.subjectId, isActive: true },
+      });
+    }
+    return {
+      id: set.id,
+      status: set.status,
+      accessMode: set.accessMode,
+      allowMultiple: set.allowMultiple,
+      subjectId: set.subjectId,
+      activeWordCloudId: set.activeWordCloudId,
+      questions: revealed.map((q) => ({
+        id: q.id,
+        question: q.question,
+        order: q.order,
+        status: q.status,
+      })),
+      students,
+    };
+  }
+
   async getResultsByToken(
     dto: GetWordCloudResultsByTokenDto,
   ): Promise<ResponseGetWordCloudSetResults> {
     try {
-      const set = await this.repository.findSetByPublicResultsToken(dto.token);
-      if (!set) throw new NotFoundException('This link is no longer available');
-
-      const results = await this.buildQuestionResults(set.id);
-      return {
-        title: set.title,
-        status: set.status,
-        activeWordCloudId: set.activeWordCloudId,
-        questions: results.map((r) => ({
-          id: r.wordCloud.id,
-          question: r.wordCloud.question,
-          order: r.wordCloud.order,
-          status: r.wordCloud.status,
-          words: r.words,
-          totalAnswers: r.totalAnswers,
-        })),
-      };
+      const ref = await this.refs.wordCloudToken(dto.token);
+      if (!ref) throw new NotFoundException('This link is no longer available');
+      // The token ref outlives a revocation, so the loader re-checks the token.
+      const v = await this.cache.getOrSet(
+        `wordCloudResults:${dto.token}`,
+        [subjectScope(ref.subjectId, 'wordcloud')],
+        TTL.WORDCLOUD,
+        () => this.loadResults(dto.token),
+      );
+      if (!v) throw new NotFoundException('This link is no longer available');
+      return v;
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  private async loadResults(token: string) {
+    const set = await this.repository.findSetByPublicResultsToken(token);
+    if (!set) return null;
+    const results = await this.buildQuestionResults(set.id);
+    return {
+      title: set.title,
+      status: set.status,
+      activeWordCloudId: set.activeWordCloudId,
+      questions: results.map((r) => ({
+        id: r.wordCloud.id,
+        question: r.wordCloud.question,
+        order: r.wordCloud.order,
+        status: r.wordCloud.status,
+        words: r.words,
+        totalAnswers: r.totalAnswers,
+      })),
+    };
   }
 }

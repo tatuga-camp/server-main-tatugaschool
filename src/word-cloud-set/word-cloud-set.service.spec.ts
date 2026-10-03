@@ -2,24 +2,33 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
-import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import { createTestCache } from '../cache/testing/cache-test-utils';
+import { subjectScope } from '../cache/cache-scopes';
+import { TTL } from '../cache/cache-ttl';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { WordCloudSetService } from './word-cloud-set.service';
 
 describe('WordCloudSetService', () => {
   let service: WordCloudSetService;
+  // A real CacheService over FakeRedis, fresh for every test.
+  let cache: CacheService;
   const mockValidateAccess = jest.fn();
   const mockPrisma: any = {
     subject: { findUnique: jest.fn() },
     studentOnSubject: { findMany: jest.fn() },
+    // CacheRefs: wordCloudSet(id) uses findUnique, wordCloudToken() findFirst.
+    wordCloudSet: { findUnique: jest.fn(), findFirst: jest.fn() },
   };
 
   beforeEach(async () => {
+    cache = createTestCache().cache;
+    mockPrisma.wordCloudSet.findUnique.mockResolvedValue({ subjectId: 'sub1' });
+    mockPrisma.wordCloudSet.findFirst.mockResolvedValue({ subjectId: 'sub1' });
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WordCloudSetService,
         { provide: PrismaService, useValue: mockPrisma },
-        { provide: CacheService, useValue: createPassthroughCache() },
+        { provide: CacheService, useValue: cache },
         {
           provide: TeacherOnSubjectService,
           useValue: { ValidateAccess: mockValidateAccess },
@@ -242,12 +251,13 @@ describe('WordCloudSetService', () => {
       expect(result.activeWordCloudId).toBe('q1');
     });
 
-    it('throws when the set does not exist', async () => {
+    it('throws when the set does not exist, without loading it', async () => {
       const repo = (service as any).repository;
-      repo.findUnique.mockResolvedValue(null);
-      await expect(service.getPublic({ setId: 'nope' })).rejects.toBeInstanceOf(
-        NotFoundException,
+      mockPrisma.wordCloudSet.findUnique.mockResolvedValue(null);
+      await expect(service.getPublic({ setId: 'nope' })).rejects.toThrow(
+        new NotFoundException('Word cloud set not found'),
       );
+      expect(repo.findUnique).not.toHaveBeenCalled();
     });
   });
 
@@ -376,13 +386,114 @@ describe('WordCloudSetService', () => {
       expect(result.questions[0].words[0].students).toEqual(['Ann B']);
     });
 
-    it('throws NotFound for an unknown or revoked token', async () => {
+    it('throws NotFound for an unknown token, without loading results', async () => {
       const repo = (service as any).repository;
-      repo.findSetByPublicResultsToken.mockResolvedValue(null);
+      mockPrisma.wordCloudSet.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.getResultsByToken({ token }),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.getResultsByToken({ token })).rejects.toThrow(
+        new NotFoundException('This link is no longer available'),
+      );
+      expect(repo.findSetByPublicResultsToken).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('public polls — cache units', () => {
+    const token = 'a'.repeat(32);
+    const set = { id: 'set1', subjectId: 'sub1', activeWordCloudId: 'q0' };
+    const studentsOnly = { ...set, accessMode: 'STUDENTS_ONLY' };
+    const sos1 = { id: 'sos1', createAt: new Date(0) };
+    const dog = { text: 'Dog', normalized: 'dog' };
+    let repo: any;
+
+    beforeEach(() => {
+      repo = (service as any).repository;
+      repo.findUnique.mockResolvedValue(set);
+      repo.findSetByPublicResultsToken.mockResolvedValue(set);
+      repo.findQuestionsBySetId.mockResolvedValue([
+        { id: 'q0', question: 'A?', order: 0, status: 'OPEN' },
+        { id: 'q1', question: 'B?', order: 1, status: 'OPEN' },
+      ]);
+      repo.findManyAnswers.mockResolvedValue([dog]);
+    });
+
+    it('getPublic serves the set from the cache until a wordcloud bump', async () => {
+      const first = await service.getPublic({ setId: 'set1' });
+      // The teacher advances the question; the set repository update bumps.
+      repo.findUnique.mockResolvedValue({ ...set, activeWordCloudId: 'q1' });
+      expect(await service.getPublic({ setId: 'set1' })).toEqual(first);
+      expect(repo.findUnique).toHaveBeenCalledTimes(1);
+      await cache.bump(subjectScope('sub1', 'wordcloud'));
+      const result = await service.getPublic({ setId: 'set1' });
+
+      expect(result.questions.map((q) => q.id)).toEqual(['q0', 'q1']);
+      expect(repo.findUnique).toHaveBeenCalledTimes(2);
+    });
+
+    it('getPublic reloads the STUDENTS_ONLY students after a roster bump', async () => {
+      repo.findUnique.mockResolvedValue(studentsOnly);
+      const findStudents = mockPrisma.studentOnSubject.findMany;
+      findStudents.mockResolvedValue([sos1]);
+      const first = await service.getPublic({ setId: 'set1' });
+      findStudents.mockResolvedValue([sos1, { ...sos1, id: 'sos2' }]);
+      // Served from Redis with its dates revived, so the response is unchanged.
+      expect(await service.getPublic({ setId: 'set1' })).toEqual(first);
+      await cache.bump(subjectScope('sub1', 'roster'));
+      const result = await service.getPublic({ setId: 'set1' });
+
+      expect(result.students.map((s) => s.id)).toEqual(['sos1', 'sos2']);
+      expect(findStudents).toHaveBeenCalledTimes(2);
+    });
+
+    it('getPublic returns 404 for a deleted set whose ref is still cached', async () => {
+      await service.getPublic({ setId: 'set1' });
+      repo.findUnique.mockResolvedValue(null);
+      // WordCloudSetRepository.deleteSet bumps the subject's wordcloud scope.
+      await cache.bump(subjectScope('sub1', 'wordcloud'));
+
+      await expect(service.getPublic({ setId: 'set1' })).rejects.toThrow(
+        new NotFoundException('Word cloud set not found'),
+      );
+      // The ref came from the cache; the loader found nothing.
+      expect(mockPrisma.wordCloudSet.findUnique).toHaveBeenCalledTimes(1);
+      expect(repo.findUnique).toHaveBeenCalledTimes(2);
+    });
+
+    it('getResultsByToken serves the results from the cache until a wordcloud bump', async () => {
+      const getOrSet = jest.spyOn(cache, 'getOrSet');
+      const first = await service.getResultsByToken({ token });
+      expect(await service.getResultsByToken({ token })).toEqual(first);
+      expect(repo.findSetByPublicResultsToken).toHaveBeenCalledTimes(1);
+      expect(getOrSet).toHaveBeenCalledWith(
+        `wordCloudResults:${token}`,
+        [subjectScope('sub1', 'wordcloud')],
+        TTL.WORDCLOUD,
+        expect.any(Function),
+      );
+      // Every new answer bumps the subject's wordcloud scope.
+      repo.findManyAnswers.mockResolvedValue([dog, dog]);
+      await cache.bump(subjectScope('sub1', 'wordcloud'));
+      const result = await service.getResultsByToken({ token });
+
+      expect(result.questions[0].totalAnswers).toBe(2);
+      expect(repo.findSetByPublicResultsToken).toHaveBeenCalledTimes(2);
+    });
+
+    it('getResultsByToken returns 404 for a revoked token whose ref is still cached', async () => {
+      await service.getResultsByToken({ token });
+      // revokeResults clears the token; the set repository's update bumps.
+      repo.findSetByPublicResultsToken.mockResolvedValue(null);
+      mockPrisma.wordCloudSet.findFirst.mockResolvedValue(null);
+      await cache.bump(subjectScope('sub1', 'wordcloud'));
+      // The token ref has no scopes, so it still resolves the subject…
+      await expect(service.refs.wordCloudToken(token)).resolves.toEqual({
+        subjectId: 'sub1',
+      });
+      // …and the results loader re-checks the token.
+      await expect(service.getResultsByToken({ token })).rejects.toThrow(
+        new NotFoundException('This link is no longer available'),
+      );
+      expect(mockPrisma.wordCloudSet.findFirst).toHaveBeenCalledTimes(1);
+      expect(repo.findSetByPublicResultsToken).toHaveBeenCalledTimes(2);
     });
   });
 });
