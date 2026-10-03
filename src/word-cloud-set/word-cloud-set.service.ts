@@ -464,9 +464,13 @@ export class WordCloudSetService {
       const ref = await this.refs.wordCloudToken(dto.token);
       if (!ref) throw new NotFoundException('This link is no longer available');
       // The token ref outlives a revocation, so the loader re-checks the token.
+      // Roster too: STUDENTS_ONLY results embed answerer names.
       const v = await this.cache.getOrSet(
         `wordCloudResults:${dto.token}`,
-        [subjectScope(ref.subjectId, 'wordcloud')],
+        [
+          subjectScope(ref.subjectId, 'wordcloud'),
+          subjectScope(ref.subjectId, 'roster'),
+        ],
         TTL.WORDCLOUD,
         () => this.loadResults(dto.token),
       );

@@ -14,7 +14,7 @@ import { Row, matches } from '../cache/testing/memory-prisma';
 
 // The two public word-cloud polls (unit #12) over a real CacheService:
 //   GET word-cloud-sets/:setId/public    scopes: wordcloud, roster
-//   GET word-cloud-sets/results/:token   scope:  wordcloud
+//   GET word-cloud-sets/results/:token   scopes: wordcloud, roster
 // Both are unauthenticated, so there is no caller to authorize.
 const d = (day: number) => new Date(Date.UTC(2026, 9, day));
 const token = 'a'.repeat(32);
@@ -213,7 +213,9 @@ describe('WordCloudSetService public polls over the cache', () => {
   });
 
   describe('GET word-cloud-sets/results/:token', () => {
-    const declared: SubjectScopeKind[] = ['wordcloud'];
+    // roster too: STUDENTS_ONLY results embed answerer names read from
+    // StudentOnSubject.
+    const declared: SubjectScopeKind[] = ['wordcloud', 'roster'];
 
     it('returns the same JSON as before caching, on a miss and on a hit', async () => {
       const { repo, service, getResults } = await setup();
@@ -233,10 +235,7 @@ describe('WordCloudSetService public polls over the cache', () => {
       });
     });
 
-    // roster is left out on purpose: STUDENTS_ONLY results embed answerer
-    // names read from StudentOnSubject, so a roster bump arguably should
-    // reload this unit, but it does not declare roster (see the report).
-    it.each(otherBumps(declared, ['roster']))(
+    it.each(otherBumps(declared, []))(
       'does not reload after a bump of %s',
       async (scope) => {
         const { cache, repo, getResults } = await setup();
@@ -261,6 +260,22 @@ describe('WordCloudSetService public polls over the cache', () => {
       expect(repo.findSetByPublicResultsToken).toHaveBeenCalledTimes(
         1 + declared.length,
       );
+    });
+
+    it('shows a renamed student after a roster bump', async () => {
+      const { cache, prisma, getResults } = await setup();
+      await getResults();
+      prisma.studentOnSubject.findMany.mockImplementation(
+        async ({ where }: Row) =>
+          students
+            .filter((s) => matches(s, where))
+            .map((s) => (s.id === 'sos1' ? { ...s, firstName: 'Anna' } : s)),
+      );
+      await cache.bump(subjectScope('sub1', 'roster'));
+
+      const after = await getResults();
+
+      expect(after.questions[0].words[0].students).toEqual(['Anna B', 'Bo C']);
     });
   });
 });

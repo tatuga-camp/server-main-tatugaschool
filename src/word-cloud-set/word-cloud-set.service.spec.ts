@@ -465,7 +465,7 @@ describe('WordCloudSetService', () => {
       expect(repo.findSetByPublicResultsToken).toHaveBeenCalledTimes(1);
       expect(getOrSet).toHaveBeenCalledWith(
         `wordCloudResults:${token}`,
-        [subjectScope('sub1', 'wordcloud')],
+        [subjectScope('sub1', 'wordcloud'), subjectScope('sub1', 'roster')],
         TTL.WORDCLOUD,
         expect.any(Function),
       );
