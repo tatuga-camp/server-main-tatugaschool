@@ -41,8 +41,10 @@ import {
 } from './dto';
 import { SubjectRepository } from './subject.repository';
 import {
+  DefaultTable,
   defaultScoresFor,
-  TrackingTable,
+  isThaiSchool,
+  thaiAttendanceTable,
   trackingTablesFor,
 } from './subject-defaults';
 import { withoutPublicProgressToken } from './public-progress/public-progress.util';
@@ -948,14 +950,16 @@ export class SubjectService {
           .catch((error) => {
             this.logger.error(error);
           }),
-        this.attendanceTableService.createAttendanceTable(
-          {
-            title: 'Default',
-            description: 'Attendance table for ' + subject.title,
-            subjectId: subject.id,
-          },
-          user,
-        ),
+        isThaiSchool(school.country)
+          ? this.createDefaultTable(thaiAttendanceTable(subject.title), subject)
+          : this.attendanceTableService.createAttendanceTable(
+              {
+                title: 'Default',
+                description: 'Attendance table for ' + subject.title,
+                subjectId: subject.id,
+              },
+              user,
+            ),
         ...scoreOnSubjectTitlesDefault.map((score) =>
           this.scoreOnSubjectRepository.createSocreOnSubject({
             title: score.title,
@@ -967,7 +971,7 @@ export class SubjectService {
           }),
         ),
         ...trackingTablesFor(classroom.level).map((table) =>
-          this.createTrackingTable(table, subject),
+          this.createDefaultTable(table, subject),
         ),
       ]);
 
@@ -983,8 +987,8 @@ export class SubjectService {
     }
   }
 
-  private async createTrackingTable(
-    table: TrackingTable,
+  private async createDefaultTable(
+    table: DefaultTable,
     subject: Subject,
   ): Promise<void> {
     const attendanceTable =

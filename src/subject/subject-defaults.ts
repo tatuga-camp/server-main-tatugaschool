@@ -5,7 +5,7 @@ type DefaultScore = {
   score: number;
 };
 
-export type TrackingTable = {
+export type DefaultTable = {
   title: string;
   description: string;
   statusLists: { title: string; value: number; color: string }[];
@@ -88,8 +88,21 @@ const THAI_DESIRABLE_CHARACTERISTICS: DefaultScore[] = [
 const DONE_COLOR = '#22c55e';
 const NOT_DONE_COLOR = '#ef4444';
 
+// Same values and colours as the English Default table in AttendanceTableService.
+export const thaiAttendanceTable = (subjectTitle: string): DefaultTable => ({
+  title: 'ตารางเข้าเรียน',
+  description: `ตารางเข้าเรียนวิชา ${subjectTitle}`,
+  statusLists: [
+    { title: 'มาเรียน', value: 1, color: '#22c55e' },
+    { title: 'มาสาย', value: 1, color: '#eab308' },
+    { title: 'ลาป่วย', value: 1, color: '#f97316' },
+    { title: 'ขาดเรียน', value: -1, color: '#ef4444' },
+    { title: 'วันหยุด', value: 1, color: '#0ea5e9' },
+  ],
+});
+
 // Status values are summed per student, so "not done" is 0 and savings are worth their baht amount.
-const PRIMARY_TRACKING_TABLES: TrackingTable[] = [
+const PRIMARY_TRACKING_TABLES: DefaultTable[] = [
   {
     title: 'ตารางดื่มนม',
     description: 'บันทึกการดื่มนมของนักเรียน',
@@ -127,12 +140,13 @@ const PRIMARY_TRACKING_TABLES: TrackingTable[] = [
 // Older schools typed their country as free text, so Thai spellings count too.
 const THAILAND_NAMES = ['thailand', 'ประเทศไทย', 'ไทย'];
 
+export const isThaiSchool = (country: string | null | undefined): boolean =>
+  THAILAND_NAMES.includes(country?.trim().toLowerCase() ?? '');
+
 export const defaultScoresFor = (
   country: string | null | undefined,
 ): DefaultScore[] =>
-  THAILAND_NAMES.includes(country?.trim().toLowerCase() ?? '')
-    ? THAI_DESIRABLE_CHARACTERISTICS
-    : DEFAULT_SCORES;
+  isThaiSchool(country) ? THAI_DESIRABLE_CHARACTERISTICS : DEFAULT_SCORES;
 
-export const trackingTablesFor = (level: string): TrackingTable[] =>
+export const trackingTablesFor = (level: string): DefaultTable[] =>
   /primary|ประถมศึกษา/i.test(level) ? PRIMARY_TRACKING_TABLES : [];

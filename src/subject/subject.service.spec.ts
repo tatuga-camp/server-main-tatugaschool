@@ -1197,10 +1197,47 @@ describe('SubjectService', () => {
       },
     );
 
+    it('should give a Thai school a ตารางเข้าเรียน attendance table instead of Default', async () => {
+      arrangeCreateSubject({
+        country: 'Thailand',
+        level: 'มัธยมศึกษาปีที่ 1/1',
+      });
+
+      await createMath();
+
+      expect(createdTables()).toEqual([
+        expect.objectContaining({
+          title: 'ตารางเข้าเรียน',
+          subjectId: 's1',
+          schoolId: 'sch1',
+        }),
+      ]);
+      expect(
+        mockAttendanceTableService.createAttendanceTable,
+      ).not.toHaveBeenCalled();
+    });
+
+    it.each([null, 'Japan'])(
+      'should keep the English Default attendance table for a school in %p',
+      async (country) => {
+        arrangeCreateSubject({ country, level: 'Grade 7' });
+
+        await createMath();
+
+        expect(
+          mockAttendanceTableService.createAttendanceTable,
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Default', subjectId: 's1' }),
+          { id: 'u1' },
+        );
+        expect(createdTables()).toEqual([]);
+      },
+    );
+
     it.each(['ประถมศึกษาปีที่ 6/1', 'Primary 3', 'primary 2/1'])(
       'should add milk, tooth-brushing and savings tables to a %p class',
       async (level) => {
-        arrangeCreateSubject({ country: 'Thailand', level });
+        arrangeCreateSubject({ country: null, level });
 
         await createMath();
 
@@ -1231,6 +1268,16 @@ describe('SubjectService', () => {
     );
 
     it.each([
+      [
+        'ตารางเข้าเรียน',
+        [
+          { title: 'มาเรียน', value: 1 },
+          { title: 'มาสาย', value: 1 },
+          { title: 'ลาป่วย', value: 1 },
+          { title: 'ขาดเรียน', value: -1 },
+          { title: 'วันหยุด', value: 1 },
+        ],
+      ],
       [
         'ตารางดื่มนม',
         [
@@ -1282,7 +1329,7 @@ describe('SubjectService', () => {
     it.each(['มัธยมศึกษาปีที่ 1/1', 'Secondary 1', 'อนุบาล'])(
       'should not add tracking tables to a %p class',
       async (level) => {
-        arrangeCreateSubject({ country: 'Thailand', level });
+        arrangeCreateSubject({ country: null, level });
 
         await createMath();
 
