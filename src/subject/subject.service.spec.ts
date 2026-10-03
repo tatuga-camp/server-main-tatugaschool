@@ -1048,6 +1048,247 @@ describe('SubjectService', () => {
         subjectScope('s1', 'roster'),
       );
     });
+
+    const arrangeCreateSubject = ({
+      country,
+      level,
+    }: {
+      country: string | null;
+      level: string;
+    }) => {
+      mockSchoolService.schoolRepository.getById.mockResolvedValue({
+        id: 'sch1',
+        country,
+      });
+      service['userRepository'].findById = jest.fn().mockResolvedValue({
+        id: 'u1',
+        firstName: 'Jane',
+        lastName: 'Doe',
+        photo: 'pic.jpg',
+        email: 'jane.doe@example.com',
+        phone: '1234567890',
+      });
+      (service.subjectRepository.findMany as jest.Mock).mockResolvedValue([]);
+      mockSchoolService.ValidateLimit.mockResolvedValue(true);
+      (findFirstMemberOnSchoolByUser as jest.Mock).mockResolvedValue({
+        schoolId: 'sch1',
+      });
+      mockClassService.classRepository.findById.mockResolvedValue({
+        id: 'c1',
+        schoolId: 'sch1',
+        title: 'ครูข้าว',
+        level,
+      });
+      mockClassService.validateAccess.mockResolvedValue(true);
+      (service as any).studentRepository.findByClassId.mockResolvedValue([]);
+      (service.subjectRepository.createSubject as jest.Mock).mockResolvedValue({
+        id: 's1',
+        schoolId: 'sch1',
+        title: 'Math',
+      });
+      mockPrismaService.teacherOnSubject.create.mockResolvedValue({});
+      mockGradeService.gradeRepository.create.mockResolvedValue({});
+      mockWheelOfNameService.create.mockResolvedValue({
+        data: { path: 'path' },
+      });
+      (service.subjectRepository.update as jest.Mock).mockResolvedValue({
+        id: 's1',
+      });
+      mockAttendanceTableService.attendanceTableRepository.createAttendanceTable.mockImplementation(
+        async (request) => ({ id: `table:${request.title}`, ...request }),
+      );
+    };
+
+    const createMath = () =>
+      service.createSubject(
+        { schoolId: 'sch1', classId: 'c1', title: 'Math' } as any,
+        { id: 'u1' } as any,
+      );
+
+    const createdScores = () =>
+      (
+        service as any
+      ).scoreOnSubjectRepository.createSocreOnSubject.mock.calls.map(
+        ([score]) => score,
+      );
+
+    const createdTables = () =>
+      mockAttendanceTableService.attendanceTableRepository.createAttendanceTable.mock.calls.map(
+        ([table]) => table,
+      );
+
+    const statusesCreatedOn = (tableTitle: string) =>
+      mockAttendanceStatusListService.attendanceStatusListSRepository.create.mock.calls
+        .map(([request]) => request.data)
+        .filter((data) => data.attendanceTableId === `table:${tableTitle}`);
+
+    it('should give a Thai school the 8 desirable characteristics as default scores', async () => {
+      arrangeCreateSubject({
+        country: 'Thailand',
+        level: 'มัธยมศึกษาปีที่ 1/1',
+      });
+
+      await createMath();
+
+      expect(createdScores().map((score) => score.title)).toEqual([
+        'รักชาติ ศาสน์ กษัตริย์',
+        'ซื่อสัตย์สุจริต',
+        'มีวินัย',
+        'ใฝ่เรียนรู้',
+        'อยู่อย่างพอเพียง',
+        'มุ่งมั่นในการทำงาน',
+        'รักความเป็นไทย',
+        'มีจิตสาธารณะ',
+      ]);
+      for (const score of createdScores()) {
+        expect(score).toEqual(
+          expect.objectContaining({
+            score: 1,
+            subjectId: 's1',
+            schoolId: 'sch1',
+            icon: expect.stringMatching(
+              /^https:\/\/storage\.tatugaschool\.com\//,
+            ),
+          }),
+        );
+      }
+    });
+
+    it('should give each Thai desirable characteristic its own icon', async () => {
+      arrangeCreateSubject({
+        country: 'Thailand',
+        level: 'มัธยมศึกษาปีที่ 1/1',
+      });
+
+      await createMath();
+
+      const scores = createdScores();
+      expect(new Set(scores.map((score) => score.icon)).size).toBe(8);
+      expect(new Set(scores.map((score) => score.blurHash)).size).toBe(8);
+    });
+
+    it.each(['thailand', '  THAILAND ', 'ประเทศไทย', 'ไทย'])(
+      'should treat a school country of %p as Thailand',
+      async (country) => {
+        arrangeCreateSubject({ country, level: 'มัธยมศึกษาปีที่ 1/1' });
+
+        await createMath();
+
+        expect(createdScores().map((score) => score.title)).toContain(
+          'มีจิตสาธารณะ',
+        );
+      },
+    );
+
+    it.each([null, 'Japan'])(
+      'should keep the English default scores for a school in %p',
+      async (country) => {
+        arrangeCreateSubject({ country, level: 'Grade 7' });
+
+        await createMath();
+
+        expect(createdScores().map((score) => score.title)).toEqual([
+          'Good Job',
+          'Well Done',
+          'Keep It Up',
+          'Excellent',
+          'Needs Improvement',
+        ]);
+      },
+    );
+
+    it.each(['ประถมศึกษาปีที่ 6/1', 'Primary 3', 'primary 2/1'])(
+      'should add milk, tooth-brushing and savings tables to a %p class',
+      async (level) => {
+        arrangeCreateSubject({ country: 'Thailand', level });
+
+        await createMath();
+
+        expect(createdTables()).toEqual([
+          expect.objectContaining({
+            title: 'ตารางดื่มนม',
+            subjectId: 's1',
+            schoolId: 'sch1',
+          }),
+          expect.objectContaining({
+            title: 'ตารางแปรงฟัน',
+            subjectId: 's1',
+            schoolId: 'sch1',
+          }),
+          expect.objectContaining({
+            title: 'ตารางเงินออม',
+            subjectId: 's1',
+            schoolId: 'sch1',
+          }),
+        ]);
+        expect(
+          mockAttendanceTableService.createAttendanceTable,
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({ title: 'Default', subjectId: 's1' }),
+          { id: 'u1' },
+        );
+      },
+    );
+
+    it.each([
+      [
+        'ตารางดื่มนม',
+        [
+          { title: 'ดื่ม', value: 1 },
+          { title: 'ไม่ดื่ม', value: 0 },
+        ],
+      ],
+      [
+        'ตารางแปรงฟัน',
+        [
+          { title: 'แปรงฟัน', value: 1 },
+          { title: 'ไม่แปรงฟัน', value: 0 },
+        ],
+      ],
+      [
+        'ตารางเงินออม',
+        [
+          { title: '1 บาท', value: 1 },
+          { title: '5 บาท', value: 5 },
+          { title: '10 บาท', value: 10 },
+          { title: '20 บาท', value: 20 },
+          { title: '50 บาท', value: 50 },
+          { title: '100 บาท', value: 100 },
+        ],
+      ],
+    ])('should give %s its statuses', async (tableTitle, expected) => {
+      arrangeCreateSubject({
+        country: 'Thailand',
+        level: 'ประถมศึกษาปีที่ 5/1',
+      });
+
+      await createMath();
+
+      const statuses = statusesCreatedOn(tableTitle);
+      expect(statuses.map(({ title, value }) => ({ title, value }))).toEqual(
+        expected,
+      );
+      for (const status of statuses) {
+        expect(status).toEqual(
+          expect.objectContaining({
+            subjectId: 's1',
+            schoolId: 'sch1',
+            color: expect.stringMatching(/^#[0-9a-f]{6}$/i),
+          }),
+        );
+      }
+    });
+
+    it.each(['มัธยมศึกษาปีที่ 1/1', 'Secondary 1', 'อนุบาล'])(
+      'should not add tracking tables to a %p class',
+      async (level) => {
+        arrangeCreateSubject({ country: 'Thailand', level });
+
+        await createMath();
+
+        expect(createdTables()).toEqual([]);
+      },
+    );
   });
 
   describe('verifyLineToken', () => {

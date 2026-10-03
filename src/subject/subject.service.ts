@@ -40,6 +40,11 @@ import {
   UpdateverifyLineToken,
 } from './dto';
 import { SubjectRepository } from './subject.repository';
+import {
+  defaultScoresFor,
+  TrackingTable,
+  trackingTablesFor,
+} from './subject-defaults';
 import { withoutPublicProgressToken } from './public-progress/public-progress.util';
 import { AssignmentService } from '../assignment/assignment.service';
 import { FileAssignmentService } from '../file-assignment/file-assignment.service';
@@ -851,38 +856,7 @@ export class SubjectService {
         });
       }
 
-      const scoreOnSubjectTitlesDefault = [
-        {
-          title: 'Good Job',
-          icon: 'https://storage.tatugaschool.com/AVATAR/Good-job.webp',
-          blurHash: 'UEO{GV?D05-m~9WDIqah0NWV08M~X_ows.ov',
-          score: 1,
-        },
-        {
-          title: 'Well Done',
-          icon: 'https://storage.tatugaschool.com/AVATAR/Well-Done.webp',
-          blurHash: 'UlMi|;xpE4n+IrWDs.bFIqahE5bY~QovIrjI',
-          score: 1,
-        },
-        {
-          title: 'Keep It Up',
-          icon: 'https://storage.tatugaschool.com/AVATAR/Keep-It-Up.webp',
-          blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
-          score: 1,
-        },
-        {
-          title: 'Excellent',
-          icon: 'https://storage.tatugaschool.com/AVATAR/Excellent.webp',
-          blurHash: 'UAP63q^z06?C^}WCM~a#05WC07Ir~jt5E4oe',
-          score: 1,
-        },
-        {
-          title: 'Needs Improvement',
-          icon: 'https://storage.tatugaschool.com/AVATAR/Needs-Improvement.webp',
-          blurHash: 'UAPPF5^z05?W~RRlNIoe05WC07IY~QxrD-WD',
-          score: -1,
-        },
-      ];
+      const scoreOnSubjectTitlesDefault = defaultScoresFor(school.country);
 
       const gradeRule = [
         {
@@ -992,6 +966,9 @@ export class SubjectService {
             blurHash: score.blurHash,
           }),
         ),
+        ...trackingTablesFor(classroom.level).map((table) =>
+          this.createTrackingTable(table, subject),
+        ),
       ]);
 
       return subject;
@@ -1004,6 +981,35 @@ export class SubjectService {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  private async createTrackingTable(
+    table: TrackingTable,
+    subject: Subject,
+  ): Promise<void> {
+    const attendanceTable =
+      await this.attendanceTableService.attendanceTableRepository.createAttendanceTable(
+        {
+          title: table.title,
+          description: table.description,
+          subjectId: subject.id,
+          schoolId: subject.schoolId,
+        },
+      );
+    await Promise.all(
+      table.statusLists.map((status) =>
+        this.attendanceStatusListService.attendanceStatusListSRepository.create(
+          {
+            data: {
+              ...status,
+              attendanceTableId: attendanceTable.id,
+              subjectId: subject.id,
+              schoolId: subject.schoolId,
+            },
+          },
+        ),
+      ),
+    );
   }
 
   async verifyLineToken(dto: UpdateverifyLineToken, user: UserJwtPayload) {
