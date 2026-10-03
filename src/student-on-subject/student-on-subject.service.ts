@@ -52,6 +52,7 @@ import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
+import { SubjectReads } from '../subject/subject.reads';
 
 @Injectable()
 export class StudentOnSubjectService {
@@ -66,6 +67,7 @@ export class StudentOnSubjectService {
   private attendanceRepository: AttendanceRepository;
   private attendanceRowRepository: AttendanceRowRepository;
   private assignmentRepository: AssignmentRepository;
+  subjectReads: SubjectReads;
 
   constructor(
     private prisma: PrismaService,
@@ -128,6 +130,7 @@ export class StudentOnSubjectService {
       this.storageService,
       this.cache,
     );
+    this.subjectReads = new SubjectReads(this.prisma, this.cache);
   }
 
   async getSummaryData(
@@ -473,21 +476,15 @@ export class StudentOnSubjectService {
     user: UserJwtPayload,
   ): Promise<StudentOnSubject[]> {
     try {
+      // Authorize on every request, before reading the cached roster.
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
 
-      const studentOnSubjects = await this.studentOnSubjectRepository.findMany({
-        where: {
-          subjectId: dto.subjectId,
-        },
-        orderBy: {
-          order: 'asc',
-        },
-      });
-
-      return studentOnSubjects;
+      return (
+        (await this.subjectReads.subjectRoster(dto.subjectId))?.students ?? []
+      );
     } catch (error) {
       this.logger.error(error);
       throw error;

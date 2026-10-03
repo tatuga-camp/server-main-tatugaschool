@@ -29,7 +29,9 @@ describe('StudentOnSubjectService', () => {
 
   const mockPrismaService = {
     student: { findUnique: jest.fn() },
-    studentOnSubject: { update: jest.fn() },
+    studentOnSubject: { update: jest.fn(), findMany: jest.fn() },
+    subject: { findUnique: jest.fn() },
+    teacherOnSubject: { findMany: jest.fn() },
   };
 
   const mockTeacherOnSubjectService = {
@@ -142,19 +144,116 @@ describe('StudentOnSubjectService', () => {
   });
 
   describe('getStudentOnSubjectsBySubjectId', () => {
-    it('should return student on subjects', async () => {
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (
-        service.studentOnSubjectRepository.findMany as jest.Mock
-      ).mockResolvedValue([{ id: 'sos1' }]);
+    const dto = { subjectId: 's1' };
+    const user: any = { id: 'u1' };
+    const students = [
+      { id: 'sos1', order: 1 },
+      { id: 'sos2', order: 2 },
+    ];
+    let subjectReads: { subjectRoster: jest.Mock };
+
+    beforeEach(() => {
+      subjectReads = {
+        subjectRoster: jest.fn().mockResolvedValue({
+          subject: { id: 's1' },
+          students,
+          teachers: [{ id: 'tos1' }],
+        }),
+      };
+      (service as any).subjectReads = subjectReads;
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue({
+        id: 'tos1',
+        status: 'ACCEPT',
+      });
+    });
+
+    afterEach(() => {
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
+    });
+
+    it("should return the cached roster's students", async () => {
+      const result = await service.getStudentOnSubjectsBySubjectId(dto, user);
+
+      expect(result).toEqual(students);
+      expect(mockTeacherOnSubjectService.ValidateAccess).toHaveBeenCalledWith({
+        userId: 'u1',
+        subjectId: 's1',
+      });
+      expect(subjectReads.subjectRoster).toHaveBeenCalledWith('s1');
+    });
+
+    it('should authorize on every request, before reading the cached roster', async () => {
+      await service.getStudentOnSubjectsBySubjectId(dto, user);
+      await service.getStudentOnSubjectsBySubjectId(dto, user);
+
+      const access = mockTeacherOnSubjectService.ValidateAccess.mock;
+      const read = subjectReads.subjectRoster.mock;
+      expect(access.calls).toHaveLength(2);
+      expect(read.calls).toHaveLength(2);
+      for (const i of [0, 1]) {
+        expect(access.invocationCallOrder[i]).toBeLessThan(
+          read.invocationCallOrder[i],
+        );
+      }
+    });
+
+    it('should not read the cached roster when the access check rejects', async () => {
+      mockTeacherOnSubjectService.ValidateAccess.mockRejectedValue(
+        new ForbiddenException("You're not a teacher on this subject"),
+      );
+
+      await expect(
+        service.getStudentOnSubjectsBySubjectId(dto, user),
+      ).rejects.toThrow(ForbiddenException);
+      expect(subjectReads.subjectRoster).not.toHaveBeenCalled();
+    });
+
+    it('should return an empty list when the subject has no roster', async () => {
+      subjectReads.subjectRoster.mockResolvedValue(null);
+
+      expect(await service.getStudentOnSubjectsBySubjectId(dto, user)).toEqual(
+        [],
+      );
+    });
+
+    it('should not read students through the repository', async () => {
+      await service.getStudentOnSubjectsBySubjectId(dto, user);
+
+      expect(
+        service.studentOnSubjectRepository.findMany,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('roster cache wiring', () => {
+    afterEach(() => {
+      mockPrismaService.subject.findUnique.mockReset();
+      mockPrismaService.studentOnSubject.findMany.mockReset();
+      mockPrismaService.teacherOnSubject.findMany.mockReset();
+      mockTeacherOnSubjectService.ValidateAccess.mockReset();
+    });
+
+    it('builds its subject reads on the primary Prisma client, students ordered by order', async () => {
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(
+        'admin-school',
+      );
+      mockPrismaService.subject.findUnique.mockResolvedValue({ id: 's1' });
+      mockPrismaService.studentOnSubject.findMany.mockResolvedValue([
+        { id: 'sos1' },
+      ]);
+      mockPrismaService.teacherOnSubject.findMany.mockResolvedValue([]);
 
       const result = await service.getStudentOnSubjectsBySubjectId(
         { subjectId: 's1' },
         { id: 'u1' } as any,
       );
 
-      expect(service.studentOnSubjectRepository.findMany).toHaveBeenCalled();
-      expect(result[0].id).toBe('sos1');
+      expect(result).toEqual([{ id: 'sos1' }]);
+      expect(mockPrismaService.studentOnSubject.findMany).toHaveBeenCalledWith({
+        where: { subjectId: 's1' },
+        orderBy: { order: 'asc' },
+      });
     });
   });
 

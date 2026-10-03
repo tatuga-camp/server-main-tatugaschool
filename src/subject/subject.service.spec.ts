@@ -1,10 +1,14 @@
 jest.mock('../member-on-school/member-on-school.raw');
 import { CacheService } from '../cache/cache.service';
-import { createPassthroughCache } from '../cache/testing/cache-test-utils';
+import {
+  createPassthroughCache,
+  createTestCache,
+} from '../cache/testing/cache-test-utils';
 import { subjectScope } from '../cache/cache-scopes';
 import { findFirstMemberOnSchoolByUser } from '../member-on-school/member-on-school.raw';
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubjectService } from './subject.service';
+import { SubjectReads } from './subject.reads';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
@@ -41,7 +45,7 @@ describe('SubjectService', () => {
   const mockPrismaService = {
     memberOnSchool: { findFirst: jest.fn() },
     subject: { findUnique: jest.fn() },
-    teacherOnSubject: { create: jest.fn() },
+    teacherOnSubject: { create: jest.fn(), findMany: jest.fn() },
     questionOnVideo: { findMany: jest.fn(), create: jest.fn() },
     studentOnSubject: { findMany: jest.fn() },
     rubric: { findMany: jest.fn(), create: jest.fn() },
@@ -650,50 +654,278 @@ describe('SubjectService', () => {
   });
 
   describe('getSubjectWithTeacherAndStudent', () => {
-    it('should throw NotFoundException if subject not found', async () => {
-      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue(
-        null,
-      );
-      await expect(
-        service.getSubjectWithTeacherAndStudent({ subjectId: 's1' }),
-      ).rejects.toThrow(NotFoundException);
+    const roster = {
+      subject: { id: 's1', code: 'OLD', title: 'Math' },
+      students: [{ id: 'sos1' }],
+      teachers: [{ id: 'tos1' }],
+    };
+    let subjectReads: {
+      subjectRoster: jest.Mock;
+      subjectIdByCode: jest.Mock;
+      forgetCode: jest.Mock;
+    };
+
+    beforeEach(() => {
+      subjectReads = {
+        subjectRoster: jest.fn().mockResolvedValue(roster),
+        subjectIdByCode: jest.fn().mockResolvedValue('s1'),
+        forgetCode: jest.fn().mockResolvedValue(undefined),
+      };
+      (service as any).subjectReads = subjectReads;
     });
 
-    it('should return subject with teachers and students', async () => {
-      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue({
-        id: 's1',
+    it('should return the cached subject with its students and teachers', async () => {
+      const result = await service.getSubjectWithTeacherAndStudent({
+        subjectId: 's1',
       });
-      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue([
-        { id: 'st1' },
+
+      expect(result).toEqual({
+        id: 's1',
+        code: 'OLD',
+        title: 'Math',
+        studentOnSubjects: [{ id: 'sos1' }],
+        teacherOnSubjects: [{ id: 'tos1' }],
+      });
+      // Same key order as before caching: subject fields, then the two lists.
+      expect(Object.keys(result)).toEqual([
+        'id',
+        'code',
+        'title',
+        'studentOnSubjects',
+        'teacherOnSubjects',
       ]);
-      mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany.mockResolvedValue(
-        [{ id: 't1' }],
+      expect(subjectReads.subjectRoster).toHaveBeenCalledWith('s1');
+      expect(subjectReads.subjectIdByCode).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if subject not found', async () => {
+      subjectReads.subjectRoster.mockResolvedValue(null);
+
+      await expect(
+        service.getSubjectWithTeacherAndStudent({ subjectId: 's1' }),
+      ).rejects.toThrow(new NotFoundException('Subject not found'));
+    });
+
+    it('should resolve a code through the cached code mapping', async () => {
+      const result = await service.getSubjectWithTeacherAndStudent({
+        code: 'OLD',
+      });
+
+      expect(result.id).toBe('s1');
+      expect(subjectReads.subjectIdByCode).toHaveBeenCalledWith('OLD');
+      expect(subjectReads.subjectRoster).toHaveBeenCalledWith('s1');
+      expect(subjectReads.forgetCode).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException for an unknown code without reading a roster', async () => {
+      subjectReads.subjectIdByCode.mockResolvedValue(null);
+
+      await expect(
+        service.getSubjectWithTeacherAndStudent({ code: 'zzz' }),
+      ).rejects.toThrow(new NotFoundException('Subject not found'));
+      expect(subjectReads.subjectRoster).not.toHaveBeenCalled();
+    });
+
+    it('should never serve a roster whose code still differs after resolving the code again', async () => {
+      subjectReads.subjectRoster.mockResolvedValue({
+        ...roster,
+        subject: { ...roster.subject, code: 'NEW' },
+      });
+
+      await expect(
+        service.getSubjectWithTeacherAndStudent({ code: 'OLD' }),
+      ).rejects.toThrow(new NotFoundException('Subject not found'));
+      expect(subjectReads.forgetCode).toHaveBeenCalledTimes(1);
+      expect(subjectReads.forgetCode).toHaveBeenCalledWith('OLD');
+      expect(subjectReads.subjectIdByCode).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not read the subject, students or teachers through repositories', async () => {
+      await service.getSubjectWithTeacherAndStudent({ subjectId: 's1' });
+      await service.getSubjectWithTeacherAndStudent({ code: 'OLD' });
+
+      expect(service.subjectRepository.findUnique).not.toHaveBeenCalled();
+      expect(
+        (service as any).studentOnSubjectRepository.findMany,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getSubjectWithTeacherAndStudent over the cache', () => {
+    // A stand-in for the primary Prisma client: it answers from `subjects` and
+    // applies `select` and `omit` the way Prisma does.
+    let subjects: Record<string, unknown>[];
+    let cache: CacheService;
+    let reads: SubjectReads;
+
+    const prismaRow = (row: Record<string, unknown> | undefined, args: any) => {
+      if (!row) return null;
+      if (args.select) return { id: row.id };
+      return Object.fromEntries(
+        Object.entries(row).filter(([key]) => !args.omit?.[key]),
       );
+    };
+    const codeLookups = (code: string) =>
+      mockPrismaService.subject.findUnique.mock.calls.filter(
+        ([args]) => args.where.code === code,
+      );
+    const changeCode = async (rows: Record<string, unknown>[]) => {
+      subjects = rows;
+      // A Subject write bumps that subject's roster.
+      await cache.bump(subjectScope('s1', 'roster'));
+    };
+
+    beforeEach(() => {
+      subjects = [{ id: 's1', code: 'OLD', verifyLineToken: 'secret-token' }];
+      mockPrismaService.subject.findUnique.mockImplementation(async (args) =>
+        prismaRow(
+          subjects.find((s) =>
+            args.where.id ? s.id === args.where.id : s.code === args.where.code,
+          ),
+          args,
+        ),
+      );
+      mockPrismaService.studentOnSubject.findMany.mockImplementation(
+        async (args) => [{ id: `sos-${args.where.subjectId}` }],
+      );
+      mockPrismaService.teacherOnSubject.findMany.mockImplementation(
+        async (args) => [{ id: `tos-${args.where.subjectId}` }],
+      );
+      ({ cache } = createTestCache());
+      reads = new SubjectReads(mockPrismaService as any, cache);
+      (service as any).subjectReads = reads;
+    });
+
+    afterEach(() => {
+      mockPrismaService.subject.findUnique.mockReset();
+      mockPrismaService.studentOnSubject.findMany.mockReset();
+      mockPrismaService.teacherOnSubject.findMany.mockReset();
+    });
+
+    it('should look the code up in Prisma once across two calls', async () => {
+      const first = await service.getSubjectWithTeacherAndStudent({
+        code: 'OLD',
+      });
+      const second = await service.getSubjectWithTeacherAndStudent({
+        code: 'OLD',
+      });
+
+      expect(second).toEqual(first);
+      expect(first).toMatchObject({ id: 's1', code: 'OLD' });
+      expect(codeLookups('OLD')).toEqual([
+        [{ where: { code: 'OLD' }, select: { id: true } }],
+      ]);
+      // The roster is read once too.
+      expect(mockPrismaService.subject.findUnique).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.studentOnSubject.findMany).toHaveBeenCalledTimes(
+        1,
+      );
+    });
+
+    it('should forget a cached code the subject no longer has, then return 404 for it', async () => {
+      const forgetCode = jest.spyOn(reads, 'forgetCode');
+      await service.getSubjectWithTeacherAndStudent({ code: 'OLD' });
+      await changeCode([
+        { id: 's1', code: 'NEW', verifyLineToken: 'secret-token' },
+      ]);
+
+      await expect(
+        service.getSubjectWithTeacherAndStudent({ code: 'OLD' }),
+      ).rejects.toThrow(new NotFoundException('Subject not found'));
+      expect(forgetCode).toHaveBeenCalledWith('OLD');
+      // The cached OLD -> s1 mapping was dropped and OLD was looked up again.
+      expect(codeLookups('OLD')).toHaveLength(2);
+    });
+
+    it('should serve the subject by its new code', async () => {
+      await service.getSubjectWithTeacherAndStudent({ code: 'OLD' });
+      await changeCode([
+        { id: 's1', code: 'NEW', verifyLineToken: 'secret-token' },
+      ]);
+      await expect(
+        service.getSubjectWithTeacherAndStudent({ code: 'OLD' }),
+      ).rejects.toThrow(NotFoundException);
+
+      const result = await service.getSubjectWithTeacherAndStudent({
+        code: 'NEW',
+      });
+
+      expect(result).toMatchObject({
+        id: 's1',
+        code: 'NEW',
+        studentOnSubjects: [{ id: 'sos-s1' }],
+        teacherOnSubjects: [{ id: 'tos-s1' }],
+      });
+    });
+
+    it('should serve the subject that now holds a code another subject gave up', async () => {
+      await service.getSubjectWithTeacherAndStudent({ code: 'OLD' });
+      await changeCode([
+        { id: 's1', code: 'NEW', verifyLineToken: null },
+        { id: 's2', code: 'OLD', verifyLineToken: null },
+      ]);
+
+      const result = await service.getSubjectWithTeacherAndStudent({
+        code: 'OLD',
+      });
+
+      expect(result).toMatchObject({
+        id: 's2',
+        code: 'OLD',
+        studentOnSubjects: [{ id: 'sos-s2' }],
+        teacherOnSubjects: [{ id: 'tos-s2' }],
+      });
+    });
+
+    it('should not return verifyLineToken in this unauthenticated response', async () => {
+      for (const dto of [{ code: 'OLD' }, { subjectId: 's1' }]) {
+        const result = await service.getSubjectWithTeacherAndStudent(dto);
+
+        expect(result).toMatchObject({ id: 's1', code: 'OLD' });
+        expect(result).not.toHaveProperty('verifyLineToken');
+      }
+    });
+  });
+
+  describe('subject roster cache wiring', () => {
+    afterEach(() => {
+      mockPrismaService.subject.findUnique.mockReset();
+      mockPrismaService.studentOnSubject.findMany.mockReset();
+      mockPrismaService.teacherOnSubject.findMany.mockReset();
+    });
+
+    it('builds its subject reads on the primary Prisma client', async () => {
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        code: 'OLD',
+      });
+      mockPrismaService.studentOnSubject.findMany.mockResolvedValue([
+        { id: 'sos1' },
+      ]);
+      mockPrismaService.teacherOnSubject.findMany.mockResolvedValue([
+        { id: 'tos1' },
+      ]);
 
       const result = await service.getSubjectWithTeacherAndStudent({
         subjectId: 's1',
       });
-      expect(result.id).toBe('s1');
-      expect(result.studentOnSubjects.length).toBe(1);
-      expect(result.teacherOnSubjects.length).toBe(1);
-    });
 
-    it('does not read verifyLineToken for this unauthenticated response', async () => {
-      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue({
+      expect(result).toEqual({
         id: 's1',
+        code: 'OLD',
+        studentOnSubjects: [{ id: 'sos1' }],
+        teacherOnSubjects: [{ id: 'tos1' }],
       });
-      (service as any).studentOnSubjectRepository.findMany.mockResolvedValue(
-        [],
-      );
-      mockTeacherOnSubjectService.teacherOnSubjectRepository.findMany.mockResolvedValue(
-        [],
-      );
-
-      await service.getSubjectWithTeacherAndStudent({ code: 'ABC123' });
-
-      expect(service.subjectRepository.findUnique).toHaveBeenCalledWith({
-        where: { code: 'ABC123' },
+      expect(mockPrismaService.subject.findUnique).toHaveBeenCalledWith({
+        where: { id: 's1' },
         omit: { verifyLineToken: true },
+      });
+      expect(mockPrismaService.studentOnSubject.findMany).toHaveBeenCalledWith({
+        where: { subjectId: 's1' },
+        orderBy: { order: 'asc' },
       });
     });
   });

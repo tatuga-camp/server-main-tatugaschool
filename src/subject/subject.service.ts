@@ -61,6 +61,7 @@ import { CommentOnAnnouncementRepository } from '../comment-on-announcement/comm
 import { FileOnAnnouncementRepository } from '../file-on-announcement/file-on-announcement.repository';
 import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
+import { SubjectReads } from './subject.reads';
 
 @Injectable()
 export class SubjectService {
@@ -84,6 +85,7 @@ export class SubjectService {
   private announcementRepository: AnnouncementRepository;
   private commentOnAnnouncementRepository: CommentOnAnnouncementRepository;
   private fileOnAnnouncementRepository: FileOnAnnouncementRepository;
+  subjectReads: SubjectReads;
 
   constructor(
     private prisma: PrismaService,
@@ -170,6 +172,7 @@ export class SubjectService {
     this.fileOnAnnouncementRepository = new FileOnAnnouncementRepository(
       this.prisma,
     );
+    this.subjectReads = new SubjectReads(this.prisma, this.cache);
   }
 
   async leaveGroupLine(request: { groupId: string }): Promise<Subject | void> {
@@ -697,45 +700,40 @@ export class SubjectService {
     code?: string;
     subjectId?: string;
   }): Promise<
-    Subject & {
+    Omit<Subject, 'verifyLineToken'> & {
       studentOnSubjects: StudentOnSubject[];
       teacherOnSubjects: TeacherOnSubject[];
     }
   > {
     try {
-      const subject = await this.subjectRepository.findUnique({
-        where: {
-          ...(dto.code && { code: dto.code }),
-          ...(dto.subjectId && { id: dto.subjectId }),
-        },
-        omit: { verifyLineToken: true },
-      });
-      if (!subject) {
+      let roster = await this.resolveRoster(dto);
+      // The cached code mapping is self-checking (spec §6.1): if the subject it
+      // points at no longer has this code, forget it and resolve the code again.
+      if (dto.code && roster && roster.subject.code !== dto.code) {
+        await this.subjectReads.forgetCode(dto.code);
+        roster = await this.resolveRoster(dto);
+        if (roster && roster.subject.code !== dto.code) roster = null;
+      }
+      if (!roster) {
         throw new NotFoundException('Subject not found');
       }
 
-      const [students, teachers] = await Promise.all([
-        this.studentOnSubjectRepository.findMany({
-          where: {
-            subjectId: subject.id,
-          },
-        }),
-        this.teacherOnSubjectService.teacherOnSubjectRepository.findMany({
-          where: {
-            subjectId: subject.id,
-          },
-        }),
-      ]);
-
       return {
-        ...subject,
-        studentOnSubjects: students,
-        teacherOnSubjects: teachers,
+        ...roster.subject,
+        studentOnSubjects: roster.students,
+        teacherOnSubjects: roster.teachers,
       };
     } catch (error) {
       this.logger.error(error);
       throw error;
     }
+  }
+
+  private async resolveRoster(dto: { code?: string; subjectId?: string }) {
+    const id = dto.code
+      ? await this.subjectReads.subjectIdByCode(dto.code)
+      : dto.subjectId;
+    return id ? this.subjectReads.subjectRoster(id) : null;
   }
 
   async createSubject(
