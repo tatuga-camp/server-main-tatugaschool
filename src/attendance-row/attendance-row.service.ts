@@ -32,6 +32,8 @@ import { ResponseGetAttendanceRowById } from './interfaces';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { CacheRefs } from '../cache/cache-refs';
+import { AttendanceReads } from '../attendance-table/attendance.reads';
 
 @Injectable()
 export class AttendanceRowService {
@@ -39,6 +41,8 @@ export class AttendanceRowService {
   attendanceRowRepository: AttendanceRowRepository;
   private attendanceTableRepository: AttendanceTableRepository;
   private attendanceRepository: AttendanceRepository;
+  refs: CacheRefs;
+  attendanceReads: AttendanceReads;
 
   constructor(
     private prisma: PrismaService,
@@ -64,6 +68,8 @@ export class AttendanceRowService {
       this.prismaReadService,
       this.cache,
     );
+    this.refs = new CacheRefs(this.prisma, this.cache);
+    this.attendanceReads = new AttendanceReads(this.prisma, this.cache);
   }
 
   async GetAttendanceRows(
@@ -71,44 +77,25 @@ export class AttendanceRowService {
     user: UserJwtPayload,
   ): Promise<(AttendanceRow & { attendances: Attendance[] })[]> {
     try {
-      const table = await this.prisma.attendanceTable.findUnique({
-        where: {
-          id: dto.attendanceTableId,
-        },
-      });
+      const ref = await this.refs.attendanceTable(dto.attendanceTableId);
 
-      if (!table) throw new NotFoundException('Attendance table not found');
+      if (!ref) throw new NotFoundException('Attendance table not found');
 
+      // Authorize on every request, before reading any cached subject data.
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
-        subjectId: table.subjectId,
+        subjectId: ref.subjectId,
       });
 
-      const rows = await this.attendanceRowRepository.findMany({
-        where: {
-          attendanceTableId: dto.attendanceTableId,
-        },
-      });
+      // The immutable ref outlives a deleted table; the attendance unit does not.
+      const rows = await this.attendanceReads.tableRows(
+        ref.subjectId,
+        dto.attendanceTableId,
+      );
 
-      const attendances =
-        rows.length > 0
-          ? await this.attendanceRepository.findMany({
-              where: {
-                attendanceRowId: {
-                  in: rows.map((row) => row.id),
-                },
-              },
-            })
-          : [];
+      if (!rows) throw new NotFoundException('Attendance table not found');
 
-      return rows.map((row) => {
-        return {
-          ...row,
-          attendances: attendances.filter(
-            (attendance) => attendance.attendanceRowId === row.id,
-          ),
-        };
-      });
+      return rows;
     } catch (error) {
       this.logger.error(error);
       throw error;

@@ -31,6 +31,9 @@ import { AttendanceRowRepository } from '../attendance-row/attendance-row.reposi
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { CacheRefs } from '../cache/cache-refs';
+import { AssignmentReads } from '../assignment/assignment.reads';
+import { AttendanceReads } from './attendance.reads';
 
 @Injectable()
 export class AttendanceTableService {
@@ -40,6 +43,9 @@ export class AttendanceTableService {
   studentOnSubjectRepository: StudentOnSubjectRepository;
   attendanceRowRepository: AttendanceRowRepository;
   attendanceRepository: AttendanceRepository;
+  refs: CacheRefs;
+  reads: AssignmentReads;
+  attendanceReads: AttendanceReads;
   constructor(
     private prisma: PrismaService,
     private teacherOnSubjectService: TeacherOnSubjectService,
@@ -72,6 +78,9 @@ export class AttendanceTableService {
       this.prisma,
       this.cache,
     );
+    this.refs = new CacheRefs(this.prisma, this.cache);
+    this.reads = new AssignmentReads(this.prisma, this.cache);
+    this.attendanceReads = new AttendanceReads(this.prisma, this.cache);
   }
 
   async getBySubjectId(
@@ -79,43 +88,19 @@ export class AttendanceTableService {
     user: UserJwtPayload,
   ): Promise<(AttendanceTable & { statusLists: AttendanceStatusList[] })[]> {
     try {
-      const subject = await this.prisma.subject.findUnique({
-        where: {
-          id: dto.subjectId,
-        },
-      });
+      const subject = await this.refs.subject(dto.subjectId);
 
       if (!subject) {
         throw new NotFoundException('Subject not found');
       }
 
+      // Authorize on every request, before reading any cached subject data.
       await this.teacherOnSubjectService.ValidateAccess({
         userId: user.id,
         subjectId: dto.subjectId,
       });
 
-      const tables = await this.attendanceTableRepository.findMany({
-        where: {
-          subjectId: dto.subjectId,
-        },
-      });
-
-      const statusLists =
-        tables.length > 0
-          ? await this.attendanceStatusListSRepository.findMany({
-              where: {
-                attendanceTableId: {
-                  in: tables.map((table) => table.id),
-                },
-              },
-            })
-          : [];
-      return tables.map((table) => ({
-        ...table,
-        statusLists: statusLists.filter(
-          (status) => status.attendanceTableId === table.id,
-        ),
-      }));
+      return await this.attendanceReads.tables(dto.subjectId);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -136,63 +121,33 @@ export class AttendanceTableService {
       if (student.id !== dto.studentId) {
         throw new ForbiddenException("You don't have access to this student");
       }
-      const studentOnSubject = await this.studentOnSubjectRepository.findFirst({
-        where: {
-          subjectId: dto.subjectId,
-          studentId: student.id,
-        },
-      });
+      // The enrolment is cached (null too) but checked on every request,
+      // before reading any cached attendance.
+      const studentOnSubject = await this.reads.enrollment(
+        dto.subjectId,
+        student.id,
+      );
 
       if (!studentOnSubject) {
         throw new ForbiddenException('Student not found');
       }
 
-      const tables = await this.attendanceTableRepository.findMany({
-        where: {
-          subjectId: dto.subjectId,
-        },
-      });
-
-      const [rows, attendances, statusLists] = await Promise.all([
-        tables.length > 0
-          ? this.attendanceRowRepository.findMany({
-              where: {
-                attendanceTableId: {
-                  in: tables.map((table) => table.id),
-                },
-              },
-            })
-          : [],
-        tables.length > 0
-          ? this.attendanceRepository.findMany({
-              where: {
-                attendanceTableId: {
-                  in: tables.map((table) => table.id),
-                },
-                studentOnSubjectId: studentOnSubject.id,
-              },
-            })
-          : [],
-        tables.length > 0
-          ? this.attendanceStatusListSRepository.findMany({
-              where: {
-                attendanceTableId: {
-                  in: tables.map((table) => table.id),
-                },
-              },
-            })
-          : [],
+      const [tables, { rows, attendances }] = await Promise.all([
+        this.attendanceReads.tables(dto.subjectId),
+        this.attendanceReads.studentAttendance(
+          dto.subjectId,
+          studentOnSubject.id,
+        ),
       ]);
 
-      return tables.map((table) => ({
+      // statusLists moves back to the end, keeping the response's key order.
+      return tables.map(({ statusLists, ...table }) => ({
         ...table,
         rows: rows.filter((row) => row.attendanceTableId === table.id),
         attendances: attendances.filter(
           (attendance) => attendance.attendanceTableId === table.id,
         ),
-        statusLists: statusLists.filter(
-          (status) => status.attendanceTableId === table.id,
-        ),
+        statusLists,
       }));
     } catch (error) {
       this.logger.error(error);
