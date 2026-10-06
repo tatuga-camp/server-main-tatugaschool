@@ -578,12 +578,21 @@ Your tasks (for ALLOWED messages):
         contents.push({ role: 'user', parts: responseParts });
       }
 
-      // Out of tool rounds (or a round returned neither calls nor text):
-      // force a text answer from what has been gathered.
+      // Out of tool rounds (or a round returned neither calls nor text — e.g.
+      // an intermittent MALFORMED_RESPONSE): force a text answer from what
+      // has been gathered. Keep the tools declared with mode NONE; removing
+      // them from a history that holds function calls made Gemini return
+      // MALFORMED_RESPONSE about half the time (measured 4/8 vs 0/5).
       const finalResponse = await this.googleAI.models.generateContent({
         model,
         contents,
-        config: this.lineAgentConfig(systemInstruction),
+        config: {
+          ...this.lineAgentConfig(systemInstruction),
+          tools,
+          toolConfig: {
+            functionCallingConfig: { mode: FunctionCallingConfigMode.NONE },
+          },
+        },
       });
       totalTokens += finalResponse.usageMetadata?.totalTokenCount ?? 0;
 

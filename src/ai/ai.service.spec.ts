@@ -491,8 +491,14 @@ describe('AiService', () => {
 
       expect(result).toBe('forced answer');
       expect(mockGenerateContent).toHaveBeenCalledTimes(5);
-      // the forced call must not offer tools again
-      expect(mockGenerateContent.mock.calls[4][0].config.tools).toBeUndefined();
+      // The forced call keeps the tools declared but forbids calling them:
+      // dropping them from a history that holds function calls made Gemini
+      // return MALFORMED_RESPONSE ~half the time; mode NONE was 0/5.
+      const forcedConfig = mockGenerateContent.mock.calls[4][0].config;
+      expect(forcedConfig.tools).toEqual(
+        mockGenerateContent.mock.calls[0][0].config.tools,
+      );
+      expect(forcedConfig.toolConfig.functionCallingConfig.mode).toBe('NONE');
       // ...but must keep the same rules, or the scope guard is lost after
       // tool rounds
       expect(mockGenerateContent.mock.calls[4][0].config.systemInstruction).toBe(
