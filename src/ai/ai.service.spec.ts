@@ -418,9 +418,15 @@ describe('AiService', () => {
       expect(mockGenerateContent).toHaveBeenCalledTimes(1);
 
       const call = mockGenerateContent.mock.calls[0][0];
-      const promptText = call.contents[0].parts[0].text;
-      expect(promptText).toContain('สรุปคะแนน');
-      expect(promptText).toContain('Math'); // preamble embedded
+      // Rules + reference data live in the system instruction; the user's
+      // text is the only user-turn content, so it can't rewrite the rules.
+      expect(call.contents).toEqual([
+        { role: 'user', parts: [{ text: 'สรุปคะแนน' }] },
+      ]);
+      const system = call.config.systemInstruction;
+      expect(system).toContain('Math'); // preamble embedded
+      expect(system).not.toContain('สรุปคะแนน');
+      expect(system).toContain('SCOPE');
       expect(
         call.config.tools[0].functionDeclarations.map((d: any) => d.name),
       ).toEqual(['get_student_summary', 'query_subject_data']);
@@ -487,6 +493,14 @@ describe('AiService', () => {
       expect(mockGenerateContent).toHaveBeenCalledTimes(5);
       // the forced call must not offer tools again
       expect(mockGenerateContent.mock.calls[4][0].config.tools).toBeUndefined();
+      // ...but must keep the same rules, or the scope guard is lost after
+      // tool rounds
+      expect(mockGenerateContent.mock.calls[4][0].config.systemInstruction).toBe(
+        mockGenerateContent.mock.calls[0][0].config.systemInstruction,
+      );
+      expect(mockGenerateContent.mock.calls[4][0].config.systemInstruction).toContain(
+        'SCOPE',
+      );
     });
 
     it('throws when the model produces no answer text at all', async () => {
