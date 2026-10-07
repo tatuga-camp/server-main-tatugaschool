@@ -455,7 +455,7 @@ export class AiService implements AiType {
   // past Gemini's input window (400 INVALID_ARGUMENT). The bot therefore sends
   // only a small roster preamble and lets the model pull detail rows through
   // the constrained query_subject_data tool, a few capped rounds at a time.
-  private static readonly MAX_TOOL_ROUNDS = 4;
+  private static readonly MAX_TOOL_ROUNDS = 10;
   // Gemini does not always honor mode NONE: it can still return a
   // functionCall (and no text) on the forced round. Each extra attempt answers
   // that call with a refusal so the history stays valid, then asks again.
