@@ -509,6 +509,52 @@ describe('AiService', () => {
       );
     });
 
+    it('refuses a tool call made despite mode NONE and asks again', async () => {
+      const toolCallResponse = {
+        functionCalls: [
+          { name: 'query_subject_data', args: { collection: 'attendances' } },
+        ],
+        candidates: [{ content: { role: 'model', parts: [] } }],
+      };
+      mockGenerateContent
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse)
+        .mockResolvedValueOnce(toolCallResponse) // forced round ignores NONE
+        .mockResolvedValueOnce({ text: 'second forced answer' });
+
+      const result = await service.answerSubjectQuestion({
+        subjectId: 's1',
+        question: 'q',
+      });
+
+      expect(result).toBe('second forced answer');
+      expect(mockGenerateContent).toHaveBeenCalledTimes(6);
+      // the ignored call is never executed — 4 AUTO rounds only
+      expect(mockSubjectQueryTool.handleCall).toHaveBeenCalledTimes(4);
+      const retry = mockGenerateContent.mock.calls[5][0];
+      expect(retry.config.toolConfig.functionCallingConfig.mode).toBe('NONE');
+      const lastTurn = retry.contents[retry.contents.length - 1];
+      expect(lastTurn.parts[0].functionResponse.response.error).toContain(
+        'No more tool calls',
+      );
+    });
+
+    it('gives up after the forced attempts keep calling tools', async () => {
+      mockGenerateContent.mockResolvedValue({
+        functionCalls: [
+          { name: 'query_subject_data', args: { collection: 'attendances' } },
+        ],
+        candidates: [{ content: { role: 'model', parts: [] } }],
+      });
+
+      await expect(
+        service.answerSubjectQuestion({ subjectId: 's1', question: 'q' }),
+      ).rejects.toThrow('no answer text');
+      expect(mockGenerateContent).toHaveBeenCalledTimes(6);
+    });
+
     it('throws when the model produces no answer text at all', async () => {
       mockGenerateContent.mockResolvedValue({ text: undefined, functionCalls: undefined });
 

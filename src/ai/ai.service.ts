@@ -456,6 +456,10 @@ export class AiService implements AiType {
   // only a small roster preamble and lets the model pull detail rows through
   // the constrained query_subject_data tool, a few capped rounds at a time.
   private static readonly MAX_TOOL_ROUNDS = 4;
+  // Gemini does not always honor mode NONE: it can still return a
+  // functionCall (and no text) on the forced round. Each extra attempt answers
+  // that call with a refusal so the history stays valid, then asks again.
+  private static readonly FORCED_ANSWER_ATTEMPTS = 2;
 
   // Every round (including the forced final answer) must carry the same
   // system instruction, or the scope rules vanish after tool rounds.
@@ -583,26 +587,58 @@ Your tasks (for ALLOWED messages):
       // has been gathered. Keep the tools declared with mode NONE; removing
       // them from a history that holds function calls made Gemini return
       // MALFORMED_RESPONSE about half the time (measured 4/8 vs 0/5).
-      const finalResponse = await this.googleAI.models.generateContent({
-        model,
-        contents,
-        config: {
-          ...this.lineAgentConfig(systemInstruction),
-          tools,
-          toolConfig: {
-            functionCallingConfig: { mode: FunctionCallingConfigMode.NONE },
+      for (
+        let attempt = 1;
+        attempt <= AiService.FORCED_ANSWER_ATTEMPTS;
+        attempt++
+      ) {
+        const finalResponse = await this.googleAI.models.generateContent({
+          model,
+          contents,
+          config: {
+            ...this.lineAgentConfig(systemInstruction),
+            tools,
+            toolConfig: {
+              functionCallingConfig: { mode: FunctionCallingConfigMode.NONE },
+            },
           },
-        },
-      });
-      totalTokens += finalResponse.usageMetadata?.totalTokenCount ?? 0;
+        });
+        totalTokens += finalResponse.usageMetadata?.totalTokenCount ?? 0;
 
-      if (!finalResponse.text) {
-        throw new Error('AI returned no answer text');
+        if (finalResponse.text) {
+          this.logger.log(
+            `answerSubjectQuestion done (forced, attempt ${attempt}): subject=${dto.subjectId} rounds=${AiService.MAX_TOOL_ROUNDS} queried=[${queried.join(', ')}] tokens=${totalTokens}`,
+          );
+          return finalResponse.text;
+        }
+
+        const calls = finalResponse.functionCalls;
+        if (!calls || calls.length === 0) break;
+
+        this.logger.warn(
+          `answerSubjectQuestion: forced round ${attempt} still called tools [${calls.map((c) => c.name).join(', ')}] (subject=${dto.subjectId})`,
+        );
+        contents.push(
+          finalResponse.candidates?.[0]?.content ?? {
+            role: 'model',
+            parts: calls.map((call) => ({ functionCall: call })),
+          },
+        );
+        contents.push({
+          role: 'user',
+          parts: calls.map((call) => ({
+            functionResponse: {
+              name: call.name,
+              response: {
+                error:
+                  'No more tool calls are available. Answer the question now using only the data already returned above.',
+              },
+            },
+          })),
+        });
       }
-      this.logger.log(
-        `answerSubjectQuestion done (forced): subject=${dto.subjectId} rounds=${AiService.MAX_TOOL_ROUNDS} queried=[${queried.join(', ')}] tokens=${totalTokens}`,
-      );
-      return finalResponse.text;
+
+      throw new Error('AI returned no answer text');
     } catch (error) {
       // Log message + status explicitly: serializing the ApiError object drops
       // its (non-enumerable) message, which hides the actual Gemini reason.
