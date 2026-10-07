@@ -395,6 +395,7 @@ describe('AiService', () => {
 
   describe('answerSubjectQuestion', () => {
     let mockGenerateContent: jest.Mock;
+    const ROUNDS: number = (AiService as any).MAX_TOOL_ROUNDS;
 
     beforeEach(() => {
       mockGenerateContent = jest.fn();
@@ -477,12 +478,10 @@ describe('AiService', () => {
         ],
         candidates: [{ content: { role: 'model', parts: [] } }],
       };
-      mockGenerateContent
-        .mockResolvedValueOnce(toolCallResponse)
-        .mockResolvedValueOnce(toolCallResponse)
-        .mockResolvedValueOnce(toolCallResponse)
-        .mockResolvedValueOnce(toolCallResponse)
-        .mockResolvedValueOnce({ text: 'forced answer' });
+      for (let i = 0; i < ROUNDS; i++) {
+        mockGenerateContent.mockResolvedValueOnce(toolCallResponse);
+      }
+      mockGenerateContent.mockResolvedValueOnce({ text: 'forced answer' });
 
       const result = await service.answerSubjectQuestion({
         subjectId: 's1',
@@ -490,23 +489,68 @@ describe('AiService', () => {
       });
 
       expect(result).toBe('forced answer');
-      expect(mockGenerateContent).toHaveBeenCalledTimes(5);
+      expect(mockGenerateContent).toHaveBeenCalledTimes(ROUNDS + 1);
       // The forced call keeps the tools declared but forbids calling them:
       // dropping them from a history that holds function calls made Gemini
       // return MALFORMED_RESPONSE ~half the time; mode NONE was 0/5.
-      const forcedConfig = mockGenerateContent.mock.calls[4][0].config;
+      const forcedConfig = mockGenerateContent.mock.calls[ROUNDS][0].config;
       expect(forcedConfig.tools).toEqual(
         mockGenerateContent.mock.calls[0][0].config.tools,
       );
       expect(forcedConfig.toolConfig.functionCallingConfig.mode).toBe('NONE');
       // ...but must keep the same rules, or the scope guard is lost after
       // tool rounds
-      expect(mockGenerateContent.mock.calls[4][0].config.systemInstruction).toBe(
+      expect(mockGenerateContent.mock.calls[ROUNDS][0].config.systemInstruction).toBe(
         mockGenerateContent.mock.calls[0][0].config.systemInstruction,
       );
-      expect(mockGenerateContent.mock.calls[4][0].config.systemInstruction).toContain(
+      expect(mockGenerateContent.mock.calls[ROUNDS][0].config.systemInstruction).toContain(
         'SCOPE',
       );
+    });
+
+    it('refuses a tool call made despite mode NONE and asks again', async () => {
+      const toolCallResponse = {
+        functionCalls: [
+          { name: 'query_subject_data', args: { collection: 'attendances' } },
+        ],
+        candidates: [{ content: { role: 'model', parts: [] } }],
+      };
+      for (let i = 0; i < ROUNDS; i++) {
+        mockGenerateContent.mockResolvedValueOnce(toolCallResponse);
+      }
+      mockGenerateContent
+        .mockResolvedValueOnce(toolCallResponse) // forced round ignores NONE
+        .mockResolvedValueOnce({ text: 'second forced answer' });
+
+      const result = await service.answerSubjectQuestion({
+        subjectId: 's1',
+        question: 'q',
+      });
+
+      expect(result).toBe('second forced answer');
+      expect(mockGenerateContent).toHaveBeenCalledTimes(ROUNDS + 2);
+      // the ignored call is never executed — AUTO rounds only
+      expect(mockSubjectQueryTool.handleCall).toHaveBeenCalledTimes(ROUNDS);
+      const retry = mockGenerateContent.mock.calls[ROUNDS + 1][0];
+      expect(retry.config.toolConfig.functionCallingConfig.mode).toBe('NONE');
+      const lastTurn = retry.contents[retry.contents.length - 1];
+      expect(lastTurn.parts[0].functionResponse.response.error).toContain(
+        'No more tool calls',
+      );
+    });
+
+    it('gives up after the forced attempts keep calling tools', async () => {
+      mockGenerateContent.mockResolvedValue({
+        functionCalls: [
+          { name: 'query_subject_data', args: { collection: 'attendances' } },
+        ],
+        candidates: [{ content: { role: 'model', parts: [] } }],
+      });
+
+      await expect(
+        service.answerSubjectQuestion({ subjectId: 's1', question: 'q' }),
+      ).rejects.toThrow('no answer text');
+      expect(mockGenerateContent).toHaveBeenCalledTimes(ROUNDS + 2);
     });
 
     it('throws when the model produces no answer text at all', async () => {
