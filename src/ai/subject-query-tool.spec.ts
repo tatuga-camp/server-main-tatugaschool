@@ -81,6 +81,25 @@ describe('SubjectQueryToolService', () => {
       expect(result.error).toContain('ISO 8601');
     });
 
+    it('rejects an enum filter value outside the Prisma enum', async () => {
+      const result = await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        filters: { status: 'PEDDING' },
+      });
+      expect(result.error).toContain('Invalid status "PEDDING"');
+      expect(result.error).toContain('PENDDING');
+      expect(prismaRead.studentOnAssignment.findMany).not.toHaveBeenCalled();
+    });
+
+    it('accepts a valid enum filter value', async () => {
+      await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        filters: { status: 'PENDDING' },
+      });
+      const call = prismaRead.studentOnAssignment.findMany.mock.calls[0][0];
+      expect(call.where).toEqual({ subjectId: SUBJECT_ID, status: 'PENDDING' });
+    });
+
     it('rejects groupBy fields outside the whitelist', async () => {
       const result = await service.execute(SUBJECT_ID, {
         collection: 'attendances',

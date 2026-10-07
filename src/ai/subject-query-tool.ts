@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { StudentAssignmentStatus } from '@prisma/client';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 
 /**
@@ -34,6 +35,8 @@ export interface CollectionConfig {
   mongoCollection: string;
   /** Equality-filter whitelist: required + indexed fields only */
   filters: string[];
+  /** allowed values for enum-typed filters — rejected before Prisma throws */
+  enumFilters?: Record<string, readonly string[]>;
   /** groupBy whitelist */
   groupBy: string[];
   /** numeric field summed in groupBy mode (in addition to _count) */
@@ -81,10 +84,11 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
   },
   studentOnAssignments: {
     description:
-      'This data contains the assignments assigned to students, including their submission status and earned scores. Student status can be "PEDDING" (assigned but not submitted), "SUBMITTED" (submitted but not reviewed), "IMPROVED" (summited but teacher ask to improve) or "REVIEWD" (submitted and reviewed with score).',
+      'This data contains the assignments assigned to students, including their submission status and earned scores. Student status can be "PENDDING" (assigned but not submitted), "SUBMITTED" (submitted but not reviewed), "IMPROVED" (summited but teacher ask to improve) or "REVIEWD" (submitted and reviewed with score).',
     model: 'studentOnAssignment',
     mongoCollection: 'StudentOnAssignment',
     filters: ['studentOnSubjectId', 'assignmentId', 'studentId', 'status'],
+    enumFilters: { status: Object.values(StudentAssignmentStatus) },
     groupBy: ['status', 'assignmentId', 'studentOnSubjectId'],
     sum: 'score',
     select: [
@@ -510,6 +514,12 @@ export class SubjectQueryToolService {
       }
       if (typeof value !== 'string' || value.length === 0 || value.length > 100) {
         return { error: `Filter "${key}" must be a non-empty string.` };
+      }
+      const allowed = config.enumFilters?.[key];
+      if (allowed && !allowed.includes(value)) {
+        return {
+          error: `Invalid ${key} "${value}" on ${args.collection}. Allowed: ${allowed.join(', ')}`,
+        };
       }
       where[key] = value;
     }
