@@ -37,6 +37,8 @@ export interface CollectionConfig {
   filters: string[];
   /** allowed values for enum-typed filters — rejected before Prisma throws */
   enumFilters?: Record<string, readonly string[]>;
+  /** always-on server-side conditions (required fields only); never model-supplied */
+  scope?: Record<string, unknown>;
   /** groupBy whitelist */
   groupBy: string[];
   /** numeric field summed in groupBy mode (in addition to _count) */
@@ -89,6 +91,10 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     mongoCollection: 'StudentOnAssignment',
     filters: ['studentOnSubjectId', 'assignmentId', 'studentId', 'status'],
     enumFilters: { status: Object.values(StudentAssignmentStatus) },
+    // Every student gets a row per assignment, but rows for students the
+    // assignment was never given to have isAssigned=false and the default
+    // PENDDING status — counting them reports "outstanding" work that isn't.
+    scope: { isAssigned: true },
     groupBy: ['status', 'assignmentId', 'studentOnSubjectId'],
     sum: 'score',
     select: [
@@ -367,7 +373,7 @@ export class SubjectQueryToolService {
             _sum: { score: true },
           }),
           this.prismaRead.studentOnAssignment.findMany({
-            where,
+            where: { ...where, ...COLLECTION_CONFIG.studentOnAssignments.scope },
             select: {
               id: true,
               assignmentId: true,
@@ -492,9 +498,9 @@ export class SubjectQueryToolService {
       return { error: `Unknown mode "${args.mode}". Allowed: rows, count, groupBy` };
     }
 
-    const where: Record<string, unknown> = { subjectId };
+    const where: Record<string, unknown> = { subjectId, ...config.scope };
     for (const [key, value] of Object.entries(args.filters ?? {})) {
-      if (key === 'subjectId' || key === 'schoolId') {
+      if (key === 'subjectId' || key === 'schoolId' || key in (config.scope ?? {})) {
         return { error: `Filter "${key}" is set by the server and cannot be supplied.` };
       }
       if (key === 'dateFrom' || key === 'dateTo') {
