@@ -97,7 +97,41 @@ describe('SubjectQueryToolService', () => {
         filters: { status: 'PENDDING' },
       });
       const call = prismaRead.studentOnAssignment.findMany.mock.calls[0][0];
-      expect(call.where).toEqual({ subjectId: SUBJECT_ID, status: 'PENDDING' });
+      expect(call.where).toEqual({
+        subjectId: SUBJECT_ID,
+        isAssigned: true,
+        status: 'PENDDING',
+      });
+    });
+
+    it('counts only assigned studentOnAssignments in every mode', async () => {
+      await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        mode: 'count',
+        filters: { status: 'PENDDING' },
+      });
+      await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        mode: 'groupBy',
+        groupBy: 'assignmentId',
+      });
+      expect(prismaRead.studentOnAssignment.count).toHaveBeenCalledWith({
+        where: { subjectId: SUBJECT_ID, isAssigned: true, status: 'PENDDING' },
+      });
+      expect(prismaRead.studentOnAssignment.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { subjectId: SUBJECT_ID, isAssigned: true },
+        }),
+      );
+    });
+
+    it('rejects a model-supplied scope field', async () => {
+      const result = await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        filters: { isAssigned: 'false' },
+      });
+      expect(result.error).toContain('set by the server');
+      expect(prismaRead.studentOnAssignment.findMany).not.toHaveBeenCalled();
     });
 
     it('rejects groupBy fields outside the whitelist', async () => {
@@ -311,6 +345,11 @@ describe('SubjectQueryToolService', () => {
       );
       expect(prismaRead.scoreOnStudent.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: scoped }),
+      );
+      // unassigned rows (isAssigned=false, default PENDDING) are not the
+      // student's work
+      expect(prismaRead.studentOnAssignment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { ...scoped, isAssigned: true } }),
       );
       // per-title behavior-score breakdown is computed DB-side
       expect(prismaRead.scoreOnStudent.groupBy).toHaveBeenCalledWith({
