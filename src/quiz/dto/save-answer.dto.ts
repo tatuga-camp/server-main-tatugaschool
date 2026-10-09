@@ -1,6 +1,13 @@
 // src/quiz/dto/save-answer.dto.ts
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsString, Matches, MaxLength, ValidateNested } from 'class-validator';
+import {
+  ArrayMaxSize,
+  IsArray,
+  IsString,
+  Matches,
+  MaxLength,
+  ValidateNested,
+} from 'class-validator';
 import { QUIZ_ID_PATTERN } from '../quiz.constants';
 
 export class QuizBlankAnswerDto {

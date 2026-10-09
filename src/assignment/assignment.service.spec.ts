@@ -1193,7 +1193,11 @@ describe('AssignmentService', () => {
         await service.updateAssignment(
           {
             query: { assignmentId: 'a1' },
-            data: { maxScore: 99, title: 'T', quizSettings: { shuffleQuestions: true } },
+            data: {
+              maxScore: 99,
+              title: 'T',
+              quizSettings: { shuffleQuestions: true },
+            },
           } as any,
           { id: 'u1' } as any,
         );

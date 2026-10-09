@@ -1,4 +1,3 @@
-
 import {
   GradableQuestion,
   gradeQuestion,
@@ -34,7 +33,10 @@ const fill: GradableQuestion = {
     { id: 'y', acceptedAnswers: ['Thailand'] },
   ],
 };
-const pick = (...ids: string[]) => ({ selectedOptionIds: ids, blankAnswers: [] });
+const pick = (...ids: string[]) => ({
+  selectedOptionIds: ids,
+  blankAnswers: [],
+});
 const blanks = (x?: string, y?: string) => ({
   selectedOptionIds: [],
   blankAnswers: [
@@ -49,21 +51,15 @@ describe('normalizeBlankAnswer', () => {
   });
   it('treats a below-vowel typed after the tone mark as equal (NFC case)', () => {
     // ปู่: ป + ู + ่  vs  ป + ่ + ู
-    expect(normalizeBlankAnswer('ปู่')).toBe(
-      normalizeBlankAnswer('ปู่'),
-    );
+    expect(normalizeBlankAnswer('ปู่')).toBe(normalizeBlankAnswer('ปู่'));
   });
   it('treats an above-vowel typed after the tone mark as equal (NFC does not fix this)', () => {
     // กิ่ง: ก + ิ + ่ + ง  vs  ก + ่ + ิ + ง
-    expect(normalizeBlankAnswer('ก่ิง')).toBe(
-      normalizeBlankAnswer('กิ่ง'),
-    );
+    expect(normalizeBlankAnswer('ก่ิง')).toBe(normalizeBlankAnswer('กิ่ง'));
   });
   it('treats SARA AM typed before the tone mark as equal', () => {
     // น้ำ: น + ้ + ำ  vs  น + ำ + ้
-    expect(normalizeBlankAnswer('นำ้')).toBe(
-      normalizeBlankAnswer('น้ำ'),
-    );
+    expect(normalizeBlankAnswer('นำ้')).toBe(normalizeBlankAnswer('น้ำ'));
   });
 });
 
@@ -94,17 +90,25 @@ describe('gradeQuestion MULTIPLE', () => {
     expect(gradeQuestion(multiple, pick('b', 'd'), 'PARTIAL')).toBe(0);
   });
   it('ignores unknown option ids', () => {
-    expect(gradeQuestion(multiple, pick('a', 'c', 'zzz'), 'ALL_OR_NOTHING')).toBe(4);
+    expect(
+      gradeQuestion(multiple, pick('a', 'c', 'zzz'), 'ALL_OR_NOTHING'),
+    ).toBe(4);
   });
 });
 
 describe('gradeQuestion FILL_BLANK', () => {
   it('all blanks right gives full points', () => {
-    expect(gradeQuestion(fill, blanks(' bangKOK ', 'Thailand'), 'ALL_OR_NOTHING')).toBe(2);
-    expect(gradeQuestion(fill, blanks('กรุงเทพ', 'thailand'), 'ALL_OR_NOTHING')).toBe(2);
+    expect(
+      gradeQuestion(fill, blanks(' bangKOK ', 'Thailand'), 'ALL_OR_NOTHING'),
+    ).toBe(2);
+    expect(
+      gradeQuestion(fill, blanks('กรุงเทพ', 'thailand'), 'ALL_OR_NOTHING'),
+    ).toBe(2);
   });
   it('one of two blanks: AON 0, PARTIAL half', () => {
-    expect(gradeQuestion(fill, blanks('Bangkok', 'Laos'), 'ALL_OR_NOTHING')).toBe(0);
+    expect(
+      gradeQuestion(fill, blanks('Bangkok', 'Laos'), 'ALL_OR_NOTHING'),
+    ).toBe(0);
     expect(gradeQuestion(fill, blanks('Bangkok', 'Laos'), 'PARTIAL')).toBe(1);
   });
   it('empty or missing blanks never match', () => {

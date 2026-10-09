@@ -7,9 +7,16 @@ import {
   toStudentResultQuestion,
   toStudentSafeSubmission,
 } from './student-question.mapper';
-import { fullQuizAttempt, leakedIntegrityKeys } from './testing/quiz-attempt.fixture';
+import {
+  fullQuizAttempt,
+  leakedIntegrityKeys,
+} from './testing/quiz-attempt.fixture';
 
-const question = (id: string, order: number, overrides: Partial<AssignmentOnQuiz> = {}): AssignmentOnQuiz => ({
+const question = (
+  id: string,
+  order: number,
+  overrides: Partial<AssignmentOnQuiz> = {},
+): AssignmentOnQuiz => ({
   id,
   createAt: new Date(),
   updateAt: new Date(),
@@ -38,7 +45,10 @@ const fillQ = question('f', 9, {
 
 describe('toStudentQuestion', () => {
   it('never includes the answer key (deep key scan)', () => {
-    const json = JSON.stringify([toStudentQuestion(question('q1', 0)), toStudentQuestion(fillQ)]);
+    const json = JSON.stringify([
+      toStudentQuestion(question('q1', 0)),
+      toStudentQuestion(fillQ),
+    ]);
     expect(json).not.toContain('isCorrect');
     expect(json).not.toContain('acceptedAnswers');
     expect(json).not.toContain('Bangkok');
@@ -65,8 +75,13 @@ describe('orderForStudent', () => {
     expect(out[0].options.map((o) => o.id)).toEqual(['q1-a', 'q1-b', 'q1-c']);
   });
   it('is stable for one seed when shuffling questions and options', () => {
-    const settings = withDefaultQuizSettings({ shuffleQuestions: true, shuffleOptions: true });
-    expect(orderForStudent(qs, settings, 11)).toEqual(orderForStudent(qs, settings, 11));
+    const settings = withDefaultQuizSettings({
+      shuffleQuestions: true,
+      shuffleOptions: true,
+    });
+    expect(orderForStudent(qs, settings, 11)).toEqual(
+      orderForStudent(qs, settings, 11),
+    );
   });
 });
 
@@ -76,16 +91,24 @@ describe('toStudentResultQuestion', () => {
     expect(r.correctOptionIds).toEqual([]);
     expect(r.acceptedAnswers).toEqual([{ blankId: 'x', answers: ['Bangkok'] }]);
     expect(r.score).toBe(1);
-    expect(toStudentResultQuestion(question('q1', 0), 0).correctOptionIds).toEqual(['q1-a']);
+    expect(
+      toStudentResultQuestion(question('q1', 0), 0).correctOptionIds,
+    ).toEqual(['q1-a']);
   });
 });
 
 describe('isAnswered', () => {
   it('is true only when something was chosen or typed', () => {
     expect(isAnswered({ selectedOptionIds: [], blankAnswers: [] })).toBe(false);
-    expect(isAnswered({ selectedOptionIds: [], blankAnswers: [{ value: '  ' }] })).toBe(false);
-    expect(isAnswered({ selectedOptionIds: ['a'], blankAnswers: [] })).toBe(true);
-    expect(isAnswered({ selectedOptionIds: [], blankAnswers: [{ value: 'x' }] })).toBe(true);
+    expect(
+      isAnswered({ selectedOptionIds: [], blankAnswers: [{ value: '  ' }] }),
+    ).toBe(false);
+    expect(isAnswered({ selectedOptionIds: ['a'], blankAnswers: [] })).toBe(
+      true,
+    );
+    expect(
+      isAnswered({ selectedOptionIds: [], blankAnswers: [{ value: 'x' }] }),
+    ).toBe(true);
   });
 });
 
@@ -116,7 +139,9 @@ describe('toStudentSafeSubmission', () => {
 
   it('leaves no integrity or risk key anywhere in the row', () => {
     expect(leakedIntegrityKeys(row(fullQuizAttempt()))).not.toEqual([]);
-    expect(leakedIntegrityKeys(toStudentSafeSubmission(row(fullQuizAttempt())))).toEqual([]);
+    expect(
+      leakedIntegrityKeys(toStudentSafeSubmission(row(fullQuizAttempt()))),
+    ).toEqual([]);
   });
 
   it('maps a missing attempt to null', () => {

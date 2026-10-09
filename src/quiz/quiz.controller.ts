@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { GetUser } from '../auth/decorators';
 import { UserGuard } from '../auth/guard';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
@@ -21,17 +30,27 @@ export class QuizController {
   ) {}
 
   @Get('assignment/:assignmentId/questions')
-  getQuestions(@Param('assignmentId') assignmentId: string, @GetUser() user: UserJwtPayload) {
+  getQuestions(
+    @Param('assignmentId') assignmentId: string,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.quizService.getQuestions(assignmentId, user);
   }
 
   @Post('questions')
-  createQuestion(@Body() dto: CreateQuizQuestionDto, @GetUser() user: UserJwtPayload) {
+  createQuestion(
+    @Body() dto: CreateQuizQuestionDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.quizService.createQuestion(dto, user);
   }
 
   @Patch('questions/:id')
-  updateQuestion(@Param('id') id: string, @Body() dto: UpdateQuizQuestionDto, @GetUser() user: UserJwtPayload) {
+  updateQuestion(
+    @Param('id') id: string,
+    @Body() dto: UpdateQuizQuestionDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.quizService.updateQuestion(id, dto, user);
   }
 
@@ -41,17 +60,28 @@ export class QuizController {
   }
 
   @Patch('assignment/:assignmentId/reorder')
-  reorder(@Param('assignmentId') assignmentId: string, @Body() dto: ReorderQuizQuestionsDto, @GetUser() user: UserJwtPayload) {
+  reorder(
+    @Param('assignmentId') assignmentId: string,
+    @Body() dto: ReorderQuizQuestionsDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.quizService.reorder(assignmentId, dto, user);
   }
 
   @Post('assignment/:assignmentId/duplicate')
-  duplicate(@Param('assignmentId') assignmentId: string, @Body() dto: DuplicateQuizDto, @GetUser() user: UserJwtPayload) {
+  duplicate(
+    @Param('assignmentId') assignmentId: string,
+    @Body() dto: DuplicateQuizDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.quizService.duplicate(assignmentId, dto, user);
   }
 
   @Get('assignment/:assignmentId/monitor')
-  monitor(@Param('assignmentId') assignmentId: string, @GetUser() user: UserJwtPayload) {
+  monitor(
+    @Param('assignmentId') assignmentId: string,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.monitorService.getMonitor(assignmentId, user);
   }
 
@@ -61,7 +91,11 @@ export class QuizController {
   }
 
   @Patch('student-on-quiz/:id/score')
-  overrideScore(@Param('id') id: string, @Body() dto: OverrideQuizScoreDto, @GetUser() user: UserJwtPayload) {
+  overrideScore(
+    @Param('id') id: string,
+    @Body() dto: OverrideQuizScoreDto,
+    @GetUser() user: UserJwtPayload,
+  ) {
     return this.monitorService.overrideScore(id, dto, user);
   }
 

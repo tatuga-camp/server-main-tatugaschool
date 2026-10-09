@@ -7,7 +7,9 @@ describe('seededShuffle', () => {
     expect(seededShuffle(range(10), 42)).toEqual(seededShuffle(range(10), 42));
   });
   it('differs for different seeds', () => {
-    expect(seededShuffle(range(10), 1)).not.toEqual(seededShuffle(range(10), 2));
+    expect(seededShuffle(range(10), 1)).not.toEqual(
+      seededShuffle(range(10), 2),
+    );
   });
   it('returns a permutation and does not mutate the input', () => {
     const input = range(10);

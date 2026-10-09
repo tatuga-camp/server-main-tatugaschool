@@ -21,18 +21,27 @@ export async function updateQuizAttempt(
   prisma: Pick<PrismaService, 'studentOnAssignment'>,
   studentOnAssignmentId: string,
   patch: Prisma.QuizAttemptUpdateInput,
-  extra: Omit<Prisma.StudentOnAssignmentUpdateManyMutationInput, 'quizAttempt'> = {},
+  extra: Omit<
+    Prisma.StudentOnAssignmentUpdateManyMutationInput,
+    'quizAttempt'
+  > = {},
   opts: { onlyUnsubmitted?: boolean } = {},
 ): Promise<boolean> {
   const where: Prisma.StudentOnAssignmentWhereInput = opts.onlyUnsubmitted
     ? {
         id: studentOnAssignmentId,
-        AND: [{ quizAttempt: { isSet: true } }, { quizAttempt: { is: { submittedAt: null } } }],
+        AND: [
+          { quizAttempt: { isSet: true } },
+          { quizAttempt: { is: { submittedAt: null } } },
+        ],
       }
     : { id: studentOnAssignmentId, quizAttempt: { isSet: true } };
   const { count } = await prisma.studentOnAssignment.updateMany({
     where,
-    data: { ...extra, quizAttempt: { upsert: { set: NEVER_SET, update: patch } } },
+    data: {
+      ...extra,
+      quizAttempt: { upsert: { set: NEVER_SET, update: patch } },
+    },
   });
   return count > 0;
 }

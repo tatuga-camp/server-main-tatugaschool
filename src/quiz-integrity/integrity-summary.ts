@@ -5,17 +5,46 @@ import { HEARTBEAT_GAP_MS, MIN_EXIT_MS } from '../quiz/quiz.constants';
 type T = QuizIntegrityEventType;
 
 export const CLIENT_EVENT_TYPES: ReadonlySet<T> = new Set<T>([
-  'HIDDEN', 'VISIBLE', 'BLUR', 'FOCUS', 'TRANSLATE_DETECTED', 'COPY_ATTEMPT',
-  'PASTE_ATTEMPT', 'FULLSCREEN_EXIT', 'SCREENSHOT_KEY', 'PAGE_HIDE', 'PAGE_SHOW',
+  'HIDDEN',
+  'VISIBLE',
+  'BLUR',
+  'FOCUS',
+  'TRANSLATE_DETECTED',
+  'COPY_ATTEMPT',
+  'PASTE_ATTEMPT',
+  'FULLSCREEN_EXIT',
+  'SCREENSHOT_KEY',
+  'PAGE_HIDE',
+  'PAGE_SHOW',
 ]);
-export const AWAY_EVENT_TYPES: ReadonlySet<T> = new Set<T>(['HIDDEN', 'BLUR', 'PAGE_HIDE']);
-export const RETURN_EVENT_TYPES: ReadonlySet<T> = new Set<T>(['VISIBLE', 'FOCUS', 'PAGE_SHOW']);
-export const DURATION_EVENT_TYPES: ReadonlySet<T> = new Set<T>(['VISIBLE', 'FOCUS']);
+export const AWAY_EVENT_TYPES: ReadonlySet<T> = new Set<T>([
+  'HIDDEN',
+  'BLUR',
+  'PAGE_HIDE',
+]);
+export const RETURN_EVENT_TYPES: ReadonlySet<T> = new Set<T>([
+  'VISIBLE',
+  'FOCUS',
+  'PAGE_SHOW',
+]);
+export const DURATION_EVENT_TYPES: ReadonlySet<T> = new Set<T>([
+  'VISIBLE',
+  'FOCUS',
+]);
 
 export type ClientEvent = { type: T; clientAt: string; durationMs?: number };
-export type PreparedEvent = { type: T; clientAt: Date; serverAt: Date; durationMs: number | null };
+export type PreparedEvent = {
+  type: T;
+  clientAt: Date;
+  serverAt: Date;
+  durationMs: number | null;
+};
 
-export function prepareClientEvents(events: ClientEvent[], now: Date, startedAt: Date): PreparedEvent[] {
+export function prepareClientEvents(
+  events: ClientEvent[],
+  now: Date,
+  startedAt: Date,
+): PreparedEvent[] {
   const maxMs = Math.max(0, now.getTime() - startedAt.getTime());
   return events
     .filter((e) => CLIENT_EVENT_TYPES.has(e.type))
@@ -30,7 +59,11 @@ export function prepareClientEvents(events: ClientEvent[], now: Date, startedAt:
     });
 }
 
-export function detectHeartbeatGap(lastSeenAt: Date, now: Date, batch: { type: T }[]): number | null {
+export function detectHeartbeatGap(
+  lastSeenAt: Date,
+  now: Date,
+  batch: { type: T }[],
+): number | null {
   const gap = now.getTime() - lastSeenAt.getTime();
   if (gap <= HEARTBEAT_GAP_MS) return null;
   if (batch.some((e) => RETURN_EVENT_TYPES.has(e.type))) return null;
@@ -53,7 +86,9 @@ export function emptySummary(): QuizIntegritySummary {
   };
 }
 
-export function summarizeEvents(events: { type: T; durationMs: number | null }[]): QuizIntegritySummary {
+export function summarizeEvents(
+  events: { type: T; durationMs: number | null }[],
+): QuizIntegritySummary {
   const s = emptySummary();
   for (const e of events) {
     const d = e.durationMs ?? 0;
@@ -93,7 +128,9 @@ export function summarizeEvents(events: { type: T; durationMs: number | null }[]
   return s;
 }
 
-const SUMMARY_KEYS = Object.keys(emptySummary()) as (keyof QuizIntegritySummary)[];
+const SUMMARY_KEYS = Object.keys(
+  emptySummary(),
+) as (keyof QuizIntegritySummary)[];
 
 export function summaryHash(summary: QuizIntegritySummary): string {
   return SUMMARY_KEYS.map((k) => `${k}=${Number(summary[k])}`).join('|');

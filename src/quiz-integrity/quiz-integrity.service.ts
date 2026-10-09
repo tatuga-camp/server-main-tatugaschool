@@ -38,28 +38,48 @@ export class QuizIntegrityService {
     student: StudentJwtPayload,
     dto: IntegrityBatchDto,
   ): Promise<{ ok: true }> {
-    const { soa, assignment } = await this.access.studentQuiz(studentOnAssignmentId, student);
+    const { soa, assignment } = await this.access.studentQuiz(
+      studentOnAssignmentId,
+      student,
+    );
     const settings = withDefaultQuizSettings(assignment.quizSettings);
     const attempt = soa.quizAttempt;
-    if (!settings.testMode || !attempt || attempt.submittedAt) return { ok: true };
+    if (!settings.testMode || !attempt || attempt.submittedAt)
+      return { ok: true };
 
     const now = new Date();
     // Past deadline + grace the attempt is due for finalization (GET/answer/
     // submit or the monitor do it); late exits must not raise the risk score.
     if (isPastGrace(attempt.deadlineAt, now)) return { ok: true };
 
-    const prepared = prepareClientEvents(dto.events ?? [], now, attempt.startedAt);
-    const gapMs = dto.heartbeat ? detectHeartbeatGap(attempt.lastSeenAt, now, prepared) : null;
+    const prepared = prepareClientEvents(
+      dto.events ?? [],
+      now,
+      attempt.startedAt,
+    );
+    const gapMs = dto.heartbeat
+      ? detectHeartbeatGap(attempt.lastSeenAt, now, prepared)
+      : null;
     const rows = [
       ...prepared,
       ...(gapMs !== null
-        ? [{ type: 'HEARTBEAT_GAP' as const, clientAt: now, serverAt: now, durationMs: gapMs }]
+        ? [
+            {
+              type: 'HEARTBEAT_GAP' as const,
+              clientAt: now,
+              serverAt: now,
+              durationMs: gapMs,
+            },
+          ]
         : []),
     ];
 
     if (rows.length === 0) {
-      const exists = await updateQuizAttempt(this.prisma, soa.id, { lastSeenAt: now });
-      if (exists && this.isJevDue(attempt, now)) void this.evaluateWithJev(soa.id);
+      const exists = await updateQuizAttempt(this.prisma, soa.id, {
+        lastSeenAt: now,
+      });
+      if (exists && this.isJevDue(attempt, now))
+        void this.evaluateWithJev(soa.id);
       return { ok: true };
     }
 
@@ -72,7 +92,11 @@ export class QuizIntegrityService {
         schoolId: soa.schoolId,
       })),
     });
-    const summary = await this.recomputeSummary(soa.id, attempt.integritySummary, now);
+    const summary = await this.recomputeSummary(
+      soa.id,
+      attempt.integritySummary,
+      now,
+    );
     if (!summary) return { ok: true }; // attempt reset by the teacher mid-batch
 
     if (this.isJevDue({ ...attempt, integritySummary: summary }, now)) {
@@ -104,16 +128,20 @@ export class QuizIntegrityService {
       const summary = summarizeEvents(events);
       const changed = summaryHash(summary) !== summaryHash(lastWritten);
       if (pass > 0 && !changed) return summary;
-      const exists = await updateQuizAttempt(this.prisma, studentOnAssignmentId, {
-        ...(pass === 0 && { lastSeenAt: now }),
-        ...(changed && {
-          integritySummary: { set: summary },
-          riskScore: ruleRiskScore(summary),
-          riskSource: 'RULE' as const,
-          riskPattern: null,
-          riskConfidence: null,
-        }),
-      });
+      const exists = await updateQuizAttempt(
+        this.prisma,
+        studentOnAssignmentId,
+        {
+          ...(pass === 0 && { lastSeenAt: now }),
+          ...(changed && {
+            integritySummary: { set: summary },
+            riskScore: ruleRiskScore(summary),
+            riskSource: 'RULE' as const,
+            riskPattern: null,
+            riskConfidence: null,
+          }),
+        },
+      );
       if (!exists) return null;
       lastWritten = summary;
       const stored = await this.prisma.quizIntegrityEvent.count({
@@ -125,8 +153,10 @@ export class QuizIntegrityService {
   }
 
   private isJevDue(attempt: QuizAttempt, now: Date): boolean {
-    if (!this.jev.isEnabled() || isEmptySummary(attempt.integritySummary)) return false;
-    if (summaryHash(attempt.integritySummary) === attempt.riskInputHash) return false;
+    if (!this.jev.isEnabled() || isEmptySummary(attempt.integritySummary))
+      return false;
+    if (summaryHash(attempt.integritySummary) === attempt.riskInputHash)
+      return false;
     return (
       !attempt.riskCheckedAt ||
       now.getTime() - attempt.riskCheckedAt.getTime() >= JEV_MIN_INTERVAL_MS
@@ -135,7 +165,8 @@ export class QuizIntegrityService {
 
   /** Fire-and-forget safe: never throws. */
   async evaluateWithJev(studentOnAssignmentId: string): Promise<void> {
-    if (!this.jev.isEnabled() || this.running.has(studentOnAssignmentId)) return;
+    if (!this.jev.isEnabled() || this.running.has(studentOnAssignmentId))
+      return;
     this.running.add(studentOnAssignmentId);
     try {
       const soa = await this.prisma.studentOnAssignment.findUnique({
@@ -147,7 +178,9 @@ export class QuizIntegrityService {
 
       const hash = summaryHash(attempt.integritySummary);
       const [questionCount, answeredCount] = await Promise.all([
-        this.prisma.assignmentOnQuiz.count({ where: { assignmentId: soa.assignmentId } }),
+        this.prisma.assignmentOnQuiz.count({
+          where: { assignmentId: soa.assignmentId },
+        }),
         this.prisma.studentOnQuiz.count({ where: { studentOnAssignmentId } }),
       ]);
       const end = attempt.submittedAt ?? new Date();
@@ -164,7 +197,8 @@ export class QuizIntegrityService {
         select: { quizAttempt: true },
       });
       if (!fresh?.quizAttempt) return; // reset meanwhile
-      const stillCurrent = summaryHash(fresh.quizAttempt.integritySummary) === hash;
+      const stillCurrent =
+        summaryHash(fresh.quizAttempt.integritySummary) === hash;
       const checkedAt = new Date();
 
       await updateQuizAttempt(
@@ -182,7 +216,9 @@ export class QuizIntegrityService {
           : { riskCheckedAt: checkedAt },
       );
     } catch (error) {
-      this.logger.error(`Jev evaluation failed for ${studentOnAssignmentId}: ${(error as Error).message}`);
+      this.logger.error(
+        `Jev evaluation failed for ${studentOnAssignmentId}: ${(error as Error).message}`,
+      );
     } finally {
       this.running.delete(studentOnAssignmentId);
     }

@@ -253,7 +253,9 @@ export class AssignmentService {
     grade: GradeRange | null;
     assignments: {
       assignment: Assignment;
-      studentOnAssignment: StudentSafeSubmission<StudentOnAssignment> | undefined;
+      studentOnAssignment:
+        | StudentSafeSubmission<StudentOnAssignment>
+        | undefined;
     }[];
     scoreOnSubjects: {
       scoreOnSubject: ScoreOnSubject;
@@ -281,10 +283,7 @@ export class AssignmentService {
         );
       }
 
-      const enrollment = await this.reads.enrollment(
-        dto.subjectId,
-        student.id,
-      );
+      const enrollment = await this.reads.enrollment(dto.subjectId, student.id);
       if (!enrollment) {
         throw new ForbiddenException('Student not enrolled in this subject');
       }
@@ -320,7 +319,8 @@ export class AssignmentService {
           return {
             assignment,
             studentOnAssignment:
-              studentOnAssignment && toStudentSafeSubmission(studentOnAssignment),
+              studentOnAssignment &&
+              toStudentSafeSubmission(studentOnAssignment),
           };
         }),
         scoreOnSubjects: scoreOnSubjects.map((scoreOnSubject) => {
@@ -376,9 +376,7 @@ export class AssignmentService {
         }),
       ]);
       const assignments = subjectAssignments.filter(
-        (a) =>
-          a.status === 'Published' &&
-          isGradedAssignmentType(a.type),
+        (a) => a.status === 'Published' && isGradedAssignmentType(a.type),
       ) as Assignment[];
 
       return {

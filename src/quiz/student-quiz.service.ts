@@ -15,7 +15,11 @@ import { validateAnswerShape } from './grading';
 import { QuizAccess } from './quiz-access';
 import { updateQuizAttempt } from './quiz-attempt-write';
 import { QuizAttemptService } from './quiz-attempt.service';
-import { computeDeadline, isPastGrace, withDefaultQuizSettings } from './quiz-settings';
+import {
+  computeDeadline,
+  isPastGrace,
+  withDefaultQuizSettings,
+} from './quiz-settings';
 import { newShuffleSeed } from './shuffle';
 import {
   orderForStudent,
@@ -37,7 +41,11 @@ export type StudentQuizView = {
   };
   serverNow: string;
   questionCount: number;
-  attempt: { startedAt: Date; deadlineAt: Date | null; submittedAt: Date | null } | null;
+  attempt: {
+    startedAt: Date;
+    deadlineAt: Date | null;
+    submittedAt: Date | null;
+  } | null;
   questions: StudentQuizQuestion[];
   answers: {
     questionId: string;
@@ -60,8 +68,14 @@ export class StudentQuizService {
     private cache: CacheService,
   ) {}
 
-  async getQuiz(studentOnAssignmentId: string, student: StudentJwtPayload): Promise<StudentQuizView> {
-    const { soa, assignment } = await this.access.studentQuiz(studentOnAssignmentId, student);
+  async getQuiz(
+    studentOnAssignmentId: string,
+    student: StudentJwtPayload,
+  ): Promise<StudentQuizView> {
+    const { soa, assignment } = await this.access.studentQuiz(
+      studentOnAssignmentId,
+      student,
+    );
     const now = new Date();
     const attempt = soa.quizAttempt;
     const current =
@@ -71,8 +85,14 @@ export class StudentQuizService {
     return this.buildView(current, assignment, now);
   }
 
-  async start(studentOnAssignmentId: string, student: StudentJwtPayload): Promise<StudentQuizView> {
-    const { soa, assignment } = await this.access.studentQuiz(studentOnAssignmentId, student);
+  async start(
+    studentOnAssignmentId: string,
+    student: StudentJwtPayload,
+  ): Promise<StudentQuizView> {
+    const { soa, assignment } = await this.access.studentQuiz(
+      studentOnAssignmentId,
+      student,
+    );
     if (!soa.quizAttempt) {
       const questionCount = await this.prisma.assignmentOnQuiz.count({
         where: { assignmentId: assignment.id },
@@ -83,14 +103,20 @@ export class StudentQuizService {
       const settings = withDefaultQuizSettings(assignment.quizSettings);
       // A due date already in the past does not close a late start (existing late-work behaviour).
       const dueDate =
-        assignment.dueDate && assignment.dueDate.getTime() > now.getTime() ? assignment.dueDate : null;
+        assignment.dueDate && assignment.dueDate.getTime() > now.getTime()
+          ? assignment.dueDate
+          : null;
       const started = await this.prisma.studentOnAssignment.updateMany({
         where: { id: soa.id, quizAttempt: { isSet: false } },
         data: {
           quizAttempt: {
             set: {
               startedAt: now,
-              deadlineAt: computeDeadline(now, settings.timeLimitMinutes, dueDate),
+              deadlineAt: computeDeadline(
+                now,
+                settings.timeLimitMinutes,
+                dueDate,
+              ),
               submittedAt: null,
               lastSeenAt: now,
               shuffleSeed: newShuffleSeed(),
@@ -121,7 +147,10 @@ export class StudentQuizService {
     dto: SaveQuizAnswerDto,
     student: StudentJwtPayload,
   ): Promise<{ questionId: string; savedAt: Date }> {
-    const { soa } = await this.access.studentQuiz(studentOnAssignmentId, student);
+    const { soa } = await this.access.studentQuiz(
+      studentOnAssignmentId,
+      student,
+    );
     const attempt = soa.quizAttempt;
     if (!attempt) throw new ConflictException('QUIZ_NOT_STARTED');
     if (attempt.submittedAt) throw new ConflictException('QUIZ_CLOSED');
@@ -131,7 +160,9 @@ export class StudentQuizService {
       throw new ConflictException('QUIZ_CLOSED');
     }
 
-    const question = await this.prisma.assignmentOnQuiz.findUnique({ where: { id: questionId } });
+    const question = await this.prisma.assignmentOnQuiz.findUnique({
+      where: { id: questionId },
+    });
     if (!question || question.assignmentId !== soa.assignmentId) {
       throw new NotFoundException('Question not found');
     }
@@ -141,10 +172,19 @@ export class StudentQuizService {
     // Guarded write first: if a teacher reset the attempt, or a submit /
     // deadline finalize landed since the access check, refuse instead of
     // writing an answer into a dead or already-graded attempt.
-    const live = await updateQuizAttempt(this.prisma, soa.id, { lastSeenAt: now }, {}, { onlyUnsubmitted: true });
+    const live = await updateQuizAttempt(
+      this.prisma,
+      soa.id,
+      { lastSeenAt: now },
+      {},
+      { onlyUnsubmitted: true },
+    );
     if (!live) {
-      const current = await this.prisma.studentOnAssignment.findUnique({ where: { id: soa.id } });
-      if (current?.quizAttempt?.submittedAt) throw new ConflictException('QUIZ_CLOSED');
+      const current = await this.prisma.studentOnAssignment.findUnique({
+        where: { id: soa.id },
+      });
+      if (current?.quizAttempt?.submittedAt)
+        throw new ConflictException('QUIZ_CLOSED');
       throw new ConflictException('QUIZ_NOT_STARTED');
     }
 
@@ -173,8 +213,14 @@ export class StudentQuizService {
     return { questionId: question.id, savedAt: answer.updateAt };
   }
 
-  async submit(studentOnAssignmentId: string, student: StudentJwtPayload): Promise<StudentQuizView> {
-    const { soa, assignment } = await this.access.studentQuiz(studentOnAssignmentId, student);
+  async submit(
+    studentOnAssignmentId: string,
+    student: StudentJwtPayload,
+  ): Promise<StudentQuizView> {
+    const { soa, assignment } = await this.access.studentQuiz(
+      studentOnAssignmentId,
+      student,
+    );
     if (!soa.quizAttempt) throw new ConflictException('QUIZ_NOT_STARTED');
     const finalized = await this.attempts.finalizeAttempt(soa.id);
     return this.buildView(finalized, assignment, new Date());
@@ -193,11 +239,15 @@ export class StudentQuizService {
         orderBy: { order: 'asc' },
       }),
       attempt
-        ? this.prisma.studentOnQuiz.findMany({ where: { studentOnAssignmentId: soa.id } })
+        ? this.prisma.studentOnQuiz.findMany({
+            where: { studentOnAssignmentId: soa.id },
+          })
         : Promise.resolve([]),
     ]);
     const submitted = !!attempt?.submittedAt;
-    const scoreByQuestion = new Map(answers.map((a) => [a.assignmentOnQuizId, a.score ?? 0]));
+    const scoreByQuestion = new Map(
+      answers.map((a) => [a.assignmentOnQuizId, a.score ?? 0]),
+    );
 
     return {
       assignment: {
@@ -212,9 +262,16 @@ export class StudentQuizService {
       serverNow: now.toISOString(),
       questionCount: questions.length,
       attempt: attempt
-        ? { startedAt: attempt.startedAt, deadlineAt: attempt.deadlineAt, submittedAt: attempt.submittedAt }
+        ? {
+            startedAt: attempt.startedAt,
+            deadlineAt: attempt.deadlineAt,
+            submittedAt: attempt.submittedAt,
+          }
         : null,
-      questions: attempt && !submitted ? orderForStudent(questions, settings, attempt.shuffleSeed) : [],
+      questions:
+        attempt && !submitted
+          ? orderForStudent(questions, settings, attempt.shuffleSeed)
+          : [],
       answers: answers.map((a) => ({
         questionId: a.assignmentOnQuizId,
         selectedOptionIds: a.selectedOptionIds,
@@ -225,7 +282,9 @@ export class StudentQuizService {
             score: soa.score ?? 0,
             maxScore: assignment.maxScore ?? 0,
             questions: settings.showAnswersAfterSubmit
-              ? questions.map((q) => toStudentResultQuestion(q, scoreByQuestion.get(q.id) ?? 0))
+              ? questions.map((q) =>
+                  toStudentResultQuestion(q, scoreByQuestion.get(q.id) ?? 0),
+                )
               : null,
           }
         : null,

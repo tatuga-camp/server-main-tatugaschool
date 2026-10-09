@@ -21,7 +21,12 @@ describe('prepareClientEvents', () => {
       startedAt,
     );
     expect(out).toEqual([
-      { type: 'HIDDEN', clientAt: new Date('2026-10-09T03:09:00Z'), serverAt: now, durationMs: null },
+      {
+        type: 'HIDDEN',
+        clientAt: new Date('2026-10-09T03:09:00Z'),
+        serverAt: now,
+        durationMs: null,
+      },
     ]);
   });
   it('keeps duration only on VISIBLE/FOCUS and clamps it to the attempt age', () => {
@@ -37,7 +42,11 @@ describe('prepareClientEvents', () => {
     expect(out.map((e) => e.durationMs)).toEqual([600_000, 0, null]);
   });
   it('replaces an invalid clientAt with now', () => {
-    const [event] = prepareClientEvents([{ type: 'BLUR', clientAt: 'nonsense' }], now, startedAt);
+    const [event] = prepareClientEvents(
+      [{ type: 'BLUR', clientAt: 'nonsense' }],
+      now,
+      startedAt,
+    );
     expect(event.clientAt).toEqual(now);
   });
 });
@@ -45,13 +54,21 @@ describe('prepareClientEvents', () => {
 describe('detectHeartbeatGap', () => {
   const last = new Date('2026-10-09T03:00:00Z');
   it('returns null for a normal 10 s beat', () => {
-    expect(detectHeartbeatGap(last, new Date('2026-10-09T03:00:10Z'), [])).toBeNull();
+    expect(
+      detectHeartbeatGap(last, new Date('2026-10-09T03:00:10Z'), []),
+    ).toBeNull();
   });
   it('returns the gap when over 25 s', () => {
-    expect(detectHeartbeatGap(last, new Date('2026-10-09T03:00:40Z'), [])).toBe(40_000);
+    expect(detectHeartbeatGap(last, new Date('2026-10-09T03:00:40Z'), [])).toBe(
+      40_000,
+    );
   });
   it('returns null when the batch already explains the absence', () => {
-    expect(detectHeartbeatGap(last, new Date('2026-10-09T03:00:40Z'), [{ type: 'VISIBLE' }])).toBeNull();
+    expect(
+      detectHeartbeatGap(last, new Date('2026-10-09T03:00:40Z'), [
+        { type: 'VISIBLE' },
+      ]),
+    ).toBeNull();
   });
 });
 
@@ -92,7 +109,9 @@ describe('summarizeEvents', () => {
 describe('summaryHash', () => {
   it('is independent of key order and changes with values', () => {
     const a = emptySummary();
-    const reordered = Object.fromEntries(Object.entries(a).reverse()) as typeof a;
+    const reordered = Object.fromEntries(
+      Object.entries(a).reverse(),
+    ) as typeof a;
     expect(summaryHash(a)).toBe(summaryHash(reordered));
     expect(summaryHash({ ...a, exitCount: 1 })).not.toBe(summaryHash(a));
   });

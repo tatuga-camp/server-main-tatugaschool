@@ -1,4 +1,9 @@
-import { computeDeadline, isPastGrace, mergeQuizSettings, withDefaultQuizSettings } from './quiz-settings';
+import {
+  computeDeadline,
+  isPastGrace,
+  mergeQuizSettings,
+  withDefaultQuizSettings,
+} from './quiz-settings';
 
 describe('quiz settings', () => {
   it('fills defaults', () => {
@@ -13,13 +18,25 @@ describe('quiz settings', () => {
     expect(withDefaultQuizSettings({ testMode: true }).testMode).toBe(true);
   });
   it('merges a partial patch without wiping other fields', () => {
-    const existing = withDefaultQuizSettings({ testMode: true, timeLimitMinutes: 20 });
-    const merged = mergeQuizSettings(existing, { shuffleOptions: true, testMode: undefined });
-    expect(merged).toMatchObject({ testMode: true, timeLimitMinutes: 20, shuffleOptions: true });
+    const existing = withDefaultQuizSettings({
+      testMode: true,
+      timeLimitMinutes: 20,
+    });
+    const merged = mergeQuizSettings(existing, {
+      shuffleOptions: true,
+      testMode: undefined,
+    });
+    expect(merged).toMatchObject({
+      testMode: true,
+      timeLimitMinutes: 20,
+      shuffleOptions: true,
+    });
   });
   it('allows clearing the time limit with null', () => {
     const existing = withDefaultQuizSettings({ timeLimitMinutes: 20 });
-    expect(mergeQuizSettings(existing, { timeLimitMinutes: null }).timeLimitMinutes).toBeNull();
+    expect(
+      mergeQuizSettings(existing, { timeLimitMinutes: null }).timeLimitMinutes,
+    ).toBeNull();
   });
 });
 
@@ -29,11 +46,15 @@ describe('computeDeadline', () => {
     expect(computeDeadline(start, null, null)).toBeNull();
   });
   it('uses start + limit', () => {
-    expect(computeDeadline(start, 30, null)?.toISOString()).toBe('2026-10-09T03:30:00.000Z');
+    expect(computeDeadline(start, 30, null)?.toISOString()).toBe(
+      '2026-10-09T03:30:00.000Z',
+    );
   });
   it('takes the earlier of limit and due date', () => {
     const due = new Date('2026-10-09T03:10:00Z');
-    expect(computeDeadline(start, 30, due)?.toISOString()).toBe(due.toISOString());
+    expect(computeDeadline(start, 30, due)?.toISOString()).toBe(
+      due.toISOString(),
+    );
   });
 });
 

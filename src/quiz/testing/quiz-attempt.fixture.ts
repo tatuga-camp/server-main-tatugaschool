@@ -32,7 +32,8 @@ const FORBIDDEN = /^(risk|integritySummary$|shuffleSeed$|lastSeenAt$)/;
 
 /** Deep-scans a response for keys that carry integrity or risk data; returns every offending path. */
 export function leakedIntegrityKeys(value: unknown, path = '$'): string[] {
-  if (value === null || typeof value !== 'object' || value instanceof Date) return [];
+  if (value === null || typeof value !== 'object' || value instanceof Date)
+    return [];
   if (Array.isArray(value)) {
     return value.flatMap((v, i) => leakedIntegrityKeys(v, `${path}[${i}]`));
   }

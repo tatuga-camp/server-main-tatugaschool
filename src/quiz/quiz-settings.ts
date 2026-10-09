@@ -30,12 +30,16 @@ export function computeDeadline(
   dueDate: Date | null | undefined,
 ): Date | null {
   const candidates: number[] = [];
-  if (timeLimitMinutes) candidates.push(startedAt.getTime() + timeLimitMinutes * 60_000);
+  if (timeLimitMinutes)
+    candidates.push(startedAt.getTime() + timeLimitMinutes * 60_000);
   if (dueDate) candidates.push(dueDate.getTime());
   return candidates.length > 0 ? new Date(Math.min(...candidates)) : null;
 }
 
-export function isPastGrace(deadlineAt: Date | null | undefined, now: Date): boolean {
+export function isPastGrace(
+  deadlineAt: Date | null | undefined,
+  now: Date,
+): boolean {
   return !!deadlineAt && now.getTime() > deadlineAt.getTime() + QUIZ_GRACE_MS;
 }
 

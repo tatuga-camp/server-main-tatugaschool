@@ -1,5 +1,13 @@
 import { QuizScoringMode } from '@prisma/client';
-import { IsBoolean, IsEnum, IsInt, IsOptional, Max, Min, ValidateIf } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  Max,
+  Min,
+  ValidateIf,
+} from 'class-validator';
 
 export class QuizSettingsDto {
   @IsOptional()

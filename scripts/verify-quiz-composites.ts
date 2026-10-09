@@ -22,7 +22,8 @@ const summary = {
 
 async function main() {
   const soa = await prisma.studentOnAssignment.findFirst();
-  if (!soa) throw new Error('Need at least one StudentOnAssignment in the test DB');
+  if (!soa)
+    throw new Error('Need at least one StudentOnAssignment in the test DB');
   const original = soa.quizAttempt;
   try {
     await prisma.studentOnAssignment.update({
@@ -81,7 +82,11 @@ async function main() {
     const after = await prisma.studentOnAssignment.findUniqueOrThrow({
       where: { id: soa.id },
     });
-    assert.equal(after.quizAttempt?.shuffleSeed, 7, 'partial update kept shuffleSeed');
+    assert.equal(
+      after.quizAttempt?.shuffleSeed,
+      7,
+      'partial update kept shuffleSeed',
+    );
     assert.equal(after.quizAttempt?.lastSeenAt.getTime(), 0);
     assert.equal(after.quizAttempt?.integritySummary.exitCount, 3);
 
@@ -98,7 +103,9 @@ async function main() {
       where: { id: soa.id, quizAttempt: { isSet: true } },
     });
     assert.equal(unsetCount, 0);
-    console.log('OK: composite update/isSet/unset/guarded-set all behave as required');
+    console.log(
+      'OK: composite update/isSet/unset/guarded-set all behave as required',
+    );
   } finally {
     await prisma.studentOnAssignment.update({
       where: { id: soa.id },

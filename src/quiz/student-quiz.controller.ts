@@ -1,5 +1,14 @@
 // src/quiz/student-quiz.controller.ts
-import { Body, Controller, Get, HttpCode, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { GetStudent } from '../auth/decorators';
 import { StudentGuard } from '../auth/guard';
 import { StudentJwtPayload } from '../interfaces/jwt-payload';
@@ -16,13 +25,19 @@ export class StudentQuizController {
   ) {}
 
   @Get(':studentOnAssignmentId')
-  getQuiz(@Param('studentOnAssignmentId') id: string, @GetStudent() student: StudentJwtPayload) {
+  getQuiz(
+    @Param('studentOnAssignmentId') id: string,
+    @GetStudent() student: StudentJwtPayload,
+  ) {
     return this.studentQuizService.getQuiz(id, student);
   }
 
   @Post(':studentOnAssignmentId/start')
   @HttpCode(200)
-  start(@Param('studentOnAssignmentId') id: string, @GetStudent() student: StudentJwtPayload) {
+  start(
+    @Param('studentOnAssignmentId') id: string,
+    @GetStudent() student: StudentJwtPayload,
+  ) {
     return this.studentQuizService.start(id, student);
   }
 
@@ -48,7 +63,10 @@ export class StudentQuizController {
 
   @Post(':studentOnAssignmentId/submit')
   @HttpCode(200)
-  submit(@Param('studentOnAssignmentId') id: string, @GetStudent() student: StudentJwtPayload) {
+  submit(
+    @Param('studentOnAssignmentId') id: string,
+    @GetStudent() student: StudentJwtPayload,
+  ) {
     return this.studentQuizService.submit(id, student);
   }
 }

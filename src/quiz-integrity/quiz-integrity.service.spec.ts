@@ -23,20 +23,36 @@ const attempt = (overrides = {}) => ({
   riskInputHash: null,
   ...overrides,
 });
-const soa = (a: any) => ({ id: 'soa1', assignmentId: 'a1', subjectId: 's1', schoolId: 'sc1', studentId: 'st1', quizAttempt: a });
-const quiz = (testMode: boolean) => ({ id: 'a1', type: 'Quiz', quizSettings: { testMode } });
+const soa = (a: any) => ({
+  id: 'soa1',
+  assignmentId: 'a1',
+  subjectId: 's1',
+  schoolId: 'sc1',
+  studentId: 'st1',
+  quizAttempt: a,
+});
+const quiz = (testMode: boolean) => ({
+  id: 'a1',
+  type: 'Quiz',
+  quizSettings: { testMode },
+});
 
 describe('QuizIntegrityService.ingest', () => {
   let service: QuizIntegrityService;
   const prisma = {
-    quizIntegrityEvent: { createMany: jest.fn(), findMany: jest.fn(), count: jest.fn() },
+    quizIntegrityEvent: {
+      createMany: jest.fn(),
+      findMany: jest.fn(),
+      count: jest.fn(),
+    },
     studentOnAssignment: { updateMany: jest.fn(), findUnique: jest.fn() },
     assignmentOnQuiz: { count: jest.fn() },
     studentOnQuiz: { count: jest.fn() },
   };
   const access = { studentQuiz: jest.fn() };
   const jev = { isEnabled: jest.fn(), evaluate: jest.fn() };
-  const attemptPatch = (call = 0) => prisma.studentOnAssignment.updateMany.mock.calls[call][0];
+  const attemptPatch = (call = 0) =>
+    prisma.studentOnAssignment.updateMany.mock.calls[call][0];
 
   beforeEach(async () => {
     jest.resetAllMocks();
@@ -56,15 +72,28 @@ describe('QuizIntegrityService.ingest', () => {
   afterEach(() => jest.useRealTimers());
 
   it('ignores batches when test mode is off or the attempt is submitted', async () => {
-    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(false) });
-    await service.ingest('soa1', student, { events: [{ type: 'HIDDEN', clientAt: now.toISOString() }] });
-    access.studentQuiz.mockResolvedValue({ soa: soa(attempt({ submittedAt: now })), assignment: quiz(true) });
-    await service.ingest('soa1', student, { events: [{ type: 'HIDDEN', clientAt: now.toISOString() }] });
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt()),
+      assignment: quiz(false),
+    });
+    await service.ingest('soa1', student, {
+      events: [{ type: 'HIDDEN', clientAt: now.toISOString() }],
+    });
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt({ submittedAt: now })),
+      assignment: quiz(true),
+    });
+    await service.ingest('soa1', student, {
+      events: [{ type: 'HIDDEN', clientAt: now.toISOString() }],
+    });
     expect(prisma.quizIntegrityEvent.createMany).not.toHaveBeenCalled();
   });
 
   it('stores events, recomputes the summary and writes the rule score', async () => {
-    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(true) });
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt()),
+      assignment: quiz(true),
+    });
     prisma.quizIntegrityEvent.findMany.mockResolvedValue([
       { type: 'HIDDEN', durationMs: null },
       { type: 'VISIBLE', durationMs: 40_000 },
@@ -73,13 +102,23 @@ describe('QuizIntegrityService.ingest', () => {
     await service.ingest('soa1', student, {
       events: [
         { type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' },
-        { type: 'VISIBLE', clientAt: '2026-10-09T03:09:55Z', durationMs: 40_000 },
+        {
+          type: 'VISIBLE',
+          clientAt: '2026-10-09T03:09:55Z',
+          durationMs: 40_000,
+        },
       ],
       heartbeat: true,
     });
     expect(prisma.quizIntegrityEvent.createMany).toHaveBeenCalledWith({
       data: [
-        expect.objectContaining({ type: 'HIDDEN', durationMs: null, serverAt: now, studentOnAssignmentId: 'soa1', assignmentId: 'a1' }),
+        expect.objectContaining({
+          type: 'HIDDEN',
+          durationMs: null,
+          serverAt: now,
+          studentOnAssignmentId: 'soa1',
+          assignmentId: 'a1',
+        }),
         expect.objectContaining({ type: 'VISIBLE', durationMs: 40_000 }),
       ],
     });
@@ -88,7 +127,13 @@ describe('QuizIntegrityService.ingest', () => {
     expect(update.where).toEqual({ id: 'soa1', quizAttempt: { isSet: true } });
     expect(update.data.quizAttempt.upsert.update).toMatchObject({
       lastSeenAt: now,
-      integritySummary: { set: expect.objectContaining({ exitCount: 1, totalAwayMs: 40_000, longestAwayMs: 40_000 }) },
+      integritySummary: {
+        set: expect.objectContaining({
+          exitCount: 1,
+          totalAwayMs: 40_000,
+          longestAwayMs: 40_000,
+        }),
+      },
       riskScore: 25, // min(30, 40/4=10) + 15 for longest > 30 s
       riskSource: 'RULE',
     });
@@ -99,19 +144,28 @@ describe('QuizIntegrityService.ingest', () => {
       soa: soa(attempt({ lastSeenAt: new Date('2026-10-09T03:09:20Z') })),
       assignment: quiz(true),
     });
-    prisma.quizIntegrityEvent.findMany.mockResolvedValue([{ type: 'HEARTBEAT_GAP', durationMs: 40_000 }]);
+    prisma.quizIntegrityEvent.findMany.mockResolvedValue([
+      { type: 'HEARTBEAT_GAP', durationMs: 40_000 },
+    ]);
     await service.ingest('soa1', student, { events: [], heartbeat: true });
     expect(prisma.quizIntegrityEvent.createMany).toHaveBeenCalledWith({
-      data: [expect.objectContaining({ type: 'HEARTBEAT_GAP', durationMs: 40_000 })],
+      data: [
+        expect.objectContaining({ type: 'HEARTBEAT_GAP', durationMs: 40_000 }),
+      ],
     });
   });
 
   it('only touches lastSeenAt when nothing changed', async () => {
-    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(true) });
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt()),
+      assignment: quiz(true),
+    });
     prisma.quizIntegrityEvent.findMany.mockResolvedValue([]);
     await service.ingest('soa1', student, { events: [], heartbeat: true });
     expect(prisma.quizIntegrityEvent.createMany).not.toHaveBeenCalled();
-    expect(attemptPatch().data.quizAttempt.upsert.update).toEqual({ lastSeenAt: now });
+    expect(attemptPatch().data.quizAttempt.upsert.update).toEqual({
+      lastSeenAt: now,
+    });
   });
 
   it('ignores batches after deadline + grace', async () => {
@@ -119,14 +173,20 @@ describe('QuizIntegrityService.ingest', () => {
       soa: soa(attempt({ deadlineAt: new Date('2026-10-09T03:09:00Z') })),
       assignment: quiz(true),
     });
-    await service.ingest('soa1', student, { events: [{ type: 'HIDDEN', clientAt: now.toISOString() }], heartbeat: true });
+    await service.ingest('soa1', student, {
+      events: [{ type: 'HIDDEN', clientAt: now.toISOString() }],
+      heartbeat: true,
+    });
     expect(prisma.quizIntegrityEvent.createMany).not.toHaveBeenCalled();
     expect(prisma.studentOnAssignment.updateMany).not.toHaveBeenCalled();
   });
 
   it('stops quietly when the attempt was reset mid-batch (guarded write returns false)', async () => {
     jev.isEnabled.mockReturnValue(true);
-    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(true) });
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt()),
+      assignment: quiz(true),
+    });
     prisma.studentOnAssignment.updateMany.mockResolvedValue({ count: 0 });
     prisma.quizIntegrityEvent.findMany.mockResolvedValue([
       { type: 'HIDDEN', durationMs: null },
@@ -137,7 +197,11 @@ describe('QuizIntegrityService.ingest', () => {
       service.ingest('soa1', student, {
         events: [
           { type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' },
-          { type: 'VISIBLE', clientAt: '2026-10-09T03:09:55Z', durationMs: 40_000 },
+          {
+            type: 'VISIBLE',
+            clientAt: '2026-10-09T03:09:55Z',
+            durationMs: 40_000,
+          },
         ],
       }),
     ).resolves.toEqual({ ok: true });
@@ -147,34 +211,65 @@ describe('QuizIntegrityService.ingest', () => {
   });
 
   it('rewrites the summary when a concurrent batch stored events after the read', async () => {
-    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(true) });
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt()),
+      assignment: quiz(true),
+    });
     prisma.quizIntegrityEvent.findMany
       .mockResolvedValueOnce([{ type: 'HIDDEN', durationMs: null }])
       .mockResolvedValueOnce([
         { type: 'HIDDEN', durationMs: null },
         { type: 'VISIBLE', durationMs: 40_000 },
       ]);
-    prisma.quizIntegrityEvent.count.mockResolvedValueOnce(2).mockResolvedValueOnce(2);
-    await service.ingest('soa1', student, { events: [{ type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' }] });
+    prisma.quizIntegrityEvent.count
+      .mockResolvedValueOnce(2)
+      .mockResolvedValueOnce(2);
+    await service.ingest('soa1', student, {
+      events: [{ type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' }],
+    });
     expect(prisma.studentOnAssignment.updateMany).toHaveBeenCalledTimes(2);
     expect(attemptPatch(1).data.quizAttempt.upsert.update).toMatchObject({
-      integritySummary: { set: expect.objectContaining({ exitCount: 1, totalAwayMs: 40_000 }) },
+      integritySummary: {
+        set: expect.objectContaining({ exitCount: 1, totalAwayMs: 40_000 }),
+      },
       riskScore: 25,
       riskSource: 'RULE',
     });
-    expect(attemptPatch(1).data.quizAttempt.upsert.update.lastSeenAt).toBeUndefined();
+    expect(
+      attemptPatch(1).data.quizAttempt.upsert.update.lastSeenAt,
+    ).toBeUndefined();
   });
 
   it('evaluateWithJev writes the Jev verdict when the summary is unchanged', async () => {
     jev.isEnabled.mockReturnValue(true);
-    const summary = { ...emptySummary(), exitCount: 2, totalAwayMs: 20_000, longestAwayMs: 15_000 };
-    const row = { ...soa(attempt({ integritySummary: summary })), assignment: quiz(true) };
-    prisma.studentOnAssignment.findUnique.mockResolvedValueOnce(row).mockResolvedValueOnce({ quizAttempt: row.quizAttempt });
+    const summary = {
+      ...emptySummary(),
+      exitCount: 2,
+      totalAwayMs: 20_000,
+      longestAwayMs: 15_000,
+    };
+    const row = {
+      ...soa(attempt({ integritySummary: summary })),
+      assignment: quiz(true),
+    };
+    prisma.studentOnAssignment.findUnique
+      .mockResolvedValueOnce(row)
+      .mockResolvedValueOnce({ quizAttempt: row.quizAttempt });
     prisma.assignmentOnQuiz.count.mockResolvedValue(10);
     prisma.studentOnQuiz.count.mockResolvedValue(4);
-    jev.evaluate.mockResolvedValue({ riskScore: 62, pattern: 'OUTSIDE_HELP', confidence: 0.8 });
+    jev.evaluate.mockResolvedValue({
+      riskScore: 62,
+      pattern: 'OUTSIDE_HELP',
+      confidence: 0.8,
+    });
     await service.evaluateWithJev('soa1');
-    expect(jev.evaluate).toHaveBeenCalledWith(expect.objectContaining({ questionCount: 10, answeredCount: 4, elapsedMs: 600_000 }));
+    expect(jev.evaluate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        questionCount: 10,
+        answeredCount: 4,
+        elapsedMs: 600_000,
+      }),
+    );
     expect(attemptPatch().data.quizAttempt.upsert.update).toMatchObject({
       riskScore: 62,
       riskSource: 'JEV',
@@ -186,25 +281,46 @@ describe('QuizIntegrityService.ingest', () => {
 
   it('evaluateWithJev only stamps riskCheckedAt when the summary changed meanwhile', async () => {
     jev.isEnabled.mockReturnValue(true);
-    const summary = { ...emptySummary(), exitCount: 2, totalAwayMs: 20_000, longestAwayMs: 15_000 };
+    const summary = {
+      ...emptySummary(),
+      exitCount: 2,
+      totalAwayMs: 20_000,
+      longestAwayMs: 15_000,
+    };
     const newer = { ...summary, exitCount: 3 };
-    const row = { ...soa(attempt({ integritySummary: summary })), assignment: quiz(true) };
+    const row = {
+      ...soa(attempt({ integritySummary: summary })),
+      assignment: quiz(true),
+    };
     prisma.studentOnAssignment.findUnique
       .mockResolvedValueOnce(row)
-      .mockResolvedValueOnce({ quizAttempt: { ...row.quizAttempt, integritySummary: newer } });
+      .mockResolvedValueOnce({
+        quizAttempt: { ...row.quizAttempt, integritySummary: newer },
+      });
     prisma.assignmentOnQuiz.count.mockResolvedValue(10);
     prisma.studentOnQuiz.count.mockResolvedValue(4);
-    jev.evaluate.mockResolvedValue({ riskScore: 62, pattern: 'OUTSIDE_HELP', confidence: 0.8 });
+    jev.evaluate.mockResolvedValue({
+      riskScore: 62,
+      pattern: 'OUTSIDE_HELP',
+      confidence: 0.8,
+    });
     await service.evaluateWithJev('soa1');
-    expect(attemptPatch().data.quizAttempt.upsert.update).toEqual({ riskCheckedAt: now });
+    expect(attemptPatch().data.quizAttempt.upsert.update).toEqual({
+      riskCheckedAt: now,
+    });
   });
 
   it('evaluateWithJev skips clean attempts and never throws', async () => {
     jev.isEnabled.mockReturnValue(true);
-    prisma.studentOnAssignment.findUnique.mockResolvedValueOnce({ ...soa(attempt()), assignment: quiz(true) });
+    prisma.studentOnAssignment.findUnique.mockResolvedValueOnce({
+      ...soa(attempt()),
+      assignment: quiz(true),
+    });
     await expect(service.evaluateWithJev('soa1')).resolves.toBeUndefined();
     expect(jev.evaluate).not.toHaveBeenCalled();
-    prisma.studentOnAssignment.findUnique.mockRejectedValueOnce(new Error('db down'));
+    prisma.studentOnAssignment.findUnique.mockRejectedValueOnce(
+      new Error('db down'),
+    );
     await expect(service.evaluateWithJev('soa1')).resolves.toBeUndefined();
   });
 });

@@ -4,19 +4,29 @@ import { BLANK_TOKEN_SOURCE, QUIZ_ID_PATTERN } from './quiz.constants';
 export type QuestionShapeInput = {
   type: QuizQuestionType;
   prompt: string;
-  options: { id: string; text: string; imageUrl?: string | null; isCorrect: boolean }[];
+  options: {
+    id: string;
+    text: string;
+    imageUrl?: string | null;
+    isCorrect: boolean;
+  }[];
   blanks: { id: string; acceptedAnswers: string[] }[];
 };
 
-export function validateQuestionShape(input: QuestionShapeInput): string | null {
+export function validateQuestionShape(
+  input: QuestionShapeInput,
+): string | null {
   if (!input.prompt.trim()) return 'Prompt is required';
 
   if (input.type === 'FILL_BLANK') {
-    if (input.options.length > 0) return 'Fill-in-the-blank questions cannot have options';
-    if (input.blanks.length === 0) return 'Fill-in-the-blank questions need at least one blank';
+    if (input.options.length > 0)
+      return 'Fill-in-the-blank questions cannot have options';
+    if (input.blanks.length === 0)
+      return 'Fill-in-the-blank questions need at least one blank';
     const ids = new Set<string>();
     for (const blank of input.blanks) {
-      if (!QUIZ_ID_PATTERN.test(blank.id)) return `Invalid blank id ${blank.id}`;
+      if (!QUIZ_ID_PATTERN.test(blank.id))
+        return `Invalid blank id ${blank.id}`;
       if (ids.has(blank.id)) return `Duplicate blank id ${blank.id}`;
       ids.add(blank.id);
       if (!blank.acceptedAnswers.some((a) => a.trim().length > 0)) {
@@ -24,7 +34,9 @@ export function validateQuestionShape(input: QuestionShapeInput): string | null 
       }
     }
     const tokens = new Set(
-      [...input.prompt.matchAll(new RegExp(BLANK_TOKEN_SOURCE, 'g'))].map((m) => m[1]),
+      [...input.prompt.matchAll(new RegExp(BLANK_TOKEN_SOURCE, 'g'))].map(
+        (m) => m[1],
+      ),
     );
     for (const id of ids) {
       if (!tokens.has(id)) return `Blank ${id} is missing from the prompt`;
@@ -36,13 +48,16 @@ export function validateQuestionShape(input: QuestionShapeInput): string | null 
   }
 
   if (input.blanks.length > 0) return 'Choice questions cannot have blanks';
-  if (input.options.length < 2) return 'Choice questions need at least 2 options';
+  if (input.options.length < 2)
+    return 'Choice questions need at least 2 options';
   const ids = new Set<string>();
   for (const option of input.options) {
-    if (!QUIZ_ID_PATTERN.test(option.id)) return `Invalid option id ${option.id}`;
+    if (!QUIZ_ID_PATTERN.test(option.id))
+      return `Invalid option id ${option.id}`;
     if (ids.has(option.id)) return `Duplicate option id ${option.id}`;
     ids.add(option.id);
-    if (!option.text.trim() && !option.imageUrl) return 'Option text or image is required';
+    if (!option.text.trim() && !option.imageUrl)
+      return 'Option text or image is required';
   }
   const correct = input.options.filter((o) => o.isCorrect).length;
   if (input.type === 'SINGLE' && correct !== 1) {
@@ -68,7 +83,10 @@ export function toQuizOption(option: {
   };
 }
 
-export function toQuizBlank(blank: { id: string; acceptedAnswers: string[] }): QuizBlank {
+export function toQuizBlank(blank: {
+  id: string;
+  acceptedAnswers: string[];
+}): QuizBlank {
   return {
     id: blank.id,
     acceptedAnswers: blank.acceptedAnswers.map((a) => a.trim()).filter(Boolean),

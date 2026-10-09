@@ -67,7 +67,9 @@ export function gradeQuestion(
     const correctPicked = [...picked].filter((id) => correctIds.has(id)).length;
     const wrongPicked = picked.size - correctPicked;
     if (mode === 'ALL_OR_NOTHING') {
-      return correctPicked === correctIds.size && wrongPicked === 0 ? points : 0;
+      return correctPicked === correctIds.size && wrongPicked === 0
+        ? points
+        : 0;
     }
     return round2(
       (points * Math.max(0, correctPicked - wrongPicked)) / correctIds.size,

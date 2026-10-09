@@ -13,7 +13,10 @@ import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
  * A quiz is locked for editing once ANY of its StudentOnAssignment rows has an
  * attempt, assigned or not. Shared by the edit guard and the teacher monitor.
  */
-export async function isQuizLocked(prisma: PrismaService, assignmentId: string): Promise<boolean> {
+export async function isQuizLocked(
+  prisma: PrismaService,
+  assignmentId: string,
+): Promise<boolean> {
   const started = await prisma.studentOnAssignment.count({
     where: { assignmentId, quizAttempt: { isSet: true } },
   });
@@ -27,10 +30,16 @@ export class QuizAccess {
     private teacherOnSubjectService: TeacherOnSubjectService,
   ) {}
 
-  async teacherAssignment(assignmentId: string, user: UserJwtPayload): Promise<Assignment> {
-    const assignment = await this.prisma.assignment.findUnique({ where: { id: assignmentId } });
+  async teacherAssignment(
+    assignmentId: string,
+    user: UserJwtPayload,
+  ): Promise<Assignment> {
+    const assignment = await this.prisma.assignment.findUnique({
+      where: { id: assignmentId },
+    });
     if (!assignment) throw new NotFoundException('Assignment not found');
-    if (assignment.type !== 'Quiz') throw new BadRequestException('Assignment is not a quiz');
+    if (assignment.type !== 'Quiz')
+      throw new BadRequestException('Assignment is not a quiz');
     await this.teacherOnSubjectService.ValidateAccess({
       userId: user.id,
       subjectId: assignment.subjectId,
@@ -60,10 +69,13 @@ export class QuizAccess {
     });
     if (!found) throw new NotFoundException('Student work not found');
     if (found.studentId !== student.id) {
-      throw new ForbiddenException('You are not allowed to access this resource');
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
     }
     const { assignment, ...soa } = found;
-    if (assignment.type !== 'Quiz') throw new BadRequestException('Assignment is not a quiz');
+    if (assignment.type !== 'Quiz')
+      throw new BadRequestException('Assignment is not a quiz');
     if (
       !soa.isAssigned ||
       assignment.status !== 'Published' ||

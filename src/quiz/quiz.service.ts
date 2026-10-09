@@ -12,7 +12,11 @@ import { subjectScope } from '../cache/cache-scopes';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { isQuizLocked, QuizAccess } from './quiz-access';
-import { toQuizBlank, toQuizOption, validateQuestionShape } from './question-shape';
+import {
+  toQuizBlank,
+  toQuizOption,
+  validateQuestionShape,
+} from './question-shape';
 import { withDefaultQuizSettings } from './quiz-settings';
 import {
   CreateQuizQuestionDto,
@@ -30,7 +34,10 @@ export class QuizService {
     private teacherOnSubjectService: TeacherOnSubjectService,
   ) {}
 
-  async getQuestions(assignmentId: string, user: UserJwtPayload): Promise<AssignmentOnQuiz[]> {
+  async getQuestions(
+    assignmentId: string,
+    user: UserJwtPayload,
+  ): Promise<AssignmentOnQuiz[]> {
     await this.access.teacherAssignment(assignmentId, user);
     return this.prisma.assignmentOnQuiz.findMany({
       where: { assignmentId },
@@ -38,8 +45,14 @@ export class QuizService {
     });
   }
 
-  async createQuestion(dto: CreateQuizQuestionDto, user: UserJwtPayload): Promise<AssignmentOnQuiz> {
-    const assignment = await this.access.teacherAssignment(dto.assignmentId, user);
+  async createQuestion(
+    dto: CreateQuizQuestionDto,
+    user: UserJwtPayload,
+  ): Promise<AssignmentOnQuiz> {
+    const assignment = await this.access.teacherAssignment(
+      dto.assignmentId,
+      user,
+    );
     await this.assertEditable(assignment);
     const shapeError = validateQuestionShape(dto);
     if (shapeError) throw new BadRequestException(shapeError);
@@ -67,10 +80,19 @@ export class QuizService {
     return question;
   }
 
-  async updateQuestion(id: string, dto: UpdateQuizQuestionDto, user: UserJwtPayload): Promise<AssignmentOnQuiz> {
-    const existing = await this.prisma.assignmentOnQuiz.findUnique({ where: { id } });
+  async updateQuestion(
+    id: string,
+    dto: UpdateQuizQuestionDto,
+    user: UserJwtPayload,
+  ): Promise<AssignmentOnQuiz> {
+    const existing = await this.prisma.assignmentOnQuiz.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Question not found');
-    const assignment = await this.access.teacherAssignment(existing.assignmentId, user);
+    const assignment = await this.access.teacherAssignment(
+      existing.assignmentId,
+      user,
+    );
     await this.assertEditable(assignment);
 
     const shapeError = validateQuestionShape({
@@ -88,25 +110,43 @@ export class QuizService {
         ...(dto.prompt !== undefined && { prompt: dto.prompt }),
         ...(dto.imageUrl !== undefined && { imageUrl: dto.imageUrl }),
         ...(dto.points !== undefined && { points: dto.points }),
-        ...(dto.options !== undefined && { options: { set: dto.options.map(toQuizOption) } }),
-        ...(dto.blanks !== undefined && { blanks: { set: dto.blanks.map(toQuizBlank) } }),
+        ...(dto.options !== undefined && {
+          options: { set: dto.options.map(toQuizOption) },
+        }),
+        ...(dto.blanks !== undefined && {
+          blanks: { set: dto.blanks.map(toQuizBlank) },
+        }),
       },
     });
     if (dto.points !== undefined) await this.syncMaxScore(assignment);
     return updated;
   }
 
-  async deleteQuestion(id: string, user: UserJwtPayload): Promise<AssignmentOnQuiz> {
-    const existing = await this.prisma.assignmentOnQuiz.findUnique({ where: { id } });
+  async deleteQuestion(
+    id: string,
+    user: UserJwtPayload,
+  ): Promise<AssignmentOnQuiz> {
+    const existing = await this.prisma.assignmentOnQuiz.findUnique({
+      where: { id },
+    });
     if (!existing) throw new NotFoundException('Question not found');
-    const assignment = await this.access.teacherAssignment(existing.assignmentId, user);
+    const assignment = await this.access.teacherAssignment(
+      existing.assignmentId,
+      user,
+    );
     await this.assertEditable(assignment);
-    const deleted = await this.prisma.assignmentOnQuiz.delete({ where: { id } });
+    const deleted = await this.prisma.assignmentOnQuiz.delete({
+      where: { id },
+    });
     await this.syncMaxScore(assignment);
     return deleted;
   }
 
-  async reorder(assignmentId: string, dto: ReorderQuizQuestionsDto, user: UserJwtPayload): Promise<AssignmentOnQuiz[]> {
+  async reorder(
+    assignmentId: string,
+    dto: ReorderQuizQuestionsDto,
+    user: UserJwtPayload,
+  ): Promise<AssignmentOnQuiz[]> {
     const assignment = await this.access.teacherAssignment(assignmentId, user);
     await this.assertEditable(assignment);
     const existing = await this.prisma.assignmentOnQuiz.findMany({
@@ -120,33 +160,55 @@ export class QuizService {
       unique.size !== existingIds.size ||
       dto.ids.some((id) => !existingIds.has(id))
     ) {
-      throw new BadRequestException('ids must contain every question of this quiz exactly once');
+      throw new BadRequestException(
+        'ids must contain every question of this quiz exactly once',
+      );
     }
     await Promise.all(
       dto.ids.map((id, index) =>
-        this.prisma.assignmentOnQuiz.update({ where: { id }, data: { order: index } }),
+        this.prisma.assignmentOnQuiz.update({
+          where: { id },
+          data: { order: index },
+        }),
       ),
     );
-    return this.prisma.assignmentOnQuiz.findMany({ where: { assignmentId }, orderBy: { order: 'asc' } });
+    return this.prisma.assignmentOnQuiz.findMany({
+      where: { assignmentId },
+      orderBy: { order: 'asc' },
+    });
   }
 
-  async duplicate(assignmentId: string, dto: DuplicateQuizDto, user: UserJwtPayload): Promise<Assignment> {
+  async duplicate(
+    assignmentId: string,
+    dto: DuplicateQuizDto,
+    user: UserJwtPayload,
+  ): Promise<Assignment> {
     const source = await this.access.teacherAssignment(assignmentId, user);
     const targetSubjectId = dto.targetSubjectId ?? source.subjectId;
     const sameSubject = targetSubjectId === source.subjectId;
     if (!sameSubject) {
-      await this.teacherOnSubjectService.ValidateAccess({ userId: user.id, subjectId: targetSubjectId });
+      await this.teacherOnSubjectService.ValidateAccess({
+        userId: user.id,
+        subjectId: targetSubjectId,
+      });
     }
-    const subject = await this.prisma.subject.findUnique({ where: { id: targetSubjectId } });
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: targetSubjectId },
+    });
     if (!subject) throw new NotFoundException('Subject not found');
-    if (subject.isLocked) throw new ForbiddenException('Subject is locked. Cannot make any changes!');
+    if (subject.isLocked)
+      throw new ForbiddenException(
+        'Subject is locked. Cannot make any changes!',
+      );
 
     const questions = await this.prisma.assignmentOnQuiz.findMany({
       where: { assignmentId },
       orderBy: { order: 'asc' },
     });
     const assignAll = sameSubject
-      ? (await this.prisma.studentOnAssignment.count({ where: { assignmentId, isAssigned: false } })) === 0
+      ? (await this.prisma.studentOnAssignment.count({
+          where: { assignmentId, isAssigned: false },
+        })) === 0
       : true;
 
     const copy = await this.prisma.assignment.create({
@@ -184,7 +246,9 @@ export class QuizService {
       });
     }
 
-    const students = await this.prisma.studentOnSubject.findMany({ where: { subjectId: targetSubjectId } });
+    const students = await this.prisma.studentOnSubject.findMany({
+      where: { subjectId: targetSubjectId },
+    });
     if (students.length > 0) {
       await this.prisma.studentOnAssignment.createMany({
         data: students.map((s) => ({
@@ -212,9 +276,15 @@ export class QuizService {
   }
 
   private async assertEditable(assignment: Assignment): Promise<void> {
-    const subject = await this.prisma.subject.findUnique({ where: { id: assignment.subjectId } });
-    if (subject?.isLocked) throw new ForbiddenException('Subject is locked. Cannot make any changes!');
-    if (await isQuizLocked(this.prisma, assignment.id)) throw new ConflictException('QUIZ_LOCKED');
+    const subject = await this.prisma.subject.findUnique({
+      where: { id: assignment.subjectId },
+    });
+    if (subject?.isLocked)
+      throw new ForbiddenException(
+        'Subject is locked. Cannot make any changes!',
+      );
+    if (await isQuizLocked(this.prisma, assignment.id))
+      throw new ConflictException('QUIZ_LOCKED');
   }
 
   private async syncMaxScore(assignment: Assignment): Promise<void> {
@@ -223,7 +293,10 @@ export class QuizService {
       select: { points: true },
     });
     const maxScore = questions.reduce((total, q) => total + q.points, 0);
-    await this.prisma.assignment.update({ where: { id: assignment.id }, data: { maxScore } });
+    await this.prisma.assignment.update({
+      where: { id: assignment.id },
+      data: { maxScore },
+    });
     await this.cache.bump(
       subjectScope(assignment.subjectId, 'assignments'),
       subjectScope(assignment.subjectId, 'grades'),
