@@ -13,4 +13,15 @@ describe('updateQuizAttempt', () => {
     prisma.studentOnAssignment.updateMany.mockResolvedValue({ count: 0 });
     await expect(updateQuizAttempt(prisma, 'soa1', { lastSeenAt: at })).resolves.toBe(false);
   });
+
+  it('with onlyUnsubmitted also requires submittedAt to be null', async () => {
+    const prisma = { studentOnAssignment: { updateMany: jest.fn().mockResolvedValue({ count: 0 }) } } as any;
+    await expect(
+      updateQuizAttempt(prisma, 'soa1', { lastSeenAt: new Date(5) }, {}, { onlyUnsubmitted: true }),
+    ).resolves.toBe(false);
+    expect(prisma.studentOnAssignment.updateMany.mock.calls[0][0].where).toEqual({
+      id: 'soa1',
+      AND: [{ quizAttempt: { isSet: true } }, { quizAttempt: { is: { submittedAt: null } } }],
+    });
+  });
 });

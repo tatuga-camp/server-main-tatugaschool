@@ -29,7 +29,7 @@ describe('StudentQuizService', () => {
   const prisma = {
     assignmentOnQuiz: { findMany: jest.fn(), findUnique: jest.fn(), count: jest.fn() },
     studentOnQuiz: { findMany: jest.fn(), upsert: jest.fn() },
-    studentOnAssignment: { updateMany: jest.fn(), update: jest.fn() },
+    studentOnAssignment: { updateMany: jest.fn(), update: jest.fn(), findUnique: jest.fn() },
   };
   const access = { studentQuiz: jest.fn() };
   const attempts = { finalizeAttempt: jest.fn() };
@@ -74,7 +74,7 @@ describe('StudentQuizService', () => {
     const call = prisma.studentOnAssignment.updateMany.mock.calls[0][0];
     expect(call.where).toEqual({ id: 'soa1', quizAttempt: { isSet: false } });
     expect(call.data.quizAttempt.set).toMatchObject({ startedAt: now, deadlineAt: new Date('2026-10-09T03:30:00Z'), lastSeenAt: now });
-    expect(cache.bump).toHaveBeenCalled();
+    expect(cache.bump).toHaveBeenCalledWith('subject:s1:submissions', 'subject:s1:grades');
   });
 
   it('start ignores a due date that has already passed (late start allowed)', async () => {
@@ -121,6 +121,19 @@ describe('StudentQuizService', () => {
     prisma.assignmentOnQuiz.findUnique.mockResolvedValue(question);
     prisma.studentOnAssignment.updateMany.mockResolvedValue({ count: 0 });
     await expect(service.saveAnswer('soa1', 'q1', { selectedOptionIds: ['a'], blankAnswers: [] }, student)).rejects.toThrow('QUIZ_NOT_STARTED');
+    expect(prisma.studentOnQuiz.upsert).not.toHaveBeenCalled();
+  });
+
+  it('saveAnswer: 409 QUIZ_CLOSED when a submit lands after the access check (answer not overwritten)', async () => {
+    access.studentQuiz.mockResolvedValue({ soa: soa(live), assignment: assignment() });
+    prisma.assignmentOnQuiz.findUnique.mockResolvedValue(question);
+    prisma.studentOnAssignment.updateMany.mockResolvedValue({ count: 0 });
+    prisma.studentOnAssignment.findUnique.mockResolvedValue(soa({ ...live, submittedAt: now }));
+    await expect(service.saveAnswer('soa1', 'q1', { selectedOptionIds: ['a'], blankAnswers: [] }, student)).rejects.toThrow('QUIZ_CLOSED');
+    expect(prisma.studentOnAssignment.updateMany.mock.calls[0][0].where).toEqual({
+      id: 'soa1',
+      AND: [{ quizAttempt: { isSet: true } }, { quizAttempt: { is: { submittedAt: null } } }],
+    });
     expect(prisma.studentOnQuiz.upsert).not.toHaveBeenCalled();
   });
 

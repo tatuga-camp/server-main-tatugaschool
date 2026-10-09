@@ -1,6 +1,6 @@
 // src/quiz/quiz-attempt.service.ts
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { StudentOnAssignment } from '@prisma/client';
+import { Prisma, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
@@ -41,26 +41,28 @@ export class QuizAttemptService {
       if (!answer) {
         scores.push(0);
         writes.push(
-          this.prisma.studentOnQuiz.upsert({
-            where: {
-              studentOnAssignmentId_assignmentOnQuizId: {
-                studentOnAssignmentId: soa.id,
-                assignmentOnQuizId: question.id,
+          ignoreUniqueViolation(
+            this.prisma.studentOnQuiz.upsert({
+              where: {
+                studentOnAssignmentId_assignmentOnQuizId: {
+                  studentOnAssignmentId: soa.id,
+                  assignmentOnQuizId: question.id,
+                },
               },
-            },
-            create: {
-              selectedOptionIds: [],
-              blankAnswers: [],
-              score: 0,
-              assignmentOnQuizId: question.id,
-              studentOnAssignmentId: soa.id,
-              assignmentId: soa.assignmentId,
-              studentId: soa.studentId,
-              subjectId: soa.subjectId,
-              schoolId: soa.schoolId,
-            },
-            update: {},
-          }),
+              create: {
+                selectedOptionIds: [],
+                blankAnswers: [],
+                score: 0,
+                assignmentOnQuizId: question.id,
+                studentOnAssignmentId: soa.id,
+                assignmentId: soa.assignmentId,
+                studentId: soa.studentId,
+                subjectId: soa.subjectId,
+                schoolId: soa.schoolId,
+              },
+              update: {},
+            }),
+          ),
         );
         continue;
       }
@@ -80,8 +82,15 @@ export class QuizAttemptService {
       soa.id,
       { submittedAt: now },
       { score: sumScores(scores), status: 'SUBMITTED', completedAt: now },
+      { onlyUnsubmitted: true },
     );
-    if (!written) throw new ConflictException('QUIZ_NOT_STARTED'); // reset raced the submit
+    if (!written) {
+      // Either a concurrent finalize won (return its result, it already bumped
+      // and started Jev) or a teacher reset raced the submit.
+      const current = await this.prisma.studentOnAssignment.findUnique({ where: { id: soa.id } });
+      if (current?.quizAttempt?.submittedAt) return current;
+      throw new ConflictException('QUIZ_NOT_STARTED');
+    }
     const updated = await this.prisma.studentOnAssignment.findUniqueOrThrow({ where: { id: soa.id } });
     await this.cache.bump(
       subjectScope(soa.subjectId, 'submissions'),
@@ -89,5 +98,18 @@ export class QuizAttemptService {
     );
     if (settings.testMode) void this.integrity.evaluateWithJev(soa.id);
     return updated;
+  }
+}
+
+/**
+ * Mongo upsert is find-then-create: a concurrent finalize may create the same
+ * missing-answer row first. That row is identical, so P2002 here is success.
+ */
+async function ignoreUniqueViolation(write: Promise<unknown>): Promise<unknown> {
+  try {
+    return await write;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return null;
+    throw error;
   }
 }

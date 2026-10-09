@@ -106,7 +106,10 @@ export class StudentQuizService {
         },
       });
       if (started.count > 0) {
-        await this.cache.bump(subjectScope(soa.subjectId, 'submissions'));
+        await this.cache.bump(
+          subjectScope(soa.subjectId, 'submissions'),
+          subjectScope(soa.subjectId, 'grades'),
+        );
       }
     }
     return this.getQuiz(studentOnAssignmentId, student);
@@ -135,9 +138,13 @@ export class StudentQuizService {
     const shapeError = validateAnswerShape(question, dto);
     if (shapeError) throw new BadRequestException(shapeError);
 
-    // Guarded write first: if a teacher reset the attempt since the access
-    // check, refuse instead of writing an answer into a dead attempt.
-    if (!(await updateQuizAttempt(this.prisma, soa.id, { lastSeenAt: now }))) {
+    // Guarded write first: if a teacher reset the attempt, or a submit /
+    // deadline finalize landed since the access check, refuse instead of
+    // writing an answer into a dead or already-graded attempt.
+    const live = await updateQuizAttempt(this.prisma, soa.id, { lastSeenAt: now }, {}, { onlyUnsubmitted: true });
+    if (!live) {
+      const current = await this.prisma.studentOnAssignment.findUnique({ where: { id: soa.id } });
+      if (current?.quizAttempt?.submittedAt) throw new ConflictException('QUIZ_CLOSED');
       throw new ConflictException('QUIZ_NOT_STARTED');
     }
 

@@ -18,6 +18,8 @@ const ALLOWED: Record<string, string> = {
     'duplicate quiz; bumps assignments + submissions after the copy',
   'quiz/quiz-attempt-write.ts:studentOnAssignment.updateMany':
     'quizAttempt partial writes (integrity/answers/finalize); integrity and answer writes must not bump, callers that change cached fields bump themselves',
+  'quiz/student-quiz.service.ts:studentOnAssignment.updateMany':
+    'start(): guarded quizAttempt set; bumps submissions + grades after the write when it matched',
   'rubric/rubric.service.ts:studentOnAssignment.update':
     'inside $transaction; bumps submissions after it resolves',
   'student-on-subject/student-on-subject.service.ts:studentOnSubject.update':
