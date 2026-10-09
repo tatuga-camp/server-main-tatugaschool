@@ -1,4 +1,5 @@
 // src/quiz/quiz-attempt.service.spec.ts
+import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -67,6 +68,19 @@ describe('QuizAttemptService.finalizeAttempt', () => {
       baseSoa({ submittedAt: new Date() }),
     );
     await service.finalizeAttempt('soa1');
+    expect(prisma.assignmentOnQuiz.findMany).not.toHaveBeenCalled();
+    expect(prisma.studentOnAssignment.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('404s without grading or writing when the quiz was soft-deleted', async () => {
+    const row = baseSoa({ submittedAt: null, startedAt: new Date() });
+    prisma.studentOnAssignment.findUnique.mockResolvedValue({
+      ...row,
+      assignment: { ...row.assignment, isDeleted: true },
+    });
+    await expect(service.finalizeAttempt('soa1')).rejects.toThrow(
+      NotFoundException,
+    );
     expect(prisma.assignmentOnQuiz.findMany).not.toHaveBeenCalled();
     expect(prisma.studentOnAssignment.updateMany).not.toHaveBeenCalled();
   });

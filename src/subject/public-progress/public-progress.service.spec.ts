@@ -282,9 +282,28 @@ describe('PublicProgressService', () => {
       expect(prisma.assignment.findMany).toHaveBeenCalledWith({
         where: {
           subjectId: 's1',
+          isDeleted: false,
           status: 'Published',
           type: { in: ['Assignment', 'VideoQuiz', 'Quiz'] },
         },
+      });
+    });
+
+    it('hides soft-deleted assignments from the public columns', async () => {
+      const { prisma, service } = setup();
+      prisma.subject.findRaw.mockResolvedValue([{ _id: { $oid: 's1' } }]);
+      prisma.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        title: 'Math',
+        educationYear: '1/2026',
+        isDeleted: false,
+        publicProgressToken: TOKEN,
+        publicProgressLevel: 'STATUS',
+        class: { title: 'M.1/2' },
+      });
+      await service.getByToken(TOKEN);
+      expect(prisma.assignment.findMany.mock.calls[0][0].where).toMatchObject({
+        isDeleted: false,
       });
     });
   });

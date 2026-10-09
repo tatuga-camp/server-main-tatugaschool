@@ -1714,5 +1714,18 @@ describe('SubjectService', () => {
       expect(result).toContain('เลขที่ 1 MrJohn Doe: 2 งาน');
       expect(result).toContain('MsJane Smith: 1 งาน');
     });
+
+    it('does not count work on soft-deleted assignments', async () => {
+      mockPrismaService.studentOnSubject.findMany.mockResolvedValue([]);
+      await service.reportPendingAssignments({
+        id: 's1',
+        title: 'Math',
+      } as any);
+      const args =
+        mockPrismaService.studentOnSubject.findMany.mock.calls.at(-1)[0];
+      expect(args.include.studentOnAssignments.where.assignment).toEqual({
+        is: { status: 'Published', isDeleted: false },
+      });
+    });
   });
 });

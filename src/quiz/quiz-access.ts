@@ -35,7 +35,7 @@ export class QuizAccess {
     user: UserJwtPayload,
   ): Promise<Assignment> {
     const assignment = await this.prisma.assignment.findUnique({
-      where: { id: assignmentId },
+      where: { id: assignmentId, isDeleted: false },
     });
     if (!assignment) throw new NotFoundException('Assignment not found');
     if (assignment.type !== 'Quiz')
@@ -67,7 +67,9 @@ export class QuizAccess {
       where: { id: studentOnAssignmentId },
       include: { assignment: true },
     });
-    if (!found) throw new NotFoundException('Student work not found');
+    // A soft-deleted quiz 404s, so autosave, integrity and submit never write.
+    if (!found || found.assignment.isDeleted)
+      throw new NotFoundException('Student work not found');
     if (found.studentId !== student.id) {
       throw new ForbiddenException(
         'You are not allowed to access this resource',

@@ -405,6 +405,14 @@ describe('SubjectQueryToolService', () => {
   });
 
   describe('getPreamble', () => {
+    it('leaves soft-deleted assignments out of the preamble', async () => {
+      prismaRead.subject.findUnique.mockResolvedValue({ id: 's1', title: 'Math' });
+      await service.getPreamble(SUBJECT_ID);
+      expect(prismaRead.assignment.findMany.mock.calls[0][0].where).toMatchObject({
+        isDeleted: false,
+      });
+    });
+
     it('fetches only small collections, all scoped to the subject', async () => {
       prismaRead.subject.findUnique.mockResolvedValue({ id: 's1', title: 'Math' });
       prismaRead.assignment.findMany.mockResolvedValue([
@@ -423,7 +431,7 @@ describe('SubjectQueryToolService', () => {
       );
       expect(prismaRead.assignment.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { subjectId: SUBJECT_ID, status: 'Published' },
+          where: { subjectId: SUBJECT_ID, status: 'Published', isDeleted: false },
         }),
       );
       // the four row-dump collections must NOT be part of the preamble

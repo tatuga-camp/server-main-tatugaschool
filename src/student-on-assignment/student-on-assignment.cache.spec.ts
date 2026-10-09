@@ -80,6 +80,7 @@ function seed(): Tables {
       schoolId: 'sch1',
       vector: [0.1],
       vectorResouce: 'e',
+      isDeleted: false,
     })),
     fileOnAssignment: [],
     questionOnVideo: [],

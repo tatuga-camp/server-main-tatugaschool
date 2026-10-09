@@ -1360,7 +1360,11 @@ export class SubjectService {
           where: { subjectId: subject.id },
         }),
         this.assignmentService.assignmentRepository.findMany({
-          where: { subjectId: subject.id, status: 'Published' },
+          where: {
+            subjectId: subject.id,
+            status: 'Published',
+            isDeleted: false,
+          },
           omit: { vector: true },
         }),
         this.scoreOnSubjectRepository.findMany({
@@ -1538,7 +1542,7 @@ export class SubjectService {
               status: 'PENDDING',
               isAssigned: true,
               assignment: {
-                status: 'Published',
+                is: { status: 'Published', isDeleted: false },
               },
             },
           },

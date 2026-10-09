@@ -310,6 +310,23 @@ describe('QuizIntegrityService.ingest', () => {
     });
   });
 
+  it('evaluateWithJev skips a soft-deleted quiz without calling Jev or writing', async () => {
+    jev.isEnabled.mockReturnValue(true);
+    const summary = {
+      ...emptySummary(),
+      exitCount: 2,
+      totalAwayMs: 20_000,
+      longestAwayMs: 15_000,
+    };
+    prisma.studentOnAssignment.findUnique.mockResolvedValueOnce({
+      ...soa(attempt({ integritySummary: summary })),
+      assignment: { ...quiz(true), isDeleted: true },
+    });
+    await expect(service.evaluateWithJev('soa1')).resolves.toBeUndefined();
+    expect(jev.evaluate).not.toHaveBeenCalled();
+    expect(prisma.studentOnAssignment.updateMany).not.toHaveBeenCalled();
+  });
+
   it('evaluateWithJev skips clean attempts and never throws', async () => {
     jev.isEnabled.mockReturnValue(true);
     prisma.studentOnAssignment.findUnique.mockResolvedValueOnce({

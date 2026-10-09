@@ -109,6 +109,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         },
         ...(!request.withVector && { omit: OMIT_EMBEDDING }),
       };
+      // includes-deleted: only with request.includeDeleted; args filters by default
       return await this.prisma.assignment.findUnique(args);
     } catch (error) {
       this.logger.error(error);
@@ -127,6 +128,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
   ): Promise<Assignment[]> {
     try {
       request = liveWhere(withEmbeddingOmitted(request), opts?.includeDeleted);
+      // includes-deleted: only with opts.includeDeleted; liveWhere filters by default
       return await this.prisma.assignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -144,6 +146,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     opts?: AssignmentReadOptions,
   ): Promise<number> {
     try {
+      // includes-deleted: only with opts.includeDeleted; liveWhere filters by default
       return await this.prisma.assignment.count(
         liveWhere(request, opts?.includeDeleted),
       );

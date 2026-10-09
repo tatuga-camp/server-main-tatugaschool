@@ -623,7 +623,7 @@ export class SubjectQueryToolService {
         orderBy: { number: 'asc' },
       }),
       this.prismaRead.assignment.findMany({
-        where: { subjectId, status: 'Published' },
+        where: { subjectId, status: 'Published', isDeleted: false },
         select: {
           id: true,
           title: true,

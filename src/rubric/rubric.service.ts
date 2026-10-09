@@ -264,7 +264,8 @@ export class RubricService {
     user: UserJwtPayload,
   ) {
     const data = await this.repo.findBreakdown(dto.studentOnAssignmentId);
-    if (!data) throw new NotFoundException('Student assignment not found');
+    if (!data || data.soa.assignment?.isDeleted)
+      throw new NotFoundException('Student assignment not found');
     await this.teacherOnSubjectService.ValidateAccess({
       userId: user.id,
       subjectId: data.soa.subjectId,
@@ -277,7 +278,8 @@ export class RubricService {
     student: StudentJwtPayload,
   ) {
     const data = await this.repo.findBreakdown(dto.studentOnAssignmentId);
-    if (!data) throw new NotFoundException('Student assignment not found');
+    if (!data || data.soa.assignment?.isDeleted)
+      throw new NotFoundException('Student assignment not found');
     if (data.soa.studentId !== student.id) {
       throw new ForbiddenException('Not your assignment.');
     }

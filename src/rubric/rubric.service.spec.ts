@@ -337,6 +337,51 @@ describe('RubricService.readBreakdownForStudent', () => {
   });
 });
 
+describe('RubricService breakdown of a soft-deleted assignment', () => {
+  function deletedBreakdownService() {
+    const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
+    const service = new RubricService(
+      {} as any,
+      teacher,
+      {} as any,
+      createPassthroughCache(),
+    );
+    (service as any).repo = {
+      findBreakdown: jest.fn().mockResolvedValue({
+        soa: {
+          id: 'soa1',
+          studentId: 'studentA',
+          subjectId: 'sub1',
+          score: 8,
+          assignment: { id: 'a1', maxScore: 10, isDeleted: true, rubric: null },
+        },
+        scores: [],
+      }),
+    };
+    return { service, teacher };
+  }
+
+  it('404s for the teacher', async () => {
+    const { service } = deletedBreakdownService();
+    await expect(
+      service.readBreakdownForTeacher(
+        { studentOnAssignmentId: 'soa1' } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('404s for the owning student', async () => {
+    const { service } = deletedBreakdownService();
+    await expect(
+      service.readBreakdownForStudent(
+        { studentOnAssignmentId: 'soa1' } as any,
+        { id: 'studentA', schoolId: 'school1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
 describe('RubricService.aiDraft', () => {
   function aiService(modelText: string) {
     const prisma: any = {

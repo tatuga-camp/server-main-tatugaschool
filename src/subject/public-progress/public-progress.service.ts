@@ -129,6 +129,7 @@ export class PublicProgressService {
       this.prisma.assignment.findMany({
         where: {
           subjectId,
+          isDeleted: false,
           status: 'Published',
           type: { in: ['Assignment', 'VideoQuiz', 'Quiz'] },
         },

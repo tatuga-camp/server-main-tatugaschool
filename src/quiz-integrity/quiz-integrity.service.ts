@@ -174,7 +174,13 @@ export class QuizIntegrityService {
         include: { assignment: true },
       });
       const attempt = soa?.quizAttempt;
-      if (!soa || !attempt || isEmptySummary(attempt.integritySummary)) return;
+      if (
+        !soa ||
+        soa.assignment.isDeleted ||
+        !attempt ||
+        isEmptySummary(attempt.integritySummary)
+      )
+        return;
 
       const hash = summaryHash(attempt.integritySummary);
       const [questionCount, answeredCount] = await Promise.all([

@@ -29,7 +29,7 @@ export class QuizAttemptService {
       where: { id: studentOnAssignmentId },
       include: { assignment: true },
     });
-    if (!found || !found.quizAttempt)
+    if (!found || !found.quizAttempt || found.assignment.isDeleted)
       throw new NotFoundException('Quiz attempt not found');
     const { assignment, ...soa } = found;
     if (soa.quizAttempt.submittedAt) return soa;
