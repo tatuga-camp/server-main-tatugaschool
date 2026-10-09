@@ -10,6 +10,12 @@ import {
 const ALLOWED: Record<string, string> = {
   'attendance-status-list/attendance-status-list.service.ts:attendance.updateMany':
     'bumps attendance after the write',
+  'quiz/quiz.service.ts:assignment.create':
+    'duplicate quiz; bumps assignments + submissions after the copy',
+  'quiz/quiz.service.ts:assignment.update':
+    'syncMaxScore; bumps assignments + grades after the write',
+  'quiz/quiz.service.ts:studentOnAssignment.createMany':
+    'duplicate quiz; bumps assignments + submissions after the copy',
   'rubric/rubric.service.ts:studentOnAssignment.update':
     'inside $transaction; bumps submissions after it resolves',
   'student-on-subject/student-on-subject.service.ts:studentOnSubject.update':
