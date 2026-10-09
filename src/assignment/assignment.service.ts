@@ -51,6 +51,7 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
 import { AiService } from '../ai/ai.service';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
 import { AssignmentReads } from './assignment.reads';
@@ -118,6 +119,7 @@ export class AssignmentService {
     private linebotService: LineBotService,
     private prismaReadService: PrismaReadService,
     private cache: CacheService,
+    private redis: RedisService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -807,33 +809,15 @@ export class AssignmentService {
         userId: user.id,
         subjectId: assignment.subjectId,
       });
-      let { totalDeleteSize } = await this.assignmentRepository.delete(dto);
-
-      if (assignment.type === 'VideoQuiz' && assignment.videoURL) {
-        const assignments = await this.assignmentRepository.count({
-          where: {
-            videoURL: assignment.videoURL,
-          },
-        });
-
-        if (assignments === 1) {
-          await this.storageService.DeleteFileOnStorage({
-            fileName: assignment.videoURL,
-          });
-        }
-      }
-
-      await this.schoolService.schoolRepository.update({
-        where: {
-          id: assignment.schoolId,
-        },
-        data: {
-          totalStorage: {
-            decrement: totalDeleteSize,
-          },
-        },
-      });
-      return assignment;
+      const deleted = await this.assignmentRepository.softDelete(assignment.id);
+      // The school analytics blob is not in the cache-scope system; drop it so
+      // the deleted assignment leaves the analytics page now, not in 15 h.
+      await this.redis
+        .del(`school_analytics:${assignment.schoolId}:${subject.educationYear}`)
+        .catch((error) =>
+          this.logger.warn(`analytics cache clear failed: ${error}`),
+        );
+      return deleted;
     } catch (error) {
       this.logger.error(error);
       throw error;

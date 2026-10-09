@@ -23,6 +23,7 @@ import { StudentService } from '../student/student.service';
 import { SchoolService } from '../school/school.service';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 import {
   NotFoundException,
   ForbiddenException,
@@ -119,6 +120,10 @@ describe('AssignmentService', () => {
     findMany: jest.fn(),
   };
 
+  const mockRedisService = {
+    del: jest.fn().mockResolvedValue(1),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -153,6 +158,7 @@ describe('AssignmentService', () => {
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: LineBotService, useValue: mockLineBotService },
         { provide: PrismaReadService, useValue: {} },
+        { provide: RedisService, useValue: mockRedisService },
       ],
     }).compile();
 
@@ -165,6 +171,7 @@ describe('AssignmentService', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      softDelete: jest.fn(),
       count: jest.fn(),
     } as any;
 
@@ -1490,39 +1497,70 @@ describe('AssignmentService', () => {
   // deleteAssignment
   // ─────────────────────────────────────────────────────────────────────────────
   describe('deleteAssignment', () => {
-    it('should delete an assignment successfully and update school storage', async () => {
+    it('soft deletes the assignment and leaves storage alone', async () => {
       const mockUser = { id: 'u1' } as any;
       const mockAssignment = {
         id: 'a1',
         subjectId: 's1',
         schoolId: 'sch1',
-        type: 'Assignment',
-        videoURL: null,
+        type: 'VideoQuiz',
+        videoURL: 'https://storage.example.com/video.mp4',
       };
-      const mockSubject = { id: 's1', isLocked: false };
+      const mockSubject = {
+        id: 's1',
+        isLocked: false,
+        educationYear: '1/2569',
+      };
+      const softDeleted = { ...mockAssignment, isDeleted: true };
 
       (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
         mockAssignment,
       );
       mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.delete as jest.Mock).mockResolvedValue({
-        totalDeleteSize: 100,
-      });
-      mockSchoolService.schoolRepository.update.mockResolvedValue({});
+      (service.assignmentRepository.softDelete as jest.Mock).mockResolvedValue(
+        softDeleted,
+      );
 
       const result = await service.deleteAssignment(
         { assignmentId: 'a1' } as any,
         mockUser,
       );
 
-      expect(service.assignmentRepository.delete).toHaveBeenCalledWith({
-        assignmentId: 'a1',
+      expect(service.assignmentRepository.softDelete).toHaveBeenCalledWith(
+        'a1',
+      );
+      expect(service.assignmentRepository.delete).not.toHaveBeenCalled();
+      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
+      expect(mockSchoolService.schoolRepository.update).not.toHaveBeenCalled();
+      expect(mockRedisService.del).toHaveBeenCalledWith(
+        'school_analytics:sch1:1/2569',
+      );
+      expect(result).toBe(softDeleted);
+    });
+
+    it('still returns the soft-deleted assignment when the analytics cache clear fails', async () => {
+      const mockAssignment = { id: 'a1', subjectId: 's1', schoolId: 'sch1' };
+      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
+        mockAssignment,
+      );
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        isLocked: false,
+        educationYear: '1/2569',
       });
-      expect(mockSchoolService.schoolRepository.update).toHaveBeenCalledWith({
-        where: { id: 'sch1' },
-        data: { totalStorage: { decrement: 100 } },
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (service.assignmentRepository.softDelete as jest.Mock).mockResolvedValue({
+        ...mockAssignment,
+        isDeleted: true,
       });
+      mockRedisService.del.mockRejectedValueOnce(new Error('redis down'));
+
+      const result = await service.deleteAssignment(
+        { assignmentId: 'a1' } as any,
+        { id: 'u1' } as any,
+      );
+
       expect(result.id).toBe('a1');
     });
 
@@ -1561,64 +1599,6 @@ describe('AssignmentService', () => {
       await expect(
         service.deleteAssignment({ assignmentId: 'a1' } as any, {} as any),
       ).rejects.toThrow(ForbiddenException);
-    });
-
-    it('should delete video from storage when VideoQuiz has unique videoURL', async () => {
-      const mockUser = { id: 'u1' } as any;
-      const mockAssignment = {
-        id: 'a1',
-        subjectId: 's1',
-        schoolId: 'sch1',
-        type: 'VideoQuiz',
-        videoURL: 'https://storage.example.com/video.mp4',
-      };
-      const mockSubject = { id: 's1', isLocked: false };
-
-      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
-        mockAssignment,
-      );
-      mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.delete as jest.Mock).mockResolvedValue({
-        totalDeleteSize: 0,
-      });
-      // Only 1 assignment uses this videoURL
-      (service.assignmentRepository.count as jest.Mock).mockResolvedValue(1);
-      mockSchoolService.schoolRepository.update.mockResolvedValue({});
-
-      await service.deleteAssignment({ assignmentId: 'a1' } as any, mockUser);
-
-      expect(mockStorageService.DeleteFileOnStorage).toHaveBeenCalledWith({
-        fileName: 'https://storage.example.com/video.mp4',
-      });
-    });
-
-    it('should NOT delete video from storage when multiple assignments share the same videoURL', async () => {
-      const mockUser = { id: 'u1' } as any;
-      const mockAssignment = {
-        id: 'a1',
-        subjectId: 's1',
-        schoolId: 'sch1',
-        type: 'VideoQuiz',
-        videoURL: 'https://storage.example.com/video.mp4',
-      };
-      const mockSubject = { id: 's1', isLocked: false };
-
-      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
-        mockAssignment,
-      );
-      mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.delete as jest.Mock).mockResolvedValue({
-        totalDeleteSize: 0,
-      });
-      // Multiple assignments use this videoURL
-      (service.assignmentRepository.count as jest.Mock).mockResolvedValue(2);
-      mockSchoolService.schoolRepository.update.mockResolvedValue({});
-
-      await service.deleteAssignment({ assignmentId: 'a1' } as any, mockUser);
-
-      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
     });
   });
 
