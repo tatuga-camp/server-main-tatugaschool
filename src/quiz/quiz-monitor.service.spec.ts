@@ -21,7 +21,7 @@ const attempt = (o = {}) => ({
 describe('QuizMonitorService', () => {
   let service: QuizMonitorService;
   const prisma = {
-    studentOnAssignment: { findMany: jest.fn(), update: jest.fn() },
+    studentOnAssignment: { findMany: jest.fn(), update: jest.fn(), count: jest.fn() },
     assignmentOnQuiz: { count: jest.fn(), findMany: jest.fn() },
     studentOnQuiz: { findMany: jest.fn(), findUnique: jest.fn(), updateMany: jest.fn(), deleteMany: jest.fn() },
     quizIntegrityEvent: { findMany: jest.fn(), deleteMany: jest.fn() },
@@ -83,6 +83,32 @@ describe('QuizMonitorService', () => {
     const view = await service.getMonitor('a1', user);
     expect(view.rows.map((r) => r.studentOnAssignmentId)).toEqual(['soa3']);
     expect(view.rows[0].submittedAt).toBeNull();
+  });
+
+  it('reports locked when any row has an attempt, including an unassigned one', async () => {
+    // The assigned rows have no attempt; only an unassigned row (not fetched) has one.
+    prisma.studentOnAssignment.findMany.mockResolvedValue([{ id: 'soa1', ...person, quizAttempt: null }]);
+    prisma.studentOnAssignment.count.mockResolvedValue(1);
+    prisma.assignmentOnQuiz.count.mockResolvedValue(3);
+    prisma.studentOnQuiz.findMany.mockResolvedValue([]);
+    prisma.quizIntegrityEvent.findMany.mockResolvedValue([]);
+
+    const view = await service.getMonitor('a1', user);
+    expect(view.locked).toBe(true);
+    expect(prisma.studentOnAssignment.count).toHaveBeenCalledWith({
+      where: { assignmentId: 'a1', quizAttempt: { isSet: true } },
+    });
+  });
+
+  it('reports unlocked when no row has an attempt', async () => {
+    prisma.studentOnAssignment.findMany.mockResolvedValue([{ id: 'soa1', ...person, quizAttempt: null }]);
+    prisma.studentOnAssignment.count.mockResolvedValue(0);
+    prisma.assignmentOnQuiz.count.mockResolvedValue(3);
+    prisma.studentOnQuiz.findMany.mockResolvedValue([]);
+    prisma.quizIntegrityEvent.findMany.mockResolvedValue([]);
+
+    const view = await service.getMonitor('a1', user);
+    expect(view.locked).toBe(false);
   });
 
   it('override caps at question points, re-sums the total and bumps', async () => {

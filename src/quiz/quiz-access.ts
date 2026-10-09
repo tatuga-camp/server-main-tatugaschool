@@ -9,6 +9,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 
+/**
+ * A quiz is locked for editing once ANY of its StudentOnAssignment rows has an
+ * attempt, assigned or not. Shared by the edit guard and the teacher monitor.
+ */
+export async function isQuizLocked(prisma: PrismaService, assignmentId: string): Promise<boolean> {
+  const started = await prisma.studentOnAssignment.count({
+    where: { assignmentId, quizAttempt: { isSet: true } },
+  });
+  return started > 0;
+}
+
 @Injectable()
 export class QuizAccess {
   constructor(

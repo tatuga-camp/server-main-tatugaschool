@@ -96,6 +96,17 @@ describe('QuizService', () => {
     });
   });
 
+  it('locks update, delete and reorder once any attempt exists (409 QUIZ_LOCKED)', async () => {
+    prisma.studentOnAssignment.count.mockResolvedValue(1);
+    prisma.assignmentOnQuiz.findUnique.mockResolvedValue({ id: 'q1', assignmentId: 'a1', type: 'SINGLE', prompt: 'Q', options: singleDto.options, blanks: [] });
+    await expect(service.updateQuestion('q1', { prompt: 'New?' } as any, user)).rejects.toThrow('QUIZ_LOCKED');
+    await expect(service.deleteQuestion('q1', user)).rejects.toThrow(ConflictException);
+    await expect(service.reorder('a1', { ids: ['q1'] }, user)).rejects.toThrow('QUIZ_LOCKED');
+    await expect(service.reorder('a1', { ids: ['q1'] }, user)).rejects.toThrow(ConflictException);
+    expect(prisma.assignmentOnQuiz.update).not.toHaveBeenCalled();
+    expect(prisma.assignmentOnQuiz.delete).not.toHaveBeenCalled();
+  });
+
   it('validates the merged shape on update', async () => {
     prisma.assignmentOnQuiz.findUnique.mockResolvedValue({ id: 'q1', assignmentId: 'a1', type: 'SINGLE', prompt: 'Q', options: singleDto.options, blanks: [] });
     await expect(

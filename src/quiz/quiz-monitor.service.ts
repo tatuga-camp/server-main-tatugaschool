@@ -17,7 +17,7 @@ import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { AWAY_EVENT_TYPES, RETURN_EVENT_TYPES } from '../quiz-integrity/integrity-summary';
 import { deriveMonitorStatus, QuizMonitorStatus } from '../quiz-integrity/monitor-status';
 import { sumScores } from './grading';
-import { QuizAccess } from './quiz-access';
+import { isQuizLocked, QuizAccess } from './quiz-access';
 import { QuizAttemptService } from './quiz-attempt.service';
 import { isPastGrace, withDefaultQuizSettings } from './quiz-settings';
 import { MAX_REVIEW_EVENTS } from './quiz.constants';
@@ -50,6 +50,8 @@ export type QuizMonitorRow = {
 export type QuizMonitorView = {
   assignmentId: string;
   testMode: boolean;
+  /** True once any row (assigned or not) has an attempt; same rule as the edit guard. */
+  locked: boolean;
   questionCount: number;
   serverNow: string;
   rows: QuizMonitorRow[];
@@ -108,8 +110,9 @@ export class QuizMonitorService {
       }),
     );
 
-    const [questionCount, answers, events] = await Promise.all([
+    const [questionCount, locked, answers, events] = await Promise.all([
       this.prisma.assignmentOnQuiz.count({ where: { assignmentId } }),
+      isQuizLocked(this.prisma, assignmentId),
       this.prisma.studentOnQuiz.findMany({
         where: { assignmentId },
         select: { studentOnAssignmentId: true, selectedOptionIds: true, blankAnswers: true },
@@ -141,6 +144,7 @@ export class QuizMonitorService {
     return {
       assignmentId,
       testMode: settings.testMode,
+      locked,
       questionCount,
       serverNow: now.toISOString(),
       rows: rows.map((s) => {

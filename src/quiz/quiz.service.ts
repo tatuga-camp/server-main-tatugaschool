@@ -12,7 +12,7 @@ import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
-import { QuizAccess } from './quiz-access';
+import { isQuizLocked, QuizAccess } from './quiz-access';
 import { toQuizBlank, toQuizOption, validateQuestionShape } from './question-shape';
 import { withDefaultQuizSettings } from './quiz-settings';
 import {
@@ -217,10 +217,7 @@ export class QuizService {
   private async assertEditable(assignment: Assignment): Promise<void> {
     const subject = await this.prisma.subject.findUnique({ where: { id: assignment.subjectId } });
     if (subject?.isLocked) throw new ForbiddenException('Subject is locked. Cannot make any changes!');
-    const started = await this.prisma.studentOnAssignment.count({
-      where: { assignmentId: assignment.id, quizAttempt: { isSet: true } },
-    });
-    if (started > 0) throw new ConflictException('QUIZ_LOCKED');
+    if (await isQuizLocked(this.prisma, assignment.id)) throw new ConflictException('QUIZ_LOCKED');
   }
 
   private async syncMaxScore(assignment: Assignment): Promise<void> {
