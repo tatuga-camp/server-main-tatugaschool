@@ -54,6 +54,7 @@ describe('SubjectService', () => {
     fileOnAnnouncement: { findMany: jest.fn() },
     commentOnAnnouncement: { findMany: jest.fn() },
     assignment: { update: jest.fn() },
+    assignmentOnQuiz: { findMany: jest.fn(), createMany: jest.fn() },
   };
 
   const mockWheelOfNameService = {
@@ -431,6 +432,144 @@ describe('SubjectService', () => {
       expect(mockPrismaService.assignment.update).toHaveBeenCalledWith({
         where: { id: 'na1' },
         data: { rubricId: 'r2' },
+        select: { id: true },
+      });
+    });
+
+    it('should duplicate quiz settings, questions and max score', async () => {
+      (service.subjectRepository.findUnique as jest.Mock).mockResolvedValue({
+        id: 's1',
+        schoolId: 'sch1',
+      });
+      mockClassService.classRepository.findById.mockResolvedValue({ id: 'c1' });
+      mockMemberOnSchoolService.validateAccess.mockResolvedValue(true);
+      jest
+        .spyOn(service, 'createSubject')
+        .mockResolvedValue({ id: 's2', schoolId: 'sch1' } as any);
+      mockAttendanceTableService.attendanceTableRepository.findMany.mockResolvedValue(
+        [],
+      );
+      mockAttendanceStatusListService.attendanceStatusListSRepository.findMany.mockResolvedValue(
+        [],
+      );
+      mockPrismaService.rubric.findMany.mockResolvedValue([]);
+      mockFileAssignmentService.fileAssignmentRepository.findMany.mockResolvedValue(
+        [],
+      );
+      mockPrismaService.questionOnVideo.findMany.mockResolvedValue([]);
+
+      const quizSettings = {
+        scoringMode: 'PARTIAL',
+        timeLimitMinutes: 20,
+        shuffleQuestions: true,
+        shuffleOptions: false,
+        testMode: true,
+        showAnswersAfterSubmit: false,
+      };
+      mockAssignmentService.assignmentRepository.findMany.mockResolvedValue([
+        {
+          id: 'q1',
+          title: 'Quiz 1',
+          type: 'Quiz',
+          status: 'Published',
+          maxScore: 3,
+          quizSettings,
+        },
+      ]);
+      mockAssignmentService.createAssignment.mockResolvedValue({ id: 'nq1' });
+      mockPrismaService.assignment.update.mockResolvedValue({ id: 'nq1' });
+      const options = [
+        { id: 'o1', text: 'A', imageUrl: null, isCorrect: true },
+        { id: 'o2', text: 'B', imageUrl: null, isCorrect: false },
+      ];
+      const blanks = [{ id: 'b1', acceptedAnswers: ['แมว'] }];
+      mockPrismaService.assignmentOnQuiz.findMany.mockResolvedValue([
+        {
+          id: 'qq1',
+          order: 0,
+          type: 'SINGLE',
+          prompt: 'Pick A',
+          imageUrl: 'https://img/1.png',
+          points: 1,
+          options,
+          blanks: [],
+          assignmentId: 'q1',
+          subjectId: 's1',
+          schoolId: 'sch1',
+        },
+        {
+          id: 'qq2',
+          order: 1,
+          type: 'FILL_BLANK',
+          prompt: 'A [[b1]]',
+          imageUrl: null,
+          points: 2,
+          options: [],
+          blanks,
+          assignmentId: 'q1',
+          subjectId: 's1',
+          schoolId: 'sch1',
+        },
+      ]);
+
+      await service.duplicateSubject(
+        {
+          subjectId: 's1',
+          classroomId: 'c1',
+          title: 'New',
+          description: 'Desc',
+          educationYear: '2024',
+        } as any,
+        { id: 'u1' } as any,
+      );
+
+      expect(mockAssignmentService.createAssignment).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'Quiz',
+          subjectId: 's2',
+          quizSettings,
+        }),
+        { id: 'u1' },
+      );
+      expect(mockPrismaService.assignmentOnQuiz.findMany).toHaveBeenCalledWith({
+        where: { assignmentId: 'q1' },
+        orderBy: { order: 'asc' },
+      });
+      expect(
+        mockPrismaService.assignmentOnQuiz.createMany,
+      ).toHaveBeenCalledWith({
+        data: [
+          {
+            order: 0,
+            type: 'SINGLE',
+            prompt: 'Pick A',
+            imageUrl: 'https://img/1.png',
+            points: 1,
+            options,
+            blanks: [],
+            assignmentId: 'nq1',
+            subjectId: 's2',
+            schoolId: 'sch1',
+          },
+          {
+            order: 1,
+            type: 'FILL_BLANK',
+            prompt: 'A [[b1]]',
+            imageUrl: null,
+            points: 2,
+            options: [],
+            blanks,
+            assignmentId: 'nq1',
+            subjectId: 's2',
+            schoolId: 'sch1',
+          },
+        ],
+      });
+      // createAssignment zeroes a quiz's max score; the copy restores the
+      // source total because the questions are copied unchanged.
+      expect(mockPrismaService.assignment.update).toHaveBeenCalledWith({
+        where: { id: 'nq1' },
+        data: { maxScore: 3 },
         select: { id: true },
       });
     });
