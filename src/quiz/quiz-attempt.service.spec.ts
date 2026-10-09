@@ -92,7 +92,7 @@ describe('QuizAttemptService.finalizeAttempt', () => {
     });
     expect(update.data).toMatchObject({
       score: 3.5,
-      status: 'SUBMITTED',
+      status: 'REVIEWD',
       quizAttempt: { upsert: { update: { submittedAt: expect.any(Date) } } },
     });
     expect(cache.bump).toHaveBeenCalledWith('subject:s1:submissions', 'subject:s1:grades');

@@ -1,5 +1,9 @@
 // src/quiz/quiz-attempt.service.ts
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, StudentOnAssignment } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -18,19 +22,26 @@ export class QuizAttemptService {
   ) {}
 
   /** Grades and submits. Idempotent: a submitted attempt is returned as-is. */
-  async finalizeAttempt(studentOnAssignmentId: string): Promise<StudentOnAssignment> {
+  async finalizeAttempt(
+    studentOnAssignmentId: string,
+  ): Promise<StudentOnAssignment> {
     const found = await this.prisma.studentOnAssignment.findUnique({
       where: { id: studentOnAssignmentId },
       include: { assignment: true },
     });
-    if (!found || !found.quizAttempt) throw new NotFoundException('Quiz attempt not found');
+    if (!found || !found.quizAttempt)
+      throw new NotFoundException('Quiz attempt not found');
     const { assignment, ...soa } = found;
     if (soa.quizAttempt.submittedAt) return soa;
 
     const settings = withDefaultQuizSettings(assignment.quizSettings);
     const [questions, answers] = await Promise.all([
-      this.prisma.assignmentOnQuiz.findMany({ where: { assignmentId: soa.assignmentId } }),
-      this.prisma.studentOnQuiz.findMany({ where: { studentOnAssignmentId: soa.id } }),
+      this.prisma.assignmentOnQuiz.findMany({
+        where: { assignmentId: soa.assignmentId },
+      }),
+      this.prisma.studentOnQuiz.findMany({
+        where: { studentOnAssignmentId: soa.id },
+      }),
     ]);
     const byQuestion = new Map(answers.map((a) => [a.assignmentOnQuizId, a]));
 
@@ -72,26 +83,37 @@ export class QuizAttemptService {
       }
       const score = gradeQuestion(question, answer, settings.scoringMode);
       scores.push(score);
-      writes.push(this.prisma.studentOnQuiz.update({ where: { id: answer.id }, data: { score } }));
+      writes.push(
+        this.prisma.studentOnQuiz.update({
+          where: { id: answer.id },
+          data: { score },
+        }),
+      );
     }
     await Promise.all(writes);
 
     const now = new Date();
+    // Graded on the spot, so it is REVIEWD rather than SUBMITTED: it never
+    // waits in the teacher's review queue.
     const written = await updateQuizAttempt(
       this.prisma,
       soa.id,
       { submittedAt: now },
-      { score: sumScores(scores), status: 'SUBMITTED', completedAt: now },
+      { score: sumScores(scores), status: 'REVIEWD', completedAt: now },
       { onlyUnsubmitted: true },
     );
     if (!written) {
       // Either a concurrent finalize won (return its result, it already bumped
       // and started Jev) or a teacher reset raced the submit.
-      const current = await this.prisma.studentOnAssignment.findUnique({ where: { id: soa.id } });
+      const current = await this.prisma.studentOnAssignment.findUnique({
+        where: { id: soa.id },
+      });
       if (current?.quizAttempt?.submittedAt) return current;
       throw new ConflictException('QUIZ_NOT_STARTED');
     }
-    const updated = await this.prisma.studentOnAssignment.findUniqueOrThrow({ where: { id: soa.id } });
+    const updated = await this.prisma.studentOnAssignment.findUniqueOrThrow({
+      where: { id: soa.id },
+    });
     await this.cache.bump(
       subjectScope(soa.subjectId, 'submissions'),
       subjectScope(soa.subjectId, 'grades'),
@@ -105,11 +127,17 @@ export class QuizAttemptService {
  * Mongo upsert is find-then-create: a concurrent finalize may create the same
  * missing-answer row first. That row is identical, so P2002 here is success.
  */
-async function ignoreUniqueViolation(write: Promise<unknown>): Promise<unknown> {
+async function ignoreUniqueViolation(
+  write: Promise<unknown>,
+): Promise<unknown> {
   try {
     return await write;
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return null;
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    )
+      return null;
     throw error;
   }
 }
