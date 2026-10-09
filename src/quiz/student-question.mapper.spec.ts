@@ -1,6 +1,13 @@
-import { AssignmentOnQuiz } from '@prisma/client';
+import { AssignmentOnQuiz, QuizAttempt } from '@prisma/client';
 import { withDefaultQuizSettings } from './quiz-settings';
-import { isAnswered, orderForStudent, toStudentQuestion, toStudentResultQuestion } from './student-question.mapper';
+import {
+  isAnswered,
+  orderForStudent,
+  toStudentQuestion,
+  toStudentResultQuestion,
+  toStudentSafeSubmission,
+} from './student-question.mapper';
+import { fullQuizAttempt, leakedIntegrityKeys } from './testing/quiz-attempt.fixture';
 
 const question = (id: string, order: number, overrides: Partial<AssignmentOnQuiz> = {}): AssignmentOnQuiz => ({
   id,
@@ -79,5 +86,41 @@ describe('isAnswered', () => {
     expect(isAnswered({ selectedOptionIds: [], blankAnswers: [{ value: '  ' }] })).toBe(false);
     expect(isAnswered({ selectedOptionIds: ['a'], blankAnswers: [] })).toBe(true);
     expect(isAnswered({ selectedOptionIds: [], blankAnswers: [{ value: 'x' }] })).toBe(true);
+  });
+});
+
+describe('toStudentSafeSubmission', () => {
+  const row = (quizAttempt: QuizAttempt | null) => ({
+    id: 'soa1',
+    studentId: 'st1',
+    score: 7,
+    status: 'SUBMITTED',
+    quizAttempt,
+  });
+
+  it('keeps only the attempt timestamps and every other column', () => {
+    const attempt = fullQuizAttempt();
+    const safe = toStudentSafeSubmission(row(attempt));
+    expect(safe).toEqual({
+      id: 'soa1',
+      studentId: 'st1',
+      score: 7,
+      status: 'SUBMITTED',
+      quizAttempt: {
+        startedAt: attempt.startedAt,
+        deadlineAt: attempt.deadlineAt,
+        submittedAt: attempt.submittedAt,
+      },
+    });
+  });
+
+  it('leaves no integrity or risk key anywhere in the row', () => {
+    expect(leakedIntegrityKeys(row(fullQuizAttempt()))).not.toEqual([]);
+    expect(leakedIntegrityKeys(toStudentSafeSubmission(row(fullQuizAttempt())))).toEqual([]);
+  });
+
+  it('maps a missing attempt to null', () => {
+    expect(toStudentSafeSubmission(row(null)).quizAttempt).toBeNull();
+    expect(toStudentSafeSubmission({ id: 'soa1' }).quizAttempt).toBeNull();
   });
 });

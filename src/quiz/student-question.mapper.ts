@@ -1,4 +1,4 @@
-import { AssignmentOnQuiz, QuizQuestionType, QuizSettings } from '@prisma/client';
+import { AssignmentOnQuiz, QuizAttempt, QuizQuestionType, QuizSettings } from '@prisma/client';
 import { hashString, seededShuffle } from './shuffle';
 
 export type StudentQuizQuestion = {
@@ -68,4 +68,30 @@ export function isAnswered(answer: {
     answer.selectedOptionIds.length > 0 ||
     answer.blankAnswers.some((b) => b.value.trim().length > 0)
   );
+}
+
+export type StudentSafeQuizAttempt = Pick<QuizAttempt, 'startedAt' | 'deadlineAt' | 'submittedAt'>;
+
+export type StudentSafeSubmission<T> = Omit<T, 'quizAttempt'> & {
+  quizAttempt: StudentSafeQuizAttempt | null;
+};
+
+/**
+ * Reduces a StudentOnAssignment row for a student caller: the quiz attempt keeps only its
+ * timestamps, so risk scores, integrity counters and the shuffle seed never leave the server.
+ */
+export function toStudentSafeSubmission<T extends { quizAttempt?: QuizAttempt | null }>(
+  soa: T,
+): StudentSafeSubmission<T> {
+  const { quizAttempt, ...rest } = soa;
+  return {
+    ...rest,
+    quizAttempt: quizAttempt
+      ? {
+          startedAt: quizAttempt.startedAt,
+          deadlineAt: quizAttempt.deadlineAt ?? null,
+          submittedAt: quizAttempt.submittedAt ?? null,
+        }
+      : null,
+  };
 }

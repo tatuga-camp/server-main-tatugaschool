@@ -24,6 +24,10 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  fullQuizAttempt,
+  leakedIntegrityKeys,
+} from '../quiz/testing/quiz-attempt.fixture';
 
 jest.mock('web-push', () => ({}));
 jest.mock('googleapis', () => ({}));
@@ -405,7 +409,41 @@ describe('AssignmentService', () => {
       );
 
       expect(result.map((a) => a.id)).toEqual(['a1']);
-      expect(result[0].studentOnAssignment).toEqual(mine[0]);
+      expect(result[0].studentOnAssignment).toEqual({
+        ...mine[0],
+        quizAttempt: null,
+      });
+    });
+
+    it('strips integrity and risk data from the student submission', async () => {
+      const attempt = fullQuizAttempt();
+      reads.enrollment.mockResolvedValue({ id: 'sos1' });
+      reads.studentSubmissions.mockResolvedValue([
+        {
+          id: 'soa1',
+          assignmentId: 'a1',
+          isAssigned: true,
+          quizAttempt: attempt,
+        },
+      ]);
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [{ id: 'a1', type: 'Quiz', status: 'Published' }],
+        files: [],
+        questions: [],
+      });
+
+      const result = await service.getAssignmentBySubjectId(
+        { subjectId: 's1' },
+        undefined,
+        { id: 'st1' } as any,
+      );
+
+      expect(leakedIntegrityKeys(result)).toEqual([]);
+      expect(result[0].studentOnAssignment.quizAttempt).toEqual({
+        startedAt: attempt.startedAt,
+        deadlineAt: attempt.deadlineAt,
+        submittedAt: attempt.submittedAt,
+      });
     });
 
     it('should include VideoQuiz questions when assignments have VideoQuiz type', async () => {
@@ -512,6 +550,29 @@ describe('AssignmentService', () => {
       expect(result.assignments[0].studentOnAssignment.id).toBe('sa1');
       expect(result.scoreOnSubjects).toHaveLength(1);
       expect(result.scoreOnSubjects[0].students).toHaveLength(1);
+    });
+
+    it('strips integrity and risk data from the student submissions', async () => {
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [
+          { id: 'a1', status: 'Published', type: 'Quiz' },
+          { id: 'a2', status: 'Published', type: 'Assignment' },
+        ],
+        files: [],
+        questions: [],
+      });
+      reads.studentSubmissions.mockResolvedValue([
+        { id: 'sa1', assignmentId: 'a1', quizAttempt: fullQuizAttempt() },
+      ]);
+
+      const result = await service.getOverviewScoreOnAssignment(
+        { subjectId: 's1', studentId: 'st1' },
+        mockStudentRequest,
+      );
+
+      expect(leakedIntegrityKeys(result)).toEqual([]);
+      expect(result.assignments[0].studentOnAssignment.id).toBe('sa1');
+      expect(result.assignments[1].studentOnAssignment).toBeUndefined();
     });
 
     it('should throw NotFoundException if subject not found', async () => {

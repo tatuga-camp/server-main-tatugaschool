@@ -58,6 +58,10 @@ import { EMPTY_COUNTS } from './submission-counts';
 import { CacheRefs } from '../cache/cache-refs';
 import { GradeReads } from '../grade/grade.reads';
 import {
+  StudentSafeSubmission,
+  toStudentSafeSubmission,
+} from '../quiz/student-question.mapper';
+import {
   isGradedAssignmentType,
   mergeQuizSettings,
   withDefaultQuizSettings,
@@ -190,7 +194,7 @@ export class AssignmentService {
       summitNumber: number;
       penddingNumber: number;
       questions: QuestionOnVideo[];
-      studentOnAssignment?: StudentOnAssignment;
+      studentOnAssignment?: StudentSafeSubmission<StudentOnAssignment>;
     })[]
   > {
     try {
@@ -231,7 +235,9 @@ export class AssignmentService {
         questions: questions.filter((q) => q.assignmentId === assignment.id),
         files: files.filter((f) => f.assignmentId === assignment.id),
         studentOnAssignment: student
-          ? mine.find((s) => s.assignmentId === assignment.id)
+          ? toStudentSafeSubmission(
+              mine.find((s) => s.assignmentId === assignment.id),
+            )
           : undefined,
       }));
     } catch (error) {
@@ -247,7 +253,7 @@ export class AssignmentService {
     grade: GradeRange | null;
     assignments: {
       assignment: Assignment;
-      studentOnAssignment: StudentOnAssignment;
+      studentOnAssignment: StudentSafeSubmission<StudentOnAssignment> | undefined;
     }[];
     scoreOnSubjects: {
       scoreOnSubject: ScoreOnSubject;
@@ -308,12 +314,13 @@ export class AssignmentService {
           ? { ...grade, gradeRules: JSON.parse(grade.gradeRules as string) }
           : null,
         assignments: assignments.map((assignment) => {
+          const studentOnAssignment = studentOnAssignments.find(
+            (s) => s.assignmentId === assignment.id,
+          );
           return {
             assignment,
-            studentOnAssignment: studentOnAssignments.find(
-              (studentOnAssignment) =>
-                studentOnAssignment.assignmentId === assignment.id,
-            ),
+            studentOnAssignment:
+              studentOnAssignment && toStudentSafeSubmission(studentOnAssignment),
           };
         }),
         scoreOnSubjects: scoreOnSubjects.map((scoreOnSubject) => {
