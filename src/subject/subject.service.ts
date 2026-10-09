@@ -671,7 +671,7 @@ export class SubjectService {
         await this.assignmentService.assignmentRepository.findMany({
           where: {
             subjectId: { in: subjectIds },
-            type: { in: ['Assignment', 'VideoQuiz'] },
+            type: { in: ['Assignment', 'VideoQuiz', 'Quiz'] },
           },
         });
 
