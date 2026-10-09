@@ -63,9 +63,17 @@ async function main() {
       where: { id: soa.id },
       data: {
         quizAttempt: {
-          update: {
-            lastSeenAt: new Date(0),
-            integritySummary: { set: { ...summary, exitCount: 3 } },
+          upsert: {
+            set: {
+              startedAt: new Date(),
+              lastSeenAt: new Date(0),
+              shuffleSeed: 99,
+              integritySummary: summary,
+            },
+            update: {
+              lastSeenAt: new Date(0),
+              integritySummary: { set: { ...summary, exitCount: 3 } },
+            },
           },
         },
       },

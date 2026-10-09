@@ -517,8 +517,8 @@ model Assignment {
   skillOnAssignments       SkillOnAssignment[]
   fileOnStudentAssignments FileOnStudentAssignment[]
   questionOnVideos         QuestionOnVideo[]
-  quizSettings      QuizSettings?
-  assignmentOnQuizs AssignmentOnQuiz[]
+  quizSettings             QuizSettings?
+  assignmentOnQuizs        AssignmentOnQuiz[]
 
   @@index([subjectId])
   @@index([schoolId])
@@ -625,9 +625,9 @@ model StudentOnAssignment {
   commentOnAssignments      CommentOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   rubricScores              RubricScoreOnStudentAssignment[]
-  quizAttempt         QuizAttempt?
-  studentOnQuizs      StudentOnQuiz[]
-  quizIntegrityEvents QuizIntegrityEvent[]
+  quizAttempt               QuizAttempt?
+  studentOnQuizs            StudentOnQuiz[]
+  quizIntegrityEvents       QuizIntegrityEvent[]
 
   @@unique([studentOnSubjectId, assignmentId])
   @@index([assignmentId])
