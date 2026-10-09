@@ -21,7 +21,13 @@ jest.mock('googleapis', () => ({}));
 describe('SkillOnStudentAssignmentService', () => {
   let service: SkillOnStudentAssignmentService;
 
-  const mockPrismaService = {};
+  const mockPrismaService = {
+    studentOnAssignment: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 'sa1', assignment: { isDeleted: false } }),
+    },
+  };
 
   const mockMemberOnSchoolService = {
     validateAccess: jest.fn(),
@@ -106,7 +112,14 @@ describe('SkillOnStudentAssignmentService', () => {
 
       expect(
         service.skillOnStudentAssignmentRepository.findMany,
-      ).toHaveBeenCalledWith({ where: { studentId: 'st1' } });
+      ).toHaveBeenCalledWith({
+        where: {
+          studentId: 'st1',
+          studentOnAssignment: {
+            is: { assignment: { is: { isDeleted: false } } },
+          },
+        },
+      });
       expect(result[0].id).toBe('ssa1');
     });
 
@@ -139,6 +152,17 @@ describe('SkillOnStudentAssignmentService', () => {
 
       const result = await service.getByStudentOnSubjectId('sos1');
 
+      expect(
+        service.skillOnStudentAssignmentRepository.findMany,
+      ).toHaveBeenCalledWith({
+        where: {
+          studentId: 'st1',
+          subjectId: 's1',
+          studentOnAssignment: {
+            is: { assignment: { is: { isDeleted: false } } },
+          },
+        },
+      });
       expect(result[0].title).toBe('Skill1');
       // The logic in service seems to incorrectly calculate average: `prev = +current.weight`, not `prev += current.weight`.
       // Let's just expect what it evaluates to based on its current implementation (last item weight / length)
@@ -234,6 +258,30 @@ describe('SkillOnStudentAssignmentService', () => {
         service.skillOnStudentAssignmentRepository.create,
       ).toHaveBeenCalled();
       expect(result.id).toBe('ssa1');
+    });
+
+    it('404s and writes nothing when the assignment was soft-deleted', async () => {
+      mockPrismaService.studentOnAssignment.findUnique.mockResolvedValueOnce({
+        id: 'sa1',
+        assignment: { isDeleted: true },
+      });
+      (service as any).studentOnAssignmentRepository.getById.mockResolvedValue({
+        id: 'sa1',
+        schoolId: 'sch1',
+      });
+      (service as any).skillRepository.findById.mockResolvedValue({
+        id: 'sk1',
+      });
+
+      await expect(
+        service.create(
+          { studentOnAssignmentId: 'sa1', skillId: 'sk1', weight: 10 },
+          { id: 'u1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.skillOnStudentAssignmentRepository.create,
+      ).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException if skill not found', async () => {

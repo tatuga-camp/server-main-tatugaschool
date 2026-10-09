@@ -65,6 +65,9 @@ export class CareerService {
           {
             where: {
               studentId: dto.studentId,
+              studentOnAssignment: {
+                is: { assignment: { is: { isDeleted: false } } },
+              },
             },
           },
         );

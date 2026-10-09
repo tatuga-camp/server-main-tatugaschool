@@ -108,6 +108,7 @@ export class StudentOnAssignmentRepository
       return await this.prisma.studentOnAssignment.findMany({
         where: {
           studentId: request.studentId,
+          assignment: { is: { isDeleted: false } },
         },
       });
     } catch (error) {

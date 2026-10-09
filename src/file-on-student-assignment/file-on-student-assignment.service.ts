@@ -26,6 +26,7 @@ import { FileOnStudentAssignment, Student, User } from '@prisma/client';
 import * as archiver from 'archiver';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class FileOnStudentAssignmentService {
@@ -166,6 +167,7 @@ export class FileOnStudentAssignmentService {
     student: StudentJwtPayload,
   ) {
     try {
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,
@@ -190,6 +192,7 @@ export class FileOnStudentAssignmentService {
     user: UserJwtPayload,
   ) {
     try {
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,
@@ -290,6 +293,7 @@ export class FileOnStudentAssignmentService {
       if (!file) {
         throw new NotFoundException('File not found');
       }
+      await assertSubmissionLive(this.prisma, file.studentOnAssignmentId);
 
       if (user) {
         const teacherOnSubject =
@@ -343,6 +347,10 @@ export class FileOnStudentAssignmentService {
       if (!fileOnStudentAssignment) {
         throw new NotFoundException('File not found');
       }
+      await assertSubmissionLive(
+        this.prisma,
+        fileOnStudentAssignment.studentOnAssignmentId,
+      );
 
       if (student && fileOnStudentAssignment.studentId !== student.id) {
         throw new ForbiddenException("You don't have permission to access");

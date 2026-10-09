@@ -202,7 +202,12 @@ describe('RubricService.gradeStudent', () => {
         deleteMany: jest.fn().mockResolvedValue({}),
         create: jest.fn().mockResolvedValue({}),
       },
-      studentOnAssignment: { update: jest.fn().mockResolvedValue({ id: 'soa1' }) },
+      studentOnAssignment: {
+        update: jest.fn().mockResolvedValue({ id: 'soa1' }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 'soa1', assignment: { isDeleted: false } }),
+      },
     };
     const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
     const ai: any = {};
@@ -243,6 +248,24 @@ describe('RubricService.gradeStudent', () => {
         { id: 'u1' } as any,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('404s and writes nothing when the assignment was soft-deleted', async () => {
+    const { service, prisma } = gradingService();
+    prisma.studentOnAssignment.findUnique.mockResolvedValue({
+      id: 'soa1',
+      assignment: { isDeleted: true },
+    });
+    await expect(
+      service.gradeStudent(
+        {
+          studentOnAssignmentId: 'soa1',
+          items: [{ criterionId: 'c1', selectedLevelId: 'l-hi' }],
+        } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('rejects duplicate criterionId in items', async () => {

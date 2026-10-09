@@ -24,6 +24,7 @@ import {
 import { AiDraftResult, RubricDraft } from './interfaces';
 import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class RubricService {
@@ -146,6 +147,7 @@ export class RubricService {
   }
 
   async gradeStudent(dto: GradeRubricDto, user: UserJwtPayload) {
+    await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
     const soa = await this.repo.getStudentOnAssignment(
       dto.studentOnAssignmentId,
     );

@@ -349,7 +349,13 @@ describe('SubjectQueryToolService', () => {
       // unassigned rows (isAssigned=false, default PENDDING) are not the
       // student's work
       expect(prismaRead.studentOnAssignment.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { ...scoped, isAssigned: true } }),
+        expect.objectContaining({
+          where: {
+            ...scoped,
+            isAssigned: true,
+            assignment: { is: { isDeleted: false } },
+          },
+        }),
       );
       // per-title behavior-score breakdown is computed DB-side
       expect(prismaRead.scoreOnStudent.groupBy).toHaveBeenCalledWith({
@@ -401,6 +407,71 @@ describe('SubjectQueryToolService', () => {
       const result: any = await service.getStudentSummary(SUBJECT_ID, 'sos1');
       expect(prismaRead.commentOnAssignment.findMany).not.toHaveBeenCalled();
       expect(result.teacherComments).toEqual([]);
+    });
+  });
+
+  describe('soft-deleted assignments', () => {
+    it('leaves the query unchanged when the subject has no deleted assignments', async () => {
+      await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        filters: { status: 'PENDDING' },
+      });
+      expect(prismaRead.assignment.findMany).toHaveBeenCalledWith({
+        where: { subjectId: SUBJECT_ID, isDeleted: true },
+        select: { id: true },
+      });
+      expect(prismaRead.studentOnAssignment.findMany.mock.calls[0][0].where).toEqual({
+        subjectId: SUBJECT_ID,
+        isAssigned: true,
+        status: 'PENDDING',
+      });
+    });
+
+    it('excludes deleted assignment ids from assignment-keyed collections', async () => {
+      prismaRead.assignment.findMany.mockResolvedValue([{ id: 'a9' }]);
+      await service.execute(SUBJECT_ID, {
+        collection: 'studentOnAssignments',
+        mode: 'count',
+      });
+      await service.execute(SUBJECT_ID, {
+        collection: 'questionOnVideos',
+        filters: { assignmentId: 'a1' },
+      });
+      expect(prismaRead.studentOnAssignment.count).toHaveBeenCalledWith({
+        where: {
+          subjectId: SUBJECT_ID,
+          isAssigned: true,
+          assignmentId: { notIn: ['a9'] },
+        },
+      });
+      expect(prismaRead.questionOnVideo.findMany.mock.calls[0][0].where).toEqual({
+        subjectId: SUBJECT_ID,
+        assignmentId: { equals: 'a1', notIn: ['a9'] },
+      });
+    });
+
+    it('excludes deleted assignments submission ids from submission-keyed collections', async () => {
+      prismaRead.assignment.findMany.mockResolvedValue([{ id: 'a9' }]);
+      prismaRead.studentOnAssignment.findMany.mockResolvedValue([
+        { id: 'soa9' },
+      ]);
+      await service.execute(SUBJECT_ID, {
+        collection: 'commentOnAssignments',
+        filters: { studentOnAssignmentId: 'soa1' },
+      });
+      expect(prismaRead.studentOnAssignment.findMany).toHaveBeenCalledWith({
+        where: { subjectId: SUBJECT_ID, assignmentId: { in: ['a9'] } },
+        select: { id: true },
+      });
+      expect(prismaRead.commentOnAssignment.findMany.mock.calls[0][0].where).toEqual({
+        subjectId: SUBJECT_ID,
+        studentOnAssignmentId: { equals: 'soa1', notIn: ['soa9'] },
+      });
+    });
+
+    it('does not look up deleted assignments for unrelated collections', async () => {
+      await service.execute(SUBJECT_ID, { collection: 'attendances' });
+      expect(prismaRead.assignment.findMany).not.toHaveBeenCalled();
     });
   });
 

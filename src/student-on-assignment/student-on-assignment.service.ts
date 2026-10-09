@@ -42,6 +42,7 @@ import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
 import { CacheRefs } from '../cache/cache-refs';
 import { AssignmentReads } from '../assignment/assignment.reads';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -112,6 +113,7 @@ export class StudentOnAssignmentService {
     student: StudentJwtPayload,
   ): Promise<StudentSafeSubmission<StudentOnAssignment>> {
     try {
+      await assertSubmissionLive(this.prisma, dto.id);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.id,
@@ -276,6 +278,7 @@ export class StudentOnAssignmentService {
     student?: StudentJwtPayload | undefined,
   ): Promise<StudentOnAssignment | StudentSafeSubmission<StudentOnAssignment>> {
     try {
+      await assertSubmissionLive(this.prisma, dto.query.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.query.studentOnAssignmentId,
@@ -432,6 +435,7 @@ export class StudentOnAssignmentService {
     user: UserJwtPayload,
   ): Promise<{ message: string }> {
     try {
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,

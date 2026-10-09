@@ -137,7 +137,11 @@ export class AnalyticsRepository {
             },
           }),
           this.prismaRead.studentOnAssignment.findMany({
-            where: { schoolId, subjectId: { in: subjectIds } },
+            where: {
+              schoolId,
+              subjectId: { in: subjectIds },
+              assignment: { is: { isDeleted: false } },
+            },
             select: {
               studentId: true,
               subjectId: true,
@@ -245,7 +249,7 @@ export class AnalyticsRepository {
           subjectId: { in: subjectIds },
           status: 'PENDDING',
           isAssigned: true,
-          assignment: { is: { status: 'Published' } },
+          assignment: { is: { status: 'Published', isDeleted: false } },
         },
         select: {
           id: true,

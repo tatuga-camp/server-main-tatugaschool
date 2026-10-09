@@ -34,6 +34,11 @@ describe('StudentOnAssignmentService', () => {
   let service: StudentOnAssignmentService;
 
   const mockPrismaService = {
+    studentOnAssignment: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 'sa1', assignment: { isDeleted: false } }),
+    },
     fileOnStudentAssignment: { findMany: jest.fn() },
     subject: { findUnique: jest.fn() },
     school: { findUnique: jest.fn() },
@@ -558,6 +563,59 @@ describe('StudentOnAssignmentService', () => {
         { studentOnAssignmentId: 'sa1' },
       );
       expect(result.message).toBe('Deleted');
+    });
+  });
+
+  describe('soft-deleted assignment', () => {
+    const deleted = () =>
+      mockPrismaService.studentOnAssignment.findUnique.mockResolvedValueOnce({
+        id: 'sa1',
+        assignment: { isDeleted: true },
+      });
+
+    it('getById 404s for the student', async () => {
+      deleted();
+      (
+        service.studentOnAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue({ id: 'sa1', studentId: 'st1' });
+
+      await expect(
+        service.getById({ id: 'sa1' }, { id: 'st1' } as any),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('update 404s and writes nothing', async () => {
+      deleted();
+      (
+        service.studentOnAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue({ id: 'sa1', assignmentId: 'a1', subjectId: 's1' });
+
+      await expect(
+        service.update(
+          {
+            query: { studentOnAssignmentId: 'sa1' },
+            body: { score: 5 },
+          } as any,
+          { id: 'u1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.studentOnAssignmentRepository.update,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('delete 404s and deletes nothing', async () => {
+      deleted();
+      (
+        service.studentOnAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue({ id: 'sa1', subjectId: 's1', schoolId: 'sch1' });
+
+      await expect(
+        service.delete({ studentOnAssignmentId: 'sa1' }, { id: 'u1' } as any),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.studentOnAssignmentRepository.delete,
+      ).not.toHaveBeenCalled();
     });
   });
 });
