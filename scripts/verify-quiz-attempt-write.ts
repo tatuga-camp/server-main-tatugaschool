@@ -25,6 +25,30 @@ async function main() {
     assert.equal(after.quizAttempt?.shuffleSeed, 7);
     assert.equal(after.quizAttempt?.lastSeenAt.getTime(), 0);
     assert.equal(after.score, 1);
+    // onlyUnsubmitted guard against a real DB.
+    const unsubmitted = { startedAt: new Date(), lastSeenAt: new Date(), shuffleSeed: 7, submittedAt: null, integritySummary: emptySummary() };
+    await prisma.studentOnAssignment.update({ where: { id: soa.id }, data: { quizAttempt: { set: unsubmitted } } });
+    assert.equal(await updateQuizAttempt(prisma, soa.id, { lastSeenAt: new Date(1) }, {}, { onlyUnsubmitted: true }), true);
+    const live = await prisma.studentOnAssignment.findUniqueOrThrow({ where: { id: soa.id } });
+    assert.equal(live.quizAttempt?.lastSeenAt.getTime(), 1, 'submittedAt:null must match the guard');
+
+    const submittedAt = new Date();
+    await prisma.studentOnAssignment.update({
+      where: { id: soa.id },
+      data: { quizAttempt: { set: { ...unsubmitted, submittedAt } } },
+    });
+    assert.equal(await updateQuizAttempt(prisma, soa.id, { lastSeenAt: new Date(2) }, { score: 99 }, { onlyUnsubmitted: true }), false);
+    const frozen = await prisma.studentOnAssignment.findUniqueOrThrow({ where: { id: soa.id } });
+    assert.equal(frozen.quizAttempt?.lastSeenAt.getTime(), unsubmitted.lastSeenAt.getTime(), 'submitted attempt must be unchanged');
+    assert.notEqual(frozen.score, 99, 'extra fields must not be written for a submitted attempt');
+    assert.equal(frozen.quizAttempt?.submittedAt?.getTime(), submittedAt.getTime());
+
+    // Older shape: no submittedAt key at all. Record whether the guard matches it.
+    const { submittedAt: _omit, ...legacy } = unsubmitted;
+    await prisma.studentOnAssignment.update({ where: { id: soa.id }, data: { quizAttempt: { set: legacy } } });
+    const legacyMatched = await updateQuizAttempt(prisma, soa.id, { lastSeenAt: new Date(3) }, {}, { onlyUnsubmitted: true });
+    console.log(`INFO: onlyUnsubmitted on an attempt with NO submittedAt key matched: ${legacyMatched}`);
+
     console.log('OK: guarded attempt writes behave as required');
   } finally {
     await prisma.studentOnAssignment.update({

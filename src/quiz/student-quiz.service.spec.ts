@@ -74,6 +74,8 @@ describe('StudentQuizService', () => {
     const call = prisma.studentOnAssignment.updateMany.mock.calls[0][0];
     expect(call.where).toEqual({ id: 'soa1', quizAttempt: { isSet: false } });
     expect(call.data.quizAttempt.set).toMatchObject({ startedAt: now, deadlineAt: new Date('2026-10-09T03:30:00Z'), lastSeenAt: now });
+    // The onlyUnsubmitted guard matches `submittedAt: null`, so the key must be written explicitly.
+    expect(call.data.quizAttempt.set).toHaveProperty('submittedAt', null);
     expect(cache.bump).toHaveBeenCalledWith('subject:s1:submissions', 'subject:s1:grades');
   });
 
