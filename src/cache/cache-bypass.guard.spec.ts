@@ -16,6 +16,8 @@ const ALLOWED: Record<string, string> = {
     'syncMaxScore; bumps assignments + grades after the write',
   'quiz/quiz.service.ts:studentOnAssignment.createMany':
     'duplicate quiz; bumps assignments + submissions after the copy',
+  'quiz/quiz-attempt-write.ts:studentOnAssignment.updateMany':
+    'quizAttempt partial writes (integrity/answers/finalize); integrity and answer writes must not bump, callers that change cached fields bump themselves',
   'rubric/rubric.service.ts:studentOnAssignment.update':
     'inside $transaction; bumps submissions after it resolves',
   'student-on-subject/student-on-subject.service.ts:studentOnSubject.update':

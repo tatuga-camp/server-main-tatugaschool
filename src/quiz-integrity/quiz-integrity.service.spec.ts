@@ -29,7 +29,7 @@ const quiz = (testMode: boolean) => ({ id: 'a1', type: 'Quiz', quizSettings: { t
 describe('QuizIntegrityService.ingest', () => {
   let service: QuizIntegrityService;
   const prisma = {
-    quizIntegrityEvent: { createMany: jest.fn(), findMany: jest.fn() },
+    quizIntegrityEvent: { createMany: jest.fn(), findMany: jest.fn(), count: jest.fn() },
     studentOnAssignment: { updateMany: jest.fn(), findUnique: jest.fn() },
     assignmentOnQuiz: { count: jest.fn() },
     studentOnQuiz: { count: jest.fn() },
@@ -69,6 +69,7 @@ describe('QuizIntegrityService.ingest', () => {
       { type: 'HIDDEN', durationMs: null },
       { type: 'VISIBLE', durationMs: 40_000 },
     ]);
+    prisma.quizIntegrityEvent.count.mockResolvedValue(2);
     await service.ingest('soa1', student, {
       events: [
         { type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' },
@@ -83,6 +84,7 @@ describe('QuizIntegrityService.ingest', () => {
       ],
     });
     const update = attemptPatch();
+    expect(prisma.studentOnAssignment.updateMany).toHaveBeenCalledTimes(1);
     expect(update.where).toEqual({ id: 'soa1', quizAttempt: { isSet: true } });
     expect(update.data.quizAttempt.upsert.update).toMatchObject({
       lastSeenAt: now,
@@ -112,6 +114,57 @@ describe('QuizIntegrityService.ingest', () => {
     expect(attemptPatch().data.quizAttempt.upsert.update).toEqual({ lastSeenAt: now });
   });
 
+  it('ignores batches after deadline + grace', async () => {
+    access.studentQuiz.mockResolvedValue({
+      soa: soa(attempt({ deadlineAt: new Date('2026-10-09T03:09:00Z') })),
+      assignment: quiz(true),
+    });
+    await service.ingest('soa1', student, { events: [{ type: 'HIDDEN', clientAt: now.toISOString() }], heartbeat: true });
+    expect(prisma.quizIntegrityEvent.createMany).not.toHaveBeenCalled();
+    expect(prisma.studentOnAssignment.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('stops quietly when the attempt was reset mid-batch (guarded write returns false)', async () => {
+    jev.isEnabled.mockReturnValue(true);
+    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(true) });
+    prisma.studentOnAssignment.updateMany.mockResolvedValue({ count: 0 });
+    prisma.quizIntegrityEvent.findMany.mockResolvedValue([
+      { type: 'HIDDEN', durationMs: null },
+      { type: 'VISIBLE', durationMs: 40_000 },
+    ]);
+    const evaluate = jest.spyOn(service, 'evaluateWithJev');
+    await expect(
+      service.ingest('soa1', student, {
+        events: [
+          { type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' },
+          { type: 'VISIBLE', clientAt: '2026-10-09T03:09:55Z', durationMs: 40_000 },
+        ],
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect(prisma.studentOnAssignment.updateMany).toHaveBeenCalledTimes(1);
+    expect(prisma.quizIntegrityEvent.count).not.toHaveBeenCalled();
+    expect(evaluate).not.toHaveBeenCalled();
+  });
+
+  it('rewrites the summary when a concurrent batch stored events after the read', async () => {
+    access.studentQuiz.mockResolvedValue({ soa: soa(attempt()), assignment: quiz(true) });
+    prisma.quizIntegrityEvent.findMany
+      .mockResolvedValueOnce([{ type: 'HIDDEN', durationMs: null }])
+      .mockResolvedValueOnce([
+        { type: 'HIDDEN', durationMs: null },
+        { type: 'VISIBLE', durationMs: 40_000 },
+      ]);
+    prisma.quizIntegrityEvent.count.mockResolvedValueOnce(2).mockResolvedValueOnce(2);
+    await service.ingest('soa1', student, { events: [{ type: 'HIDDEN', clientAt: '2026-10-09T03:09:15Z' }] });
+    expect(prisma.studentOnAssignment.updateMany).toHaveBeenCalledTimes(2);
+    expect(attemptPatch(1).data.quizAttempt.upsert.update).toMatchObject({
+      integritySummary: { set: expect.objectContaining({ exitCount: 1, totalAwayMs: 40_000 }) },
+      riskScore: 25,
+      riskSource: 'RULE',
+    });
+    expect(attemptPatch(1).data.quizAttempt.upsert.update.lastSeenAt).toBeUndefined();
+  });
+
   it('evaluateWithJev writes the Jev verdict when the summary is unchanged', async () => {
     jev.isEnabled.mockReturnValue(true);
     const summary = { ...emptySummary(), exitCount: 2, totalAwayMs: 20_000, longestAwayMs: 15_000 };
@@ -129,6 +182,21 @@ describe('QuizIntegrityService.ingest', () => {
       riskConfidence: 0.8,
       riskCheckedAt: now,
     });
+  });
+
+  it('evaluateWithJev only stamps riskCheckedAt when the summary changed meanwhile', async () => {
+    jev.isEnabled.mockReturnValue(true);
+    const summary = { ...emptySummary(), exitCount: 2, totalAwayMs: 20_000, longestAwayMs: 15_000 };
+    const newer = { ...summary, exitCount: 3 };
+    const row = { ...soa(attempt({ integritySummary: summary })), assignment: quiz(true) };
+    prisma.studentOnAssignment.findUnique
+      .mockResolvedValueOnce(row)
+      .mockResolvedValueOnce({ quizAttempt: { ...row.quizAttempt, integritySummary: newer } });
+    prisma.assignmentOnQuiz.count.mockResolvedValue(10);
+    prisma.studentOnQuiz.count.mockResolvedValue(4);
+    jev.evaluate.mockResolvedValue({ riskScore: 62, pattern: 'OUTSIDE_HELP', confidence: 0.8 });
+    await service.evaluateWithJev('soa1');
+    expect(attemptPatch().data.quizAttempt.upsert.update).toEqual({ riskCheckedAt: now });
   });
 
   it('evaluateWithJev skips clean attempts and never throws', async () => {
