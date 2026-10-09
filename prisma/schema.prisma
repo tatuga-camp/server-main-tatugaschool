@@ -498,6 +498,9 @@ model Assignment {
   preventFastForward    Boolean?
   allowStudentViewScore Boolean  @default(true)
 
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
   tags String[]
 
   rubricId String? @db.ObjectId
@@ -523,6 +526,7 @@ model Assignment {
   @@index([subjectId])
   @@index([schoolId])
   @@index([schoolId, status])
+  @@index([subjectId, isDeleted])
 }
 
 enum AssignmentType {
