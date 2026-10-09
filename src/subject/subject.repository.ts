@@ -229,11 +229,15 @@ export class SubjectRepository implements Repository {
     try {
       let totalDeleteSize: number = 0;
 
-      const assignments = await this.assignmentRepository.findMany({
-        where: {
-          subjectId: request.subjectId,
+      // Soft-deleted assignments still hold files until the hard delete.
+      const assignments = await this.assignmentRepository.findMany(
+        {
+          where: {
+            subjectId: request.subjectId,
+          },
         },
-      });
+        { includeDeleted: true },
+      );
 
       if (assignments.length > 0) {
         const getTotalDeleteSizes = await Promise.all(
@@ -272,9 +276,11 @@ export class SubjectRepository implements Repository {
         this.groupOnSubjectRepository.findMany({
           where: { subjectId: subjectId },
         }),
-        this.assignmentRepository.findMany({
-          where: { subjectId: subjectId },
-        }),
+        // Soft-deleted assignments are hard deleted with their subject.
+        this.assignmentRepository.findMany(
+          { where: { subjectId: subjectId } },
+          { includeDeleted: true },
+        ),
       ]);
 
       // 3. Independent leaf deletions can all run concurrently.

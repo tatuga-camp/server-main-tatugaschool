@@ -18,6 +18,10 @@ import { StorageService } from '../storage/storage.service';
 import { StudentRepository } from '../student/student.repository';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { PushService } from '../web-push/push.service';
+import {
+  StudentSafeSubmission,
+  toStudentSafeSubmission,
+} from '../quiz/student-question.mapper';
 import { AssignmentRepository } from './../assignment/assignment.repository';
 import { FileOnStudentAssignmentRepository } from './../file-on-student-assignment/file-on-student-assignment.repository';
 import { MemberOnSchoolRepository } from './../member-on-school/member-on-school.repository';
@@ -38,6 +42,7 @@ import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
 import { CacheRefs } from '../cache/cache-refs';
 import { AssignmentReads } from '../assignment/assignment.reads';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class StudentOnAssignmentService {
@@ -106,8 +111,9 @@ export class StudentOnAssignmentService {
   async getById(
     dto: { id: string },
     student: StudentJwtPayload,
-  ): Promise<StudentOnAssignment> {
+  ): Promise<StudentSafeSubmission<StudentOnAssignment>> {
     try {
+      await assertSubmissionLive(this.prisma, dto.id);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.id,
@@ -123,7 +129,7 @@ export class StudentOnAssignmentService {
         );
       }
 
-      return studentOnAssignment;
+      return toStudentSafeSubmission(studentOnAssignment);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -270,8 +276,9 @@ export class StudentOnAssignmentService {
     dto: UpdateStudentOnAssignmentDto,
     user?: UserJwtPayload | undefined,
     student?: StudentJwtPayload | undefined,
-  ): Promise<StudentOnAssignment> {
+  ): Promise<StudentOnAssignment | StudentSafeSubmission<StudentOnAssignment>> {
     try {
+      await assertSubmissionLive(this.prisma, dto.query.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.query.studentOnAssignmentId,
@@ -325,6 +332,11 @@ export class StudentOnAssignmentService {
         if (student.id !== studentOnAssignment.studentId) {
           throw new ForbiddenException(
             'You are not allowed to access this resource',
+          );
+        }
+        if (assignment.type === 'Quiz') {
+          throw new ForbiddenException(
+            'Quiz answers are submitted through the quiz endpoints',
           );
         }
 
@@ -410,7 +422,8 @@ export class StudentOnAssignmentService {
           });
       }
 
-      return update;
+      // Student callers never see integrity or risk data; teachers keep the full row.
+      return student ? toStudentSafeSubmission(update) : update;
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -422,6 +435,7 @@ export class StudentOnAssignmentService {
     user: UserJwtPayload,
   ): Promise<{ message: string }> {
     try {
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,

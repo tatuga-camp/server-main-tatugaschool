@@ -498,6 +498,9 @@ model Assignment {
   preventFastForward    Boolean?
   allowStudentViewScore Boolean  @default(true)
 
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
   tags String[]
 
   rubricId String? @db.ObjectId
@@ -517,16 +520,20 @@ model Assignment {
   skillOnAssignments       SkillOnAssignment[]
   fileOnStudentAssignments FileOnStudentAssignment[]
   questionOnVideos         QuestionOnVideo[]
+  quizSettings             QuizSettings?
+  assignmentOnQuizs        AssignmentOnQuiz[]
 
   @@index([subjectId])
   @@index([schoolId])
   @@index([schoolId, status])
+  @@index([subjectId, isDeleted])
 }
 
 enum AssignmentType {
   Assignment
   VideoQuiz
   Material
+  Quiz
 }
 
 enum AssignmentStatus {
@@ -622,6 +629,9 @@ model StudentOnAssignment {
   commentOnAssignments      CommentOnAssignment[]
   skillOnStudentAssignments SkillOnStudentAssignment[]
   rubricScores              RubricScoreOnStudentAssignment[]
+  quizAttempt               QuizAttempt?
+  studentOnQuizs            StudentOnQuiz[]
+  quizIntegrityEvents       QuizIntegrityEvent[]
 
   @@unique([studentOnSubjectId, assignmentId])
   @@index([assignmentId])
@@ -1436,4 +1446,163 @@ model ReactionOnAnnouncement {
   @@index([announcementId])
   @@index([subjectId])
   @@index([schoolId])
+}
+
+type QuizSettings {
+  scoringMode            QuizScoringMode @default(ALL_OR_NOTHING)
+  timeLimitMinutes       Int?
+  shuffleQuestions       Boolean         @default(false)
+  shuffleOptions         Boolean         @default(false)
+  testMode               Boolean         @default(false)
+  showAnswersAfterSubmit Boolean         @default(false)
+}
+
+enum QuizScoringMode {
+  ALL_OR_NOTHING
+  PARTIAL
+}
+
+enum QuizQuestionType {
+  SINGLE
+  MULTIPLE
+  FILL_BLANK
+}
+
+type QuizOption {
+  id        String
+  text      String
+  imageUrl  String?
+  isCorrect Boolean @default(false)
+}
+
+type QuizBlank {
+  id              String
+  acceptedAnswers String[]
+}
+
+model AssignmentOnQuiz {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  order    Int
+  type     QuizQuestionType
+  prompt   String
+  imageUrl String?
+  points   Float            @default(1)
+  options  QuizOption[]
+  blanks   QuizBlank[]
+
+  assignmentId String     @db.ObjectId
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  subjectId    String     @db.ObjectId
+  schoolId     String     @db.ObjectId
+
+  studentOnQuizs StudentOnQuiz[]
+
+  @@index([assignmentId, order])
+  @@index([subjectId])
+  @@index([schoolId])
+}
+
+type QuizAttempt {
+  startedAt        DateTime
+  deadlineAt       DateTime?
+  submittedAt      DateTime?
+  lastSeenAt       DateTime
+  shuffleSeed      Int
+  integritySummary QuizIntegritySummary
+  riskScore        Float?
+  riskSource       QuizRiskSource?
+  riskPattern      QuizRiskPattern?
+  riskConfidence   Float?
+  riskCheckedAt    DateTime?
+  riskInputHash    String?
+}
+
+type QuizIntegritySummary {
+  exitCount             Int     @default(0)
+  totalAwayMs           Int     @default(0)
+  longestAwayMs         Int     @default(0)
+  blurCount             Int     @default(0)
+  translateDetected     Boolean @default(false)
+  pasteAttempts         Int     @default(0)
+  copyAttempts          Int     @default(0)
+  fullscreenExits       Int     @default(0)
+  screenshotKeyCount    Int     @default(0)
+  heartbeatGapCount     Int     @default(0)
+  longestHeartbeatGapMs Int     @default(0)
+}
+
+enum QuizRiskSource {
+  RULE
+  JEV
+}
+
+enum QuizRiskPattern {
+  NORMAL
+  CONNECTIVITY
+  DISTRACTED
+  OUTSIDE_HELP
+}
+
+type QuizBlankAnswer {
+  blankId String
+  value   String
+}
+
+model StudentOnQuiz {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  selectedOptionIds String[]
+  blankAnswers      QuizBlankAnswer[]
+  score             Float?
+  teacherOverridden Boolean           @default(false)
+
+  assignmentOnQuizId    String              @db.ObjectId
+  assignmentOnQuiz      AssignmentOnQuiz    @relation(fields: [assignmentOnQuizId], references: [id], onDelete: Cascade)
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id], onDelete: Cascade)
+  assignmentId          String              @db.ObjectId
+  studentId             String              @db.ObjectId
+  subjectId             String              @db.ObjectId
+  schoolId              String              @db.ObjectId
+
+  @@unique([studentOnAssignmentId, assignmentOnQuizId])
+  @@index([assignmentId])
+  @@index([assignmentOnQuizId])
+}
+
+enum QuizIntegrityEventType {
+  HIDDEN
+  VISIBLE
+  BLUR
+  FOCUS
+  TRANSLATE_DETECTED
+  COPY_ATTEMPT
+  PASTE_ATTEMPT
+  FULLSCREEN_EXIT
+  SCREENSHOT_KEY
+  HEARTBEAT_GAP
+  PAGE_HIDE
+  PAGE_SHOW
+}
+
+model QuizIntegrityEvent {
+  id         String                 @id @default(auto()) @map("_id") @db.ObjectId
+  type       QuizIntegrityEventType
+  clientAt   DateTime
+  serverAt   DateTime
+  durationMs Int?
+
+  studentOnAssignmentId String              @db.ObjectId
+  studentOnAssignment   StudentOnAssignment @relation(fields: [studentOnAssignmentId], references: [id], onDelete: Cascade)
+  assignmentId          String              @db.ObjectId
+  subjectId             String              @db.ObjectId
+  schoolId              String              @db.ObjectId
+
+  @@index([studentOnAssignmentId, serverAt])
+  @@index([assignmentId, serverAt])
 }

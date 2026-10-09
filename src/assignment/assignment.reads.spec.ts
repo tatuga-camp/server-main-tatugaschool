@@ -47,11 +47,20 @@ describe('AssignmentReads', () => {
       expect(first.questions).toEqual([{ id: 'q1', assignmentId: 'a1' }]);
       expect(prisma.assignment.findMany).toHaveBeenCalledTimes(1);
       expect(prisma.assignment.findMany).toHaveBeenCalledWith({
-        where: { subjectId: 's1' },
+        where: { subjectId: 's1', isDeleted: false },
         omit: { vector: true, vectorResouce: true },
       });
       expect(prisma.questionOnVideo.findMany).toHaveBeenCalledWith({
         where: { assignmentId: { in: ['a1'] } },
+      });
+    });
+
+    it('hides soft-deleted assignments', async () => {
+      const { prisma, reads } = setup();
+      await reads.subjectAssignments('s1');
+      expect(prisma.assignment.findMany.mock.calls[0][0].where).toEqual({
+        subjectId: 's1',
+        isDeleted: false,
       });
     });
 

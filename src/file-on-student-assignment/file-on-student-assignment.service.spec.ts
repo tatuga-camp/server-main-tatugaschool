@@ -38,7 +38,13 @@ jest.mock('archiver', () => {
 describe('FileOnStudentAssignmentService', () => {
   let service: FileOnStudentAssignmentService;
 
-  const mockPrismaService = {};
+  const mockPrismaService = {
+    studentOnAssignment: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 'sa1', assignment: { isDeleted: false } }),
+    },
+  };
 
   const mockStorageService = {
     getFileStream: jest.fn(),
@@ -495,6 +501,97 @@ describe('FileOnStudentAssignmentService', () => {
           id: 'st1',
         } as any),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+  describe('soft-deleted assignment', () => {
+    const deleted = () =>
+      mockPrismaService.studentOnAssignment.findUnique.mockResolvedValueOnce({
+        id: 'sa1',
+        assignment: { isDeleted: true },
+      });
+    const file = {
+      id: 'f1',
+      studentOnAssignmentId: 'sa1',
+      studentId: 'st1',
+      subjectId: 's1',
+      assignmentId: 'a1',
+      contentType: 'TEXT',
+      body: 'x',
+    };
+
+    it('getFileByStudentOnAssignmentIdFromStudent 404s', async () => {
+      deleted();
+      (service as any).studentOnAssignmentRepository.getById.mockResolvedValue({
+        id: 'sa1',
+        studentId: 'st1',
+      });
+
+      await expect(
+        service.getFileByStudentOnAssignmentIdFromStudent(
+          { studentOnAssignmentId: 'sa1' },
+          { id: 'st1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.fileOnStudentAssignmentRepository.findMany,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('getFileByStudentOnAssignmentIdFromTeacher 404s', async () => {
+      deleted();
+      (service as any).studentOnAssignmentRepository.getById.mockResolvedValue({
+        id: 'sa1',
+        subjectId: 's1',
+      });
+      (
+        service as any
+      ).teacherOnSubjectRepository.getByTeacherIdAndSubjectId.mockResolvedValue(
+        {
+          id: 't1',
+        },
+      );
+
+      await expect(
+        service.getFileByStudentOnAssignmentIdFromTeacher(
+          { studentOnAssignmentId: 'sa1' },
+          { id: 'u1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.fileOnStudentAssignmentRepository.findMany,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('updateFile 404s and writes nothing', async () => {
+      deleted();
+      (
+        service.fileOnStudentAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue(file);
+
+      await expect(
+        service.updateFile({ query: { id: 'f1' }, body: { name: 'n' } }, null, {
+          id: 'st1',
+        } as any),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.fileOnStudentAssignmentRepository.update,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('delete 404s and deletes nothing', async () => {
+      deleted();
+      (
+        service.fileOnStudentAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue(file);
+
+      await expect(
+        service.delete({ fileOnStudentAssignmentId: 'f1' }, null, {
+          id: 'st1',
+        } as any),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        service.fileOnStudentAssignmentRepository.delete,
+      ).not.toHaveBeenCalled();
     });
   });
 });

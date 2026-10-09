@@ -124,12 +124,14 @@ export class PublicProgressService {
       studentOnSubjects,
     ] = await Promise.all([
       // Same filter as AssignmentService.getOverviewScoreOnAssignments so the
-      // public columns match the teacher Grade table.
+      // public columns match the teacher Grade table. Mirrors
+      // isGradedAssignmentType (Assignment, VideoQuiz and Quiz).
       this.prisma.assignment.findMany({
         where: {
           subjectId,
+          isDeleted: false,
           status: 'Published',
-          type: { in: ['Assignment', 'VideoQuiz'] },
+          type: { in: ['Assignment', 'VideoQuiz', 'Quiz'] },
         },
       }),
       this.prisma.studentOnAssignment.findMany({ where: { subjectId } }),

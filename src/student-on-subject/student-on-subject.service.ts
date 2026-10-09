@@ -220,7 +220,7 @@ export class StudentOnSubjectService {
         where: {
           subjectId: studentOnSubject.subjectId,
           status: 'Published',
-          type: 'Assignment',
+          type: { in: ['Assignment', 'Quiz'] },
         },
       });
 

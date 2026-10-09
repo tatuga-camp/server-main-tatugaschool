@@ -1,9 +1,13 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Db, Row, project } from './read-parity.db';
+import { toStudentSafeSubmission } from '../../quiz/student-question.mapper';
 
 export const json = (v: unknown) => JSON.parse(JSON.stringify(v));
 export const OMIT = { vector: true, vectorResouce: true };
 export const noEmbedding = (a: Row) => project(a, { omit: OMIT });
+// Deliberate change since 6581991 (quiz test mode): student callers get the
+// submission with the quiz attempt reduced to its timestamps.
+const studentSafe = (s: Row | undefined) => s && toStudentSafeSubmission(s);
 
 // ── legacy restatements of commit 6581991 ──────────────────────────────────
 export function legacyList(db: Db, subjectId: string, studentId?: string) {
@@ -55,7 +59,7 @@ export function legacyList(db: Db, subjectId: string, studentId?: string) {
       files: files.filter((f) => f.assignmentId === assignment.id) ?? [],
       studentOnAssignment:
         mine.length > 0
-          ? mine.find((x) => x.assignmentId === assignment.id)
+          ? studentSafe(mine.find((x) => x.assignmentId === assignment.id))
           : undefined,
     };
   });
@@ -92,7 +96,9 @@ export function legacyStudentOverview(
     grade: legacyGrade(db, subjectId),
     assignments: assignments.map((assignment) => ({
       assignment,
-      studentOnAssignment: soas.find((s) => s.assignmentId === assignment.id),
+      studentOnAssignment: studentSafe(
+        soas.find((s) => s.assignmentId === assignment.id),
+      ),
     })),
     scoreOnSubjects: db.scoreOnSubject
       .filter((s) => s.subjectId === subjectId)

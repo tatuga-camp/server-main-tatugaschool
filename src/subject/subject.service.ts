@@ -373,6 +373,7 @@ export class SubjectService {
       if (assignments.length > 0) {
         await Promise.all(
           assignments.map(async (assignment) => {
+            const isQuiz = assignment.type === 'Quiz';
             const newAssignment = await this.assignmentService.createAssignment(
               {
                 title: assignment.title,
@@ -390,19 +391,55 @@ export class SubjectService {
                 maxScore: assignment.maxScore,
                 videoURL: assignment.videoURL,
                 tags: assignment.tags,
+                ...(isQuiz &&
+                  assignment.quizSettings && {
+                    quizSettings: assignment.quizSettings,
+                  }),
               },
               user,
             );
 
+            // Copy the quiz questions (with their answer keys) unchanged.
+            // Student answers and attempts are not copied.
+            if (isQuiz) {
+              const quizQuestions = await this.prisma.assignmentOnQuiz.findMany(
+                {
+                  where: { assignmentId: assignment.id },
+                  orderBy: { order: 'asc' },
+                },
+              );
+              if (quizQuestions.length > 0) {
+                await this.prisma.assignmentOnQuiz.createMany({
+                  data: quizQuestions.map((q) => ({
+                    order: q.order,
+                    type: q.type,
+                    prompt: q.prompt,
+                    imageUrl: q.imageUrl,
+                    points: q.points,
+                    options: q.options,
+                    blanks: q.blanks,
+                    assignmentId: newAssignment.id,
+                    subjectId: create.id,
+                    schoolId: create.schoolId,
+                  })),
+                });
+              }
+            }
+
             // Re-attach the cloned rubric (createAssignment doesn't accept
             // rubricId, so set it via update once the assignment exists).
+            // createAssignment also zeroes a quiz's max score, so restore the
+            // source total: the questions were copied unchanged.
             const mappedRubricId = assignment.rubricId
               ? rubricIdMap.get(assignment.rubricId)
               : undefined;
-            if (mappedRubricId) {
+            if (mappedRubricId || isQuiz) {
               await this.prisma.assignment.update({
                 where: { id: newAssignment.id },
-                data: { rubricId: mappedRubricId },
+                data: {
+                  ...(mappedRubricId && { rubricId: mappedRubricId }),
+                  ...(isQuiz && { maxScore: assignment.maxScore }),
+                },
                 select: { id: true },
               });
             }
@@ -671,7 +708,7 @@ export class SubjectService {
         await this.assignmentService.assignmentRepository.findMany({
           where: {
             subjectId: { in: subjectIds },
-            type: { in: ['Assignment', 'VideoQuiz'] },
+            type: { in: ['Assignment', 'VideoQuiz', 'Quiz'] },
           },
         });
 
@@ -1323,7 +1360,11 @@ export class SubjectService {
           where: { subjectId: subject.id },
         }),
         this.assignmentService.assignmentRepository.findMany({
-          where: { subjectId: subject.id, status: 'Published' },
+          where: {
+            subjectId: subject.id,
+            status: 'Published',
+            isDeleted: false,
+          },
           omit: { vector: true },
         }),
         this.scoreOnSubjectRepository.findMany({
@@ -1501,7 +1542,7 @@ export class SubjectService {
               status: 'PENDDING',
               isAssigned: true,
               assignment: {
-                status: 'Published',
+                is: { status: 'Published', isDeleted: false },
               },
             },
           },

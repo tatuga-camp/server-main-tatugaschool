@@ -202,7 +202,12 @@ describe('RubricService.gradeStudent', () => {
         deleteMany: jest.fn().mockResolvedValue({}),
         create: jest.fn().mockResolvedValue({}),
       },
-      studentOnAssignment: { update: jest.fn().mockResolvedValue({ id: 'soa1' }) },
+      studentOnAssignment: {
+        update: jest.fn().mockResolvedValue({ id: 'soa1' }),
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 'soa1', assignment: { isDeleted: false } }),
+      },
     };
     const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
     const ai: any = {};
@@ -243,6 +248,24 @@ describe('RubricService.gradeStudent', () => {
         { id: 'u1' } as any,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('404s and writes nothing when the assignment was soft-deleted', async () => {
+    const { service, prisma } = gradingService();
+    prisma.studentOnAssignment.findUnique.mockResolvedValue({
+      id: 'soa1',
+      assignment: { isDeleted: true },
+    });
+    await expect(
+      service.gradeStudent(
+        {
+          studentOnAssignmentId: 'soa1',
+          items: [{ criterionId: 'c1', selectedLevelId: 'l-hi' }],
+        } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.$transaction).not.toHaveBeenCalled();
   });
 
   it('rejects duplicate criterionId in items', async () => {
@@ -334,6 +357,51 @@ describe('RubricService.readBreakdownForStudent', () => {
     expect(result.finalScore).toBe(8);
     expect(result.rubric.criteria[0].selectedLevelId).toBe('l1');
     expect(result.rubric.criteria[0].comment).toBe('nice');
+  });
+});
+
+describe('RubricService breakdown of a soft-deleted assignment', () => {
+  function deletedBreakdownService() {
+    const teacher: any = { ValidateAccess: jest.fn().mockResolvedValue(true) };
+    const service = new RubricService(
+      {} as any,
+      teacher,
+      {} as any,
+      createPassthroughCache(),
+    );
+    (service as any).repo = {
+      findBreakdown: jest.fn().mockResolvedValue({
+        soa: {
+          id: 'soa1',
+          studentId: 'studentA',
+          subjectId: 'sub1',
+          score: 8,
+          assignment: { id: 'a1', maxScore: 10, isDeleted: true, rubric: null },
+        },
+        scores: [],
+      }),
+    };
+    return { service, teacher };
+  }
+
+  it('404s for the teacher', async () => {
+    const { service } = deletedBreakdownService();
+    await expect(
+      service.readBreakdownForTeacher(
+        { studentOnAssignmentId: 'soa1' } as any,
+        { id: 'u1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('404s for the owning student', async () => {
+    const { service } = deletedBreakdownService();
+    await expect(
+      service.readBreakdownForStudent(
+        { studentOnAssignmentId: 'soa1' } as any,
+        { id: 'studentA', schoolId: 'school1' } as any,
+      ),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });
 

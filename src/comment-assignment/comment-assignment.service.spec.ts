@@ -75,6 +75,11 @@ describe('CommentAssignmentService', () => {
     service['userRepository'] = {
       findById: jest.fn(),
     } as any;
+
+    mockPrismaService.studentOnAssignment.findUnique.mockResolvedValue({
+      id: 'sa1',
+      assignment: { isDeleted: false },
+    });
   });
 
   afterEach(() => {
@@ -165,6 +170,20 @@ describe('CommentAssignmentService', () => {
       );
       expect(mockTeacherOnSubjectService.ValidateAccess).not.toHaveBeenCalled();
       expect(getOrSet).not.toHaveBeenCalled();
+    });
+
+    it('should 404 without reading comments when the assignment was soft-deleted', async () => {
+      mockPrismaService.studentOnAssignment.findUnique.mockResolvedValue({
+        id: 'sa1',
+        assignment: { isDeleted: true },
+      });
+
+      await expect(
+        service.getByStudentOnAssignment(dto, user, null),
+      ).rejects.toThrow(NotFoundException);
+      expect(
+        mockPrismaService.commentOnAssignment.findMany,
+      ).not.toHaveBeenCalled();
     });
 
     it('should not read comments when the access check rejects', async () => {
@@ -283,6 +302,43 @@ describe('CommentAssignmentService', () => {
     });
   });
 
+  describe('soft-deleted assignment', () => {
+    beforeEach(() => {
+      mockPrismaService.studentOnAssignment.findUnique.mockResolvedValue({
+        id: 'sa1',
+        assignment: { isDeleted: true },
+      });
+      (
+        service['studentOnAssignmentRepository'].getById as jest.Mock
+      ).mockResolvedValue({ id: 'sa1', subjectId: 's1', assignmentId: 'a1' });
+    });
+
+    it('createFromStudent 404s and writes nothing', async () => {
+      await expect(
+        service.createFromStudent(
+          { studentOnAssignmentId: 'sa1' } as any,
+          { id: 'st1', schoolId: 'sch1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(service.commentAssignmentRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('createFromTeacher 404s and writes nothing', async () => {
+      service['userRepository'].findById = jest
+        .fn()
+        .mockResolvedValue({ id: 'u1' });
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+
+      await expect(
+        service.createFromTeacher(
+          { studentOnAssignmentId: 'sa1' } as any,
+          { id: 'u1' } as any,
+        ),
+      ).rejects.toThrow(NotFoundException);
+      expect(service.commentAssignmentRepository.create).not.toHaveBeenCalled();
+    });
+  });
+
   describe('updateFromStudent', () => {
     it('should update comment if correct student', async () => {
       (
@@ -376,6 +432,8 @@ describe('CommentAssignmentService', () => {
     });
   });
 });
+
+const LIVE_SELECT = { id: true, assignment: { select: { isDeleted: true } } };
 
 describe('CommentAssignmentService.getByStudentOnAssignment (cached)', () => {
   const dto = { studentOnAssignmentId: 'sa1' };
@@ -472,8 +530,8 @@ describe('CommentAssignmentService.getByStudentOnAssignment (cached)', () => {
     // The ref came from the cache; the loader's existence check found nothing.
     expect(prisma.studentOnAssignment.findUnique.mock.calls).toEqual([
       [{ where: { id: 'sa1' }, select: { subjectId: true, studentId: true } }],
-      [{ where: { id: 'sa1' }, select: { id: true } }],
-      [{ where: { id: 'sa1' }, select: { id: true } }],
+      [{ where: { id: 'sa1' }, select: LIVE_SELECT }],
+      [{ where: { id: 'sa1' }, select: LIVE_SELECT }],
     ]);
   });
 

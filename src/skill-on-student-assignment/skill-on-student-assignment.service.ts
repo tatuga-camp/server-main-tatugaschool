@@ -27,6 +27,7 @@ import { RedisService } from '../redis/redis.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
 import { UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class SkillOnStudentAssignmentService {
@@ -99,6 +100,9 @@ export class SkillOnStudentAssignmentService {
       return await this.skillOnStudentAssignmentRepository.findMany({
         where: {
           studentId: dto.studentId,
+          studentOnAssignment: {
+            is: { assignment: { is: { isDeleted: false } } },
+          },
         },
       });
     } catch (error) {
@@ -124,6 +128,9 @@ export class SkillOnStudentAssignmentService {
           where: {
             studentId: studentOnSubject.studentId,
             subjectId: studentOnSubject.subjectId,
+            studentOnAssignment: {
+              is: { assignment: { is: { isDeleted: false } } },
+            },
           },
         });
 
@@ -241,6 +248,7 @@ export class SkillOnStudentAssignmentService {
     user: UserJwtPayload,
   ): Promise<SkillOnStudentAssignment> {
     try {
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const [studentOnAssignment, skill] = await Promise.all([
         this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,

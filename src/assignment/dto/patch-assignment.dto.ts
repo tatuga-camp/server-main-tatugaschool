@@ -1,6 +1,7 @@
 import { AssignmentStatus, AssignmentType } from '@prisma/client';
 import { Transform, Type } from 'class-transformer';
 import { normalizeTags } from '../utils/normalize-tags';
+import { QuizSettingsDto } from '../../quiz/dto/quiz-settings.dto';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -78,6 +79,12 @@ class UpdateAssignmentBody {
   @ValidateIf((o) => o.rubricId !== null)
   @IsMongoId()
   rubricId?: string | null;
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => QuizSettingsDto)
+  quizSettings?: QuizSettingsDto;
 }
 
 class UpdateAssignmentQuery {

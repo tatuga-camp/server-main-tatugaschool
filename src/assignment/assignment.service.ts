@@ -51,12 +51,22 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
 import { AiService } from '../ai/ai.service';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 import { StudentJwtPayload, UserJwtPayload } from '../interfaces/jwt-payload';
 import { CacheService } from '../cache/cache.service';
 import { AssignmentReads } from './assignment.reads';
 import { EMPTY_COUNTS } from './submission-counts';
 import { CacheRefs } from '../cache/cache-refs';
 import { GradeReads } from '../grade/grade.reads';
+import {
+  StudentSafeSubmission,
+  toStudentSafeSubmission,
+} from '../quiz/student-question.mapper';
+import {
+  isGradedAssignmentType,
+  mergeQuizSettings,
+  withDefaultQuizSettings,
+} from '../quiz/quiz-settings';
 
 // The teacher grade table needs scores and statuses, plus the student fields
 // the client grade popup shows. Never the answer `body`.
@@ -109,6 +119,7 @@ export class AssignmentService {
     private linebotService: LineBotService,
     private prismaReadService: PrismaReadService,
     private cache: CacheService,
+    private redis: RedisService,
   ) {
     this.studentOnSubjectRepository = new StudentOnSubjectRepository(
       this.prisma,
@@ -185,7 +196,7 @@ export class AssignmentService {
       summitNumber: number;
       penddingNumber: number;
       questions: QuestionOnVideo[];
-      studentOnAssignment?: StudentOnAssignment;
+      studentOnAssignment?: StudentSafeSubmission<StudentOnAssignment>;
     })[]
   > {
     try {
@@ -226,7 +237,9 @@ export class AssignmentService {
         questions: questions.filter((q) => q.assignmentId === assignment.id),
         files: files.filter((f) => f.assignmentId === assignment.id),
         studentOnAssignment: student
-          ? mine.find((s) => s.assignmentId === assignment.id)
+          ? toStudentSafeSubmission(
+              mine.find((s) => s.assignmentId === assignment.id),
+            )
           : undefined,
       }));
     } catch (error) {
@@ -242,7 +255,9 @@ export class AssignmentService {
     grade: GradeRange | null;
     assignments: {
       assignment: Assignment;
-      studentOnAssignment: StudentOnAssignment;
+      studentOnAssignment:
+        | StudentSafeSubmission<StudentOnAssignment>
+        | undefined;
     }[];
     scoreOnSubjects: {
       scoreOnSubject: ScoreOnSubject;
@@ -270,10 +285,7 @@ export class AssignmentService {
         );
       }
 
-      const enrollment = await this.reads.enrollment(
-        dto.subjectId,
-        student.id,
-      );
+      const enrollment = await this.reads.enrollment(dto.subjectId, student.id);
       if (!enrollment) {
         throw new ForbiddenException('Student not enrolled in this subject');
       }
@@ -294,19 +306,23 @@ export class AssignmentService {
         }),
       ]);
       const assignments = subjectAssignments.filter(
-        (a) => a.status === 'Published' && a.type === 'Assignment',
+        (a) =>
+          a.status === 'Published' &&
+          (a.type === 'Assignment' || a.type === 'Quiz'),
       ) as Assignment[];
       return {
         grade: grade
           ? { ...grade, gradeRules: JSON.parse(grade.gradeRules as string) }
           : null,
         assignments: assignments.map((assignment) => {
+          const studentOnAssignment = studentOnAssignments.find(
+            (s) => s.assignmentId === assignment.id,
+          );
           return {
             assignment,
-            studentOnAssignment: studentOnAssignments.find(
-              (studentOnAssignment) =>
-                studentOnAssignment.assignmentId === assignment.id,
-            ),
+            studentOnAssignment:
+              studentOnAssignment &&
+              toStudentSafeSubmission(studentOnAssignment),
           };
         }),
         scoreOnSubjects: scoreOnSubjects.map((scoreOnSubject) => {
@@ -362,9 +378,7 @@ export class AssignmentService {
         }),
       ]);
       const assignments = subjectAssignments.filter(
-        (a) =>
-          a.status === 'Published' &&
-          (a.type === 'Assignment' || a.type === 'VideoQuiz'),
+        (a) => a.status === 'Published' && isGradedAssignmentType(a.type),
       ) as Assignment[];
 
       return {
@@ -410,6 +424,12 @@ export class AssignmentService {
         delete dto?.maxScore;
         delete dto?.dueDate;
         delete dto?.weight;
+      }
+      if (dto.type === 'Quiz') {
+        dto.maxScore = 0; // recomputed from question points
+        dto.quizSettings = withDefaultQuizSettings(dto.quizSettings);
+      } else {
+        delete dto.quizSettings;
       }
 
       await this.teacherOnSubjectService.ValidateAccess({
@@ -711,6 +731,18 @@ export class AssignmentService {
         subjectId: assignment.subjectId,
       });
 
+      if (assignment.type === 'Quiz') {
+        delete dto.data.maxScore; // owned by question points
+        if (dto.data.quizSettings) {
+          dto.data.quizSettings = mergeQuizSettings(
+            assignment.quizSettings,
+            dto.data.quizSettings,
+          );
+        }
+      } else {
+        delete dto.data.quizSettings;
+      }
+
       const update = await this.assignmentRepository.update({
         where: { id: dto.query.assignmentId },
         data: { ...dto.data },
@@ -777,33 +809,15 @@ export class AssignmentService {
         userId: user.id,
         subjectId: assignment.subjectId,
       });
-      let { totalDeleteSize } = await this.assignmentRepository.delete(dto);
-
-      if (assignment.type === 'VideoQuiz' && assignment.videoURL) {
-        const assignments = await this.assignmentRepository.count({
-          where: {
-            videoURL: assignment.videoURL,
-          },
-        });
-
-        if (assignments === 1) {
-          await this.storageService.DeleteFileOnStorage({
-            fileName: assignment.videoURL,
-          });
-        }
-      }
-
-      await this.schoolService.schoolRepository.update({
-        where: {
-          id: assignment.schoolId,
-        },
-        data: {
-          totalStorage: {
-            decrement: totalDeleteSize,
-          },
-        },
-      });
-      return assignment;
+      const deleted = await this.assignmentRepository.softDelete(assignment.id);
+      // The school analytics blob is not in the cache-scope system; drop it so
+      // the deleted assignment leaves the analytics page now, not in 15 h.
+      await this.redis
+        .del(`school_analytics:${assignment.schoolId}:${subject.educationYear}`)
+        .catch((error) =>
+          this.logger.warn(`analytics cache clear failed: ${error}`),
+        );
+      return deleted;
     } catch (error) {
       this.logger.error(error);
       throw error;

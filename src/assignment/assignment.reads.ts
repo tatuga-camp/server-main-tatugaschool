@@ -18,7 +18,7 @@ export class AssignmentReads {
       TTL.LONG,
       async () => {
         const assignments = await this.prisma.assignment.findMany({
-          where: { subjectId },
+          where: { subjectId, isDeleted: false },
           omit: { vector: true, vectorResouce: true },
         });
         const ids = assignments.map((a) => a.id);

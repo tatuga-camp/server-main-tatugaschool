@@ -24,6 +24,7 @@ import {
 import { AiDraftResult, RubricDraft } from './interfaces';
 import { CacheService } from '../cache/cache.service';
 import { subjectScope } from '../cache/cache-scopes';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class RubricService {
@@ -146,6 +147,7 @@ export class RubricService {
   }
 
   async gradeStudent(dto: GradeRubricDto, user: UserJwtPayload) {
+    await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
     const soa = await this.repo.getStudentOnAssignment(
       dto.studentOnAssignmentId,
     );
@@ -264,7 +266,8 @@ export class RubricService {
     user: UserJwtPayload,
   ) {
     const data = await this.repo.findBreakdown(dto.studentOnAssignmentId);
-    if (!data) throw new NotFoundException('Student assignment not found');
+    if (!data || data.soa.assignment?.isDeleted)
+      throw new NotFoundException('Student assignment not found');
     await this.teacherOnSubjectService.ValidateAccess({
       userId: user.id,
       subjectId: data.soa.subjectId,
@@ -277,7 +280,8 @@ export class RubricService {
     student: StudentJwtPayload,
   ) {
     const data = await this.repo.findBreakdown(dto.studentOnAssignmentId);
-    if (!data) throw new NotFoundException('Student assignment not found');
+    if (!data || data.soa.assignment?.isDeleted)
+      throw new NotFoundException('Student assignment not found');
     if (data.soa.studentId !== student.id) {
       throw new ForbiddenException('Not your assignment.');
     }

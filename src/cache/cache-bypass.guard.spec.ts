@@ -10,6 +10,18 @@ import {
 const ALLOWED: Record<string, string> = {
   'attendance-status-list/attendance-status-list.service.ts:attendance.updateMany':
     'bumps attendance after the write',
+  'quiz/quiz.service.ts:assignment.create':
+    'duplicate quiz; bumps assignments + submissions after the copy',
+  'quiz/quiz.service.ts:assignment.update':
+    'syncMaxScore; bumps assignments + grades after the write',
+  'quiz/quiz.service.ts:studentOnAssignment.createMany':
+    'duplicate quiz; bumps assignments + submissions after the copy',
+  'quiz/quiz-attempt-write.ts:studentOnAssignment.updateMany':
+    'quizAttempt partial writes (integrity/answers/finalize); integrity and answer writes must not bump, callers that change cached fields bump themselves',
+  'quiz/quiz-monitor.service.ts:studentOnAssignment.update':
+    'overrideScore total + reset unset; both bump submissions + grades after the write',
+  'quiz/student-quiz.service.ts:studentOnAssignment.updateMany':
+    'start(): guarded quizAttempt set; bumps submissions + grades after the write when it matched',
   'rubric/rubric.service.ts:studentOnAssignment.update':
     'inside $transaction; bumps submissions after it resolves',
   'student-on-subject/student-on-subject.service.ts:studentOnSubject.update':

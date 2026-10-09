@@ -2,6 +2,10 @@ import { CacheService } from '../cache/cache.service';
 import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AssignmentService } from './assignment.service';
+import {
+  mergeQuizSettings,
+  withDefaultQuizSettings,
+} from '../quiz/quiz-settings';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { StorageService } from '../storage/storage.service';
@@ -19,11 +23,16 @@ import { StudentService } from '../student/student.service';
 import { SchoolService } from '../school/school.service';
 import { LineBotService } from '../line-bot/line-bot.service';
 import { PrismaReadService } from '../prisma/prisma-read.service';
+import { RedisService } from '../redis/redis.service';
 import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import {
+  fullQuizAttempt,
+  leakedIntegrityKeys,
+} from '../quiz/testing/quiz-attempt.fixture';
 
 jest.mock('web-push', () => ({}));
 jest.mock('googleapis', () => ({}));
@@ -111,6 +120,10 @@ describe('AssignmentService', () => {
     findMany: jest.fn(),
   };
 
+  const mockRedisService = {
+    del: jest.fn().mockResolvedValue(1),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -145,6 +158,7 @@ describe('AssignmentService', () => {
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: LineBotService, useValue: mockLineBotService },
         { provide: PrismaReadService, useValue: {} },
+        { provide: RedisService, useValue: mockRedisService },
       ],
     }).compile();
 
@@ -157,6 +171,7 @@ describe('AssignmentService', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      softDelete: jest.fn(),
       count: jest.fn(),
     } as any;
 
@@ -405,7 +420,41 @@ describe('AssignmentService', () => {
       );
 
       expect(result.map((a) => a.id)).toEqual(['a1']);
-      expect(result[0].studentOnAssignment).toEqual(mine[0]);
+      expect(result[0].studentOnAssignment).toEqual({
+        ...mine[0],
+        quizAttempt: null,
+      });
+    });
+
+    it('strips integrity and risk data from the student submission', async () => {
+      const attempt = fullQuizAttempt();
+      reads.enrollment.mockResolvedValue({ id: 'sos1' });
+      reads.studentSubmissions.mockResolvedValue([
+        {
+          id: 'soa1',
+          assignmentId: 'a1',
+          isAssigned: true,
+          quizAttempt: attempt,
+        },
+      ]);
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [{ id: 'a1', type: 'Quiz', status: 'Published' }],
+        files: [],
+        questions: [],
+      });
+
+      const result = await service.getAssignmentBySubjectId(
+        { subjectId: 's1' },
+        undefined,
+        { id: 'st1' } as any,
+      );
+
+      expect(leakedIntegrityKeys(result)).toEqual([]);
+      expect(result[0].studentOnAssignment.quizAttempt).toEqual({
+        startedAt: attempt.startedAt,
+        deadlineAt: attempt.deadlineAt,
+        submittedAt: attempt.submittedAt,
+      });
     });
 
     it('should include VideoQuiz questions when assignments have VideoQuiz type', async () => {
@@ -512,6 +561,29 @@ describe('AssignmentService', () => {
       expect(result.assignments[0].studentOnAssignment.id).toBe('sa1');
       expect(result.scoreOnSubjects).toHaveLength(1);
       expect(result.scoreOnSubjects[0].students).toHaveLength(1);
+    });
+
+    it('strips integrity and risk data from the student submissions', async () => {
+      reads.subjectAssignments.mockResolvedValue({
+        assignments: [
+          { id: 'a1', status: 'Published', type: 'Quiz' },
+          { id: 'a2', status: 'Published', type: 'Assignment' },
+        ],
+        files: [],
+        questions: [],
+      });
+      reads.studentSubmissions.mockResolvedValue([
+        { id: 'sa1', assignmentId: 'a1', quizAttempt: fullQuizAttempt() },
+      ]);
+
+      const result = await service.getOverviewScoreOnAssignment(
+        { subjectId: 's1', studentId: 'st1' },
+        mockStudentRequest,
+      );
+
+      expect(leakedIntegrityKeys(result)).toEqual([]);
+      expect(result.assignments[0].studentOnAssignment.id).toBe('sa1');
+      expect(result.assignments[1].studentOnAssignment).toBeUndefined();
     });
 
     it('should throw NotFoundException if subject not found', async () => {
@@ -703,6 +775,75 @@ describe('AssignmentService', () => {
   // createAssignment
   // ─────────────────────────────────────────────────────────────────────────────
   describe('createAssignment', () => {
+    describe('quiz integration', () => {
+      const setupCreate = () => {
+        mockSubjectService.subjectRepository.findUnique.mockResolvedValue({
+          id: 's1',
+          schoolId: 'sch1',
+          isLocked: false,
+        });
+        mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+        (service.assignmentRepository.create as jest.Mock).mockResolvedValue({
+          id: 'a1',
+          subjectId: 's1',
+          schoolId: 'sch1',
+          status: 'Draft',
+        });
+        (service as any).studentOnSubjectRepository.findMany.mockResolvedValue(
+          [],
+        );
+      };
+      const createdData = () =>
+        (service.assignmentRepository.create as jest.Mock).mock.calls[0][0]
+          .data;
+
+      it('forces maxScore 0 and default quizSettings for a Quiz', async () => {
+        setupCreate();
+        await service.createAssignment(
+          { subjectId: 's1', title: 'Q', type: 'Quiz', maxScore: 50 } as any,
+          { id: 'u1' } as any,
+        );
+        expect(createdData().maxScore).toBe(0);
+        expect(createdData().quizSettings).toEqual(
+          withDefaultQuizSettings(undefined),
+        );
+      });
+
+      it('keeps client quizSettings overrides on top of the defaults for a Quiz', async () => {
+        setupCreate();
+        await service.createAssignment(
+          {
+            subjectId: 's1',
+            title: 'Q',
+            type: 'Quiz',
+            quizSettings: { testMode: true },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(createdData().quizSettings).toEqual(
+          withDefaultQuizSettings({ testMode: true } as any),
+        );
+        expect(createdData().quizSettings.testMode).toBe(true);
+      });
+
+      it('strips quizSettings when creating a non-quiz assignment', async () => {
+        setupCreate();
+        await service.createAssignment(
+          {
+            subjectId: 's1',
+            title: 'A',
+            type: 'Assignment',
+            beginDate: new Date(),
+            maxScore: 10,
+            quizSettings: { testMode: true },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(createdData()).not.toHaveProperty('quizSettings');
+        expect(createdData().maxScore).toBe(10);
+      });
+    });
+
     it('should create an assignment successfully and send line notification', async () => {
       const mockUser = { id: 'u1' } as any;
       const dto: any = {
@@ -1028,6 +1169,80 @@ describe('AssignmentService', () => {
   // updateAssignment
   // ─────────────────────────────────────────────────────────────────────────────
   describe('updateAssignment', () => {
+    describe('quiz integration', () => {
+      const setupUpdate = (type: string, quizSettings?: any) => {
+        const assignment = {
+          id: 'a1',
+          subjectId: 's1',
+          status: 'Draft',
+          schoolId: 'sch1',
+          type,
+          quizSettings,
+        };
+        (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
+          assignment,
+        );
+        mockPrismaService.subject.findUnique.mockResolvedValue({
+          id: 's1',
+          isLocked: false,
+        });
+        mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+        (service.assignmentRepository.update as jest.Mock).mockResolvedValue(
+          assignment,
+        );
+      };
+      const updatedData = () =>
+        (service.assignmentRepository.update as jest.Mock).mock.calls[0][0]
+          .data;
+
+      it('drops a client maxScore and merges partial quizSettings for a Quiz', async () => {
+        setupUpdate('Quiz', withDefaultQuizSettings({ testMode: true } as any));
+        await service.updateAssignment(
+          {
+            query: { assignmentId: 'a1' },
+            data: {
+              maxScore: 99,
+              title: 'T',
+              quizSettings: { shuffleQuestions: true },
+            },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(updatedData()).not.toHaveProperty('maxScore');
+        expect(updatedData().title).toBe('T');
+        expect(updatedData().quizSettings).toEqual(
+          mergeQuizSettings(
+            withDefaultQuizSettings({ testMode: true } as any),
+            { shuffleQuestions: true } as any,
+          ),
+        );
+        expect(updatedData().quizSettings.testMode).toBe(true);
+        expect(updatedData().quizSettings.shuffleQuestions).toBe(true);
+      });
+
+      it('leaves quizSettings out of the update when a Quiz update sends none', async () => {
+        setupUpdate('Quiz', withDefaultQuizSettings(undefined));
+        await service.updateAssignment(
+          { query: { assignmentId: 'a1' }, data: { title: 'T' } } as any,
+          { id: 'u1' } as any,
+        );
+        expect(updatedData()).not.toHaveProperty('quizSettings');
+      });
+
+      it('strips quizSettings from a non-quiz update but keeps maxScore', async () => {
+        setupUpdate('Assignment');
+        await service.updateAssignment(
+          {
+            query: { assignmentId: 'a1' },
+            data: { maxScore: 20, quizSettings: { testMode: true } },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(updatedData()).not.toHaveProperty('quizSettings');
+        expect(updatedData().maxScore).toBe(20);
+      });
+    });
+
     it('should update an assignment successfully', async () => {
       const mockUser = { id: 'u1' } as any;
       const dto: any = {
@@ -1282,39 +1497,70 @@ describe('AssignmentService', () => {
   // deleteAssignment
   // ─────────────────────────────────────────────────────────────────────────────
   describe('deleteAssignment', () => {
-    it('should delete an assignment successfully and update school storage', async () => {
+    it('soft deletes the assignment and leaves storage alone', async () => {
       const mockUser = { id: 'u1' } as any;
       const mockAssignment = {
         id: 'a1',
         subjectId: 's1',
         schoolId: 'sch1',
-        type: 'Assignment',
-        videoURL: null,
+        type: 'VideoQuiz',
+        videoURL: 'https://storage.example.com/video.mp4',
       };
-      const mockSubject = { id: 's1', isLocked: false };
+      const mockSubject = {
+        id: 's1',
+        isLocked: false,
+        educationYear: '1/2569',
+      };
+      const softDeleted = { ...mockAssignment, isDeleted: true };
 
       (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
         mockAssignment,
       );
       mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.delete as jest.Mock).mockResolvedValue({
-        totalDeleteSize: 100,
-      });
-      mockSchoolService.schoolRepository.update.mockResolvedValue({});
+      (service.assignmentRepository.softDelete as jest.Mock).mockResolvedValue(
+        softDeleted,
+      );
 
       const result = await service.deleteAssignment(
         { assignmentId: 'a1' } as any,
         mockUser,
       );
 
-      expect(service.assignmentRepository.delete).toHaveBeenCalledWith({
-        assignmentId: 'a1',
+      expect(service.assignmentRepository.softDelete).toHaveBeenCalledWith(
+        'a1',
+      );
+      expect(service.assignmentRepository.delete).not.toHaveBeenCalled();
+      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
+      expect(mockSchoolService.schoolRepository.update).not.toHaveBeenCalled();
+      expect(mockRedisService.del).toHaveBeenCalledWith(
+        'school_analytics:sch1:1/2569',
+      );
+      expect(result).toBe(softDeleted);
+    });
+
+    it('still returns the soft-deleted assignment when the analytics cache clear fails', async () => {
+      const mockAssignment = { id: 'a1', subjectId: 's1', schoolId: 'sch1' };
+      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
+        mockAssignment,
+      );
+      mockPrismaService.subject.findUnique.mockResolvedValue({
+        id: 's1',
+        isLocked: false,
+        educationYear: '1/2569',
       });
-      expect(mockSchoolService.schoolRepository.update).toHaveBeenCalledWith({
-        where: { id: 'sch1' },
-        data: { totalStorage: { decrement: 100 } },
+      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+      (service.assignmentRepository.softDelete as jest.Mock).mockResolvedValue({
+        ...mockAssignment,
+        isDeleted: true,
       });
+      mockRedisService.del.mockRejectedValueOnce(new Error('redis down'));
+
+      const result = await service.deleteAssignment(
+        { assignmentId: 'a1' } as any,
+        { id: 'u1' } as any,
+      );
+
       expect(result.id).toBe('a1');
     });
 
@@ -1353,64 +1599,6 @@ describe('AssignmentService', () => {
       await expect(
         service.deleteAssignment({ assignmentId: 'a1' } as any, {} as any),
       ).rejects.toThrow(ForbiddenException);
-    });
-
-    it('should delete video from storage when VideoQuiz has unique videoURL', async () => {
-      const mockUser = { id: 'u1' } as any;
-      const mockAssignment = {
-        id: 'a1',
-        subjectId: 's1',
-        schoolId: 'sch1',
-        type: 'VideoQuiz',
-        videoURL: 'https://storage.example.com/video.mp4',
-      };
-      const mockSubject = { id: 's1', isLocked: false };
-
-      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
-        mockAssignment,
-      );
-      mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.delete as jest.Mock).mockResolvedValue({
-        totalDeleteSize: 0,
-      });
-      // Only 1 assignment uses this videoURL
-      (service.assignmentRepository.count as jest.Mock).mockResolvedValue(1);
-      mockSchoolService.schoolRepository.update.mockResolvedValue({});
-
-      await service.deleteAssignment({ assignmentId: 'a1' } as any, mockUser);
-
-      expect(mockStorageService.DeleteFileOnStorage).toHaveBeenCalledWith({
-        fileName: 'https://storage.example.com/video.mp4',
-      });
-    });
-
-    it('should NOT delete video from storage when multiple assignments share the same videoURL', async () => {
-      const mockUser = { id: 'u1' } as any;
-      const mockAssignment = {
-        id: 'a1',
-        subjectId: 's1',
-        schoolId: 'sch1',
-        type: 'VideoQuiz',
-        videoURL: 'https://storage.example.com/video.mp4',
-      };
-      const mockSubject = { id: 's1', isLocked: false };
-
-      (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
-        mockAssignment,
-      );
-      mockPrismaService.subject.findUnique.mockResolvedValue(mockSubject);
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (service.assignmentRepository.delete as jest.Mock).mockResolvedValue({
-        totalDeleteSize: 0,
-      });
-      // Multiple assignments use this videoURL
-      (service.assignmentRepository.count as jest.Mock).mockResolvedValue(2);
-      mockSchoolService.schoolRepository.update.mockResolvedValue({});
-
-      await service.deleteAssignment({ assignmentId: 'a1' } as any, mockUser);
-
-      expect(mockStorageService.DeleteFileOnStorage).not.toHaveBeenCalled();
     });
   });
 

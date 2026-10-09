@@ -132,6 +132,17 @@ describe('CareerService', () => {
 
       const result = await service.suggest({ studentId: 'st1' }, {} as any);
 
+      expect(
+        mockSkillOnStudentAssignmentService.skillOnStudentAssignmentRepository
+          .findMany,
+      ).toHaveBeenCalledWith({
+        where: {
+          studentId: 'st1',
+          studentOnAssignment: {
+            is: { assignment: { is: { isDeleted: false } } },
+          },
+        },
+      });
       expect(result.student.skills[0].avg).toBe(15);
       expect(result.careers[0].skills[0].avg).toBe(10);
       expect(result.careers[0].skills[0].matchPoint).toBe(15 / 10);

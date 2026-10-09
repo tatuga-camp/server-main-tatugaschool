@@ -19,6 +19,7 @@ export function seed() {
     createAt: d(i + 1),
     vector: [0.1, 0.2],
     vectorResouce: 'embedding',
+    isDeleted: false,
   }));
   const soa = (
     id: string,

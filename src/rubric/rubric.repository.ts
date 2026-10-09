@@ -92,7 +92,9 @@ export class RubricRepository {
 
   async countAssignmentsUsing(rubricId: string): Promise<number> {
     try {
-      return await this.prisma.assignment.count({ where: { rubricId } });
+      return await this.prisma.assignment.count({
+        where: { rubricId, isDeleted: false },
+      });
     } catch (e) {
       this.handle(e);
     }
@@ -192,6 +194,7 @@ export class RubricRepository {
             select: {
               id: true,
               maxScore: true,
+              isDeleted: true,
               rubric: {
                 include: {
                   criteria: {
@@ -217,7 +220,7 @@ export class RubricRepository {
   async findAssignmentRubric(assignmentId: string) {
     try {
       const assignment = await this.prisma.assignment.findUnique({
-        where: { id: assignmentId },
+        where: { id: assignmentId, isDeleted: false },
         select: { maxScore: true, rubricId: true },
       });
       if (!assignment?.rubricId) return null;

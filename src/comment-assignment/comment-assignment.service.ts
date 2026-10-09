@@ -22,6 +22,7 @@ import { CacheService } from '../cache/cache.service';
 import { CacheRefs } from '../cache/cache-refs';
 import { subjectScope } from '../cache/cache-scopes';
 import { TTL } from '../cache/cache-ttl';
+import { assertSubmissionLive } from '../assignment/submission-live';
 
 @Injectable()
 export class CommentAssignmentService {
@@ -78,11 +79,13 @@ export class CommentAssignmentService {
         [subjectScope(ref.subjectId, 'submissions')],
         TTL.SHORT,
         async () => {
+          // assertSubmissionLive's check, inside the cached unit: the soft
+          // delete bumps the subject's submissions scope.
           const exists = await this.prisma.studentOnAssignment.findUnique({
             where: { id: dto.studentOnAssignmentId },
-            select: { id: true },
+            select: { id: true, assignment: { select: { isDeleted: true } } },
           });
-          if (!exists) return null;
+          if (!exists || exists.assignment?.isDeleted) return null;
           return this.prisma.commentOnAssignment.findMany({
             where: { studentOnAssignmentId: dto.studentOnAssignmentId },
           });
@@ -106,6 +109,7 @@ export class CommentAssignmentService {
     student: StudentJwtPayload,
   ) {
     try {
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,
@@ -175,6 +179,7 @@ export class CommentAssignmentService {
         throw new NotFoundException('User not found');
       }
 
+      await assertSubmissionLive(this.prisma, dto.studentOnAssignmentId);
       const studentOnAssignment =
         await this.studentOnAssignmentRepository.getById({
           studentOnAssignmentId: dto.studentOnAssignmentId,

@@ -11,6 +11,7 @@ export class CacheRefs {
 
   assignment(id: string) {
     return this.cache.getOrSet(`ref:assignment:${id}`, [], TTL.REF, () =>
+      // includes-deleted: parent link only, never proof the row is live
       this.prisma.assignment.findUnique({
         where: { id },
         select: { subjectId: true, schoolId: true },

@@ -34,10 +34,31 @@ function withEmbeddingOmitted<T extends { select?: unknown; omit?: unknown }>(
   return { ...request, omit: OMIT_EMBEDDING };
 }
 
+// Deleted assignments are hidden from every read unless a hard-delete path
+// asks for them explicitly.
+function liveWhere<T extends { where?: object }>(
+  args: T,
+  includeDeleted?: boolean,
+): T {
+  if (includeDeleted) return args;
+  return { ...args, where: { ...(args.where ?? {}), isDeleted: false } };
+}
+
+export type AssignmentReadOptions = { includeDeleted?: boolean };
+
 type AssignmentRepositoryType = {
-  getById(request: RequestGetAssignmentById): Promise<Assignment>;
-  findMany(request: Prisma.AssignmentFindManyArgs): Promise<Assignment[]>;
-  count(request: Prisma.AssignmentCountArgs): Promise<number>;
+  getById(
+    request: RequestGetAssignmentById & AssignmentReadOptions,
+  ): Promise<Assignment>;
+  findMany(
+    request: Prisma.AssignmentFindManyArgs,
+    opts?: AssignmentReadOptions,
+  ): Promise<Assignment[]>;
+  count(
+    request: Prisma.AssignmentCountArgs,
+    opts?: AssignmentReadOptions,
+  ): Promise<number>;
+  softDelete(assignmentId: string): Promise<Assignment>;
   create(request: Prisma.AssignmentCreateArgs): Promise<Assignment>;
   update(request: Prisma.AssignmentUpdateArgs): Promise<Assignment>;
   delete(
@@ -77,14 +98,18 @@ export class AssignmentRepository implements AssignmentRepositoryType {
       );
   }
 
-  async getById(request: RequestGetAssignmentById): Promise<Assignment> {
+  async getById(
+    request: RequestGetAssignmentById & AssignmentReadOptions,
+  ): Promise<Assignment> {
     try {
       const args: Prisma.AssignmentFindUniqueArgs = {
         where: {
           id: request.assignmentId,
+          ...(request.includeDeleted ? {} : { isDeleted: false }),
         },
         ...(!request.withVector && { omit: OMIT_EMBEDDING }),
       };
+      // includes-deleted: only with request.includeDeleted; args filters by default
       return await this.prisma.assignment.findUnique(args);
     } catch (error) {
       this.logger.error(error);
@@ -99,9 +124,11 @@ export class AssignmentRepository implements AssignmentRepositoryType {
 
   async findMany(
     request: Prisma.AssignmentFindManyArgs,
+    opts?: AssignmentReadOptions,
   ): Promise<Assignment[]> {
     try {
-      request = withEmbeddingOmitted(request);
+      request = liveWhere(withEmbeddingOmitted(request), opts?.includeDeleted);
+      // includes-deleted: only with opts.includeDeleted; liveWhere filters by default
       return await this.prisma.assignment.findMany(request);
     } catch (error) {
       this.logger.error(error);
@@ -114,9 +141,15 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
-  async count(request: Prisma.AssignmentCountArgs): Promise<number> {
+  async count(
+    request: Prisma.AssignmentCountArgs,
+    opts?: AssignmentReadOptions,
+  ): Promise<number> {
     try {
-      return await this.prisma.assignment.count(request);
+      // includes-deleted: only with opts.includeDeleted; liveWhere filters by default
+      return await this.prisma.assignment.count(
+        liveWhere(request, opts?.includeDeleted),
+      );
     } catch (error) {
       this.logger.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
@@ -164,6 +197,30 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     }
   }
 
+  async softDelete(assignmentId: string): Promise<Assignment> {
+    try {
+      const args: Prisma.AssignmentUpdateArgs = {
+        where: { id: assignmentId },
+        data: { isDeleted: true, deletedAt: new Date() },
+        omit: OMIT_EMBEDDING,
+      };
+      const result = await this.prisma.assignment.update(args);
+      await this.cache.bump(
+        subjectScope(result.subjectId, 'assignments'),
+        subjectScope(result.subjectId, 'submissions'),
+      );
+      return result;
+    } catch (error) {
+      this.logger.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        throw new InternalServerErrorException(
+          `message: ${error.message} - codeError: ${error.code}`,
+        );
+      }
+      throw error;
+    }
+  }
+
   async getTotalDeleteSize(request: { assignmentId: string }): Promise<number> {
     try {
       const fileOnStudentAssignments =
@@ -194,6 +251,7 @@ export class AssignmentRepository implements AssignmentRepositoryType {
     request: RequestDeleteAssignment,
   ): Promise<{ message: string; totalDeleteSize: number }> {
     try {
+      // includes-deleted: hard delete
       const ref = await this.prisma.assignment.findUnique({
         where: { id: request.assignmentId },
         select: { subjectId: true },
@@ -245,6 +303,19 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         ]);
       }
 
+      // Quiz rows: answers and events reference questions and student work,
+      // so delete them before their parents.
+      await Promise.all([
+        this.prisma.studentOnQuiz.deleteMany({
+          where: { assignmentId: request.assignmentId },
+        }),
+        this.prisma.quizIntegrityEvent.deleteMany({
+          where: { assignmentId: request.assignmentId },
+        }),
+      ]);
+      await this.prisma.assignmentOnQuiz.deleteMany({
+        where: { assignmentId: request.assignmentId },
+      });
       await this.prisma.questionOnVideo.deleteMany({
         where: {
           assignmentId: request.assignmentId,

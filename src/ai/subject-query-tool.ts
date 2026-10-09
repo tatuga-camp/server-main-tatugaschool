@@ -47,6 +47,11 @@ export interface CollectionConfig {
   select: string[];
   /** required DateTime field used for dateFrom/dateTo and orderBy */
   dateField: string;
+  /**
+   * How rows hang off an assignment, so rows of soft-deleted assignments are
+   * excluded server-side: by `assignmentId`, or only by `studentOnAssignmentId`.
+   */
+  assignmentLink?: 'assignmentId' | 'studentOnAssignmentId';
 }
 
 export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
@@ -110,6 +115,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
       'studentOnSubjectId',
     ],
     dateField: 'createAt',
+    assignmentLink: 'assignmentId',
   },
   rubricScoreOnStudentAssignments: {
     description:
@@ -121,6 +127,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     sum: 'points',
     select: ['points', 'comment', 'studentOnAssignmentId', 'criterionId', 'selectedLevelId'],
     dateField: 'createAt',
+    assignmentLink: 'studentOnAssignmentId',
   },
   skillOnStudentAssignments: {
     description:
@@ -132,6 +139,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     sum: 'weight',
     select: ['weight', 'skillId', 'studentId', 'studentOnAssignmentId'],
     dateField: 'createAt',
+    assignmentLink: 'studentOnAssignmentId',
   },
   fileOnStudentAssignments: {
     description:
@@ -150,6 +158,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
       'studentOnAssignmentId',
     ],
     dateField: 'createAt',
+    assignmentLink: 'assignmentId',
   },
   commentOnAssignments: {
     description:
@@ -160,6 +169,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     groupBy: [],
     select: ['content', 'firstName', 'lastName', 'createAt', 'studentOnAssignmentId'],
     dateField: 'createAt',
+    assignmentLink: 'studentOnAssignmentId',
   },
   announcements: {
     description:
@@ -200,6 +210,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     groupBy: [],
     select: ['name', 'type', 'size', 'createAt', 'assignmentId'],
     dateField: 'createAt',
+    assignmentLink: 'assignmentId',
   },
   questionOnVideos: {
     description:
@@ -210,6 +221,7 @@ export const COLLECTION_CONFIG: Record<string, CollectionConfig> = {
     groupBy: [],
     select: ['question', 'options', 'correctOptions', 'timestamp', 'assignmentId'],
     dateField: 'createAt',
+    assignmentLink: 'assignmentId',
   },
 };
 
@@ -373,7 +385,11 @@ export class SubjectQueryToolService {
             _sum: { score: true },
           }),
           this.prismaRead.studentOnAssignment.findMany({
-            where: { ...where, ...COLLECTION_CONFIG.studentOnAssignments.scope },
+            where: {
+              ...where,
+              ...COLLECTION_CONFIG.studentOnAssignments.scope,
+              assignment: { is: { isDeleted: false } },
+            },
             select: {
               id: true,
               assignmentId: true,
@@ -533,6 +549,8 @@ export class SubjectQueryToolService {
     const delegate = (this.prismaRead as any)[config.model];
 
     try {
+      await this.excludeDeletedAssignments(subjectId, config, where);
+
       if (mode === 'count') {
         const count = await delegate.count({ where });
         return { collection: args.collection, mode, count };
@@ -573,6 +591,38 @@ export class SubjectQueryToolService {
       );
       return { error: 'Query failed. Try different filters or another collection.' };
     }
+  }
+
+  /**
+   * Soft-deleted assignments stay in the database until the nightly
+   * scheduler purges them, so the list of ids to exclude stays small.
+   */
+  private async excludeDeletedAssignments(
+    subjectId: string,
+    config: CollectionConfig,
+    where: Record<string, unknown>,
+  ): Promise<void> {
+    if (!config.assignmentLink) return;
+    const deleted = await this.prismaRead.assignment.findMany({
+      where: { subjectId, isDeleted: true },
+      select: { id: true },
+    });
+    if (deleted.length === 0) return;
+    let excluded = deleted.map((a) => a.id);
+    if (config.assignmentLink === 'studentOnAssignmentId') {
+      const submissions = await this.prismaRead.studentOnAssignment.findMany({
+        where: { subjectId, assignmentId: { in: excluded } },
+        select: { id: true },
+      });
+      if (submissions.length === 0) return;
+      excluded = submissions.map((s) => s.id);
+    }
+    const key = config.assignmentLink;
+    const supplied = where[key];
+    where[key] =
+      typeof supplied === 'string'
+        ? { equals: supplied, notIn: excluded }
+        : { notIn: excluded };
   }
 
   private capped(result: Record<string, unknown>): Record<string, unknown> {
@@ -623,7 +673,7 @@ export class SubjectQueryToolService {
         orderBy: { number: 'asc' },
       }),
       this.prismaRead.assignment.findMany({
-        where: { subjectId, status: 'Published' },
+        where: { subjectId, status: 'Published', isDeleted: false },
         select: {
           id: true,
           title: true,
