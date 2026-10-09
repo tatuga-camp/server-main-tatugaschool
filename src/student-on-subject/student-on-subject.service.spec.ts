@@ -621,6 +621,14 @@ describe('StudentOnSubjectService', () => {
       expect(result.schoolName).toBe('School 1');
       expect(result.courseInfo.subject).toBe('Math');
       expect(result.academicPerformance.overallGrade).toBe('A');
+      // Quizzes count toward the report grade, like the student overview.
+      expect((service as any).assignmentRepository.findMany).toHaveBeenCalledWith({
+        where: {
+          subjectId: 's1',
+          status: 'Published',
+          type: { in: ['Assignment', 'Quiz'] },
+        },
+      });
     });
   });
 });
