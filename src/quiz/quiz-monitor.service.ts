@@ -1,5 +1,5 @@
 // src/quiz/quiz-monitor.service.ts
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import {
   AssignmentOnQuiz,
   QuizIntegrityEventType,
@@ -75,6 +75,8 @@ const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
 @Injectable()
 export class QuizMonitorService {
+  private readonly logger = new Logger(QuizMonitorService.name);
+
   constructor(
     private prisma: PrismaService,
     private access: QuizAccess,
@@ -88,16 +90,23 @@ export class QuizMonitorService {
     const settings = withDefaultQuizSettings(assignment.quizSettings);
     const now = new Date();
 
-    let rows = await this.prisma.studentOnAssignment.findMany({
+    const fetched = await this.prisma.studentOnAssignment.findMany({
       where: { assignmentId, isAssigned: true },
     });
-    for (const row of rows) {
-      const attempt = row.quizAttempt;
-      if (attempt && !attempt.submittedAt && isPastGrace(attempt.deadlineAt, now)) {
-        const finalized = await this.attempts.finalizeAttempt(row.id);
-        rows = rows.map((r) => (r.id === finalized.id ? finalized : r));
-      }
-    }
+    // Finalize expired attempts in parallel. A failure (e.g. a teacher reset
+    // racing the finalize) keeps the fetched row instead of failing the poll.
+    const rows = await Promise.all(
+      fetched.map(async (row) => {
+        const attempt = row.quizAttempt;
+        if (!attempt || attempt.submittedAt || !isPastGrace(attempt.deadlineAt, now)) return row;
+        try {
+          return await this.attempts.finalizeAttempt(row.id);
+        } catch (error) {
+          this.logger.warn(`finalize on monitor fetch failed for ${row.id}: ${(error as Error)?.message}`);
+          return row;
+        }
+      }),
+    );
 
     const [questionCount, answers, events] = await Promise.all([
       this.prisma.assignmentOnQuiz.count({ where: { assignmentId } }),
@@ -202,13 +211,19 @@ export class QuizMonitorService {
     });
     if (!answer) throw new NotFoundException('Answer not found');
     const { soa } = await this.access.teacherStudentOnAssignment(answer.studentOnAssignmentId, user);
+    // Only submitted attempts: the student could still change an answer the
+    // teacher never saw, and finalize would keep the overridden score.
+    if (!soa.quizAttempt?.submittedAt) throw new ConflictException('QUIZ_NOT_SUBMITTED');
     if (dto.score > answer.assignmentOnQuiz.points) {
       throw new BadRequestException('Score cannot exceed the question points');
     }
-    await this.prisma.studentOnQuiz.update({
+    // updateMany, not update: a concurrent reset may have deleted the answer,
+    // which should be a 404 rather than a P2025 500.
+    const { count } = await this.prisma.studentOnQuiz.updateMany({
       where: { id: studentOnQuizId },
       data: { score: dto.score, teacherOverridden: true },
     });
+    if (count === 0) throw new NotFoundException('Answer not found');
     const all = await this.prisma.studentOnQuiz.findMany({
       where: { studentOnAssignmentId: soa.id },
       select: { score: true },
@@ -221,14 +236,17 @@ export class QuizMonitorService {
 
   async reset(studentOnAssignmentId: string, user: UserJwtPayload): Promise<StudentOnAssignment> {
     const { soa } = await this.access.teacherStudentOnAssignment(studentOnAssignmentId, user);
-    await Promise.all([
-      this.prisma.studentOnQuiz.deleteMany({ where: { studentOnAssignmentId: soa.id } }),
-      this.prisma.quizIntegrityEvent.deleteMany({ where: { studentOnAssignmentId: soa.id } }),
-    ]);
+    // Unset the attempt FIRST: guarded writes (saveAnswer, integrity batches,
+    // finalize) then fail with QUIZ_NOT_STARTED, so no write from the old
+    // attempt can land after the deletes below and survive the reset.
     const updated = await this.prisma.studentOnAssignment.update({
       where: { id: soa.id },
       data: { quizAttempt: { unset: true }, status: 'PENDDING', score: null, completedAt: null },
     });
+    await Promise.all([
+      this.prisma.studentOnQuiz.deleteMany({ where: { studentOnAssignmentId: soa.id } }),
+      this.prisma.quizIntegrityEvent.deleteMany({ where: { studentOnAssignmentId: soa.id } }),
+    ]);
     await this.cache.bump(subjectScope(soa.subjectId, 'submissions'), subjectScope(soa.subjectId, 'grades'));
     return updated;
   }
