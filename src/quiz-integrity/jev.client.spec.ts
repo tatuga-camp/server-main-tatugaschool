@@ -1,9 +1,15 @@
 // src/quiz-integrity/jev.client.spec.ts
 import { emptySummary } from './integrity-summary';
-import { buildJevRequest, JEV_URL, JevClient, parseJevResponse } from './jev.client';
+import { buildJevRequest, JevClient, parseJevResponse } from './jev.client';
 
 const input = {
-  summary: { ...emptySummary(), exitCount: 2, totalAwayMs: 45_000, longestAwayMs: 30_000, translateDetected: true },
+  summary: {
+    ...emptySummary(),
+    exitCount: 2,
+    totalAwayMs: 45_000,
+    longestAwayMs: 30_000,
+    translateDetected: true,
+  },
   questionCount: 10,
   answeredCount: 6,
   timeLimitMinutes: 20,
@@ -26,8 +32,15 @@ describe('buildJevRequest', () => {
     });
     expect(body.questions.outside_help.type).toBe('noul');
     expect(body.questions.pattern.type).toBe('choice');
-    expect(Object.keys(body.questions.pattern.criteria)).toEqual(['normal', 'connectivity', 'distracted', 'outside_help']);
-    expect(JSON.stringify(body)).not.toMatch(/firstName|lastName|studentId|schoolId/);
+    expect(Object.keys(body.questions.pattern.criteria)).toEqual([
+      'normal',
+      'connectivity',
+      'distracted',
+      'outside_help',
+    ]);
+    expect(JSON.stringify(body)).not.toMatch(
+      /firstName|lastName|studentId|schoolId/,
+    );
   });
 });
 
@@ -37,7 +50,12 @@ describe('parseJevResponse', () => {
       parseJevResponse({
         answers: {
           outside_help: { type: 'noul', noul: 0.834 },
-          pattern: { type: 'choice', choice: 'outside_help', probabilities: {}, confidence: 0.7 },
+          pattern: {
+            type: 'choice',
+            choice: 'outside_help',
+            probabilities: {},
+            confidence: 0.7,
+          },
         },
       }),
     ).toEqual({ riskScore: 83, pattern: 'OUTSIDE_HELP', confidence: 0.7 });
@@ -45,17 +63,26 @@ describe('parseJevResponse', () => {
   it('returns null when noul is missing; tolerates a missing pattern', () => {
     expect(parseJevResponse({ answers: {} })).toBeNull();
     expect(parseJevResponse(null)).toBeNull();
-    expect(parseJevResponse({ answers: { outside_help: { noul: 0.1 } } })).toEqual({ riskScore: 10, pattern: null, confidence: null });
+    expect(
+      parseJevResponse({ answers: { outside_help: { noul: 0.1 } } }),
+    ).toEqual({ riskScore: 10, pattern: null, confidence: null });
   });
 });
 
 describe('JevClient.evaluate', () => {
-  const client = new JevClient();
+  let client: JevClient;
   let fetchSpy: jest.SpyInstance;
-  const ok = (body: unknown) => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) } as Response);
+  const json = (status: number, body: unknown) =>
+    Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
 
   beforeEach(() => {
     process.env.TYPESAFE_AI_API_KEY = 'test-key';
+    client = new JevClient();
     fetchSpy = jest.spyOn(global, 'fetch');
   });
   afterEach(() => {
@@ -70,17 +97,39 @@ describe('JevClient.evaluate', () => {
     await expect(client.evaluate(input)).resolves.toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
-  it('posts to the decision endpoint with bearer auth', async () => {
-    fetchSpy.mockImplementation(() => ok({ answers: { outside_help: { noul: 0.5 }, pattern: { choice: 'distracted', confidence: 0.6 } } }));
-    await expect(client.evaluate(input)).resolves.toEqual({ riskScore: 50, pattern: 'DISTRACTED', confidence: 0.6 });
+  it('posts the request to the systemone endpoint with bearer auth through the SDK', async () => {
+    fetchSpy.mockImplementation(() =>
+      json(200, {
+        model: 'jev-latest',
+        answers: {
+          outside_help: { type: 'noul', noul: 0.5 },
+          pattern: {
+            type: 'choice',
+            choice: 'distracted',
+            confidence: 0.6,
+            probabilities: {},
+          },
+        },
+        usage: { input_tokens: 1, output_tokens: 1 },
+      }),
+    );
+    await expect(client.evaluate(input)).resolves.toEqual({
+      riskScore: 50,
+      pattern: 'DISTRACTED',
+      confidence: 0.6,
+    });
     const [url, init] = fetchSpy.mock.calls[0];
-    expect(url).toBe(JEV_URL);
+    expect(url).toBe('https://api.typesafe.ai/v1/systemone');
     expect(init.method).toBe('POST');
-    expect(init.headers.Authorization).toBe('Bearer test-key');
+    expect(new Headers(init.headers).get('authorization')).toBe(
+      'Bearer test-key',
+    );
+    expect(JSON.parse(init.body)).toEqual(buildJevRequest(input));
   });
-  it('returns null on a non-2xx response', async () => {
-    fetchSpy.mockImplementation(() => Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({}) } as Response));
+  it('returns null on a non-2xx response and does not retry', async () => {
+    fetchSpy.mockImplementation(() => json(503, { error: 'unavailable' }));
     await expect(client.evaluate(input)).resolves.toBeNull();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
   it('returns null when fetch rejects', async () => {
     fetchSpy.mockImplementation(() => Promise.reject(new Error('network')));
@@ -97,7 +146,7 @@ describe('JevClient.evaluate', () => {
         }),
     );
     const pending = client.evaluate(input);
-    jest.advanceTimersByTime(5_000);
+    await jest.advanceTimersByTimeAsync(5_000);
     await expect(pending).resolves.toBeNull();
   });
 });
