@@ -1,4 +1,4 @@
-import { QuizSettings } from '@prisma/client';
+import { AssignmentType, QuizSettings } from '@prisma/client';
 import { DEFAULT_QUIZ_SETTINGS, QUIZ_GRACE_MS } from './quiz.constants';
 
 function definedOnly<T extends object>(value: T): Partial<T> {
@@ -37,4 +37,8 @@ export function computeDeadline(
 
 export function isPastGrace(deadlineAt: Date | null | undefined, now: Date): boolean {
   return !!deadlineAt && now.getTime() > deadlineAt.getTime() + QUIZ_GRACE_MS;
+}
+
+export function isGradedAssignmentType(type: AssignmentType): boolean {
+  return type === 'Assignment' || type === 'VideoQuiz' || type === 'Quiz';
 }

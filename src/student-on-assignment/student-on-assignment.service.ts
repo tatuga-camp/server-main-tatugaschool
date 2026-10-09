@@ -327,6 +327,11 @@ export class StudentOnAssignmentService {
             'You are not allowed to access this resource',
           );
         }
+        if (assignment.type === 'Quiz') {
+          throw new ForbiddenException(
+            'Quiz answers are submitted through the quiz endpoints',
+          );
+        }
 
         if (assignment.type !== 'VideoQuiz' && dto.body.status === 'REVIEWD') {
           throw new ForbiddenException(

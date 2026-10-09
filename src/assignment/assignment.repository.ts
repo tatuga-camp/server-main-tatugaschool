@@ -245,6 +245,19 @@ export class AssignmentRepository implements AssignmentRepositoryType {
         ]);
       }
 
+      // Quiz rows: answers and events reference questions and student work,
+      // so delete them before their parents.
+      await Promise.all([
+        this.prisma.studentOnQuiz.deleteMany({
+          where: { assignmentId: request.assignmentId },
+        }),
+        this.prisma.quizIntegrityEvent.deleteMany({
+          where: { assignmentId: request.assignmentId },
+        }),
+      ]);
+      await this.prisma.assignmentOnQuiz.deleteMany({
+        where: { assignmentId: request.assignmentId },
+      });
       await this.prisma.questionOnVideo.deleteMany({
         where: {
           assignmentId: request.assignmentId,

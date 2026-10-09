@@ -57,6 +57,11 @@ import { AssignmentReads } from './assignment.reads';
 import { EMPTY_COUNTS } from './submission-counts';
 import { CacheRefs } from '../cache/cache-refs';
 import { GradeReads } from '../grade/grade.reads';
+import {
+  isGradedAssignmentType,
+  mergeQuizSettings,
+  withDefaultQuizSettings,
+} from '../quiz/quiz-settings';
 
 // The teacher grade table needs scores and statuses, plus the student fields
 // the client grade popup shows. Never the answer `body`.
@@ -294,7 +299,9 @@ export class AssignmentService {
         }),
       ]);
       const assignments = subjectAssignments.filter(
-        (a) => a.status === 'Published' && a.type === 'Assignment',
+        (a) =>
+          a.status === 'Published' &&
+          (a.type === 'Assignment' || a.type === 'Quiz'),
       ) as Assignment[];
       return {
         grade: grade
@@ -364,7 +371,7 @@ export class AssignmentService {
       const assignments = subjectAssignments.filter(
         (a) =>
           a.status === 'Published' &&
-          (a.type === 'Assignment' || a.type === 'VideoQuiz'),
+          isGradedAssignmentType(a.type),
       ) as Assignment[];
 
       return {
@@ -410,6 +417,12 @@ export class AssignmentService {
         delete dto?.maxScore;
         delete dto?.dueDate;
         delete dto?.weight;
+      }
+      if (dto.type === 'Quiz') {
+        dto.maxScore = 0; // recomputed from question points
+        dto.quizSettings = withDefaultQuizSettings(dto.quizSettings);
+      } else {
+        delete dto.quizSettings;
       }
 
       await this.teacherOnSubjectService.ValidateAccess({
@@ -710,6 +723,18 @@ export class AssignmentService {
         userId: user.id,
         subjectId: assignment.subjectId,
       });
+
+      if (assignment.type === 'Quiz') {
+        delete dto.data.maxScore; // owned by question points
+        if (dto.data.quizSettings) {
+          dto.data.quizSettings = mergeQuizSettings(
+            assignment.quizSettings,
+            dto.data.quizSettings,
+          );
+        }
+      } else {
+        delete dto.data.quizSettings;
+      }
 
       const update = await this.assignmentRepository.update({
         where: { id: dto.query.assignmentId },

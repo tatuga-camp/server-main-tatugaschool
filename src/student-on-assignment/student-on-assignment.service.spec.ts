@@ -413,6 +413,35 @@ describe('StudentOnAssignmentService', () => {
         BadRequestException,
       );
     });
+
+    it('forbids students from patching a quiz submission directly', async () => {
+      const dto: any = {
+        query: { studentOnAssignmentId: 'sa1' },
+        body: { status: 'SUBMITTED' },
+      };
+      (
+        service.studentOnAssignmentRepository.getById as jest.Mock
+      ).mockResolvedValue({
+        id: 'sa1',
+        assignmentId: 'a1',
+        subjectId: 's1',
+        studentId: 'st1',
+        isAssigned: true,
+        status: 'PENDDING',
+      });
+      (service as any).assignmentRepository.getById.mockResolvedValue({
+        id: 'a1',
+        maxScore: 10,
+        type: 'Quiz',
+      });
+
+      await expect(
+        service.update(dto, undefined, { id: 'st1', schoolId: 'sc1' } as any),
+      ).rejects.toThrow(ForbiddenException);
+      expect(
+        service.studentOnAssignmentRepository.update,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {

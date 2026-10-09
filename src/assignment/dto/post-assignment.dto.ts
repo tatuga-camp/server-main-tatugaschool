@@ -1,6 +1,7 @@
 import { AssignmentStatus, AssignmentType } from '@prisma/client';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { normalizeTags } from '../utils/normalize-tags';
+import { QuizSettingsDto } from '../../quiz/dto/quiz-settings.dto';
 import {
   ArrayMaxSize,
   IsArray,
@@ -10,11 +11,13 @@ import {
   IsMongoId,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   IsUrl,
   MaxLength,
   Min,
+  ValidateNested,
 } from 'class-validator';
 
 export class CreateAssignmentDto {
@@ -86,4 +89,10 @@ export class CreateAssignmentDto {
   @MaxLength(30, { each: true })
   @Transform(({ value }) => normalizeTags(value))
   tags?: string[];
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => QuizSettingsDto)
+  quizSettings?: QuizSettingsDto;
 }
