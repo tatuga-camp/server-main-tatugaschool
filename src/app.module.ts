@@ -53,6 +53,7 @@ import { NotificationModule } from './notification/notification.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AssignmentVideoQuizModule } from './assignment-video-quiz/assignment-video-quiz.module';
+import { QuizModule } from './quiz/quiz.module';
 import { FileOnFeedbackModule } from './file-on-feedback/file-on-feedback.module';
 import { LineBotModule } from './line-bot/line-bot.module';
 import { AiModule } from './ai/ai.module';
@@ -117,6 +118,7 @@ import { RubricModule } from './rubric/rubric.module';
     FileOnTeachingMaterialModule,
     NotificationModule,
     AssignmentVideoQuizModule,
+    QuizModule,
     FileOnFeedbackModule,
     LineBotModule,
     RedisModule,
