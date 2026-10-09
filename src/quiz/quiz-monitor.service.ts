@@ -240,9 +240,12 @@ export class QuizMonitorService {
 
   async reset(studentOnAssignmentId: string, user: UserJwtPayload): Promise<StudentOnAssignment> {
     const { soa } = await this.access.teacherStudentOnAssignment(studentOnAssignmentId, user);
-    // Unset the attempt FIRST: guarded writes (saveAnswer, integrity batches,
-    // finalize) then fail with QUIZ_NOT_STARTED, so no write from the old
-    // attempt can land after the deletes below and survive the reset.
+    // Unset the attempt FIRST: every guarded write that STARTS after this
+    // point (saveAnswer, integrity batches, finalize) fails with
+    // QUIZ_NOT_STARTED. A saveAnswer that already passed its guard can still
+    // run its single answer upsert; that lands either before the deletes below
+    // (and is removed) or, in a narrow race, just after them, leaving at most
+    // one orphan answer. Closing that fully needs a transaction, not done here.
     const updated = await this.prisma.studentOnAssignment.update({
       where: { id: soa.id },
       data: { quizAttempt: { unset: true }, status: 'PENDDING', score: null, completedAt: null },

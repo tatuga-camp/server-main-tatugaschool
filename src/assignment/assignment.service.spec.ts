@@ -2,6 +2,10 @@ import { CacheService } from '../cache/cache.service';
 import { createPassthroughCache } from '../cache/testing/cache-test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AssignmentService } from './assignment.service';
+import {
+  mergeQuizSettings,
+  withDefaultQuizSettings,
+} from '../quiz/quiz-settings';
 import { PrismaService } from '../prisma/prisma.service';
 import { AiService } from '../ai/ai.service';
 import { StorageService } from '../storage/storage.service';
@@ -764,6 +768,75 @@ describe('AssignmentService', () => {
   // createAssignment
   // ─────────────────────────────────────────────────────────────────────────────
   describe('createAssignment', () => {
+    describe('quiz integration', () => {
+      const setupCreate = () => {
+        mockSubjectService.subjectRepository.findUnique.mockResolvedValue({
+          id: 's1',
+          schoolId: 'sch1',
+          isLocked: false,
+        });
+        mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+        (service.assignmentRepository.create as jest.Mock).mockResolvedValue({
+          id: 'a1',
+          subjectId: 's1',
+          schoolId: 'sch1',
+          status: 'Draft',
+        });
+        (service as any).studentOnSubjectRepository.findMany.mockResolvedValue(
+          [],
+        );
+      };
+      const createdData = () =>
+        (service.assignmentRepository.create as jest.Mock).mock.calls[0][0]
+          .data;
+
+      it('forces maxScore 0 and default quizSettings for a Quiz', async () => {
+        setupCreate();
+        await service.createAssignment(
+          { subjectId: 's1', title: 'Q', type: 'Quiz', maxScore: 50 } as any,
+          { id: 'u1' } as any,
+        );
+        expect(createdData().maxScore).toBe(0);
+        expect(createdData().quizSettings).toEqual(
+          withDefaultQuizSettings(undefined),
+        );
+      });
+
+      it('keeps client quizSettings overrides on top of the defaults for a Quiz', async () => {
+        setupCreate();
+        await service.createAssignment(
+          {
+            subjectId: 's1',
+            title: 'Q',
+            type: 'Quiz',
+            quizSettings: { testMode: true },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(createdData().quizSettings).toEqual(
+          withDefaultQuizSettings({ testMode: true } as any),
+        );
+        expect(createdData().quizSettings.testMode).toBe(true);
+      });
+
+      it('strips quizSettings when creating a non-quiz assignment', async () => {
+        setupCreate();
+        await service.createAssignment(
+          {
+            subjectId: 's1',
+            title: 'A',
+            type: 'Assignment',
+            beginDate: new Date(),
+            maxScore: 10,
+            quizSettings: { testMode: true },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(createdData()).not.toHaveProperty('quizSettings');
+        expect(createdData().maxScore).toBe(10);
+      });
+    });
+
     it('should create an assignment successfully and send line notification', async () => {
       const mockUser = { id: 'u1' } as any;
       const dto: any = {
@@ -1089,6 +1162,76 @@ describe('AssignmentService', () => {
   // updateAssignment
   // ─────────────────────────────────────────────────────────────────────────────
   describe('updateAssignment', () => {
+    describe('quiz integration', () => {
+      const setupUpdate = (type: string, quizSettings?: any) => {
+        const assignment = {
+          id: 'a1',
+          subjectId: 's1',
+          status: 'Draft',
+          schoolId: 'sch1',
+          type,
+          quizSettings,
+        };
+        (service.assignmentRepository.getById as jest.Mock).mockResolvedValue(
+          assignment,
+        );
+        mockPrismaService.subject.findUnique.mockResolvedValue({
+          id: 's1',
+          isLocked: false,
+        });
+        mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
+        (service.assignmentRepository.update as jest.Mock).mockResolvedValue(
+          assignment,
+        );
+      };
+      const updatedData = () =>
+        (service.assignmentRepository.update as jest.Mock).mock.calls[0][0]
+          .data;
+
+      it('drops a client maxScore and merges partial quizSettings for a Quiz', async () => {
+        setupUpdate('Quiz', withDefaultQuizSettings({ testMode: true } as any));
+        await service.updateAssignment(
+          {
+            query: { assignmentId: 'a1' },
+            data: { maxScore: 99, title: 'T', quizSettings: { shuffleQuestions: true } },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(updatedData()).not.toHaveProperty('maxScore');
+        expect(updatedData().title).toBe('T');
+        expect(updatedData().quizSettings).toEqual(
+          mergeQuizSettings(
+            withDefaultQuizSettings({ testMode: true } as any),
+            { shuffleQuestions: true } as any,
+          ),
+        );
+        expect(updatedData().quizSettings.testMode).toBe(true);
+        expect(updatedData().quizSettings.shuffleQuestions).toBe(true);
+      });
+
+      it('leaves quizSettings out of the update when a Quiz update sends none', async () => {
+        setupUpdate('Quiz', withDefaultQuizSettings(undefined));
+        await service.updateAssignment(
+          { query: { assignmentId: 'a1' }, data: { title: 'T' } } as any,
+          { id: 'u1' } as any,
+        );
+        expect(updatedData()).not.toHaveProperty('quizSettings');
+      });
+
+      it('strips quizSettings from a non-quiz update but keeps maxScore', async () => {
+        setupUpdate('Assignment');
+        await service.updateAssignment(
+          {
+            query: { assignmentId: 'a1' },
+            data: { maxScore: 20, quizSettings: { testMode: true } },
+          } as any,
+          { id: 'u1' } as any,
+        );
+        expect(updatedData()).not.toHaveProperty('quizSettings');
+        expect(updatedData().maxScore).toBe(20);
+      });
+    });
+
     it('should update an assignment successfully', async () => {
       const mockUser = { id: 'u1' } as any;
       const dto: any = {

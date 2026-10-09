@@ -3,7 +3,6 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { Assignment, AssignmentOnQuiz } from '@prisma/client';
@@ -24,8 +23,6 @@ import {
 
 @Injectable()
 export class QuizService {
-  private readonly logger = new Logger(QuizService.name);
-
   constructor(
     private prisma: PrismaService,
     private access: QuizAccess,
