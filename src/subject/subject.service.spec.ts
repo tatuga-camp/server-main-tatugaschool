@@ -11,7 +11,6 @@ import { SubjectService } from './subject.service';
 import { SubjectReads } from './subject.reads';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { ClassService } from '../class/class.service';
@@ -55,11 +54,6 @@ describe('SubjectService', () => {
     commentOnAnnouncement: { findMany: jest.fn() },
     assignment: { update: jest.fn() },
     assignmentOnQuiz: { findMany: jest.fn(), createMany: jest.fn() },
-  };
-
-  const mockWheelOfNameService = {
-    get: jest.fn(),
-    create: jest.fn(),
   };
 
   const mockAttendanceTableService = {
@@ -130,7 +124,6 @@ describe('SubjectService', () => {
         SubjectService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: StorageService, useValue: {} },
-        { provide: WheelOfNameService, useValue: mockWheelOfNameService },
         {
           provide: AttendanceTableService,
           useValue: mockAttendanceTableService,
@@ -589,10 +582,9 @@ describe('SubjectService', () => {
 
     it('should return subject', async () => {
       (service.subjectRepository.getSubjectById as jest.Mock).mockResolvedValue(
-        { id: 's1', isDeleted: false, wheelOfNamePath: 'path1' },
+        { id: 's1', isDeleted: false },
       );
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      mockWheelOfNameService.get.mockResolvedValue(true);
 
       const result = await service.getSubjectById({ subjectId: 's1' }, {
         id: 'u1',
@@ -611,59 +603,16 @@ describe('SubjectService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should create wheel of name if it returns 404', async () => {
+    it('should not write to the subject when a teacher loads it', async () => {
       (service.subjectRepository.getSubjectById as jest.Mock).mockResolvedValue(
-        { id: 's1', isDeleted: false, wheelOfNamePath: 'path1', title: 'Math' },
+        { id: 's1', isDeleted: false, title: 'Math' },
       );
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      mockWheelOfNameService.get.mockRejectedValue({
-        response: { status: 404 },
-      });
-      (
-        service as any
-      ).studentOnSubjectRepository.getStudentOnSubjectsBySubjectId.mockResolvedValue(
-        [{ title: 'Mr', firstName: 'John', lastName: 'Doe' }],
-      );
-      mockWheelOfNameService.create.mockResolvedValue({
-        data: { path: 'new_path' },
-      });
-      (service.subjectRepository.update as jest.Mock).mockResolvedValue({
-        id: 's1',
-        wheelOfNamePath: 'new_path',
-      });
 
       const result = await service.getSubjectById({ subjectId: 's1' }, {
         id: 'u1',
       } as any);
 
-      expect(mockWheelOfNameService.create).toHaveBeenCalled();
-      expect(service.subjectRepository.update).toHaveBeenCalled();
-      expect(result.id).toBe('s1');
-    });
-
-    it('should still return the subject when re-creating the wheel of name fails (e.g. upstream 503)', async () => {
-      (service.subjectRepository.getSubjectById as jest.Mock).mockResolvedValue(
-        { id: 's1', isDeleted: false, wheelOfNamePath: 'path1', title: 'Math' },
-      );
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      mockWheelOfNameService.get.mockRejectedValue({
-        response: { status: 404 },
-      });
-      (
-        service as any
-      ).studentOnSubjectRepository.getStudentOnSubjectsBySubjectId.mockResolvedValue(
-        [{ title: 'Mr', firstName: 'John', lastName: 'Doe' }],
-      );
-      mockWheelOfNameService.create.mockRejectedValue({
-        response: { status: 503 },
-        message: 'Request failed with status code 503',
-      });
-
-      const result = await service.getSubjectById({ subjectId: 's1' }, {
-        id: 'u1',
-      } as any);
-
-      expect(mockWheelOfNameService.create).toHaveBeenCalled();
       expect(service.subjectRepository.update).not.toHaveBeenCalled();
       expect(result.id).toBe('s1');
     });
@@ -1166,9 +1115,6 @@ describe('SubjectService', () => {
       );
       mockPrismaService.teacherOnSubject.create.mockResolvedValue({});
       mockGradeService.gradeRepository.create.mockResolvedValue({});
-      mockWheelOfNameService.create.mockResolvedValue({
-        data: { path: 'path' },
-      });
       (service.subjectRepository.update as jest.Mock).mockResolvedValue({
         id: 's1',
       });
@@ -1227,9 +1173,6 @@ describe('SubjectService', () => {
       });
       mockPrismaService.teacherOnSubject.create.mockResolvedValue({});
       mockGradeService.gradeRepository.create.mockResolvedValue({});
-      mockWheelOfNameService.create.mockResolvedValue({
-        data: { path: 'path' },
-      });
       (service.subjectRepository.update as jest.Mock).mockResolvedValue({
         id: 's1',
       });

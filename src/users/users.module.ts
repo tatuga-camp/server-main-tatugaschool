@@ -20,7 +20,6 @@ import { AttendanceStatusListService } from '../attendance-status-list/attendanc
 import { SubscriptionService } from '../subscription/subscription.service';
 import { AssignmentService } from '../assignment/assignment.service';
 import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignment-video-quiz.repository';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { GradeService } from '../grade/grade.service';
@@ -50,7 +49,6 @@ import { HttpModule } from '@nestjs/axios';
     SubscriptionService,
     AssignmentService,
     AssignmentVideoQuizRepository,
-    WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
     GradeService,

@@ -6,7 +6,6 @@ import { MemberOnSchoolModule } from '../member-on-school/member-on-school.modul
 import { SchoolModule } from '../school/school.module';
 import { StudentService } from '../student/student.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { SubjectController } from './subject.controller';
 import { SubjectService } from './subject.service';
 import { PublicProgressController } from './public-progress/public-progress.controller';
@@ -38,7 +37,6 @@ import { ClassModule } from '../class/class.module';
   ],
   providers: [
     SubjectService,
-    WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
     StudentService,

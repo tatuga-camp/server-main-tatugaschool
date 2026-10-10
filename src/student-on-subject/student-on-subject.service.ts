@@ -31,7 +31,6 @@ import { StudentOnAssignmentRepository } from './../student-on-assignment/studen
 import { SubjectRepository } from './../subject/subject.repository';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
 import { UserRepository } from './../users/users.repository';
-import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import {
   CreateStudentOnSubjectDto,
   DeleteStudentOnSubjectDto,
@@ -73,7 +72,6 @@ export class StudentOnSubjectService {
     private prisma: PrismaService,
     private storageService: StorageService,
     private teacherOnSubjectService: TeacherOnSubjectService,
-    private wheelOfNameService: WheelOfNameService,
     @Inject(forwardRef(() => SchoolService))
     private schoolService: SchoolService,
     private gradeService: GradeService,
@@ -548,29 +546,6 @@ export class StudentOnSubjectService {
             blurHash: dto.data.blurHash,
           },
         });
-      }
-
-      if (subject.wheelOfNamePath && dto.data.isActive) {
-        const studentActives = await this.studentOnSubjectRepository.findMany({
-          where: {
-            subjectId: studentOnSubject.subjectId,
-            isActive: true,
-          },
-        });
-        this.wheelOfNameService
-          .update({
-            path: subject.wheelOfNamePath,
-            texts: studentActives.map((student) => {
-              return {
-                text: `${student.title} ${student.firstName} ${student.lastName}`,
-              };
-            }),
-            title: subject.title,
-            description: subject.description,
-          })
-          .catch((error) => {
-            this.logger.error(error);
-          });
       }
 
       return update;

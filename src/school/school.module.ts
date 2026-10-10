@@ -8,7 +8,6 @@ import { StudentModule } from '../student/student.module';
 import { SubjectModule } from '../subject/subject.module';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { UsersService } from '../users/users.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { SchoolController } from './school.controller';
 import { SchoolService } from './school.service';
 import { SubjectService } from '../subject/subject.service';
@@ -37,7 +36,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
   ],
   providers: [
     SchoolService,
-    WheelOfNameService,
     AttendanceTableService,
     TeacherOnSubjectService,
     GradeService,

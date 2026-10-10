@@ -47,7 +47,6 @@ import { UnitOnGroupModule } from './unit-on-group/unit-on-group.module';
 import { UsersModule } from './users/users.module';
 import { PushModule } from './web-push/push.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
-import { WheelOfNameModule } from './wheel-of-name/wheel-of-name.module';
 import { StorageModule } from './storage/storage.module';
 import { NotificationModule } from './notification/notification.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -103,7 +102,6 @@ import { RubricModule } from './rubric/rubric.module';
     SkillOnStudentAssignmentModule,
     CareerModule,
     SkillOnCareerModule,
-    WheelOfNameModule,
     AttendanceStatusListModule,
     PushModule,
     WebhooksModule,

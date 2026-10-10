@@ -2,7 +2,6 @@ import { Module, forwardRef } from '@nestjs/common';
 import { StudentOnSubjectService } from './student-on-subject.service';
 import { StudentOnSubjectController } from './student-on-subject.controller';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { HttpModule } from '@nestjs/axios';
 import { SchoolService } from '../school/school.service';
 import { GradeService } from '../grade/grade.service';
@@ -28,7 +27,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
   providers: [
     StudentOnSubjectService,
     TeacherOnSubjectService,
-    WheelOfNameService,
     GradeService,
     SkillOnStudentAssignmentService,
     MemberOnSchoolService,
