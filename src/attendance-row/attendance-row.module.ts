@@ -3,7 +3,6 @@ import { AttendanceRowService } from './attendance-row.service';
 import { AttendanceRowController } from './attendance-row.controller';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { HttpModule } from '@nestjs/axios';
 import { SubjectService } from '../subject/subject.service';
 import { AttendanceTableService } from '../attendance-table/attendance-table.service';
@@ -30,7 +29,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     AttendanceRowService,
     StudentOnSubjectService,
     TeacherOnSubjectService,
-    WheelOfNameService,
     AttendanceStatusListService,
     SubjectService,
     AttendanceTableService,

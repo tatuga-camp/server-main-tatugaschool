@@ -30,7 +30,6 @@ import { MemberOnSchoolService } from './../member-on-school/member-on-school.se
 import { ScoreOnSubjectRepository } from './../score-on-subject/score-on-subject.repository';
 import { StudentRepository } from './../student/student.repository';
 import { TeacherOnSubjectService } from './../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from './../wheel-of-name/wheel-of-name.service';
 import {
   CreateSubjectDto,
   DeleteSubjectDto,
@@ -98,7 +97,6 @@ export class SubjectService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-    private wheelOfNameService: WheelOfNameService,
     private attendanceTableService: AttendanceTableService,
     private teacherOnSubjectService: TeacherOnSubjectService,
     @Inject(forwardRef(() => ClassService))
@@ -534,56 +532,12 @@ export class SubjectService {
         }
       }
 
-      let subject = await this.subjectRepository.getSubjectById({
+      const subject = await this.subjectRepository.getSubjectById({
         subjectId: dto.subjectId,
       });
 
       if (subject.isDeleted === true) {
         throw new NotFoundException('Subject is flagged as deleted');
-      }
-
-      if (user) {
-        await this.wheelOfNameService
-          .get({
-            path: subject.wheelOfNamePath,
-          })
-          .catch(async (error) => {
-            if (error?.response?.status !== 404) {
-              return;
-            }
-            // wheelofnames.com is a non-critical dependency: if re-creating
-            // the wheel fails (e.g. upstream 503) log it and still return the
-            // subject instead of turning the page load into a 500.
-            try {
-              const studentOnSubjects =
-                await this.studentOnSubjectRepository.getStudentOnSubjectsBySubjectId(
-                  {
-                    subjectId: subject.id,
-                  },
-                );
-
-              const create = await this.wheelOfNameService.create({
-                title: subject.title,
-                description: subject.description,
-                texts: studentOnSubjects.map((student) => {
-                  return {
-                    text: `${student.title} ${student.firstName} ${student.lastName}`,
-                  };
-                }),
-              });
-
-              subject = await this.subjectRepository.update({
-                where: {
-                  id: subject.id,
-                },
-                data: {
-                  wheelOfNamePath: create.data.path,
-                },
-              });
-            } catch (wheelError) {
-              this.logger.error(wheelError);
-            }
-          });
       }
 
       // Only teachers may see the public progress token.
@@ -864,7 +818,7 @@ export class SubjectService {
 
       const code = crypto.randomBytes(3).toString('hex');
 
-      let subject = await this.subjectRepository.createSubject({
+      const subject = await this.subjectRepository.createSubject({
         ...dto,
         educationYear: educationYear,
         code,
@@ -964,29 +918,6 @@ export class SubjectService {
             gradeRules: JSON.stringify(gradeRule),
           },
         }),
-        this.wheelOfNameService
-          .create({
-            title: subject.title,
-            description: subject.description,
-            texts: students.map((student) => {
-              return {
-                text: `${student.title} ${student.firstName} ${student.lastName}`,
-              };
-            }),
-          })
-          .then(async (wheel) => {
-            subject = await this.subjectRepository.update({
-              where: {
-                id: subject.id,
-              },
-              data: {
-                wheelOfNamePath: wheel.data.path,
-              },
-            });
-          })
-          .catch((error) => {
-            this.logger.error(error);
-          }),
         isThaiSchool(school.country)
           ? this.createDefaultTable(thaiAttendanceTable(subject.title), subject)
           : this.attendanceTableService.createAttendanceTable(

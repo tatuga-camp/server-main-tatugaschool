@@ -6,7 +6,6 @@ import { StudentOnSubjectService } from './student-on-subject.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { SchoolService } from '../school/school.service';
 import { GradeService } from '../grade/grade.service';
 import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/skill-on-student-assignment.service';
@@ -43,10 +42,6 @@ describe('StudentOnSubjectService', () => {
     schoolRepository: { findUnique: jest.fn() },
   };
 
-  const mockWheelOfNameService = {
-    update: jest.fn().mockResolvedValue(true),
-  };
-
   const mockGradeService = {
     gradeRepository: { findUnique: jest.fn() },
     assignGrade: jest.fn().mockResolvedValue({ grade: 'A' }),
@@ -71,7 +66,6 @@ describe('StudentOnSubjectService', () => {
           provide: TeacherOnSubjectService,
           useValue: mockTeacherOnSubjectService,
         },
-        { provide: WheelOfNameService, useValue: mockWheelOfNameService },
         { provide: SchoolService, useValue: mockSchoolService },
         { provide: GradeService, useValue: mockGradeService },
         {
@@ -264,7 +258,6 @@ describe('StudentOnSubjectService', () => {
       ).mockResolvedValue({ id: 'sos1', subjectId: 's1' });
       (service as any).subjectRepository.getSubjectById.mockResolvedValue({
         id: 's1',
-        wheelOfNamePath: null,
       });
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       (
@@ -302,7 +295,6 @@ describe('StudentOnSubjectService', () => {
       ).mockResolvedValue({ id: 'sos1', subjectId: 's1', studentId: 'st1' });
       (service as any).subjectRepository.getSubjectById.mockResolvedValue({
         id: 's1',
-        wheelOfNamePath: null,
       });
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       (
@@ -338,7 +330,6 @@ describe('StudentOnSubjectService', () => {
       ).mockResolvedValue({ id: 'sos1', subjectId: 's1', studentId: 'st1' });
       (service as any).subjectRepository.getSubjectById.mockResolvedValue({
         id: 's1',
-        wheelOfNamePath: null,
       });
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       (
@@ -356,60 +347,26 @@ describe('StudentOnSubjectService', () => {
       expect((service as any).studentRepository.update).not.toHaveBeenCalled();
     });
 
-    it('should refresh wheel of name when subject has wheelOfNamePath and isActive is true', async () => {
+    it('should not reload the roster when a student is activated', async () => {
       (
         service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
       ).mockResolvedValue({ id: 'sos1', subjectId: 's1' });
       (service as any).subjectRepository.getSubjectById.mockResolvedValue({
         id: 's1',
         title: 'Math',
-        description: 'desc',
-        wheelOfNamePath: '/wheel/abc',
-      });
-      mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
-      (
-        service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
-      ).mockResolvedValue({ id: 'sos1', isActive: true });
-      (
-        service.studentOnSubjectRepository.findMany as jest.Mock
-      ).mockResolvedValue([
-        { title: 'Mr.', firstName: 'John', lastName: 'Doe' },
-      ]);
-
-      await service.update(
-        { query: { id: 'sos1' }, data: { isActive: true } } as any,
-        { id: 'u1' } as any,
-      );
-
-      expect(mockWheelOfNameService.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          path: '/wheel/abc',
-          title: 'Math',
-          description: 'desc',
-          texts: [{ text: 'Mr. John Doe' }],
-        }),
-      );
-    });
-
-    it('should not refresh wheel of name when subject has no wheelOfNamePath', async () => {
-      (
-        service.studentOnSubjectRepository.getStudentOnSubjectById as jest.Mock
-      ).mockResolvedValue({ id: 'sos1', subjectId: 's1' });
-      (service as any).subjectRepository.getSubjectById.mockResolvedValue({
-        id: 's1',
-        wheelOfNamePath: null,
       });
       mockTeacherOnSubjectService.ValidateAccess.mockResolvedValue(true);
       (
         service.studentOnSubjectRepository.updateStudentOnSubject as jest.Mock
       ).mockResolvedValue({ id: 'sos1', isActive: true });
 
-      await service.update(
+      const result = await service.update(
         { query: { id: 'sos1' }, data: { isActive: true } } as any,
         { id: 'u1' } as any,
       );
 
-      expect(mockWheelOfNameService.update).not.toHaveBeenCalled();
+      expect(result).toEqual({ id: 'sos1', isActive: true });
+      expect(service.studentOnSubjectRepository.findMany).not.toHaveBeenCalled();
     });
   });
 

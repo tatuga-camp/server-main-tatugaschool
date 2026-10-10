@@ -8,7 +8,6 @@ import { SkillOnStudentAssignmentService } from '../skill-on-student-assignment/
 import { StudentService } from '../student/student.service';
 import { SubjectService } from '../subject/subject.service';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { StudentOnAssignmentController } from './student-on-assignment.controller';
 import { StudentOnAssignmentService } from './student-on-assignment.service';
 import { GradeService } from '../grade/grade.service';
@@ -37,7 +36,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     StudentService,
     ClassService,
     SubjectService,
-    WheelOfNameService,
     AttendanceTableService,
     GradeService,
     UsersService,

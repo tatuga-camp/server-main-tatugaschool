@@ -4,7 +4,6 @@ import { AssignmentService } from './assignment.service';
 import { AssignmentController } from './assignment.controller';
 import { TeacherOnSubjectService } from '../teacher-on-subject/teacher-on-subject.service';
 import { StudentOnSubjectService } from '../student-on-subject/student-on-subject.service';
-import { WheelOfNameService } from '../wheel-of-name/wheel-of-name.service';
 import { SkillService } from '../skill/skill.service';
 import { SkillOnAssignmentService } from '../skill-on-assignment/skill-on-assignment.service';
 import { SubjectService } from '../subject/subject.service';
@@ -35,7 +34,6 @@ import { AssignmentVideoQuizRepository } from '../assignment-video-quiz/assignme
     AssignmentService,
     TeacherOnSubjectService,
     StudentOnSubjectService,
-    WheelOfNameService,
     SkillService,
     SkillOnAssignmentService,
     AttendanceTableService,
