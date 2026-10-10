@@ -303,7 +303,7 @@ describe('WebhooksService', () => {
 
       await service.handleSanityNewsWebhook(payload);
 
-      expect(mockUsersService.findActiveRecipients).toHaveBeenCalledWith(30);
+      expect(mockUsersService.findActiveRecipients).toHaveBeenCalledWith(60);
       expect(mockEmailService.sendBulk).toHaveBeenCalledTimes(2);
 
       const enArg = mockEmailService.sendBulk.mock.calls[0][0];
@@ -547,7 +547,9 @@ describe('WebhooksService', () => {
 
       await service.handleStripeWebhook(req, reply);
 
-      expect(mockSchoolService.schoolRepository.findFirst).not.toHaveBeenCalled();
+      expect(
+        mockSchoolService.schoolRepository.findFirst,
+      ).not.toHaveBeenCalled();
       expect(mockSchoolService.upgradePlanFree).not.toHaveBeenCalled();
       expect(reply.status).toHaveBeenCalledWith(200);
     });
