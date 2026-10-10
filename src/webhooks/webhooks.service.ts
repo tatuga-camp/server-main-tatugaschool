@@ -193,7 +193,7 @@ export class WebhooksService {
   ): Promise<void> {
     const start = Date.now();
     try {
-      const recipients = await this.users.findActiveRecipients(30);
+      const recipients = await this.users.findActiveRecipients(60);
       if (recipients.length === 0) {
         this.logger.log(
           `sanity-news ${payload._id}: 0 active recipients in last 30d, skipping`,
